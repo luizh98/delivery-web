@@ -1,10 +1,7 @@
-import { CategoryManager } from "@/features/admin/category-manager";
-import { getAdminCategories } from "@/lib/api/server";
+import { AdminCategoriesView } from "@/views/AdminCategories";
 
 export const dynamic = "force-dynamic";
 
-export default async function CategoriesPage() {
-  const categories = await getAdminCategories();
-
-  return <CategoryManager initialCategories={categories} />;
+export default function CategoriesPage() {
+  return <AdminCategoriesView />;
 }

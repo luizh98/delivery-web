@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { AdminShell } from "@/features/admin/admin-shell";
-import { getAdminUser } from "@/lib/api/server";
+import { AdminLayout } from "@/layouts/AdminLayout";
+import { getAdminUser } from "@/services/api/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +15,5 @@ export default async function ProtectedAdminLayout({
     redirect("/admin/login");
   }
 
-  return <AdminShell admin={admin}>{children}</AdminShell>;
+  return <AdminLayout admin={admin}>{children}</AdminLayout>;
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { resolveTenantFromHost } from "@/lib/tenant";
+import { resolveTenantFromHost } from "@/utils/tenant";
 
 export function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);

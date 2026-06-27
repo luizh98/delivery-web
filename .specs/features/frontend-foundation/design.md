@@ -26,7 +26,7 @@ graph TD
 ### Tenant Resolver
 
 - **Purpose**: Extract tenant from host/subdomain or fallback env.
-- **Location**: `src/lib/tenant.ts`
+- **Location**: `src/utils/tenant.ts`
 - **Interfaces**:
   - `resolveTenantFromHost(host?: string): string`
   - `resolveTenantFromHeaders(headers: Headers): string`
@@ -45,17 +45,33 @@ graph TD
 ### Theme
 
 - **Purpose**: Apply `primaryColor` and `secondaryColor`.
-- **Location**: `src/components/theme/theme-provider.tsx`
+- **Location**: `src/components/ThemeProvider/`
 
 ### Customer App
 
 - **Purpose**: Menu, product options, cart and checkout.
-- **Location**: `src/features/customer/`
+- **Location**: `src/views/Home/`
 
 ### Admin App
 
 - **Purpose**: Login, dashboard, orders, kitchen, catalog and settings.
-- **Location**: `src/features/admin/`
+- **Location**: `src/views/Admin*/`
+
+### Admin Layout
+
+- **Purpose**: Protected admin shell, navigation and logout.
+- **Location**: `src/layouts/AdminLayout/`
+
+### API Services
+
+- **Purpose**: Frontend API client and server-side backend calls.
+- **Location**: `src/services/api/`
+
+### Shared UI Components
+
+- **Purpose**: Reusable UI components.
+- **Location**: `src/components/[ComponentName]/`
+- **Files**: `index.tsx` plus `types.ts` when the component exposes props.
 
 ---
 
@@ -73,3 +89,4 @@ Types mirror backend DTOs in `src/types/api.ts`.
 | API access | Next Route Handlers | Avoid CORS and centralize tenant header |
 | Forms | React Hook Form + Zod | Required and predictable validation |
 | Theme | CSS variables | Fast runtime tenant color changes |
+| Frontend organization | Layer-based structure: `app`, `views`, `components`, `layouts`, `services`, `utils`, `constants`, `types` | Matches Cosmos architecture by technical responsibility |

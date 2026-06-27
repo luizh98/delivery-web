@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/lib/api/constants";
-import { resolveTenantFromHeaders } from "@/lib/tenant";
+import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/constants/api";
+import { resolveTenantFromHeaders } from "@/utils/tenant";
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(ADMIN_TOKEN_COOKIE)?.value;

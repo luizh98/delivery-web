@@ -1,5 +1,5 @@
-import { AdminLogin } from "@/features/admin/admin-login";
+import { AdminLoginView } from "@/views/AdminLogin";
 
 export default function AdminLoginPage() {
-  return <AdminLogin />;
+  return <AdminLoginView />;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ADMIN_TOKEN_COOKIE } from "@/lib/api/constants";
+import { ADMIN_TOKEN_COOKIE } from "@/constants/api";
 
 export async function POST() {
   const response = NextResponse.json({ ok: true });
