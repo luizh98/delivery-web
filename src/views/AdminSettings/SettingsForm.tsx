@@ -23,7 +23,17 @@ const settingsSchema = z.object({
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
-  businessHoursJson: z.string().optional(),
+  businessHoursJson: z.string().optional().refine((value) => {
+    if (!value?.trim()) {
+      return true;
+    }
+
+    try {
+      return Array.isArray(JSON.parse(value));
+    } catch {
+      return false;
+    }
+  }, "Informe uma lista JSON valida."),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -55,6 +65,10 @@ export function SettingsForm({
     setSaved(false);
     setError("");
     try {
+      const businessHours = values.businessHoursJson?.trim()
+        ? JSON.parse(values.businessHoursJson)
+        : [];
+      console.log("Submitting values:", values);
       await clientApi<RestaurantConfigResponse>("admin/restaurant/config", {
         method: "PUT",
         body: JSON.stringify({
@@ -73,9 +87,7 @@ export function SettingsForm({
             city: values.city,
             state: values.state,
           },
-          businessHours: values.businessHoursJson
-            ? JSON.parse(values.businessHoursJson)
-            : [],
+          businessHours,
         }),
       });
       setSaved(true);
@@ -84,8 +96,13 @@ export function SettingsForm({
     }
   }
 
+  function onInvalidSubmit() {
+    setSaved(false);
+    setError("Corrija os campos destacados antes de salvar.");
+  }
+
   return (
-    <form className="grid max-w-3xl gap-4" onSubmit={form.handleSubmit(submit)}>
+    <form className="grid max-w-3xl gap-4" onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
       <div>
         <h1 className="text-2xl font-bold">Configuracao</h1>
         <p className="text-sm text-muted">Identidade, tema e funcionamento.</p>
@@ -134,7 +151,7 @@ export function SettingsForm({
         </div>
       </section>
 
-      <Field label="Horarios">
+      <Field label="Horarios" error={form.formState.errors.businessHoursJson?.message}>
         <Textarea className="font-mono" rows={8} {...form.register("businessHoursJson")} />
       </Field>
 
