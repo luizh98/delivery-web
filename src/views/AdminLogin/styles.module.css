@@ -1,0 +1,21 @@
+@reference "../../app/globals.css";
+
+.root {
+  @apply grid min-h-screen place-items-center px-4;
+}
+
+.form {
+  @apply grid w-full max-w-sm gap-4 rounded-md border border-border bg-surface p-5;
+}
+
+.title {
+  @apply text-2xl font-bold;
+}
+
+.subtitle {
+  @apply text-sm text-muted;
+}
+
+.error {
+  @apply text-sm text-red-600;
+}

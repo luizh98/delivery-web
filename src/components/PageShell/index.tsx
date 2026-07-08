@@ -1,8 +1,10 @@
+import { cx } from "@/utils/classNames";
 import type { PageShellProps } from "./types";
+import styles from "./styles.module.css";
 
 export function PageShell({ children, className = "" }: PageShellProps) {
   return (
-    <main className={`mx-auto min-h-screen w-full max-w-6xl px-4 py-4 sm:px-6 ${className}`}>
+    <main className={cx(styles.shell, className)}>
       {children}
     </main>
   );

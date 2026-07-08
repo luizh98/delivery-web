@@ -6,9 +6,12 @@ import {
   Tags,
 } from "lucide-react";
 import Link from "next/link";
+import { ConfirmationProvider } from "@/components/ConfirmationProvider";
 import { PageShell } from "@/components/PageShell";
+import { ToastProvider } from "@/components/ToastProvider";
 import { LogoutButton } from "./LogoutButton";
 import type { AdminLayoutProps } from "./types";
+import styles from "./styles.module.css";
 
 const navItems = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard },
@@ -23,34 +26,38 @@ export function AdminLayout({
   children,
 }: AdminLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase text-muted">
-              {admin.tenantSlug}
-            </p>
-            <p className="font-bold">{admin.email}</p>
-          </div>
-          <LogoutButton />
+    <ToastProvider>
+      <ConfirmationProvider>
+        <div className={styles.root}>
+          <header className={styles.header}>
+            <div className={styles.headerInner}>
+              <div>
+                <p className={styles.tenant}>
+                  {admin.tenantSlug}
+                </p>
+                <p className={styles.email}>{admin.email}</p>
+              </div>
+              <LogoutButton />
+            </div>
+            <nav className={styles.nav}>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    className={styles.navLink}
+                    href={item.href}
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </header>
+          <PageShell>{children}</PageShell>
         </div>
-        <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-3 sm:px-6">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                className="inline-flex h-10 min-w-max items-center gap-2 rounded-md px-3 text-sm font-semibold hover:bg-surface-muted"
-                href={item.href}
-              >
-                <Icon size={16} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </header>
-      <PageShell>{children}</PageShell>
-    </div>
+      </ConfirmationProvider>
+    </ToastProvider>
   );
 }

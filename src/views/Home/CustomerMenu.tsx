@@ -19,6 +19,7 @@ import { Button } from "@/components/Button";
 import { Field, Input, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
+import { cx } from "@/utils/classNames";
 import { money } from "@/utils/format";
 import type { CustomerMenuProps } from "./types";
 import type {
@@ -27,6 +28,7 @@ import type {
   ProductOptionGroup,
   ProductOptionItem,
 } from "@/types/api";
+import styles from "./styles.module.css";
 
 type CartOption = {
   groupId: string;
@@ -118,16 +120,18 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       return;
     }
 
-    const options = selectedProduct.optionGroups.flatMap((group) => {
-      const groupId = group.id ?? group.name;
-      return (selectedOptions[groupId] ?? []).map<CartOption>((item) => ({
-        groupId,
-        groupName: group.name,
-        itemId: item.id ?? item.name,
-        itemName: item.name,
-        priceCents: item.priceCents,
-      }));
-    });
+    const options = selectedProduct.optionGroups
+      .filter((group) => !group.deleted)
+      .flatMap((group) => {
+        const groupId = group.id ?? group.name;
+        return (selectedOptions[groupId] ?? []).map<CartOption>((item) => ({
+          groupId,
+          groupName: group.name,
+          itemId: item.id ?? item.name,
+          itemName: item.name,
+          priceCents: item.priceCents,
+        }));
+      });
 
     const optionsTotalCents = options.reduce((sum, option) => sum + option.priceCents, 0);
     const totalCents = (selectedProduct.priceCents + optionsTotalCents) * quantity;
@@ -190,35 +194,36 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   }
 
   return (
-    <PageShell className="pb-28">
-      <header className="overflow-hidden rounded-md border border-border bg-surface">
+    <PageShell className={styles.pageShellPad}>
+      <header className={styles.hero}>
         <div
-          className="h-32 bg-surface-muted bg-cover bg-center"
+          className={styles.heroBanner}
           style={{
             backgroundImage: restaurantConfig?.bannerUrl
               ? `url(${restaurantConfig.bannerUrl})`
               : "linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))",
           }}
         />
-        <div className="grid gap-2 p-4">
-          <p className="text-xs font-semibold uppercase text-muted">Cardapio</p>
-          <h1 className="text-2xl font-bold">
+        <div className={styles.heroBody}>
+          <p className={styles.eyebrow}>Cardapio</p>
+          <h1 className={styles.heroTitle}>
             {restaurantConfig?.name ?? "Delivery"}
           </h1>
-          <p className="text-sm text-muted">
+          <p className={styles.heroText}>
             Escolha seus itens, revise o carrinho e envie o pedido.
           </p>
         </div>
       </header>
 
-      <div className="sticky top-0 z-10 -mx-4 mt-4 overflow-x-auto border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-md sm:border">
-        <div className="flex min-w-max gap-2">
+      <div className={styles.categoryBar}>
+        <div className={styles.categoryList}>
           <button
-            className={`rounded-md px-4 py-2 text-sm font-semibold ${
+            className={cx(
+              styles.categoryButton,
               selectedCategory === "all"
-                ? "bg-primary text-white"
-                : "bg-surface text-foreground"
-            }`}
+                ? styles.categoryButtonActive
+                : styles.categoryButtonIdle,
+            )}
             onClick={() => setSelectedCategory("all")}
           >
             Todos
@@ -226,11 +231,12 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           {menu.categories.map((category) => (
             <button
               key={category.id}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${
+              className={cx(
+                styles.categoryButton,
                 selectedCategory === category.id
-                  ? "bg-primary text-white"
-                  : "bg-surface text-foreground"
-              }`}
+                  ? styles.categoryButtonActive
+                  : styles.categoryButtonIdle,
+              )}
               onClick={() => setSelectedCategory(category.id)}
             >
               {category.name}
@@ -239,10 +245,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         </div>
       </div>
 
-      <section className="mt-4 grid gap-3 lg:grid-cols-[1fr_360px]">
-        <div className="grid gap-3">
+      <section className={styles.contentGrid}>
+        <div className={styles.productList}>
           {visibleProducts.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border bg-surface p-6 text-sm text-muted">
+            <div className={styles.empty}>
               Nenhum produto cadastrado para este tenant.
             </div>
           ) : null}
@@ -250,20 +256,20 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           {visibleProducts.map((product) => (
             <button
               key={product.id}
-              className="grid grid-cols-[1fr_96px] gap-3 rounded-md border border-border bg-surface p-3 text-left transition hover:border-primary"
+              className={styles.productCard}
               onClick={() => openProduct(product)}
             >
-              <span className="grid content-start gap-1">
-                <span className="text-base font-semibold">{product.name}</span>
-                <span className="line-clamp-2 text-sm text-muted">
+              <span className={styles.productInfo}>
+                <span className={styles.productName}>{product.name}</span>
+                <span className={styles.productDescription}>
                   {product.description || "Sem descricao."}
                 </span>
-                <span className="pt-1 text-sm font-bold text-primary">
+                <span className={styles.productPrice}>
                   {money(product.priceCents)}
                 </span>
               </span>
               <span
-                className="h-24 rounded-md bg-surface-muted bg-cover bg-center"
+                className={styles.productImage}
                 style={{
                   backgroundImage: product.imageUrl
                     ? `url(${product.imageUrl})`
@@ -274,7 +280,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           ))}
         </div>
 
-        <aside className="hidden lg:block">
+        <aside className={styles.desktopCart}>
           <CartPanel
             cart={cart}
             subtotalCents={subtotalCents}
@@ -290,16 +296,16 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         </aside>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface p-3 shadow-2xl lg:hidden">
+      <div className={styles.mobileCart}>
         <details>
-          <summary className="flex list-none items-center justify-between">
-            <span className="inline-flex items-center gap-2 font-semibold">
+          <summary className={styles.mobileSummary}>
+            <span className={styles.mobileSummaryLabel}>
               <ShoppingCart size={18} />
               Carrinho ({cart.length})
             </span>
-            <span className="font-bold text-primary">{money(subtotalCents)}</span>
+            <span className={styles.mobileTotal}>{money(subtotalCents)}</span>
           </summary>
-          <div className="mt-3 max-h-[70vh] overflow-y-auto">
+          <div className={styles.mobileCartBody}>
             <CartPanel
               cart={cart}
               subtotalCents={subtotalCents}
@@ -317,15 +323,15 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       </div>
 
       {selectedProduct ? (
-        <div className="fixed inset-0 z-30 grid place-items-end bg-black/40 p-0 sm:place-items-center sm:p-4">
-          <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-md bg-surface p-4 shadow-xl sm:max-w-xl sm:rounded-md">
-            <div className="flex items-start justify-between gap-3">
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
               <div>
-                <h2 className="text-xl font-bold">{selectedProduct.name}</h2>
-                <p className="text-sm text-muted">{selectedProduct.description}</p>
+                <h2 className={styles.modalTitle}>{selectedProduct.name}</h2>
+                <p className={styles.modalText}>{selectedProduct.description}</p>
               </div>
               <button
-                className="rounded-md p-2 hover:bg-surface-muted"
+                className={styles.closeButton}
                 onClick={() => setSelectedProduct(null)}
                 aria-label="Fechar"
               >
@@ -333,17 +339,21 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               </button>
             </div>
 
-            <div className="mt-4 grid gap-4">
-              {selectedProduct.optionGroups.map((group) => (
-                <div key={group.id ?? group.name} className="grid gap-2">
+            <div className={styles.modalContent}>
+              {selectedProduct.optionGroups
+                .filter((group) => !group.deleted)
+                .map((group) => (
+                <div key={group.id ?? group.name} className={styles.optionGroup}>
                   <div>
-                    <h3 className="font-semibold">{group.name}</h3>
-                    <p className="text-xs text-muted">
+                    <h3 className={styles.optionGroupTitle}>{group.name}</h3>
+                    <p className={styles.muted}>
                       {group.required ? "Obrigatorio" : "Opcional"} · selecione ate{" "}
                       {group.maxSelections || 1}
                     </p>
                   </div>
-                  {group.items.map((item) => {
+                  {group.items
+                    .filter((item) => item.active && !item.deleted)
+                    .map((item) => {
                     const groupId = group.id ?? group.name;
                     const selected = (selectedOptions[groupId] ?? []).some(
                       (option) => option.id === item.id,
@@ -352,23 +362,22 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                     return (
                       <button
                         key={item.id ?? item.name}
-                        className={`flex items-center justify-between rounded-md border p-3 text-sm ${
-                          selected
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-surface"
-                        }`}
+                        className={cx(
+                          styles.optionButton,
+                          selected ? styles.optionButtonSelected : styles.optionButtonIdle,
+                        )}
                         onClick={() => toggleOption(group, item)}
                       >
                         <span>{item.name}</span>
-                        <span className="inline-flex items-center gap-2 font-semibold">
+                        <span className={styles.optionPrice}>
                           {money(item.priceCents)}
                           {selected ? <Check size={16} /> : null}
                         </span>
                       </button>
                     );
-                  })}
+                    })}
                 </div>
-              ))}
+                ))}
 
               <Field label="Observacao">
                 <Textarea
@@ -378,18 +387,18 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                 />
               </Field>
 
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center rounded-md border border-border">
+              <div className={styles.quantityRow}>
+                <div className={styles.quantityControl}>
                   <button
-                    className="p-3"
+                    className={styles.quantityButton}
                     onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                     aria-label="Diminuir"
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="w-10 text-center font-semibold">{quantity}</span>
+                  <span className={styles.quantityValue}>{quantity}</span>
                   <button
-                    className="p-3"
+                    className={styles.quantityButton}
                     onClick={() => setQuantity((value) => value + 1)}
                     aria-label="Aumentar"
                   >
@@ -437,59 +446,60 @@ function CartPanel({
   });
 
   return (
-    <div className="rounded-md border border-border bg-surface p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="inline-flex items-center gap-2 text-lg font-bold">
+    <div className={styles.cartCard}>
+      <div className={styles.cartHeader}>
+        <h2 className={styles.cartTitle}>
           <ReceiptText size={18} />
           Seu pedido
         </h2>
-        <span className="text-sm text-muted">{cart.length} item(ns)</span>
+        <span className={styles.cartCount}>{cart.length} item(ns)</span>
       </div>
 
-      <div className="mt-3 grid gap-3">
+      <div className={styles.cartList}>
         {cart.length === 0 ? (
-          <p className="rounded-md bg-surface-muted p-3 text-sm text-muted">
+          <p className={styles.emptyCart}>
             Carrinho vazio.
           </p>
         ) : null}
         {cart.map((item) => (
-          <div key={item.lineId} className="grid gap-1 border-b border-border pb-3">
-            <div className="flex items-start justify-between gap-2">
+          <div key={item.lineId} className={styles.cartItem}>
+            <div className={styles.cartItemHeader}>
               <div>
-                <p className="font-semibold">
+                <p className={styles.cartItemName}>
                   {item.quantity}x {item.name}
                 </p>
                 {item.options.map((option) => (
-                  <p key={`${option.groupId}-${option.itemId}`} className="text-xs text-muted">
+                  <p key={`${option.groupId}-${option.itemId}`} className={styles.muted}>
                     + {option.groupName}: {option.itemName}
                   </p>
                 ))}
                 {item.observations ? (
-                  <p className="text-xs text-muted">Obs: {item.observations}</p>
+                  <p className={styles.muted}>Obs: {item.observations}</p>
                 ) : null}
               </div>
               <button
-                className="rounded-md p-2 text-red-600 hover:bg-red-50"
+                className={styles.removeButton}
                 onClick={() => removeItem(item.lineId)}
                 aria-label="Remover item"
               >
                 <Trash2 size={16} />
               </button>
             </div>
-            <p className="text-sm font-bold text-primary">{money(item.totalCents)}</p>
+            <p className={styles.cartItemTotal}>{money(item.totalCents)}</p>
           </div>
         ))}
       </div>
 
-      <form className="mt-4 grid gap-3" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-2 gap-2">
+      <form className={styles.checkoutForm} onSubmit={form.handleSubmit(onSubmit)}>
+        <div className={styles.deliveryToggleGrid}>
           <button
             type="button"
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-md border text-sm font-semibold ${
+            className={cx(
+              styles.deliveryButton,
               deliveryType === "DELIVERY"
-                ? "border-primary bg-primary/10"
-                : "border-border"
-            }`}
+                ? styles.deliveryButtonSelected
+                : styles.deliveryButtonIdle,
+            )}
             onClick={() => form.setValue("deliveryType", "DELIVERY")}
           >
             <Bike size={16} />
@@ -497,11 +507,12 @@ function CartPanel({
           </button>
           <button
             type="button"
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-md border text-sm font-semibold ${
+            className={cx(
+              styles.deliveryButton,
               deliveryType === "PICKUP"
-                ? "border-primary bg-primary/10"
-                : "border-border"
-            }`}
+                ? styles.deliveryButtonSelected
+                : styles.deliveryButtonIdle,
+            )}
             onClick={() => form.setValue("deliveryType", "PICKUP")}
           >
             <Store size={16} />
@@ -517,11 +528,11 @@ function CartPanel({
         </Field>
 
         {deliveryType === "DELIVERY" ? (
-          <div className="grid gap-2">
+          <div className={styles.deliveryFields}>
             <Field label="Rua">
               <Input {...form.register("street")} />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className={styles.addressGrid}>
               <Field label="Numero">
                 <Input {...form.register("number")} />
               </Field>
@@ -539,21 +550,21 @@ function CartPanel({
           <Textarea {...form.register("notes")} />
         </Field>
 
-        <div className="grid gap-1 rounded-md bg-surface-muted p-3 text-sm">
-          <span className="flex justify-between">
+        <div className={styles.totalsBox}>
+          <span className={styles.totalRow}>
             Subtotal <strong>{money(subtotalCents)}</strong>
           </span>
-          <span className="flex justify-between">
+          <span className={styles.totalRow}>
             Frete <strong>{money(deliveryFeeCents)}</strong>
           </span>
-          <span className="flex justify-between text-base">
-            Total <strong className="text-primary">{money(totalCents)}</strong>
+          <span className={styles.totalGrand}>
+            Total <strong className={styles.totalStrong}>{money(totalCents)}</strong>
           </span>
         </div>
 
-        {checkoutError ? <p className="text-sm text-red-600">{checkoutError}</p> : null}
+        {checkoutError ? <p className={styles.checkoutError}>{checkoutError}</p> : null}
         {createdOrder ? (
-          <div className="rounded-md border border-primary bg-primary/10 p-3 text-sm">
+          <div className={styles.successBox}>
             Pedido enviado. Status: {createdOrder.status}
           </div>
         ) : null}

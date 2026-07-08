@@ -7,9 +7,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
 import { Field, Input, Textarea } from "@/components/Field";
+import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
 import type { SettingsFormProps } from "./types";
+import styles from "./styles.module.css";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
@@ -41,8 +43,8 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 export function SettingsForm({
   initialConfig,
 }: SettingsFormProps) {
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -62,7 +64,6 @@ export function SettingsForm({
   });
 
   async function submit(values: SettingsFormData) {
-    setSaved(false);
     setError("");
     try {
       const businessHours = values.businessHoursJson?.trim()
@@ -90,26 +91,31 @@ export function SettingsForm({
           businessHours,
         }),
       });
-      setSaved(true);
+      showToast("Configuracao salva com sucesso");
     } catch {
-      setError("Nao foi possivel salvar.");
+      const message = "Nao foi possivel salvar configuracao.";
+
+      setError(message);
+      showToast(message, "error");
     }
   }
 
   function onInvalidSubmit() {
-    setSaved(false);
-    setError("Corrija os campos destacados antes de salvar.");
+    const message = "Corrija os campos destacados antes de salvar.";
+
+    setError(message);
+    showToast(message, "error");
   }
 
   return (
-    <form className="grid max-w-3xl gap-4" onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
+    <form className={styles.form} onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
       <div>
-        <h1 className="text-2xl font-bold">Configuracao</h1>
-        <p className="text-sm text-muted">Identidade, tema e funcionamento.</p>
+        <h1 className={styles.title}>Configuracao</h1>
+        <p className={styles.subtitle}>Identidade, tema e funcionamento.</p>
       </div>
 
-      <section className="grid gap-3 rounded-md border border-border bg-surface p-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <section className={styles.section}>
+        <div className={styles.gridTwo}>
           <Field label="Nome" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} />
           </Field>
@@ -131,8 +137,8 @@ export function SettingsForm({
         </div>
       </section>
 
-      <section className="grid gap-3 rounded-md border border-border bg-surface p-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <section className={styles.section}>
+        <div className={styles.gridTwo}>
           <Field label="Rua">
             <Input {...form.register("street")} />
           </Field>
@@ -152,11 +158,10 @@ export function SettingsForm({
       </section>
 
       <Field label="Horarios" error={form.formState.errors.businessHoursJson?.message}>
-        <Textarea className="font-mono" rows={8} {...form.register("businessHoursJson")} />
+        <Textarea className={styles.mono} rows={8} {...form.register("businessHoursJson")} />
       </Field>
 
-      {saved ? <p className="text-sm text-primary">Configuracao salva.</p> : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className={styles.error}>{error}</p> : null}
       <Button type="submit" disabled={form.formState.isSubmitting}>
         <Save size={16} />
         Salvar

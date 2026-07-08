@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { getRestaurantConfig } from "@/services/api/server";
+import { cx } from "@/utils/classNames";
 import "./globals.css";
+import styles from "./layout.module.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,9 +31,10 @@ export default async function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={cx(geistSans.variable, geistMono.variable, styles.html)}
     >
-      <body className="min-h-full">
+      <body className={styles.body}>
         <ThemeProvider theme={restaurantConfig?.theme}>{children}</ThemeProvider>
       </body>
     </html>

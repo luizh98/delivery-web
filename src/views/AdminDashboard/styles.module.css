@@ -1,0 +1,41 @@
+@reference "../../app/globals.css";
+
+.root {
+  @apply grid gap-4;
+}
+
+.title {
+  @apply text-2xl font-bold;
+}
+
+.subtitle {
+  @apply text-sm text-muted;
+}
+
+.metricsGrid {
+  @apply grid gap-3 sm:grid-cols-3;
+}
+
+.linksGrid {
+  @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-4;
+}
+
+.link {
+  @apply flex items-center gap-3 rounded-md border border-border bg-surface p-4 font-semibold hover:border-primary;
+}
+
+.linkIcon {
+  @apply text-primary;
+}
+
+.metric {
+  @apply rounded-md border border-border bg-surface p-4;
+}
+
+.metricLabel {
+  @apply text-sm text-muted;
+}
+
+.metricValue {
+  @apply mt-1 text-2xl font-bold;
+}

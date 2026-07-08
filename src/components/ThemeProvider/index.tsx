@@ -1,6 +1,7 @@
 "use client";
 
 import type { ThemeProviderProps, ThemeVars } from "./types";
+import styles from "./styles.module.css";
 
 export function ThemeProvider({ theme, children }: ThemeProviderProps) {
   const style: ThemeVars = {
@@ -9,7 +10,7 @@ export function ThemeProvider({ theme, children }: ThemeProviderProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground" style={style}>
+    <div className={styles.provider} style={style}>
       {children}
     </div>
   );

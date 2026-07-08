@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Ban, Printer, RefreshCw } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Field, Select, Textarea } from "@/components/Field";
+import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import { money, statusLabel } from "@/utils/format";
 import type { OrderResponse, OrderStatus } from "@/types/api";
 import type { OrdersManagerProps } from "./types";
+import styles from "./styles.module.css";
 
 const nextStatuses: OrderStatus[] = [
   "CONFIRMED",
@@ -22,26 +24,37 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
   const [cancelReason, setCancelReason] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [printText, setPrintText] = useState("");
+  const { showToast } = useToast();
 
   async function updateStatus(order: OrderResponse, status: OrderStatus) {
-    const updated = await clientApi<OrderResponse>(`admin/orders/${order.id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
-    setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+    try {
+      const updated = await clientApi<OrderResponse>(`admin/orders/${order.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+      showToast("Pedido atualizado com sucesso");
+    } catch {
+      showToast("Nao foi possivel atualizar pedido.", "error");
+    }
   }
 
   async function cancelOrder(order: OrderResponse) {
     if (!cancelReason.trim()) {
       return;
     }
-    const updated = await clientApi<OrderResponse>(`admin/orders/${order.id}/cancel`, {
-      method: "POST",
-      body: JSON.stringify({ reason: cancelReason }),
-    });
-    setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
-    setSelectedOrderId("");
-    setCancelReason("");
+    try {
+      const updated = await clientApi<OrderResponse>(`admin/orders/${order.id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ reason: cancelReason }),
+      });
+      setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+      setSelectedOrderId("");
+      setCancelReason("");
+      showToast("Pedido cancelado com sucesso");
+    } catch {
+      showToast("Nao foi possivel cancelar pedido.", "error");
+    }
   }
 
   async function printOrder(order: OrderResponse) {
@@ -50,11 +63,11 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className={styles.root}>
+      <div className={styles.toolbar}>
         <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-sm text-muted">{orders.length} pedido(s)</p>
+          <h1 className={styles.title}>{title}</h1>
+          <p className={styles.subtitle}>{orders.length} pedido(s)</p>
         </div>
         <Button variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw size={16} />
@@ -63,39 +76,39 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       </div>
 
       {orders.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border bg-surface p-6 text-sm text-muted">
+        <div className={styles.empty}>
           Nenhum pedido encontrado.
         </div>
       ) : null}
 
-      <section className="grid gap-3">
+      <section className={styles.list}>
         {orders.map((order) => (
-          <article key={order.id} className="rounded-md border border-border bg-surface p-4">
-            <div className="grid gap-3 lg:grid-cols-[1fr_280px]">
-              <div className="grid gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-bold">{order.customer.name}</h2>
-                  <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+          <article key={order.id} className={styles.card}>
+            <div className={styles.cardGrid}>
+              <div className={styles.orderInfo}>
+                <div className={styles.orderHeader}>
+                  <h2 className={styles.customerName}>{order.customer.name}</h2>
+                  <span className={styles.statusBadge}>
                     {statusLabel(order.status)}
                   </span>
-                  <span className="text-xs text-muted">{order.deliveryType}</span>
+                  <span className={styles.mutedTiny}>{order.deliveryType}</span>
                 </div>
-                <p className="text-sm text-muted">{order.customer.phone}</p>
-                <div className="grid gap-1">
+                <p className={styles.mutedText}>{order.customer.phone}</p>
+                <div className={styles.itemList}>
                   {order.items.map((item) => (
-                    <p key={`${order.id}-${item.productId}-${item.name}`} className="text-sm">
+                    <p key={`${order.id}-${item.productId}-${item.name}`} className={styles.item}>
                       {item.quantity}x {item.name} · {money(item.totalCents)}
                     </p>
                   ))}
                 </div>
                 {!compact ? (
-                  <p className="text-sm font-bold text-primary">
+                  <p className={styles.total}>
                     Total {money(order.totals.totalCents)}
                   </p>
                 ) : null}
               </div>
 
-              <div className="grid gap-2">
+              <div className={styles.actionsPanel}>
                 <Field label="Status">
                   <Select
                     value={order.status}
@@ -112,7 +125,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                     ))}
                   </Select>
                 </Field>
-                <div className="flex gap-2">
+                <div className={styles.buttonRow}>
                   <Button variant="outline" onClick={() => printOrder(order)}>
                     <Printer size={16} />
                     Imprimir
@@ -127,7 +140,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                   </Button>
                 </div>
                 {selectedOrderId === order.id ? (
-                  <div className="grid gap-2">
+                  <div className={styles.cancelBox}>
                     <Textarea
                       value={cancelReason}
                       onChange={(event) => setCancelReason(event.target.value)}
@@ -145,9 +158,9 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       </section>
 
       {printText ? (
-        <section className="rounded-md border border-border bg-surface p-4">
-          <h2 className="font-bold">Impressao</h2>
-          <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-md bg-surface-muted p-3 text-sm">
+        <section className={styles.printSection}>
+          <h2 className={styles.printTitle}>Impressao</h2>
+          <pre className={styles.printBody}>
             {printText}
           </pre>
         </section>

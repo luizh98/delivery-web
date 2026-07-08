@@ -37,6 +37,7 @@ export type ProductCategory = {
   description?: string;
   sortOrder: number;
   active: boolean;
+  deletedAt?: string;
 };
 
 export type ProductOptionItem = {
@@ -44,6 +45,8 @@ export type ProductOptionItem = {
   name: string;
   priceCents: number;
   active: boolean;
+  deleted?: boolean;
+  deletedAt?: string;
 };
 
 export type ProductOptionGroup = {
@@ -52,6 +55,18 @@ export type ProductOptionGroup = {
   required: boolean;
   minSelections: number;
   maxSelections: number;
+  deleted?: boolean;
+  deletedAt?: string;
+  items: ProductOptionItem[];
+};
+
+export type ProductOptionGroupTemplate = {
+  id: string;
+  name: string;
+  required: boolean;
+  minSelections: number;
+  maxSelections: number;
+  sortOrder: number;
   items: ProductOptionItem[];
 };
 

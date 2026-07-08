@@ -1,0 +1,283 @@
+@reference "../../app/globals.css";
+
+.root,
+.panelRoot {
+  @apply grid gap-4;
+}
+
+.pageHeader {
+  @apply flex flex-wrap items-center justify-between gap-3;
+}
+
+.pageTitle {
+  @apply text-2xl font-bold;
+}
+
+.pageSubtitle {
+  @apply text-sm text-muted;
+}
+
+.detailsCard {
+  @apply rounded-md border border-border bg-surface p-4;
+}
+
+.detailsSummary {
+  @apply flex cursor-pointer items-center justify-between gap-3 text-base font-bold;
+}
+
+.summaryTitle {
+  @apply min-w-0;
+}
+
+.summaryMeta {
+  @apply flex shrink-0 items-center gap-2 text-xs font-semibold text-muted;
+}
+
+.summaryMetaPlain {
+  @apply flex shrink-0 items-center gap-2 text-xs text-muted;
+}
+
+.detailsIcon {
+  @apply shrink-0 text-muted transition-transform duration-200 motion-reduce:transition-none;
+}
+
+.detailsCard[open] > .detailsSummary .detailsIcon,
+.nestedDetails[open] > .nestedSummary .detailsIcon {
+  @apply rotate-180;
+}
+
+.detailsBody {
+  @apply pt-4;
+}
+
+.productForm {
+  @apply grid gap-3 pt-4;
+}
+
+.sectionHeader,
+.builderHeader,
+.itemHeader {
+  @apply flex flex-wrap items-center justify-between gap-2;
+}
+
+.builderHeader {
+  @apply items-center;
+}
+
+.sectionHeader {
+  @apply items-start;
+}
+
+.formTitle {
+  @apply text-lg font-bold;
+}
+
+.builderTitle {
+  @apply text-base font-bold;
+}
+
+.sectionTitle,
+.itemTitle {
+  @apply text-sm font-semibold;
+}
+
+.cardTitle {
+  @apply font-semibold;
+}
+
+.description {
+  @apply text-sm text-muted;
+}
+
+.muted {
+  @apply text-xs text-muted;
+}
+
+.gridTwo {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.checkboxBackground {
+  @apply flex h-11 items-center gap-2 self-end rounded-md border border-border bg-background px-3 text-sm font-medium;
+}
+
+.checkboxSurface {
+  @apply flex h-11 items-center gap-2 self-end rounded-md border border-border bg-surface px-3 text-sm font-medium;
+}
+
+.checkbox {
+  @apply accent-primary;
+}
+
+.optionsSection {
+  @apply grid gap-3 border-y border-border py-3;
+}
+
+.nestedDetails {
+  @apply rounded-md border border-border bg-background p-3;
+}
+
+.nestedSummary {
+  @apply flex cursor-pointer items-center justify-between gap-3 text-sm font-semibold;
+}
+
+.nestedBody {
+  @apply grid gap-3 pt-3;
+}
+
+.searchLabel {
+  @apply grid gap-1 text-sm font-medium;
+}
+
+.productSearchLabel {
+  @apply grid w-full gap-1 text-sm font-medium md:w-1/2;
+}
+
+.searchWrap {
+  @apply relative;
+}
+
+.searchIcon {
+  @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted;
+}
+
+.searchInput {
+  @apply w-full pl-9;
+}
+
+.empty,
+.emptySurface {
+  @apply rounded-md border border-dashed border-border p-3 text-sm text-muted;
+}
+
+.empty {
+  @apply bg-background;
+}
+
+.emptySurface {
+  @apply bg-surface;
+}
+
+.emptyInfo {
+  @apply grid gap-2 rounded-md border border-dashed border-border bg-background p-4 text-sm text-muted;
+}
+
+.scrollList {
+  @apply grid max-h-[22rem] gap-2 overflow-y-auto pr-1;
+}
+
+.groupList {
+  @apply grid gap-3;
+}
+
+.groupCard {
+  @apply grid gap-3 rounded-md border border-border bg-background p-3;
+}
+
+.groupFields {
+  @apply grid gap-3 md:grid-cols-[1fr_auto_auto];
+}
+
+.itemList {
+  @apply grid gap-3;
+}
+
+.itemRow {
+  @apply grid gap-3 border-t border-border pt-3;
+}
+
+.itemFields {
+  @apply grid gap-3 md:grid-cols-[1fr_160px_auto];
+}
+
+.iconActions {
+  @apply flex items-center gap-1;
+}
+
+.iconButton {
+  @apply rounded-md p-2 hover:bg-surface-muted disabled:opacity-40;
+}
+
+.dangerGhostButton {
+  @apply h-9 px-2 text-red-600 hover:bg-red-50;
+}
+
+.dangerTextButton {
+  @apply text-red-600 hover:bg-red-50;
+}
+
+.errorText {
+  @apply text-xs text-red-600;
+}
+
+.errorTextLarge {
+  @apply text-sm text-red-600;
+}
+
+.paneGrid {
+  @apply grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)];
+}
+
+.pane {
+  @apply grid content-start gap-3;
+}
+
+.summaryCard {
+  @apply rounded-md border border-border bg-background p-3;
+}
+
+.actions {
+  @apply flex justify-end border-t border-border pt-3;
+}
+
+.templateCard {
+  @apply grid gap-2 rounded-md border border-border bg-background p-3;
+}
+
+.availableTemplateCard {
+  @apply grid gap-2 rounded-md border border-border bg-surface p-3 md:grid-cols-[1fr_auto];
+}
+
+.cardActions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.selectedGroups {
+  @apply grid gap-2;
+}
+
+.selectedGroupCard {
+  @apply flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background p-3;
+}
+
+.productSection {
+  @apply grid gap-3;
+}
+
+.productToolbar {
+  @apply flex flex-wrap items-end justify-between gap-3;
+}
+
+.productCount {
+  @apply text-xs font-semibold text-muted;
+}
+
+.productList {
+  @apply grid max-h-[32rem] gap-2 overflow-y-auto pr-1;
+}
+
+.productCard {
+  @apply grid gap-2 rounded-md border border-border bg-surface p-3 sm:grid-cols-[1fr_auto];
+}
+
+.productActions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.price {
+  @apply font-bold text-primary;
+}
+
+.optionBuilder {
+  @apply grid gap-3;
+}

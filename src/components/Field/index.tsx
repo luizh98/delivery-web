@@ -1,11 +1,13 @@
+import { cx } from "@/utils/classNames";
 import type { FieldProps, InputProps, SelectProps, TextareaProps } from "./types";
+import styles from "./styles.module.css";
 
 export function Field({ label, error, children }: FieldProps) {
   return (
-    <label className="grid gap-1 text-sm font-medium text-foreground">
+    <label className={styles.field}>
       <span>{label}</span>
       {children}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {error ? <span className={styles.error}>{error}</span> : null}
     </label>
   );
 }
@@ -13,7 +15,7 @@ export function Field({ label, error, children }: FieldProps) {
 export function Input({ className = "", ...props }: InputProps) {
   return (
     <input
-      className={`h-11 rounded-md border border-border bg-surface px-3 text-sm outline-none ring-primary/20 transition focus:ring-4 ${className}`}
+      className={cx(styles.control, className)}
       {...props}
     />
   );
@@ -25,7 +27,7 @@ export function Textarea({
 }: TextareaProps) {
   return (
     <textarea
-      className={`min-h-24 rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none ring-primary/20 transition focus:ring-4 ${className}`}
+      className={cx(styles.control, styles.textarea, className)}
       {...props}
     />
   );
@@ -34,7 +36,7 @@ export function Textarea({
 export function Select({ className = "", ...props }: SelectProps) {
   return (
     <select
-      className={`h-11 rounded-md border border-border bg-surface px-3 text-sm outline-none ring-primary/20 transition focus:ring-4 ${className}`}
+      className={cx(styles.control, className)}
       {...props}
     />
   );

@@ -1,0 +1,39 @@
+@reference "../../app/globals.css";
+
+.button {
+  @apply inline-flex h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition disabled:opacity-100;
+}
+
+.primary {
+  background: color-mix(in srgb, var(--color-primary) 82%, black);
+  @apply text-white shadow-sm shadow-primary/30 ring-1 ring-primary/20;
+}
+
+.primary:hover {
+  background: color-mix(in srgb, var(--color-primary) 72%, black);
+}
+
+.primary:active {
+  filter: brightness(0.95);
+}
+
+.primary:disabled {
+  filter: brightness(1);
+  @apply bg-surface-muted text-muted shadow-none ring-0;
+}
+
+.secondary {
+  @apply bg-secondary text-white hover:opacity-90;
+}
+
+.outline {
+  @apply border border-border bg-surface text-foreground hover:bg-surface-muted;
+}
+
+.ghost {
+  @apply text-foreground hover:bg-surface-muted;
+}
+
+.danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}

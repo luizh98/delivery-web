@@ -7,6 +7,7 @@ import type {
   OrderResponse,
   Product,
   ProductCategory,
+  ProductOptionGroupTemplate,
   RestaurantConfigResponse,
 } from "@/types/api";
 
@@ -68,4 +69,8 @@ export async function getAdminCategories() {
 
 export async function getAdminProducts() {
   return (await backendFetch<Product[]>("admin/products")) ?? [];
+}
+
+export async function getAdminProductOptionGroups() {
+  return (await backendFetch<ProductOptionGroupTemplate[]>("admin/product-option-groups")) ?? [];
 }

@@ -2,6 +2,7 @@ import { ClipboardList, CookingPot, Settings, Tags } from "lucide-react";
 import Link from "next/link";
 import { getAdminOrders } from "@/services/api/server";
 import { statusLabel } from "@/utils/format";
+import styles from "./styles.module.css";
 
 export async function AdminDashboardView() {
   const orders = await getAdminOrders();
@@ -17,13 +18,13 @@ export async function AdminDashboardView() {
   ];
 
   return (
-    <div className="grid gap-4">
+    <div className={styles.root}>
       <div>
-        <h1 className="text-2xl font-bold">Painel</h1>
-        <p className="text-sm text-muted">Operacao do restaurante.</p>
+        <h1 className={styles.title}>Painel</h1>
+        <p className={styles.subtitle}>Operacao do restaurante.</p>
       </div>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className={styles.metricsGrid}>
         <Metric label="Pedidos ativos" value={activeOrders.length.toString()} />
         <Metric label="Total de pedidos" value={orders.length.toString()} />
         <Metric
@@ -32,16 +33,16 @@ export async function AdminDashboardView() {
         />
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className={styles.linksGrid}>
         {links.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              className="flex items-center gap-3 rounded-md border border-border bg-surface p-4 font-semibold hover:border-primary"
+              className={styles.link}
               href={item.href}
             >
-              <Icon size={20} className="text-primary" />
+              <Icon size={20} className={styles.linkIcon} />
               {item.label}
             </Link>
           );
@@ -53,9 +54,9 @@ export async function AdminDashboardView() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border bg-surface p-4">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-bold">{value}</p>
+    <div className={styles.metric}>
+      <p className={styles.metricLabel}>{label}</p>
+      <p className={styles.metricValue}>{value}</p>
     </div>
   );
 }

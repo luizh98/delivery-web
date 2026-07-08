@@ -1,0 +1,93 @@
+@reference "../../app/globals.css";
+
+.root {
+  @apply grid gap-4;
+}
+
+.toolbar {
+  @apply flex flex-wrap items-center justify-between gap-3;
+}
+
+.title {
+  @apply text-2xl font-bold;
+}
+
+.subtitle {
+  @apply text-sm text-muted;
+}
+
+.empty {
+  @apply rounded-md border border-dashed border-border bg-surface p-6 text-sm text-muted;
+}
+
+.list {
+  @apply grid gap-3;
+}
+
+.card {
+  @apply rounded-md border border-border bg-surface p-4;
+}
+
+.cardGrid {
+  @apply grid gap-3 lg:grid-cols-[1fr_280px];
+}
+
+.orderInfo {
+  @apply grid gap-2;
+}
+
+.orderHeader {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.customerName {
+  @apply font-bold;
+}
+
+.statusBadge {
+  @apply rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary;
+}
+
+.mutedTiny {
+  @apply text-xs text-muted;
+}
+
+.mutedText {
+  @apply text-sm text-muted;
+}
+
+.itemList {
+  @apply grid gap-1;
+}
+
+.item {
+  @apply text-sm;
+}
+
+.total {
+  @apply text-sm font-bold text-primary;
+}
+
+.actionsPanel {
+  @apply grid gap-2;
+}
+
+.buttonRow {
+  @apply flex gap-2;
+}
+
+.cancelBox {
+  @apply grid gap-2;
+}
+
+.printSection {
+  @apply rounded-md border border-border bg-surface p-4;
+}
+
+.printTitle {
+  @apply font-bold;
+}
+
+.printBody {
+  @apply mt-3 overflow-auto whitespace-pre-wrap rounded-md bg-surface-muted p-3 text-sm;
+}

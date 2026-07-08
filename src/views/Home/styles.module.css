@@ -1,0 +1,265 @@
+@reference "../../app/globals.css";
+
+.pageShellPad {
+  @apply pb-28;
+}
+
+.hero {
+  @apply overflow-hidden rounded-md border border-border bg-surface;
+}
+
+.heroBanner {
+  @apply h-32 bg-surface-muted bg-cover bg-center;
+}
+
+.heroBody {
+  @apply grid gap-2 p-4;
+}
+
+.eyebrow {
+  @apply text-xs font-semibold uppercase text-muted;
+}
+
+.heroTitle {
+  @apply text-2xl font-bold;
+}
+
+.heroText,
+.modalText,
+.cartCount,
+.description {
+  @apply text-sm text-muted;
+}
+
+.categoryBar {
+  @apply sticky top-0 z-10 -mx-4 mt-4 overflow-x-auto border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-md sm:border;
+}
+
+.categoryList {
+  @apply flex min-w-max gap-2;
+}
+
+.categoryButton {
+  @apply rounded-md px-4 py-2 text-sm font-semibold;
+}
+
+.categoryButtonActive {
+  @apply bg-primary text-white;
+}
+
+.categoryButtonIdle {
+  @apply bg-surface text-foreground;
+}
+
+.contentGrid {
+  @apply mt-4 grid gap-3 lg:grid-cols-[1fr_360px];
+}
+
+.productList {
+  @apply grid gap-3;
+}
+
+.empty {
+  @apply rounded-md border border-dashed border-border bg-surface p-6 text-sm text-muted;
+}
+
+.productCard {
+  @apply grid grid-cols-[1fr_96px] gap-3 rounded-md border border-border bg-surface p-3 text-left transition hover:border-primary;
+}
+
+.productInfo {
+  @apply grid content-start gap-1;
+}
+
+.productName,
+.optionGroupTitle,
+.cartItemName {
+  @apply font-semibold;
+}
+
+.productDescription {
+  @apply line-clamp-2 text-sm text-muted;
+}
+
+.productPrice {
+  @apply pt-1 text-sm font-bold text-primary;
+}
+
+.productImage {
+  @apply h-24 rounded-md bg-surface-muted bg-cover bg-center;
+}
+
+.desktopCart {
+  @apply hidden lg:block;
+}
+
+.mobileCart {
+  @apply fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface p-3 shadow-2xl lg:hidden;
+}
+
+.mobileSummary {
+  @apply flex list-none items-center justify-between;
+}
+
+.mobileSummaryLabel {
+  @apply inline-flex items-center gap-2 font-semibold;
+}
+
+.mobileTotal {
+  @apply font-bold text-primary;
+}
+
+.mobileCartBody {
+  @apply mt-3 max-h-[70vh] overflow-y-auto;
+}
+
+.modalOverlay {
+  @apply fixed inset-0 z-30 grid place-items-end bg-black/40 p-0 sm:place-items-center sm:p-4;
+}
+
+.modal {
+  @apply max-h-[92vh] w-full overflow-y-auto rounded-t-md bg-surface p-4 shadow-xl sm:max-w-xl sm:rounded-md;
+}
+
+.modalHeader,
+.quantityRow,
+.cartHeader {
+  @apply flex items-center justify-between;
+}
+
+.modalHeader {
+  @apply items-start gap-3;
+}
+
+.modalTitle {
+  @apply text-xl font-bold;
+}
+
+.closeButton {
+  @apply rounded-md p-2 hover:bg-surface-muted;
+}
+
+.modalContent {
+  @apply mt-4 grid gap-4;
+}
+
+.optionGroup {
+  @apply grid gap-2;
+}
+
+.muted {
+  @apply text-xs text-muted;
+}
+
+.optionButton {
+  @apply flex items-center justify-between rounded-md border p-3 text-sm;
+}
+
+.optionButtonSelected {
+  @apply border-primary bg-primary/10;
+}
+
+.optionButtonIdle {
+  @apply border-border bg-surface;
+}
+
+.optionPrice {
+  @apply inline-flex items-center gap-2 font-semibold;
+}
+
+.quantityControl {
+  @apply inline-flex items-center rounded-md border border-border;
+}
+
+.quantityButton {
+  @apply p-3;
+}
+
+.quantityValue {
+  @apply w-10 text-center font-semibold;
+}
+
+.cartCard {
+  @apply rounded-md border border-border bg-surface p-4;
+}
+
+.cartTitle {
+  @apply inline-flex items-center gap-2 text-lg font-bold;
+}
+
+.cartList {
+  @apply mt-3 grid gap-3;
+}
+
+.emptyCart {
+  @apply rounded-md bg-surface-muted p-3 text-sm text-muted;
+}
+
+.cartItem {
+  @apply grid gap-1 border-b border-border pb-3;
+}
+
+.cartItemHeader {
+  @apply flex items-start justify-between gap-2;
+}
+
+.removeButton {
+  @apply rounded-md p-2 text-red-600 hover:bg-red-50;
+}
+
+.cartItemTotal {
+  @apply text-sm font-bold text-primary;
+}
+
+.checkoutForm {
+  @apply mt-4 grid gap-3;
+}
+
+.deliveryToggleGrid {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.deliveryButton {
+  @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border text-sm font-semibold;
+}
+
+.deliveryButtonSelected {
+  @apply border-primary bg-primary/10;
+}
+
+.deliveryButtonIdle {
+  @apply border-border;
+}
+
+.deliveryFields {
+  @apply grid gap-2;
+}
+
+.addressGrid {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.totalsBox {
+  @apply grid gap-1 rounded-md bg-surface-muted p-3 text-sm;
+}
+
+.totalRow,
+.totalGrand {
+  @apply flex justify-between;
+}
+
+.totalGrand {
+  @apply text-base;
+}
+
+.totalStrong {
+  @apply text-primary;
+}
+
+.checkoutError {
+  @apply text-sm text-red-600;
+}
+
+.successBox {
+  @apply rounded-md border border-primary bg-primary/10 p-3 text-sm;
+}

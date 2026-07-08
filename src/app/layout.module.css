@@ -1,0 +1,9 @@
+@reference "./globals.css";
+
+.html {
+  @apply h-full antialiased;
+}
+
+.body {
+  @apply min-h-full;
+}

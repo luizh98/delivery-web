@@ -5,6 +5,14 @@ export function money(cents: number) {
   }).format(cents / 100);
 }
 
+export function centsToReais(cents: number) {
+  return cents / 100;
+}
+
+export function reaisToCents(reais: number) {
+  return Math.round(reais * 100);
+}
+
 export function statusLabel(status: string) {
   const labels: Record<string, string> = {
     RECEIVED: "Recebido",
