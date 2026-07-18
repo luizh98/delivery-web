@@ -11,13 +11,14 @@ import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
 import type { SettingsFormProps } from "./types";
-import styles from "./styles.module.css";
+import { ErrorText, Form, GridTwo, Section, Subtitle, Title } from "./styles";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
   whatsapp: z.string().min(8, "Informe o WhatsApp."),
   logoUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
+  menuDescription: z.string().optional(),
   primaryColor: z.string().min(4),
   secondaryColor: z.string().min(4),
   street: z.string().optional(),
@@ -52,6 +53,8 @@ export function SettingsForm({
       whatsapp: initialConfig?.whatsapp ?? "",
       logoUrl: initialConfig?.logoUrl ?? "",
       bannerUrl: initialConfig?.bannerUrl ?? "",
+      menuDescription: initialConfig?.menuDescription ??
+        "Escolha seus itens, revise o carrinho e envie o pedido.",
       primaryColor: initialConfig?.theme?.primaryColor ?? "#0f766e",
       secondaryColor: initialConfig?.theme?.secondaryColor ?? "#f59e0b",
       street: initialConfig?.address?.street ?? "",
@@ -77,6 +80,7 @@ export function SettingsForm({
           whatsapp: values.whatsapp,
           logoUrl: values.logoUrl,
           bannerUrl: values.bannerUrl,
+          menuDescription: values.menuDescription,
           theme: {
             primaryColor: values.primaryColor,
             secondaryColor: values.secondaryColor,
@@ -108,14 +112,14 @@ export function SettingsForm({
   }
 
   return (
-    <form className={styles.form} onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
+    <Form onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
       <div>
-        <h1 className={styles.title}>Configuracao</h1>
-        <p className={styles.subtitle}>Identidade, tema e funcionamento.</p>
+        <Title>Configuracao</Title>
+        <Subtitle>Identidade, tema e funcionamento.</Subtitle>
       </div>
 
-      <section className={styles.section}>
-        <div className={styles.gridTwo}>
+      <Section>
+        <GridTwo>
           <Field label="Nome" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} />
           </Field>
@@ -128,17 +132,20 @@ export function SettingsForm({
           <Field label="Banner URL">
             <Input {...form.register("bannerUrl")} />
           </Field>
+          <Field label="Descrição do cardápio">
+            <Textarea rows={3} {...form.register("menuDescription")} />
+          </Field>
           <Field label="Cor primaria">
             <Input type="color" {...form.register("primaryColor")} />
           </Field>
           <Field label="Cor secundaria">
             <Input type="color" {...form.register("secondaryColor")} />
           </Field>
-        </div>
-      </section>
+        </GridTwo>
+      </Section>
 
-      <section className={styles.section}>
-        <div className={styles.gridTwo}>
+      <Section>
+        <GridTwo>
           <Field label="Rua">
             <Input {...form.register("street")} />
           </Field>
@@ -154,18 +161,18 @@ export function SettingsForm({
           <Field label="Estado">
             <Input {...form.register("state")} />
           </Field>
-        </div>
-      </section>
+        </GridTwo>
+      </Section>
 
       <Field label="Horarios" error={form.formState.errors.businessHoursJson?.message}>
-        <Textarea className={styles.mono} rows={8} {...form.register("businessHoursJson")} />
+        <Textarea mono rows={8} {...form.register("businessHoursJson")} />
       </Field>
 
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
       <Button type="submit" disabled={form.formState.isSubmitting}>
         <Save size={16} />
         Salvar
       </Button>
-    </form>
+    </Form>
   );
 }

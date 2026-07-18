@@ -4,7 +4,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "./globals.css";
-import styles from "./layout.module.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +31,9 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={cx(geistSans.variable, geistMono.variable, styles.html)}
+      className={cx(geistSans.variable, geistMono.variable)}
     >
-      <body className={styles.body}>
+      <body>
         <ThemeProvider theme={restaurantConfig?.theme}>{children}</ThemeProvider>
       </body>
     </html>

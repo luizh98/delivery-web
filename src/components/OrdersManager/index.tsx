@@ -9,7 +9,31 @@ import { clientApi } from "@/services/api/client";
 import { money, statusLabel } from "@/utils/format";
 import type { OrderResponse, OrderStatus } from "@/types/api";
 import type { OrdersManagerProps } from "./types";
-import styles from "./styles.module.css";
+import {
+  ActionsPanel,
+  ButtonRow,
+  CancelBox,
+  Card,
+  CardGrid,
+  CustomerName,
+  Empty,
+  Item,
+  ItemList,
+  List,
+  MutedText,
+  MutedTiny,
+  OrderHeader,
+  OrderInfo,
+  PrintBody,
+  PrintSection,
+  PrintTitle,
+  Root,
+  StatusBadge,
+  Subtitle,
+  Title,
+  Toolbar,
+  Total,
+} from "./styles";
 
 const nextStatuses: OrderStatus[] = [
   "CONFIRMED",
@@ -63,52 +87,50 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
   }
 
   return (
-    <div className={styles.root}>
-      <div className={styles.toolbar}>
+    <Root>
+      <Toolbar>
         <div>
-          <h1 className={styles.title}>{title}</h1>
-          <p className={styles.subtitle}>{orders.length} pedido(s)</p>
+          <Title>{title}</Title>
+          <Subtitle>{orders.length} pedido(s)</Subtitle>
         </div>
         <Button variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw size={16} />
           Atualizar
         </Button>
-      </div>
+      </Toolbar>
 
       {orders.length === 0 ? (
-        <div className={styles.empty}>
+        <Empty>
           Nenhum pedido encontrado.
-        </div>
+        </Empty>
       ) : null}
 
-      <section className={styles.list}>
+      <List>
         {orders.map((order) => (
-          <article key={order.id} className={styles.card}>
-            <div className={styles.cardGrid}>
-              <div className={styles.orderInfo}>
-                <div className={styles.orderHeader}>
-                  <h2 className={styles.customerName}>{order.customer.name}</h2>
-                  <span className={styles.statusBadge}>
-                    {statusLabel(order.status)}
-                  </span>
-                  <span className={styles.mutedTiny}>{order.deliveryType}</span>
-                </div>
-                <p className={styles.mutedText}>{order.customer.phone}</p>
-                <div className={styles.itemList}>
+          <Card key={order.id}>
+            <CardGrid>
+              <OrderInfo>
+                <OrderHeader>
+                  <CustomerName>{order.customer.name}</CustomerName>
+                  <StatusBadge>{statusLabel(order.status)}</StatusBadge>
+                  <MutedTiny>{order.deliveryType}</MutedTiny>
+                </OrderHeader>
+                <MutedText>{order.customer.phone}</MutedText>
+                <ItemList>
                   {order.items.map((item) => (
-                    <p key={`${order.id}-${item.productId}-${item.name}`} className={styles.item}>
-                      {item.quantity}x {item.name} · {money(item.totalCents)}
-                    </p>
+                    <Item key={`${order.id}-${item.productId}-${item.name}`}>
+                      {item.quantity}x {item.name} - {money(item.totalCents)}
+                    </Item>
                   ))}
-                </div>
+                </ItemList>
                 {!compact ? (
-                  <p className={styles.total}>
+                  <Total>
                     Total {money(order.totals.totalCents)}
-                  </p>
+                  </Total>
                 ) : null}
-              </div>
+              </OrderInfo>
 
-              <div className={styles.actionsPanel}>
+              <ActionsPanel>
                 <Field label="Status">
                   <Select
                     value={order.status}
@@ -125,7 +147,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                     ))}
                   </Select>
                 </Field>
-                <div className={styles.buttonRow}>
+                <ButtonRow>
                   <Button variant="outline" onClick={() => printOrder(order)}>
                     <Printer size={16} />
                     Imprimir
@@ -138,9 +160,9 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                     <Ban size={16} />
                     Cancelar
                   </Button>
-                </div>
+                </ButtonRow>
                 {selectedOrderId === order.id ? (
-                  <div className={styles.cancelBox}>
+                  <CancelBox>
                     <Textarea
                       value={cancelReason}
                       onChange={(event) => setCancelReason(event.target.value)}
@@ -149,22 +171,22 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                     <Button variant="danger" onClick={() => cancelOrder(order)}>
                       Confirmar cancelamento
                     </Button>
-                  </div>
+                  </CancelBox>
                 ) : null}
-              </div>
-            </div>
-          </article>
+              </ActionsPanel>
+            </CardGrid>
+          </Card>
         ))}
-      </section>
+      </List>
 
       {printText ? (
-        <section className={styles.printSection}>
-          <h2 className={styles.printTitle}>Impressao</h2>
-          <pre className={styles.printBody}>
+        <PrintSection>
+          <PrintTitle>Impressao</PrintTitle>
+          <PrintBody>
             {printText}
-          </pre>
-        </section>
+          </PrintBody>
+        </PrintSection>
       ) : null}
-    </div>
+    </Root>
   );
 }

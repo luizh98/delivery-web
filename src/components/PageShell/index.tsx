@@ -1,11 +1,10 @@
-import { cx } from "@/utils/classNames";
 import type { PageShellProps } from "./types";
-import styles from "./styles.module.css";
+import { Shell } from "./styles";
 
-export function PageShell({ children, className = "" }: PageShellProps) {
+export function PageShell({ children, className = "", bottomPad }: PageShellProps) {
   return (
-    <main className={cx(styles.shell, className)}>
+    <Shell className={className} bottomPad={bottomPad}>
       {children}
-    </main>
+    </Shell>
   );
 }

@@ -6,7 +6,28 @@ import { Field, Input } from "@/components/Field";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
 import type { ProductOptionGroup, ProductOptionItem } from "@/types/api";
 import type { ProductOptionsErrors } from "./optionValidation";
-import styles from "./styles.module.css";
+import {
+  BuilderHeader,
+  BuilderTitle,
+  CardTitle,
+  CheckboxSurface,
+  EmptyInfo,
+  ErrorText,
+  GridTwo,
+  GroupCard,
+  GroupFields,
+  GroupList,
+  IconActions,
+  IconButton,
+  ItemFields,
+  ItemHeader,
+  ItemList,
+  ItemRow,
+  ItemTitle,
+  Muted,
+  OptionBuilder,
+  SectionHeader,
+} from "./styles";
 
 type ProductOptionsBuilderProps = {
   value: ProductOptionGroup[];
@@ -186,11 +207,11 @@ export function ProductOptionsBuilder({
   const canAddGroup = maxGroups === undefined || visibleGroups.length < maxGroups;
 
   return (
-    <section className={styles.optionBuilder}>
-      <div className={styles.builderHeader}>
+    <OptionBuilder>
+      <BuilderHeader>
         <div>
-          <h2 className={styles.builderTitle}>{title}</h2>
-          <p className={styles.muted}>{description}</p>
+          <BuilderTitle>{title}</BuilderTitle>
+          <Muted>{description}</Muted>
         </div>
         {canAddGroup ? (
           <Button
@@ -202,55 +223,51 @@ export function ProductOptionsBuilder({
             {addGroupLabel}
           </Button>
         ) : null}
-      </div>
+      </BuilderHeader>
 
       {visibleGroups.length === 0 ? (
-        <div className={styles.emptyInfo}>
+        <EmptyInfo>
           <p>Nenhum opcional cadastrado.</p>
           <p>Use quando o cliente puder escolher molhos, adicionais ou variacoes.</p>
-        </div>
+        </EmptyInfo>
       ) : null}
 
-      <div className={styles.groupList}>
+      <GroupList>
         {visibleGroups.map(({ group, groupIndex }, visibleGroupIndex) => {
           const groupErrors = errors?.groups[groupIndex];
           const visibleItemIndexes = visibleIndexes(group.items);
 
           return (
-            <section
+            <GroupCard
               key={group.id ?? groupIndex}
-              className={styles.groupCard}
             >
-              <div className={styles.sectionHeader}>
+              <SectionHeader>
                 <div>
-                  <h3 className={styles.cardTitle}>Grupo {visibleGroupIndex + 1}</h3>
-                  <p className={styles.muted}>{groupSummary(group)}</p>
+                  <CardTitle>Grupo {visibleGroupIndex + 1}</CardTitle>
+                  <Muted>{groupSummary(group)}</Muted>
                 </div>
-                <div className={styles.iconActions}>
-                  <button
+                <IconActions>
+                  <IconButton
                     type="button"
-                    className={styles.iconButton}
                     onClick={() => moveGroup(groupIndex, -1)}
                     disabled={visibleGroupIndex === 0}
                     aria-label={`Subir grupo ${visibleGroupIndex + 1}`}
                     title="Subir grupo"
                   >
                     <ArrowUp size={16} />
-                  </button>
-                  <button
+                  </IconButton>
+                  <IconButton
                     type="button"
-                    className={styles.iconButton}
                     onClick={() => moveGroup(groupIndex, 1)}
                     disabled={visibleGroupIndex === visibleGroups.length - 1}
                     aria-label={`Descer grupo ${visibleGroupIndex + 1}`}
                     title="Descer grupo"
                   >
                     <ArrowDown size={16} />
-                  </button>
+                  </IconButton>
                   <Button
                     type="button"
-                    variant="ghost"
-                    className={styles.dangerGhostButton}
+                    variant="dangerGhost"
                     onClick={() => removeGroup(groupIndex)}
                     aria-label={`Remover grupo ${visibleGroupIndex + 1}`}
                     title="Remover grupo"
@@ -258,10 +275,10 @@ export function ProductOptionsBuilder({
                     <Trash2 size={16} />
                     Excluir grupo
                   </Button>
-                </div>
-              </div>
+                </IconActions>
+              </SectionHeader>
 
-              <div className={styles.groupFields}>
+              <GroupFields>
                 <Field label="Nome do grupo" error={groupErrors?.name}>
                   <Input
                     value={group.name}
@@ -271,10 +288,9 @@ export function ProductOptionsBuilder({
                     placeholder="Ex: Molhos"
                   />
                 </Field>
-                <label className={styles.checkboxSurface}>
+                <CheckboxSurface>
                   <input
                     type="checkbox"
-                    className={styles.checkbox}
                     checked={group.required}
                     onChange={(event) =>
                       patchGroup(groupIndex, {
@@ -286,14 +302,14 @@ export function ProductOptionsBuilder({
                     }
                   />
                   Obrigatorio
-                </label>
+                </CheckboxSurface>
                 <Button type="button" variant="outline" onClick={() => addItem(groupIndex)}>
                   <Plus size={16} />
                   Adicionar item
                 </Button>
-              </div>
+              </GroupFields>
 
-              <div className={styles.gridTwo}>
+              <GridTwo>
                 <Field label="Minimo" error={groupErrors?.minSelections}>
                   <Input
                     type="number"
@@ -320,54 +336,50 @@ export function ProductOptionsBuilder({
                     }
                   />
                 </Field>
-              </div>
+              </GridTwo>
 
               {groupErrors?.items ? (
-                <p className={styles.errorText}>{groupErrors.items}</p>
+                <ErrorText>{groupErrors.items}</ErrorText>
               ) : null}
 
-              <div className={styles.itemList}>
+              <ItemList>
                 {visibleItemIndexes.map((itemIndex, visibleItemIndex) => {
                   const item = group.items[itemIndex];
                   const itemErrors = groupErrors?.itemErrors?.[itemIndex];
 
                   return (
-                    <div
+                    <ItemRow
                       key={item.id ?? itemIndex}
-                      className={styles.itemRow}
                     >
-                      <div className={styles.itemHeader}>
+                      <ItemHeader>
                         <div>
-                          <p className={styles.itemTitle}>
+                          <ItemTitle>
                             {item.name || `Item ${visibleItemIndex + 1}`}
-                          </p>
-                          <p className={styles.muted}>{money(item.priceCents)}</p>
+                          </ItemTitle>
+                          <Muted>{money(item.priceCents)}</Muted>
                         </div>
-                        <div className={styles.iconActions}>
-                          <button
+                        <IconActions>
+                          <IconButton
                             type="button"
-                            className={styles.iconButton}
                             onClick={() => moveItem(groupIndex, itemIndex, -1)}
                             disabled={visibleItemIndex === 0}
                             aria-label={`Subir item ${visibleItemIndex + 1}`}
                             title="Subir item"
                           >
                             <ArrowUp size={16} />
-                          </button>
-                          <button
+                          </IconButton>
+                          <IconButton
                             type="button"
-                            className={styles.iconButton}
                             onClick={() => moveItem(groupIndex, itemIndex, 1)}
                             disabled={visibleItemIndex === visibleItemIndexes.length - 1}
                             aria-label={`Descer item ${visibleItemIndex + 1}`}
                             title="Descer item"
                           >
                             <ArrowDown size={16} />
-                          </button>
+                          </IconButton>
                           <Button
                             type="button"
-                            variant="ghost"
-                            className={styles.dangerGhostButton}
+                            variant="dangerGhost"
                             onClick={() => removeItem(groupIndex, itemIndex)}
                             aria-label={`Remover item ${visibleItemIndex + 1}`}
                             title="Remover item"
@@ -375,10 +387,10 @@ export function ProductOptionsBuilder({
                             <Trash2 size={16} />
                             Excluir item
                           </Button>
-                        </div>
-                      </div>
+                        </IconActions>
+                      </ItemHeader>
 
-                      <div className={styles.itemFields}>
+                      <ItemFields>
                         <Field label="Nome do item" error={itemErrors?.name}>
                           <Input
                             value={item.name}
@@ -403,10 +415,9 @@ export function ProductOptionsBuilder({
                             }
                           />
                         </Field>
-                        <label className={styles.checkboxSurface}>
+                        <CheckboxSurface>
                           <input
                             type="checkbox"
-                            className={styles.checkbox}
                             checked={item.active}
                             onChange={(event) =>
                               patchItem(groupIndex, itemIndex, {
@@ -415,16 +426,16 @@ export function ProductOptionsBuilder({
                             }
                           />
                           Ativo
-                        </label>
-                      </div>
-                    </div>
+                        </CheckboxSurface>
+                      </ItemFields>
+                    </ItemRow>
                   );
                 })}
-              </div>
-            </section>
+              </ItemList>
+            </GroupCard>
           );
         })}
-      </div>
-    </section>
+      </GroupList>
+    </OptionBuilder>
   );
 }

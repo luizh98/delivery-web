@@ -11,8 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { cx } from "@/utils/classNames";
-import styles from "./styles.module.css";
+import { IconWrap, ToastRoot, Viewport } from "./styles";
 
 type Toast = {
   id: number;
@@ -67,28 +66,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div
-        className={styles.viewport}
+      <Viewport
         aria-live="polite"
         aria-atomic="true"
       >
         {toasts.map((toast) => (
-          <div
+          <ToastRoot
             key={toast.id}
-            className={cx(
-              styles.toast,
-              toast.variant === "error" ? styles.error : styles.success,
-            )}
+            variant={toast.variant}
           >
             {toast.variant === "error" ? (
-              <AlertCircle className={styles.errorIcon} size={18} />
+              <IconWrap variant="error">
+                <AlertCircle size={18} />
+              </IconWrap>
             ) : (
-              <CheckCircle2 className={styles.successIcon} size={18} />
+              <IconWrap variant="success">
+                <CheckCircle2 size={18} />
+              </IconWrap>
             )}
             <p>{toast.message}</p>
-          </div>
+          </ToastRoot>
         ))}
-      </div>
+      </Viewport>
     </ToastContext.Provider>
   );
 }

@@ -12,7 +12,30 @@ import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { ProductCategory } from "@/types/api";
 import type { CategoryManagerProps } from "./types";
-import styles from "./styles.module.css";
+import {
+  Actions,
+  Card,
+  CardActions,
+  CardTitle,
+  CheckboxLabel,
+  Empty,
+  ErrorText,
+  Form,
+  GridTwo,
+  List,
+  Muted,
+  PaneGrid,
+  Root,
+  SearchIcon,
+  SearchLabel,
+  SearchWrap,
+  Section,
+  SectionHeader,
+  SectionHelp,
+  SectionTitle,
+  Subtitle,
+  Title,
+} from "./styles";
 
 const categorySchema = z.object({
   name: z.string().min(2, "Informe o nome."),
@@ -149,26 +172,26 @@ export function CategoryManager({
   }
 
   return (
-    <div className={styles.root}>
+    <Root>
       {showHeader ? (
         <div>
-          <h1 className={styles.title}>Categorias</h1>
-          <p className={styles.subtitle}>Organizacao do cardapio.</p>
+          <Title>Categorias</Title>
+          <Subtitle>Organizacao do cardapio.</Subtitle>
         </div>
       ) : null}
 
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
 
-      <div className={styles.paneGrid}>
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
+      <PaneGrid>
+        <Section>
+          <SectionHeader>
             <div>
-              <h3 className={styles.sectionTitle}>
+              <SectionTitle>
                 {isEditing ? "Alterar categoria" : "Adicionar categoria"}
-              </h3>
-              <p className={styles.sectionHelp}>
+              </SectionTitle>
+              <SectionHelp>
                 Uma categoria por vez deixa o cadastro mais claro.
-              </p>
+              </SectionHelp>
             </div>
             {isEditing ? (
               <Button
@@ -180,10 +203,10 @@ export function CategoryManager({
                 Cancelar
               </Button>
             ) : null}
-          </div>
+          </SectionHeader>
 
-          <form className={styles.form} onSubmit={form.handleSubmit(submit)}>
-            <div className={styles.gridTwo}>
+          <Form onSubmit={form.handleSubmit(submit)}>
+            <GridTwo>
               <Field label="Nome" error={form.formState.errors.name?.message}>
                 <Input {...form.register("name")} />
               </Field>
@@ -196,76 +219,72 @@ export function CategoryManager({
                   {...form.register("sortOrder", { valueAsNumber: true })}
                 />
               </Field>
-              <label className={styles.checkboxLabel}>
+              <CheckboxLabel>
                 <input
                   type="checkbox"
-                  className={styles.checkbox}
                   {...form.register("active")}
                 />
                 Categoria ativa
-              </label>
-            </div>
-            <div className={styles.actions}>
+              </CheckboxLabel>
+            </GridTwo>
+            <Actions>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 <Save size={16} />
                 {isEditing ? "Salvar categoria" : "Criar categoria"}
               </Button>
-            </div>
-          </form>
-        </section>
+            </Actions>
+          </Form>
+        </Section>
 
-        <section className={styles.section}>
+        <Section>
           <div>
-            <h3 className={styles.sectionTitle}>Categorias cadastradas</h3>
-            <p className={styles.sectionHelp}>
+            <SectionTitle>Categorias cadastradas</SectionTitle>
+            <SectionHelp>
               {categories.length} categoria(s) disponivel(is)
-            </p>
+            </SectionHelp>
           </div>
 
-          <label className={styles.searchLabel}>
+          <SearchLabel>
             <span>Pesquisar</span>
-            <span className={styles.searchWrap}>
-              <Search
-                className={styles.searchIcon}
-                size={16}
-              />
+            <SearchWrap>
+              <SearchIcon>
+                <Search size={16} />
+              </SearchIcon>
               <Input
-                className={styles.searchInput}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Nome da categoria"
               />
-            </span>
-          </label>
+            </SearchWrap>
+          </SearchLabel>
 
           {categories.length === 0 ? (
-            <div className={styles.empty}>
+            <Empty>
               Nenhuma categoria salva.
-            </div>
+            </Empty>
           ) : null}
 
           {categories.length > 0 && filteredCategories.length === 0 ? (
-            <div className={styles.empty}>
+            <Empty>
               Nenhuma categoria encontrada.
-            </div>
+            </Empty>
           ) : null}
 
-          <div className={styles.list}>
+          <List>
             {filteredCategories.map((category) => (
-              <div
+              <Card
                 key={category.id}
-                className={styles.card}
               >
                 <div>
-                  <p className={styles.cardTitle}>{category.name}</p>
+                  <CardTitle>{category.name}</CardTitle>
                   {category.description ? (
-                    <p className={styles.muted}>{category.description}</p>
+                    <Muted>{category.description}</Muted>
                   ) : null}
-                  <p className={styles.muted}>
+                  <Muted>
                     #{category.sortOrder} - {category.active ? "ativa" : "inativa"}
-                  </p>
+                  </Muted>
                 </div>
-                <div className={styles.cardActions}>
+                <CardActions>
                   <Button
                     type="button"
                     variant="outline"
@@ -284,12 +303,12 @@ export function CategoryManager({
                     <Trash2 size={16} />
                     Excluir
                   </Button>
-                </div>
-              </div>
+                </CardActions>
+              </Card>
             ))}
-          </div>
-        </section>
-      </div>
-    </div>
+          </List>
+        </Section>
+      </PaneGrid>
+    </Root>
   );
 }

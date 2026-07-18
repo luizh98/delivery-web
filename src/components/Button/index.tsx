@@ -1,13 +1,14 @@
-import { cx } from "@/utils/classNames";
 import type { ButtonProps, ButtonVariant } from "./types";
-import styles from "./styles.module.css";
+import { ButtonRoot } from "./styles";
 
-const variants: Record<ButtonVariant, string> = {
-  primary: styles.primary,
-  secondary: styles.secondary,
-  outline: styles.outline,
-  ghost: styles.ghost,
-  danger: styles.danger,
+const variants: Record<ButtonVariant, ButtonVariant> = {
+  primary: "primary",
+  secondary: "secondary",
+  outline: "outline",
+  ghost: "ghost",
+  danger: "danger",
+  dangerGhost: "dangerGhost",
+  dangerText: "dangerText",
 };
 
 export function Button({
@@ -17,11 +18,12 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button
-      className={cx(styles.button, variants[variant], className)}
+    <ButtonRoot
+      className={className}
+      variant={variants[variant]}
       {...props}
     >
       {children}
-    </button>
+    </ButtonRoot>
   );
 }

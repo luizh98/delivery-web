@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Bike,
@@ -19,7 +19,6 @@ import { Button } from "@/components/Button";
 import { Field, Input, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
-import { cx } from "@/utils/classNames";
 import { money } from "@/utils/format";
 import type { CustomerMenuProps } from "./types";
 import type {
@@ -28,7 +27,76 @@ import type {
   ProductOptionGroup,
   ProductOptionItem,
 } from "@/types/api";
-import styles from "./styles.module.css";
+import {
+  AddressGrid,
+  CartCard,
+  CartCount,
+  CartHeader,
+  CartItem,
+  CartItemHeader,
+  CartItemName,
+  CartItemTotal,
+  CartList,
+  CartTitle,
+  CategoryBar,
+  CategoryButton,
+  CategoryList,
+  CategoryProducts,
+  CategorySection,
+  CategoryTitle,
+  CheckoutError,
+  CheckoutForm,
+  CloseButton,
+  ContentGrid,
+  DeliveryButton,
+  DeliveryFields,
+  DeliveryToggleGrid,
+  DesktopCart,
+  Empty,
+  EmptyCart,
+  Eyebrow,
+  FlagBadge,
+  FlagBadges,
+  Hero,
+  HeroBanner,
+  HeroBody,
+  HeroText,
+  HeroTitle,
+  MobileCart,
+  MobileCartBody,
+  MobileSummary,
+  MobileSummaryLabel,
+  MobileTotal,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  ModalProductImage,
+  ModalText,
+  ModalTitle,
+  Muted,
+  OptionButton,
+  OptionGroup,
+  OptionGroupTitle,
+  OptionPrice,
+  ProductCard,
+  ProductDescription,
+  ProductImage,
+  ProductInfo,
+  ProductList,
+  ProductName,
+  ProductPrice,
+  QuantityButton,
+  QuantityControl,
+  QuantityRow,
+  QuantityValue,
+  RemoveButton,
+  SuccessBox,
+  TotalGrand,
+  TotalRow,
+  TotalStrong,
+  TotalsBox,
+} from "./styles";
 
 type CartOption = {
   groupId: string;
@@ -61,9 +129,38 @@ const checkoutSchema = z.object({
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
+type ProductFlagField = "adultOnly" | "glutenFree" | "lactoseFree" | "vegetarian";
+type ProductFlagStyle = "flagAdult" | "flagGluten" | "flagLactose" | "flagVegetarian";
+type ProductFlagTone = "adult" | "gluten" | "lactose" | "vegetarian";
+
+const PRODUCT_FLAGS: {
+  field: ProductFlagField;
+  label: string;
+  styleClass: ProductFlagStyle;
+}[] = [
+  { field: "adultOnly", label: "+18", styleClass: "flagAdult" },
+  { field: "glutenFree", label: "Sem gluten", styleClass: "flagGluten" },
+  { field: "lactoseFree", label: "Sem lactose", styleClass: "flagLactose" },
+  { field: "vegetarian", label: "Vegetariano", styleClass: "flagVegetarian" },
+];
+
+const flagTones: Record<ProductFlagStyle, ProductFlagTone> = {
+  flagAdult: "adult",
+  flagGluten: "gluten",
+  flagLactose: "lactose",
+  flagVegetarian: "vegetarian",
+};
+
+function activeProductFlags(product: Product) {
+  return PRODUCT_FLAGS.filter(({ field }) => product[field] ?? false);
+}
 
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
-  const [selectedCategory, setSelectedCategory] = useState(menu.categories[0]?.id ?? "all");
+  const initialCategoryId =
+    menu.categories.find((category) =>
+      menu.products.some((product) => product.categoryId === category.id),
+    )?.id ?? "";
+  const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, ProductOptionItem[]>>({});
   const [quantity, setQuantity] = useState(1);
@@ -71,6 +168,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [createdOrder, setCreatedOrder] = useState<OrderResponse | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -79,12 +177,24 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     },
   });
 
-  const visibleProducts = useMemo(() => {
-    if (selectedCategory === "all") {
-      return menu.products;
-    }
-    return menu.products.filter((product) => product.categoryId === selectedCategory);
-  }, [menu.products, selectedCategory]);
+  const productsByCategory = useMemo(() => {
+    const groups = new Map<string, Product[]>();
+
+    menu.categories.forEach((category) => groups.set(category.id, []));
+    menu.products.forEach((product) => {
+      groups.get(product.categoryId)?.push(product);
+    });
+
+    return groups;
+  }, [menu.categories, menu.products]);
+
+  const visibleCategories = useMemo(
+    () =>
+      menu.categories.filter(
+        (category) => (productsByCategory.get(category.id)?.length ?? 0) > 0,
+      ),
+    [menu.categories, productsByCategory],
+  );
 
   const subtotalCents = cart.reduce((sum, item) => sum + item.totalCents, 0);
   const deliveryType = useWatch({
@@ -92,6 +202,15 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     name: "deliveryType",
   });
   const estimatedDeliveryFeeCents = deliveryType === "DELIVERY" ? 500 : 0;
+  const selectedProductFlags = selectedProduct ? activeProductFlags(selectedProduct) : [];
+
+  function handleCategoryClick(categoryId: string) {
+    setActiveCategoryId(categoryId);
+    const section = sectionRefs.current[categoryId];
+
+    section?.focus({ preventScroll: true });
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function openProduct(product: Product) {
     setSelectedProduct(product);
@@ -194,93 +313,109 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   }
 
   return (
-    <PageShell className={styles.pageShellPad}>
-      <header className={styles.hero}>
-        <div
-          className={styles.heroBanner}
+    <PageShell bottomPad>
+      <Hero>
+        <HeroBanner
           style={{
             backgroundImage: restaurantConfig?.bannerUrl
               ? `url(${restaurantConfig.bannerUrl})`
               : "linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))",
           }}
         />
-        <div className={styles.heroBody}>
-          <p className={styles.eyebrow}>Cardapio</p>
-          <h1 className={styles.heroTitle}>
+        <HeroBody>
+          <Eyebrow>Cardapio</Eyebrow>
+          <HeroTitle>
             {restaurantConfig?.name ?? "Delivery"}
-          </h1>
-          <p className={styles.heroText}>
-            Escolha seus itens, revise o carrinho e envie o pedido.
-          </p>
-        </div>
-      </header>
+          </HeroTitle>
+          <HeroText>
+            {restaurantConfig?.menuDescription?.trim() ||
+              "Escolha seus itens, revise o carrinho e envie o pedido."}
+          </HeroText>
+        </HeroBody>
+      </Hero>
 
-      <div className={styles.categoryBar}>
-        <div className={styles.categoryList}>
-          <button
-            className={cx(
-              styles.categoryButton,
-              selectedCategory === "all"
-                ? styles.categoryButtonActive
-                : styles.categoryButtonIdle,
-            )}
-            onClick={() => setSelectedCategory("all")}
-          >
-            Todos
-          </button>
-          {menu.categories.map((category) => (
-            <button
-              key={category.id}
-              className={cx(
-                styles.categoryButton,
-                selectedCategory === category.id
-                  ? styles.categoryButtonActive
-                  : styles.categoryButtonIdle,
-              )}
-              onClick={() => setSelectedCategory(category.id)}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      {visibleCategories.length > 0 ? (
+        <CategoryBar>
+          <CategoryList>
+            {visibleCategories.map((category) => (
+              <CategoryButton
+                key={category.id}
+                active={activeCategoryId === category.id}
+                onClick={() => handleCategoryClick(category.id)}
+              >
+                {category.name}
+              </CategoryButton>
+            ))}
+          </CategoryList>
+        </CategoryBar>
+      ) : null}
 
-      <section className={styles.contentGrid}>
-        <div className={styles.productList}>
-          {visibleProducts.length === 0 ? (
-            <div className={styles.empty}>
+      <ContentGrid>
+        <ProductList>
+          {visibleCategories.length === 0 ? (
+            <Empty>
               Nenhum produto cadastrado para este tenant.
-            </div>
+            </Empty>
           ) : null}
 
-          {visibleProducts.map((product) => (
-            <button
-              key={product.id}
-              className={styles.productCard}
-              onClick={() => openProduct(product)}
+          {visibleCategories.map((category) => (
+            <CategorySection
+              key={category.id}
+              ref={(element: HTMLElement | null) => {
+                sectionRefs.current[category.id] = element;
+              }}
+              tabIndex={-1}
+              aria-labelledby={`category-${category.id}`}
             >
-              <span className={styles.productInfo}>
-                <span className={styles.productName}>{product.name}</span>
-                <span className={styles.productDescription}>
-                  {product.description || "Sem descricao."}
-                </span>
-                <span className={styles.productPrice}>
-                  {money(product.priceCents)}
-                </span>
-              </span>
-              <span
-                className={styles.productImage}
-                style={{
-                  backgroundImage: product.imageUrl
-                    ? `url(${product.imageUrl})`
-                    : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
-                }}
-              />
-            </button>
-          ))}
-        </div>
+              <CategoryTitle id={`category-${category.id}`}>
+                {category.name}
+              </CategoryTitle>
+              <CategoryProducts>
+                {(productsByCategory.get(category.id) ?? []).map((product) => {
+                  const flags = activeProductFlags(product);
 
-        <aside className={styles.desktopCart}>
+                  return (
+                    <ProductCard
+                      key={product.id}
+                      onClick={() => openProduct(product)}
+                    >
+                      <ProductInfo>
+                        <ProductName>{product.name}</ProductName>
+                        <ProductDescription>
+                          {product.description || "Sem descricao."}
+                        </ProductDescription>
+                        {flags.length > 0 ? (
+                          <FlagBadges>
+                            {flags.map((flag) => (
+                              <FlagBadge
+                                key={flag.field}
+                                tone={flagTones[flag.styleClass]}
+                              >
+                                {flag.label}
+                              </FlagBadge>
+                            ))}
+                          </FlagBadges>
+                        ) : null}
+                        <ProductPrice>
+                          {money(product.priceCents)}
+                        </ProductPrice>
+                      </ProductInfo>
+                      <ProductImage
+                        style={{
+                          backgroundImage: product.imageUrl
+                            ? `url(${product.imageUrl})`
+                            : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
+                        }}
+                      />
+                    </ProductCard>
+                  );
+                })}
+              </CategoryProducts>
+            </CategorySection>
+          ))}
+        </ProductList>
+
+        <DesktopCart>
           <CartPanel
             cart={cart}
             subtotalCents={subtotalCents}
@@ -293,19 +428,19 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             createdOrder={createdOrder}
             onSubmit={submitOrder}
           />
-        </aside>
-      </section>
+        </DesktopCart>
+      </ContentGrid>
 
-      <div className={styles.mobileCart}>
+      <MobileCart>
         <details>
-          <summary className={styles.mobileSummary}>
-            <span className={styles.mobileSummaryLabel}>
+          <MobileSummary>
+            <MobileSummaryLabel>
               <ShoppingCart size={18} />
               Carrinho ({cart.length})
-            </span>
-            <span className={styles.mobileTotal}>{money(subtotalCents)}</span>
-          </summary>
-          <div className={styles.mobileCartBody}>
+            </MobileSummaryLabel>
+            <MobileTotal>{money(subtotalCents)}</MobileTotal>
+          </MobileSummary>
+          <MobileCartBody>
             <CartPanel
               cart={cart}
               subtotalCents={subtotalCents}
@@ -318,38 +453,56 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               createdOrder={createdOrder}
               onSubmit={submitOrder}
             />
-          </div>
+          </MobileCartBody>
         </details>
-      </div>
+      </MobileCart>
 
       {selectedProduct ? (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
+        <ModalOverlay>
+          <Modal>
+            {selectedProduct.imageUrl ? (
+              <ModalProductImage
+                role="img"
+                aria-label={`Foto de ${selectedProduct.name}`}
+                style={{ backgroundImage: `url(${selectedProduct.imageUrl})` }}
+              />
+            ) : null}
+            <ModalHeader>
               <div>
-                <h2 className={styles.modalTitle}>{selectedProduct.name}</h2>
-                <p className={styles.modalText}>{selectedProduct.description}</p>
+                <ModalTitle>{selectedProduct.name}</ModalTitle>
+                <ModalText>{selectedProduct.description}</ModalText>
+                {selectedProductFlags.length > 0 ? (
+                  <FlagBadges>
+                    {selectedProductFlags.map((flag) => (
+                      <FlagBadge
+                        key={flag.field}
+                        tone={flagTones[flag.styleClass]}
+                      >
+                        {flag.label}
+                      </FlagBadge>
+                    ))}
+                  </FlagBadges>
+                ) : null}
               </div>
-              <button
-                className={styles.closeButton}
+              <CloseButton
                 onClick={() => setSelectedProduct(null)}
                 aria-label="Fechar"
               >
                 <X size={20} />
-              </button>
-            </div>
+              </CloseButton>
+            </ModalHeader>
 
-            <div className={styles.modalContent}>
+            <ModalContent>
               {selectedProduct.optionGroups
                 .filter((group) => !group.deleted)
                 .map((group) => (
-                <div key={group.id ?? group.name} className={styles.optionGroup}>
+                <OptionGroup key={group.id ?? group.name}>
                   <div>
-                    <h3 className={styles.optionGroupTitle}>{group.name}</h3>
-                    <p className={styles.muted}>
-                      {group.required ? "Obrigatorio" : "Opcional"} · selecione ate{" "}
+                    <OptionGroupTitle>{group.name}</OptionGroupTitle>
+                    <Muted>
+                      {group.required ? "Obrigatorio" : "Opcional"} - selecione ate{" "}
                       {group.maxSelections || 1}
-                    </p>
+                    </Muted>
                   </div>
                   {group.items
                     .filter((item) => item.active && !item.deleted)
@@ -360,23 +513,20 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                     );
 
                     return (
-                      <button
+                      <OptionButton
                         key={item.id ?? item.name}
-                        className={cx(
-                          styles.optionButton,
-                          selected ? styles.optionButtonSelected : styles.optionButtonIdle,
-                        )}
+                        selected={selected}
                         onClick={() => toggleOption(group, item)}
                       >
                         <span>{item.name}</span>
-                        <span className={styles.optionPrice}>
+                        <OptionPrice>
                           {money(item.priceCents)}
                           {selected ? <Check size={16} /> : null}
-                        </span>
-                      </button>
+                        </OptionPrice>
+                      </OptionButton>
                     );
                     })}
-                </div>
+                </OptionGroup>
                 ))}
 
               <Field label="Observacao">
@@ -387,37 +537,34 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                 />
               </Field>
 
-              <div className={styles.quantityRow}>
-                <div className={styles.quantityControl}>
-                  <button
-                    className={styles.quantityButton}
+              <QuantityRow>
+                <QuantityControl>
+                  <QuantityButton
                     onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                     aria-label="Diminuir"
                   >
                     <Minus size={16} />
-                  </button>
-                  <span className={styles.quantityValue}>{quantity}</span>
-                  <button
-                    className={styles.quantityButton}
+                  </QuantityButton>
+                  <QuantityValue>{quantity}</QuantityValue>
+                  <QuantityButton
                     onClick={() => setQuantity((value) => value + 1)}
                     aria-label="Aumentar"
                   >
                     <Plus size={16} />
-                  </button>
-                </div>
+                  </QuantityButton>
+                </QuantityControl>
                 <Button onClick={addSelectedProduct}>
                   <ShoppingCart size={16} />
                   Adicionar
                 </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+              </QuantityRow>
+            </ModalContent>
+          </Modal>
+        </ModalOverlay>
       ) : null}
     </PageShell>
   );
 }
-
 type CartPanelProps = {
   cart: CartItem[];
   subtotalCents: number;
@@ -446,79 +593,68 @@ function CartPanel({
   });
 
   return (
-    <div className={styles.cartCard}>
-      <div className={styles.cartHeader}>
-        <h2 className={styles.cartTitle}>
+    <CartCard>
+      <CartHeader>
+        <CartTitle>
           <ReceiptText size={18} />
           Seu pedido
-        </h2>
-        <span className={styles.cartCount}>{cart.length} item(ns)</span>
-      </div>
+        </CartTitle>
+        <CartCount>{cart.length} item(ns)</CartCount>
+      </CartHeader>
 
-      <div className={styles.cartList}>
+      <CartList>
         {cart.length === 0 ? (
-          <p className={styles.emptyCart}>
+          <EmptyCart>
             Carrinho vazio.
-          </p>
+          </EmptyCart>
         ) : null}
         {cart.map((item) => (
-          <div key={item.lineId} className={styles.cartItem}>
-            <div className={styles.cartItemHeader}>
+          <CartItem key={item.lineId}>
+            <CartItemHeader>
               <div>
-                <p className={styles.cartItemName}>
+                <CartItemName>
                   {item.quantity}x {item.name}
-                </p>
+                </CartItemName>
                 {item.options.map((option) => (
-                  <p key={`${option.groupId}-${option.itemId}`} className={styles.muted}>
+                  <Muted key={`${option.groupId}-${option.itemId}`}>
                     + {option.groupName}: {option.itemName}
-                  </p>
+                  </Muted>
                 ))}
                 {item.observations ? (
-                  <p className={styles.muted}>Obs: {item.observations}</p>
+                  <Muted>Obs: {item.observations}</Muted>
                 ) : null}
               </div>
-              <button
-                className={styles.removeButton}
+              <RemoveButton
                 onClick={() => removeItem(item.lineId)}
                 aria-label="Remover item"
               >
                 <Trash2 size={16} />
-              </button>
-            </div>
-            <p className={styles.cartItemTotal}>{money(item.totalCents)}</p>
-          </div>
+              </RemoveButton>
+            </CartItemHeader>
+            <CartItemTotal>{money(item.totalCents)}</CartItemTotal>
+          </CartItem>
         ))}
-      </div>
+      </CartList>
 
-      <form className={styles.checkoutForm} onSubmit={form.handleSubmit(onSubmit)}>
-        <div className={styles.deliveryToggleGrid}>
-          <button
+      <CheckoutForm onSubmit={form.handleSubmit(onSubmit)}>
+        <DeliveryToggleGrid>
+          <DeliveryButton
             type="button"
-            className={cx(
-              styles.deliveryButton,
-              deliveryType === "DELIVERY"
-                ? styles.deliveryButtonSelected
-                : styles.deliveryButtonIdle,
-            )}
+            selected={deliveryType === "DELIVERY"}
             onClick={() => form.setValue("deliveryType", "DELIVERY")}
           >
             <Bike size={16} />
             Entrega
-          </button>
-          <button
+          </DeliveryButton>
+          <DeliveryButton
             type="button"
-            className={cx(
-              styles.deliveryButton,
-              deliveryType === "PICKUP"
-                ? styles.deliveryButtonSelected
-                : styles.deliveryButtonIdle,
-            )}
+            selected={deliveryType === "PICKUP"}
             onClick={() => form.setValue("deliveryType", "PICKUP")}
           >
             <Store size={16} />
             Retirada
-          </button>
-        </div>
+          </DeliveryButton>
+        </DeliveryToggleGrid>
 
         <Field label="Nome" error={form.formState.errors.customerName?.message}>
           <Input {...form.register("customerName")} />
@@ -528,51 +664,51 @@ function CartPanel({
         </Field>
 
         {deliveryType === "DELIVERY" ? (
-          <div className={styles.deliveryFields}>
+          <DeliveryFields>
             <Field label="Rua">
               <Input {...form.register("street")} />
             </Field>
-            <div className={styles.addressGrid}>
+            <AddressGrid>
               <Field label="Numero">
                 <Input {...form.register("number")} />
               </Field>
               <Field label="Bairro">
                 <Input {...form.register("neighborhood")} />
               </Field>
-            </div>
+            </AddressGrid>
             <Field label="Cidade">
               <Input {...form.register("city")} />
             </Field>
-          </div>
+          </DeliveryFields>
         ) : null}
 
         <Field label="Observacoes do pedido">
           <Textarea {...form.register("notes")} />
         </Field>
 
-        <div className={styles.totalsBox}>
-          <span className={styles.totalRow}>
+        <TotalsBox>
+          <TotalRow>
             Subtotal <strong>{money(subtotalCents)}</strong>
-          </span>
-          <span className={styles.totalRow}>
+          </TotalRow>
+          <TotalRow>
             Frete <strong>{money(deliveryFeeCents)}</strong>
-          </span>
-          <span className={styles.totalGrand}>
-            Total <strong className={styles.totalStrong}>{money(totalCents)}</strong>
-          </span>
-        </div>
+          </TotalRow>
+          <TotalGrand>
+            Total <TotalStrong>{money(totalCents)}</TotalStrong>
+          </TotalGrand>
+        </TotalsBox>
 
-        {checkoutError ? <p className={styles.checkoutError}>{checkoutError}</p> : null}
+        {checkoutError ? <CheckoutError>{checkoutError}</CheckoutError> : null}
         {createdOrder ? (
-          <div className={styles.successBox}>
+          <SuccessBox>
             Pedido enviado. Status: {createdOrder.status}
-          </div>
+          </SuccessBox>
         ) : null}
 
         <Button type="submit" disabled={cart.length === 0}>
           Enviar pedido
         </Button>
-      </form>
-    </div>
+      </CheckoutForm>
+    </CartCard>
   );
 }

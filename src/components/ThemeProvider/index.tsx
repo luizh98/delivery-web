@@ -1,7 +1,7 @@
 "use client";
 
 import type { ThemeProviderProps, ThemeVars } from "./types";
-import styles from "./styles.module.css";
+import { ProviderRoot } from "./styles";
 
 export function ThemeProvider({ theme, children }: ThemeProviderProps) {
   const style: ThemeVars = {
@@ -10,8 +10,8 @@ export function ThemeProvider({ theme, children }: ThemeProviderProps) {
   };
 
   return (
-    <div className={styles.provider} style={style}>
+    <ProviderRoot style={style}>
       {children}
-    </div>
+    </ProviderRoot>
   );
 }

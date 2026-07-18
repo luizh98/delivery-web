@@ -25,6 +25,7 @@ export type RestaurantConfigResponse = {
   name?: string;
   logoUrl?: string;
   bannerUrl?: string;
+  menuDescription?: string;
   whatsapp?: string;
   address?: Address;
   theme?: Theme;
@@ -79,6 +80,10 @@ export type Product = {
   priceCents: number;
   sortOrder: number;
   active: boolean;
+  adultOnly: boolean;
+  glutenFree: boolean;
+  lactoseFree: boolean;
+  vegetarian: boolean;
   optionGroups: ProductOptionGroup[];
 };
 

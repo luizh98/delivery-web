@@ -11,7 +11,15 @@ import { PageShell } from "@/components/PageShell";
 import { ToastProvider } from "@/components/ToastProvider";
 import { LogoutButton } from "./LogoutButton";
 import type { AdminLayoutProps } from "./types";
-import styles from "./styles.module.css";
+import {
+  Email,
+  Header,
+  HeaderInner,
+  Nav,
+  NavLink,
+  Root,
+  Tenant,
+} from "./styles";
 
 const navItems = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard },
@@ -28,35 +36,35 @@ export function AdminLayout({
   return (
     <ToastProvider>
       <ConfirmationProvider>
-        <div className={styles.root}>
-          <header className={styles.header}>
-            <div className={styles.headerInner}>
+        <Root>
+          <Header>
+            <HeaderInner>
               <div>
-                <p className={styles.tenant}>
+                <Tenant>
                   {admin.tenantSlug}
-                </p>
-                <p className={styles.email}>{admin.email}</p>
+                </Tenant>
+                <Email>{admin.email}</Email>
               </div>
               <LogoutButton />
-            </div>
-            <nav className={styles.nav}>
+            </HeaderInner>
+            <Nav>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <Link
+                  <NavLink
                     key={item.href}
-                    className={styles.navLink}
+                    as={Link}
                     href={item.href}
                   >
                     <Icon size={16} />
                     {item.label}
-                  </Link>
+                  </NavLink>
                 );
               })}
-            </nav>
-          </header>
+            </Nav>
+          </Header>
           <PageShell>{children}</PageShell>
-        </div>
+        </Root>
       </ConfirmationProvider>
     </ToastProvider>
   );

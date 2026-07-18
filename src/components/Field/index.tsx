@@ -1,21 +1,26 @@
-import { cx } from "@/utils/classNames";
 import type { FieldProps, InputProps, SelectProps, TextareaProps } from "./types";
-import styles from "./styles.module.css";
+import {
+  ErrorMessage,
+  FieldRoot,
+  InputRoot,
+  SelectRoot,
+  TextareaRoot,
+} from "./styles";
 
 export function Field({ label, error, children }: FieldProps) {
   return (
-    <label className={styles.field}>
+    <FieldRoot>
       <span>{label}</span>
       {children}
-      {error ? <span className={styles.error}>{error}</span> : null}
-    </label>
+      {error ? <ErrorMessage>{error}</ErrorMessage> : null}
+    </FieldRoot>
   );
 }
 
 export function Input({ className = "", ...props }: InputProps) {
   return (
-    <input
-      className={cx(styles.control, className)}
+    <InputRoot
+      className={className}
       {...props}
     />
   );
@@ -23,11 +28,13 @@ export function Input({ className = "", ...props }: InputProps) {
 
 export function Textarea({
   className = "",
+  mono = false,
   ...props
 }: TextareaProps) {
   return (
-    <textarea
-      className={cx(styles.control, styles.textarea, className)}
+    <TextareaRoot
+      className={className}
+      mono={mono}
       {...props}
     />
   );
@@ -35,8 +42,8 @@ export function Textarea({
 
 export function Select({ className = "", ...props }: SelectProps) {
   return (
-    <select
-      className={cx(styles.control, className)}
+    <SelectRoot
+      className={className}
       {...props}
     />
   );

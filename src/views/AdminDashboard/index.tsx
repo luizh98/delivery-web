@@ -2,7 +2,18 @@ import { ClipboardList, CookingPot, Settings, Tags } from "lucide-react";
 import Link from "next/link";
 import { getAdminOrders } from "@/services/api/server";
 import { statusLabel } from "@/utils/format";
-import styles from "./styles.module.css";
+import {
+  LinkCard,
+  LinkIcon,
+  LinksGrid,
+  MetricLabel,
+  MetricRoot,
+  MetricValue,
+  MetricsGrid,
+  Root,
+  Subtitle,
+  Title,
+} from "./styles";
 
 export async function AdminDashboardView() {
   const orders = await getAdminOrders();
@@ -18,45 +29,47 @@ export async function AdminDashboardView() {
   ];
 
   return (
-    <div className={styles.root}>
+    <Root>
       <div>
-        <h1 className={styles.title}>Painel</h1>
-        <p className={styles.subtitle}>Operacao do restaurante.</p>
+        <Title>Painel</Title>
+        <Subtitle>Operacao do restaurante.</Subtitle>
       </div>
 
-      <section className={styles.metricsGrid}>
+      <MetricsGrid>
         <Metric label="Pedidos ativos" value={activeOrders.length.toString()} />
         <Metric label="Total de pedidos" value={orders.length.toString()} />
         <Metric
           label="Ultimo status"
           value={orders[0] ? statusLabel(orders[0].status) : "-"}
         />
-      </section>
+      </MetricsGrid>
 
-      <section className={styles.linksGrid}>
+      <LinksGrid>
         {links.map((item) => {
           const Icon = item.icon;
           return (
-            <Link
+            <LinkCard
               key={item.href}
-              className={styles.link}
+              as={Link}
               href={item.href}
             >
-              <Icon size={20} className={styles.linkIcon} />
+              <LinkIcon>
+                <Icon size={20} />
+              </LinkIcon>
               {item.label}
-            </Link>
+            </LinkCard>
           );
         })}
-      </section>
-    </div>
+      </LinksGrid>
+    </Root>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className={styles.metric}>
-      <p className={styles.metricLabel}>{label}</p>
-      <p className={styles.metricValue}>{value}</p>
-    </div>
+    <MetricRoot>
+      <MetricLabel>{label}</MetricLabel>
+      <MetricValue>{value}</MetricValue>
+    </MetricRoot>
   );
 }

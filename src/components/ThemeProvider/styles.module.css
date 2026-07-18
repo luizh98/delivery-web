@@ -1,5 +1,0 @@
-@reference "../../app/globals.css";
-
-.provider {
-  @apply min-h-screen bg-background text-foreground;
-}

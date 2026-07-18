@@ -12,5 +12,7 @@ export type FieldProps = {
 };
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement>;
-export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  mono?: boolean;
+};
 export type SelectProps = SelectHTMLAttributes<HTMLSelectElement>;

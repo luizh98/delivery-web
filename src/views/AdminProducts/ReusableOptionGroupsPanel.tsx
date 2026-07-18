@@ -12,7 +12,27 @@ import type {
 } from "@/types/api";
 import { ProductOptionsBuilder } from "./ProductOptionsBuilder";
 import type { ProductOptionsErrors } from "./optionValidation";
-import styles from "./styles.module.css";
+import {
+  Actions,
+  BuilderTitle,
+  CardActions,
+  CardTitle,
+  Empty,
+  ErrorTextLarge,
+  ItemTitle,
+  Muted,
+  Pane,
+  PaneGrid,
+  PanelRoot,
+  ScrollList,
+  SearchIcon,
+  SearchLabel,
+  SearchWrap,
+  SectionHeader,
+  SectionTitle,
+  SummaryCard,
+  TemplateCard,
+} from "./styles";
 
 type ReusableOptionGroupsPanelProps = {
   templates: ProductOptionGroupTemplate[];
@@ -108,28 +128,28 @@ export function ReusableOptionGroupsPanel({
   );
 
   return (
-    <section className={styles.panelRoot}>
+    <PanelRoot>
       {showHeader ? (
         <div>
-          <h2 className={styles.builderTitle}>Cadastro de grupos</h2>
-          <p className={styles.muted}>
+          <BuilderTitle>Cadastro de grupos</BuilderTitle>
+          <Muted>
             Crie, pesquise, altere e exclua grupos reutilizaveis.
-          </p>
+          </Muted>
         </div>
       ) : null}
 
-      {error ? <p className={styles.errorTextLarge}>{error}</p> : null}
+      {error ? <ErrorTextLarge>{error}</ErrorTextLarge> : null}
 
-      <div className={styles.paneGrid}>
-        <section className={styles.pane}>
-          <div className={styles.sectionHeader}>
+      <PaneGrid>
+        <Pane>
+          <SectionHeader>
             <div>
-              <h3 className={styles.sectionTitle}>
+              <SectionTitle>
                 {isEditing ? "Alterar grupo" : "Adicionar grupo"}
-              </h3>
-              <p className={styles.muted}>
+              </SectionTitle>
+              <Muted>
                 Um grupo por vez deixa o cadastro mais claro.
-              </p>
+              </Muted>
             </div>
             {isEditing ? (
               <Button type="button" variant="ghost" onClick={onCancelEdit}>
@@ -137,7 +157,7 @@ export function ReusableOptionGroupsPanel({
                 Cancelar
               </Button>
             ) : null}
-          </div>
+          </SectionHeader>
 
           <ProductOptionsBuilder
             value={draftGroups}
@@ -150,18 +170,17 @@ export function ReusableOptionGroupsPanel({
           />
 
           {visibleDraftGroups.map(({ group, groupIndex }) => (
-            <div
+            <SummaryCard
               key={group.id ?? groupIndex}
-              className={styles.summaryCard}
             >
-              <p className={styles.itemTitle}>
+              <ItemTitle>
                 {group.name || `Grupo ${groupIndex + 1}`}
-              </p>
-              <p className={styles.muted}>{groupSummary(group)}</p>
-            </div>
+              </ItemTitle>
+              <Muted>{groupSummary(group)}</Muted>
+            </SummaryCard>
           ))}
 
-          <div className={styles.actions}>
+          <Actions>
             <Button
               type="button"
               onClick={() => {
@@ -177,57 +196,54 @@ export function ReusableOptionGroupsPanel({
               <Save size={16} />
               Salvar grupo
             </Button>
-          </div>
-        </section>
+          </Actions>
+        </Pane>
 
-        <section className={styles.pane}>
+        <Pane>
           <div>
-            <h3 className={styles.sectionTitle}>Grupos cadastrados</h3>
-            <p className={styles.muted}>
+            <SectionTitle>Grupos cadastrados</SectionTitle>
+            <Muted>
               {templates.length} grupo(s) disponivel(is)
-            </p>
+            </Muted>
           </div>
 
-          <label className={styles.searchLabel}>
+          <SearchLabel>
             <span>Pesquisar</span>
-            <span className={styles.searchWrap}>
-              <Search
-                className={styles.searchIcon}
-                size={16}
-              />
+            <SearchWrap>
+              <SearchIcon>
+                <Search size={16} />
+              </SearchIcon>
               <Input
-                className={styles.searchInput}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Nome do grupo ou item"
               />
-            </span>
-          </label>
+            </SearchWrap>
+          </SearchLabel>
 
           {templates.length === 0 ? (
-            <div className={styles.empty}>
+            <Empty>
               Nenhum grupo salvo.
-            </div>
+            </Empty>
           ) : null}
 
           {templates.length > 0 && filteredTemplates.length === 0 ? (
-            <div className={styles.empty}>
+            <Empty>
               Nenhum grupo encontrado.
-            </div>
+            </Empty>
           ) : null}
 
-          <div className={styles.scrollList}>
+          <ScrollList>
             {filteredTemplates.map((template) => (
-              <div
+              <TemplateCard
                 key={template.id}
-                className={styles.templateCard}
               >
                 <div>
-                  <p className={styles.cardTitle}>{template.name}</p>
-                  <p className={styles.muted}>{groupSummary(template)}</p>
-                  <p className={styles.muted}>{itemsSummary(template.items)}</p>
+                  <CardTitle>{template.name}</CardTitle>
+                  <Muted>{groupSummary(template)}</Muted>
+                  <Muted>{itemsSummary(template.items)}</Muted>
                 </div>
-                <div className={styles.cardActions}>
+                <CardActions>
                   <Button
                     type="button"
                     variant="outline"
@@ -246,12 +262,12 @@ export function ReusableOptionGroupsPanel({
                     <Trash2 size={16} />
                     Excluir
                   </Button>
-                </div>
-              </div>
+                </CardActions>
+              </TemplateCard>
             ))}
-          </div>
-        </section>
-      </div>
-    </section>
+          </ScrollList>
+        </Pane>
+      </PaneGrid>
+    </PanelRoot>
   );
 }

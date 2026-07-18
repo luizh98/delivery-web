@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, CopyPlus, Pencil, Save, Search, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
@@ -28,7 +28,61 @@ import {
   type ProductOptionsErrors,
 } from "./optionValidation";
 import type { ProductManagerProps } from "./types";
-import styles from "./styles.module.css";
+import {
+  AvailableTemplateCard,
+  BuilderTitle,
+  CardTitle,
+  CheckboxBackground,
+  Description,
+  DetailsBody,
+  DetailsCard,
+  DetailsIcon,
+  DetailsSummary,
+  Empty,
+  EmptySurface,
+  ErrorTextLarge,
+  FlagBadge,
+  FlagBadges,
+  FlagFieldset,
+  FlagGrid,
+  FlagLegend,
+  FormTitle,
+  GridTwo,
+  ItemTitle,
+  Muted,
+  NestedBody,
+  NestedDetails,
+  NestedSummary,
+  OptionsSection,
+  PageHeader,
+  PageSubtitle,
+  PageTitle,
+  Price,
+  ProductActions,
+  ProductCard,
+  ProductCategory as ProductCategoryText,
+  ProductCategoryFilterLabel,
+  ProductCount,
+  ProductForm,
+  ProductList,
+  ProductMeta,
+  ProductSearchLabel,
+  ProductSection,
+  ProductToolbar,
+  Root,
+  ScrollList,
+  SearchIcon,
+  SearchLabel,
+  SearchWrap,
+  SectionHeader,
+  SectionTitle,
+  SelectedGroupCard,
+  SelectedGroups,
+  StatusBadge,
+  SummaryMeta,
+  SummaryMetaPlain,
+  SummaryTitle,
+} from "./styles";
 
 const productSchema = z.object({
   categoryId: z.string().min(1, "Selecione uma categoria."),
@@ -38,9 +92,55 @@ const productSchema = z.object({
   priceReais: z.number().min(0),
   sortOrder: z.number(),
   active: z.boolean(),
+  adultOnly: z.boolean(),
+  glutenFree: z.boolean(),
+  lactoseFree: z.boolean(),
+  vegetarian: z.boolean(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
+type ProductFlagField = "adultOnly" | "glutenFree" | "lactoseFree" | "vegetarian";
+type ProductFlagStyle = "flagAdult" | "flagGluten" | "flagLactose" | "flagVegetarian";
+type ProductFlagTone = "adult" | "gluten" | "lactose" | "vegetarian";
+
+const PRODUCT_FLAGS: {
+  field: ProductFlagField;
+  label: string;
+  badge: string;
+  styleClass: ProductFlagStyle;
+}[] = [
+    {
+      field: "adultOnly",
+      label: "Maiores de 18 anos",
+      badge: "+18",
+      styleClass: "flagAdult",
+    },
+    {
+      field: "glutenFree",
+      label: "Nao contem gluten",
+      badge: "Sem gluten",
+      styleClass: "flagGluten",
+    },
+    {
+      field: "lactoseFree",
+      label: "Nao contem lactose",
+      badge: "Sem lactose",
+      styleClass: "flagLactose",
+    },
+    {
+      field: "vegetarian",
+      label: "Vegetariano",
+      badge: "Vegetariano",
+      styleClass: "flagVegetarian",
+    },
+  ];
+
+const flagTones: Record<ProductFlagStyle, ProductFlagTone> = {
+  flagAdult: "adult",
+  flagGluten: "gluten",
+  flagLactose: "lactose",
+  flagVegetarian: "vegetarian",
+};
 
 const defaultProductForm = (categoryId = ""): ProductForm => ({
   categoryId,
@@ -50,6 +150,10 @@ const defaultProductForm = (categoryId = ""): ProductForm => ({
   priceReais: 0,
   sortOrder: 0,
   active: true,
+  adultOnly: false,
+  glutenFree: false,
+  lactoseFree: false,
+  vegetarian: false,
 });
 
 function productToForm(product: Product): ProductForm {
@@ -61,6 +165,10 @@ function productToForm(product: Product): ProductForm {
     priceReais: centsToReais(product.priceCents),
     sortOrder: product.sortOrder,
     active: product.active,
+    adultOnly: product.adultOnly ?? false,
+    glutenFree: product.glutenFree ?? false,
+    lactoseFree: product.lactoseFree ?? false,
+    vegetarian: product.vegetarian ?? false,
   };
 }
 
@@ -73,6 +181,10 @@ function cloneOptionGroups(groups: ProductOptionGroup[]) {
 
 function visibleOptionGroupsCount(product: Product) {
   return product.optionGroups?.filter((group) => !group.deleted).length ?? 0;
+}
+
+function activeProductFlags(product: Product) {
+  return PRODUCT_FLAGS.filter(({ field }) => product[field] ?? false);
 }
 
 function visibleItems(items: ProductOptionItem[]) {
@@ -205,6 +317,7 @@ export function ProductManager({
   const [optionGroups, setOptionGroups] = useState<ProductOptionGroup[]>([]);
   const [productGroupSearch, setProductGroupSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const [productCategoryFilter, setProductCategoryFilter] = useState("");
   const [productFormOpen, setProductFormOpen] = useState(false);
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
@@ -234,6 +347,12 @@ export function ProductManager({
     if (!currentCategoryExists) {
       form.setValue("categoryId", nextCategories[0]?.id ?? "");
     }
+    if (
+      productCategoryFilter &&
+      !nextCategories.some((category) => category.id === productCategoryFilter)
+    ) {
+      setProductCategoryFilter("");
+    }
   }
 
   function resetForm(categoryId = form.getValues("categoryId")) {
@@ -241,6 +360,11 @@ export function ProductManager({
     setEditingProduct(null);
     setOptionGroups([]);
     setError("");
+  }
+
+  function cancelProductEdit() {
+    resetForm();
+    setProductFormOpen(false);
   }
 
   function startEdit(product: Product) {
@@ -423,6 +547,10 @@ export function ProductManager({
         priceCents: reaisToCents(values.priceReais),
         sortOrder: values.sortOrder,
         active: values.active,
+        adultOnly: values.adultOnly,
+        glutenFree: values.glutenFree,
+        lactoseFree: values.lactoseFree,
+        vegetarian: values.vegetarian,
         optionGroups: normalizeOptionGroups(optionGroups),
       };
       const path = editingProduct
@@ -461,56 +589,85 @@ export function ProductManager({
   const filteredProductTemplates = optionGroupTemplates.filter((template) =>
     templateMatchesSearch(template, productGroupSearch.trim().toLowerCase()),
   );
+  const sortedCategories = useMemo(
+    () =>
+      [...categories].sort(
+        (left, right) =>
+          left.sortOrder - right.sortOrder || left.name.localeCompare(right.name),
+      ),
+    [categories],
+  );
+  const categoryById = useMemo(
+    () => new Map(sortedCategories.map((category) => [category.id, category])),
+    [sortedCategories],
+  );
+  const sortedProducts = useMemo(
+    () =>
+      [...products].sort((left, right) => {
+        const leftCategory = categoryById.get(left.categoryId);
+        const rightCategory = categoryById.get(right.categoryId);
+        const leftCategoryOrder = leftCategory?.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightCategoryOrder = rightCategory?.sortOrder ?? Number.MAX_SAFE_INTEGER;
+
+        return (
+          leftCategoryOrder - rightCategoryOrder ||
+          (leftCategory?.name ?? "").localeCompare(rightCategory?.name ?? "") ||
+          left.sortOrder - right.sortOrder ||
+          left.name.localeCompare(right.name)
+        );
+      }),
+    [categoryById, products],
+  );
   const normalizedProductSearch = productSearch.trim().toLowerCase();
-  const filteredProducts = normalizedProductSearch
-    ? products.filter((product) =>
-        product.name.toLowerCase().includes(normalizedProductSearch),
-      )
-    : products;
+  const filteredProducts = sortedProducts.filter((product) => {
+    const matchesSearch =
+      !normalizedProductSearch ||
+      product.name.toLowerCase().includes(normalizedProductSearch);
+    const matchesCategory =
+      !productCategoryFilter || product.categoryId === productCategoryFilter;
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
-    <div className={styles.root}>
-      <div className={styles.pageHeader}>
+    <Root>
+      <PageHeader>
         <div>
-          <h1 className={styles.pageTitle}>Produtos</h1>
-          <p className={styles.pageSubtitle}>Itens, precos e opcionais.</p>
+          <PageTitle>Produtos</PageTitle>
+          <PageSubtitle>Itens, precos e opcionais.</PageSubtitle>
         </div>
-      </div>
+      </PageHeader>
 
-      <details className={styles.detailsCard}>
-        <summary className={styles.detailsSummary}>
-          <span className={styles.summaryTitle}>Categorias</span>
-          <span className={styles.summaryMeta}>
+      <DetailsCard>
+        <DetailsSummary>
+          <SummaryTitle>Categorias</SummaryTitle>
+          <SummaryMeta>
             <span>{categories.length} cadastrada(s)</span>
-            <ChevronDown
-              className={styles.detailsIcon}
-              size={18}
-              aria-hidden="true"
-            />
-          </span>
-        </summary>
-        <div className={styles.detailsBody}>
+            <DetailsIcon data-details-icon>
+              <ChevronDown size={18} aria-hidden="true" />
+            </DetailsIcon>
+          </SummaryMeta>
+        </DetailsSummary>
+        <DetailsBody>
           <CategoryManager
             initialCategories={categories}
             onCategoriesChange={updateCategories}
             showHeader={false}
           />
-        </div>
-      </details>
+        </DetailsBody>
+      </DetailsCard>
 
-      <details className={styles.detailsCard}>
-        <summary className={styles.detailsSummary}>
-          <span className={styles.summaryTitle}>Grupos salvos</span>
-          <span className={styles.summaryMeta}>
+      <DetailsCard>
+        <DetailsSummary>
+          <SummaryTitle>Grupos salvos</SummaryTitle>
+          <SummaryMeta>
             <span>{optionGroupTemplates.length} cadastrado(s)</span>
-            <ChevronDown
-              className={styles.detailsIcon}
-              size={18}
-              aria-hidden="true"
-            />
-          </span>
-        </summary>
-        <div className={styles.detailsBody}>
+            <DetailsIcon data-details-icon>
+              <ChevronDown size={18} aria-hidden="true" />
+            </DetailsIcon>
+          </SummaryMeta>
+        </DetailsSummary>
+        <DetailsBody>
           <ReusableOptionGroupsPanel
             templates={optionGroupTemplates}
             draftGroups={templateDraftGroups}
@@ -526,45 +683,43 @@ export function ProductManager({
             onCancelEdit={cancelReusableGroupEdit}
             onDeleteTemplate={deleteReusableGroup}
           />
-        </div>
-      </details>
+        </DetailsBody>
+      </DetailsCard>
 
-      <details
+      <DetailsCard
         open={productFormOpen}
         onToggle={(event) => setProductFormOpen(event.currentTarget.open)}
-        className={styles.detailsCard}
       >
-        <summary className={styles.detailsSummary}>
-          <span className={styles.summaryTitle}>
+        <DetailsSummary>
+          <SummaryTitle>
             {editingProduct ? "Editar produto" : "Cadastro de produto"}
-          </span>
-          <ChevronDown
-            className={styles.detailsIcon}
-            size={18}
-            aria-hidden="true"
-          />
-        </summary>
+          </SummaryTitle>
+          <DetailsIcon data-details-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </DetailsIcon>
+        </DetailsSummary>
 
-        <form className={styles.productForm} onSubmit={form.handleSubmit(submit)}>
-          <div className={styles.sectionHeader}>
+        <ProductForm onSubmit={form.handleSubmit(submit)}>
+          <SectionHeader>
             <div>
-              <h2 className={styles.formTitle}>
+              <FormTitle>
                 {editingProduct ? "Editar produto" : "Novo produto"}
-              </h2>
+              </FormTitle>
               {editingProduct ? (
-                <p className={styles.muted}>
+                <Muted>
                   Alterando produto e opcionais ja cadastrados.
-                </p>
+                </Muted>
               ) : null}
             </div>
             {editingProduct ? (
-              <Button type="button" variant="ghost" onClick={() => resetForm()}>
+              <Button type="button" variant="ghost" onClick={cancelProductEdit}>
                 <X size={16} />
                 Cancelar edicao
               </Button>
             ) : null}
-          </div>
-          <div className={styles.gridTwo}>
+          </SectionHeader>
+
+          <GridTwo>
             <Field label="Categoria" error={form.formState.errors.categoryId?.message}>
               <Select {...form.register("categoryId")}>
                 {categories.map((category) => (
@@ -594,82 +749,82 @@ export function ProductManager({
             <Field label="Descricao">
               <Input {...form.register("description")} />
             </Field>
-            <label className={styles.checkboxBackground}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                {...form.register("active")}
-              />
+            <CheckboxBackground>
+              <input type="checkbox" {...form.register("active")} />
               Produto ativo
-            </label>
-          </div>
-          <section className={styles.optionsSection}>
+            </CheckboxBackground>
+          </GridTwo>
+
+          <FlagFieldset>
+            <FlagLegend>Flags do produto</FlagLegend>
+            <FlagGrid>
+              {PRODUCT_FLAGS.map((flag) => (
+                <CheckboxBackground key={flag.field}>
+                  <input type="checkbox" {...form.register(flag.field)} />
+                  {flag.label}
+                </CheckboxBackground>
+              ))}
+            </FlagGrid>
+          </FlagFieldset>
+
+          <OptionsSection>
             <div>
-              <h2 className={styles.builderTitle}>Opcionais</h2>
-              <p className={styles.muted}>
-                Use grupos salvos no cadastro acima.
-              </p>
+              <BuilderTitle>Opcionais</BuilderTitle>
+              <Muted>Use grupos salvos no cadastro acima.</Muted>
             </div>
 
-            <details className={styles.nestedDetails}>
-              <summary className={styles.nestedSummary}>
-                <span className={styles.summaryTitle}>Grupos disponiveis</span>
-                <span className={styles.summaryMetaPlain}>
+            <NestedDetails>
+              <NestedSummary>
+                <SummaryTitle>Grupos disponiveis</SummaryTitle>
+                <SummaryMetaPlain>
                   <span>
                     {filteredProductTemplates.length} de {optionGroupTemplates.length}
                   </span>
-                  <ChevronDown
-                    className={styles.detailsIcon}
-                    size={18}
-                    aria-hidden="true"
-                  />
-                </span>
-              </summary>
+                  <DetailsIcon data-details-icon>
+                    <ChevronDown size={18} aria-hidden="true" />
+                  </DetailsIcon>
+                </SummaryMetaPlain>
+              </NestedSummary>
 
-              <div className={styles.nestedBody}>
-                <label className={styles.searchLabel}>
+              <NestedBody>
+                <SearchLabel>
                   <span>Pesquisar</span>
-                  <span className={styles.searchWrap}>
-                    <Search
-                      className={styles.searchIcon}
-                      size={16}
-                    />
+                  <SearchWrap>
+                    <SearchIcon>
+                      <Search size={16} />
+                    </SearchIcon>
                     <Input
-                      className={styles.searchInput}
                       value={productGroupSearch}
                       onChange={(event) => setProductGroupSearch(event.target.value)}
                       placeholder="Nome do grupo ou item"
                     />
-                  </span>
-                </label>
+                  </SearchWrap>
+                </SearchLabel>
 
                 {optionGroupTemplates.length === 0 ? (
-                  <div className={styles.emptySurface}>
+                  <EmptySurface>
                     Nenhum grupo salvo para usar neste produto.
-                  </div>
+                  </EmptySurface>
                 ) : null}
 
                 {optionGroupTemplates.length > 0 && filteredProductTemplates.length === 0 ? (
-                  <div className={styles.emptySurface}>
+                  <EmptySurface>
                     Nenhum grupo encontrado.
-                  </div>
+                  </EmptySurface>
                 ) : null}
 
-                <div className={styles.scrollList}>
+                <ScrollList>
                   {filteredProductTemplates.map((template) => {
                     const selected = selectedGroupSignatures.has(
                       optionGroupSignature(template),
                     );
 
                     return (
-                      <div
-                        key={template.id}
-                        className={styles.availableTemplateCard}
-                      >
+                      <AvailableTemplateCard key={template.id}>
                         <div>
-                          <p className={styles.cardTitle}>{template.name}</p>
-                          <p className={styles.muted}>{groupSummary(template)}</p>
-                          <p className={styles.muted}>{itemsSummary(template.items)}</p>
+                          <CardTitle>{template.name}</CardTitle>
+                          <Muted>{groupSummary(template)}</Muted>
+                          <Muted>{itemsSummary(template.items)}</Muted>
                         </div>
                         <Button
                           type="button"
@@ -680,119 +835,146 @@ export function ProductManager({
                           <CopyPlus size={16} />
                           {selected ? "Adicionado" : "Usar grupo"}
                         </Button>
-                      </div>
+                      </AvailableTemplateCard>
                     );
                   })}
-                </div>
-              </div>
-            </details>
+                </ScrollList>
+              </NestedBody>
+            </NestedDetails>
 
-            <div className={styles.selectedGroups}>
-              <p className={styles.sectionTitle}>Grupos no produto</p>
+            <SelectedGroups>
+              <SectionTitle>Grupos no produto</SectionTitle>
               {visibleSelectedGroups.length === 0 ? (
-                <div className={styles.empty}>
+                <Empty>
                   Nenhum grupo selecionado.
-                </div>
+                </Empty>
               ) : null}
               {visibleSelectedGroups.map(({ group, groupIndex }) => (
-                <div
-                  key={group.id ?? `${group.name}-${groupIndex}`}
-                  className={styles.selectedGroupCard}
-                >
+                <SelectedGroupCard key={group.id ?? `${group.name}-${groupIndex}`}>
                   <div>
-                    <p className={styles.itemTitle}>{group.name}</p>
-                    <p className={styles.muted}>{groupSummary(group)}</p>
+                    <ItemTitle>{group.name}</ItemTitle>
+                    <Muted>{groupSummary(group)}</Muted>
                   </div>
                   <Button
                     type="button"
-                    variant="ghost"
-                    className={styles.dangerTextButton}
+                    variant="dangerText"
                     onClick={() => removeOptionGroup(groupIndex)}
                   >
                     <Trash2 size={16} />
                     Remover
                   </Button>
-                </div>
+                </SelectedGroupCard>
               ))}
-            </div>
-          </section>
-          {error ? <p className={styles.errorTextLarge}>{error}</p> : null}
+            </SelectedGroups>
+          </OptionsSection>
+
+          {error ? <ErrorTextLarge>{error}</ErrorTextLarge> : null}
           <Button type="submit" disabled={categories.length === 0}>
             <Save size={16} />
             Salvar produto
           </Button>
-        </form>
-      </details>
+        </ProductForm>
+      </DetailsCard>
 
-      <section className={styles.productSection}>
-        <div className={styles.productToolbar}>
-          <label className={styles.productSearchLabel}>
+      <ProductSection>
+        <ProductToolbar>
+          <ProductSearchLabel>
             <span>Pesquisar produto</span>
-            <span className={styles.searchWrap}>
-              <Search
-                className={styles.searchIcon}
-                size={16}
-              />
+            <SearchWrap>
+              <SearchIcon>
+                <Search size={16} />
+              </SearchIcon>
               <Input
-                className={styles.searchInput}
                 value={productSearch}
                 onChange={(event) => setProductSearch(event.target.value)}
                 placeholder="Nome do produto"
               />
-            </span>
-          </label>
-          <p className={styles.productCount}>
-            {filteredProducts.length} de {products.length} produto(s)
-          </p>
-        </div>
+            </SearchWrap>
+          </ProductSearchLabel>
+          <ProductCategoryFilterLabel>
+            <span>Filtrar categoria</span>
+            <Select
+              value={productCategoryFilter}
+              onChange={(event) => setProductCategoryFilter(event.target.value)}
+            >
+              <option value="">Todas as categorias</option>
+              {sortedCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+          </ProductCategoryFilterLabel>
+        </ProductToolbar>
+        <ProductCount>
+          {filteredProducts.length} de {products.length} produto(s)
+        </ProductCount>
 
         {products.length === 0 ? (
-          <div className={styles.emptySurface}>
+          <EmptySurface>
             Nenhum produto cadastrado.
-          </div>
+          </EmptySurface>
         ) : null}
 
         {products.length > 0 && filteredProducts.length === 0 ? (
-          <div className={styles.emptySurface}>
+          <EmptySurface>
             Nenhum produto encontrado.
-          </div>
+          </EmptySurface>
         ) : null}
 
-        <div className={styles.productList}>
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className={styles.productCard}
-            >
-              <div>
-                <p className={styles.cardTitle}>{product.name}</p>
-                <p className={styles.description}>{product.description}</p>
-                <p className={styles.muted}>
-                  {visibleOptionGroupsCount(product)} grupo(s) de opcionais
-                  {" - "}
-                  {product.active ? "ativo" : "inativo"}
-                </p>
-              </div>
-              <div className={styles.productActions}>
-                <p className={styles.price}>{money(product.priceCents)}</p>
-                <Button type="button" variant="outline" onClick={() => startEdit(product)}>
-                  <Pencil size={16} />
-                  Editar
-                </Button>
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => deleteProduct(product)}
-                  disabled={deletingProductId === product.id}
-                >
-                  <Trash2 size={16} />
-                  Excluir
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+        <ProductList>
+          {filteredProducts.map((product) => {
+            const flags = activeProductFlags(product);
+            const category = categoryById.get(product.categoryId);
+
+            return (
+              <ProductCard key={product.id}>
+                <div>
+                  <CardTitle>{product.name}</CardTitle>
+                  <ProductCategoryText>
+                    {category?.name ?? "Categoria indisponivel"}
+                  </ProductCategoryText>
+                  <Description>{product.description}</Description>
+                  <ProductMeta>
+                    <span>{visibleOptionGroupsCount(product)} grupo(s) de opcionais</span>
+                    <StatusBadge active={product.active}>
+                      {product.active ? "Ativo" : "Inativo"}
+                    </StatusBadge>
+                  </ProductMeta>
+                  {flags.length > 0 ? (
+                    <FlagBadges>
+                      {flags.map((flag) => (
+                        <FlagBadge
+                          key={flag.field}
+                          tone={flagTones[flag.styleClass]}
+                        >
+                          {flag.badge}
+                        </FlagBadge>
+                      ))}
+                    </FlagBadges>
+                  ) : null}
+                </div>
+                <ProductActions>
+                  <Price>{money(product.priceCents)}</Price>
+                  <Button type="button" variant="outline" onClick={() => startEdit(product)}>
+                    <Pencil size={16} />
+                    Editar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => deleteProduct(product)}
+                    disabled={deletingProductId === product.id}
+                  >
+                    <Trash2 size={16} />
+                    Excluir
+                  </Button>
+                </ProductActions>
+              </ProductCard>
+            );
+          })}
+        </ProductList>
+      </ProductSection>
+    </Root>
   );
 }

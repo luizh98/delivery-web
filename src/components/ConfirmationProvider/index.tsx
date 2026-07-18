@@ -10,7 +10,16 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "@/components/Button";
-import styles from "./styles.module.css";
+import {
+  Actions,
+  Copy,
+  Dialog,
+  Header,
+  IconWrap,
+  Message,
+  Overlay,
+  Title,
+} from "./styles";
 
 type ConfirmationRequest = {
   message: string;
@@ -61,28 +70,28 @@ export function ConfirmationProvider({ children }: { children: ReactNode }) {
     <ConfirmationContext.Provider value={value}>
       {children}
       {pendingConfirmation ? (
-        <div
-          className={styles.overlay}
+        <Overlay
           role="presentation"
           onClick={() => closeConfirmation(false)}
         >
-          <div
-            className={styles.dialog}
+          <Dialog
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirmation-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className={styles.header}>
-              <AlertTriangle className={styles.icon} size={22} />
-              <div className={styles.copy}>
-                <h2 id="confirmation-title" className={styles.title}>
+            <Header>
+              <IconWrap>
+                <AlertTriangle size={22} />
+              </IconWrap>
+              <Copy>
+                <Title id="confirmation-title">
                   Confirmacao
-                </h2>
-                <p className={styles.message}>{pendingConfirmation.message}</p>
-              </div>
-            </div>
-            <div className={styles.actions}>
+                </Title>
+                <Message>{pendingConfirmation.message}</Message>
+              </Copy>
+            </Header>
+            <Actions>
               <Button
                 type="button"
                 variant="outline"
@@ -97,9 +106,9 @@ export function ConfirmationProvider({ children }: { children: ReactNode }) {
               >
                 {pendingConfirmation.confirmLabel}
               </Button>
-            </div>
-          </div>
-        </div>
+            </Actions>
+          </Dialog>
+        </Overlay>
       ) : null}
     </ConfirmationContext.Provider>
   );

@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Button } from "@/components/Button";
 import { Field, Input } from "@/components/Field";
 import { authApi } from "@/services/api/client";
-import styles from "./styles.module.css";
+import { ErrorText, Form, Root, Subtitle, Title } from "./styles";
 
 const loginSchema = z.object({
   email: z.string().email("Email invalido."),
@@ -44,14 +44,13 @@ export function AdminLoginView() {
   }
 
   return (
-    <main className={styles.root}>
-      <form
-        className={styles.form}
+    <Root>
+      <Form
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div>
-          <h1 className={styles.title}>Admin</h1>
-          <p className={styles.subtitle}>Acesse o painel do restaurante.</p>
+          <Title>Admin</Title>
+          <Subtitle>Acesse o painel do restaurante.</Subtitle>
         </div>
         <Field label="Email" error={form.formState.errors.email?.message}>
           <Input type="email" {...form.register("email")} />
@@ -59,12 +58,12 @@ export function AdminLoginView() {
         <Field label="Senha" error={form.formState.errors.password?.message}>
           <Input type="password" {...form.register("password")} />
         </Field>
-        {error ? <p className={styles.error}>{error}</p> : null}
+        {error ? <ErrorText>{error}</ErrorText> : null}
         <Button type="submit" disabled={form.formState.isSubmitting}>
           <LogIn size={16} />
           Entrar
         </Button>
-      </form>
-    </main>
+      </Form>
+    </Root>
   );
 }
