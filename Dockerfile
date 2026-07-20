@@ -16,8 +16,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
-COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs next-env.d.ts ./
-COPY public ./public
+COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs ./
 COPY src ./src
 
 RUN npm run build
@@ -33,7 +32,6 @@ ENV NODE_ENV=production \
 COPY --chown=node:node package.json package-lock.json ./
 COPY --chown=node:node --from=production-dependencies /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/.next ./.next
-COPY --chown=node:node --from=builder /app/public ./public
 
 USER node
 
