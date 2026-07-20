@@ -10,6 +10,14 @@ export type BusinessHour = {
   closed?: boolean;
 };
 
+export type HolidayHour = {
+  date?: string;
+  name?: string;
+  openTime?: string;
+  closeTime?: string;
+  closed?: boolean;
+};
+
 export type Address = {
   street?: string;
   number?: string;
@@ -30,6 +38,7 @@ export type RestaurantConfigResponse = {
   address?: Address;
   theme?: Theme;
   businessHours?: BusinessHour[];
+  holidayHours?: HolidayHour[];
 };
 
 export type ProductCategory = {

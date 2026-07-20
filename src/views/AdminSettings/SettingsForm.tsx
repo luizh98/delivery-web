@@ -10,6 +10,16 @@ import { Field, Input, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
+import { OperatingHoursEditor } from "./OperatingHoursEditor";
+import {
+  createHolidayHours,
+  createWeeklyHours,
+  hasOperatingHoursErrors,
+  normalizeBusinessHours,
+  normalizeHolidayHours,
+  type OperatingHoursErrors,
+  validateOperatingHours,
+} from "./operatingHours";
 import type { SettingsFormProps } from "./types";
 import { ErrorText, Form, GridTwo, Section, Subtitle, Title } from "./styles";
 
@@ -26,17 +36,6 @@ const settingsSchema = z.object({
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
-  businessHoursJson: z.string().optional().refine((value) => {
-    if (!value?.trim()) {
-      return true;
-    }
-
-    try {
-      return Array.isArray(JSON.parse(value));
-    } catch {
-      return false;
-    }
-  }, "Informe uma lista JSON valida."),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -45,6 +44,14 @@ export function SettingsForm({
   initialConfig,
 }: SettingsFormProps) {
   const [error, setError] = useState("");
+  const [businessHours, setBusinessHours] = useState(() =>
+    createWeeklyHours(initialConfig?.businessHours));
+  const [holidayHours, setHolidayHours] = useState(() =>
+    createHolidayHours(initialConfig?.holidayHours));
+  const [operatingHoursErrors, setOperatingHoursErrors] = useState<OperatingHoursErrors>({
+    businessHours: {},
+    holidayHours: {},
+  });
   const { showToast } = useToast();
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -62,16 +69,23 @@ export function SettingsForm({
       neighborhood: initialConfig?.address?.neighborhood ?? "",
       city: initialConfig?.address?.city ?? "",
       state: initialConfig?.address?.state ?? "",
-      businessHoursJson: JSON.stringify(initialConfig?.businessHours ?? [], null, 2),
     },
   });
 
   async function submit(values: SettingsFormData) {
     setError("");
+    const hoursErrors = validateOperatingHours(businessHours, holidayHours);
+    setOperatingHoursErrors(hoursErrors);
+
+    if (hasOperatingHoursErrors(hoursErrors)) {
+      const message = "Corrija os horarios e feriados destacados antes de salvar.";
+
+      setError(message);
+      showToast(message, "error");
+      return;
+    }
+
     try {
-      const businessHours = values.businessHoursJson?.trim()
-        ? JSON.parse(values.businessHoursJson)
-        : [];
       console.log("Submitting values:", values);
       await clientApi<RestaurantConfigResponse>("admin/restaurant/config", {
         method: "PUT",
@@ -92,7 +106,8 @@ export function SettingsForm({
             city: values.city,
             state: values.state,
           },
-          businessHours,
+          businessHours: normalizeBusinessHours(businessHours),
+          holidayHours: normalizeHolidayHours(holidayHours),
         }),
       });
       showToast("Configuracao salva com sucesso");
@@ -109,6 +124,16 @@ export function SettingsForm({
 
     setError(message);
     showToast(message, "error");
+  }
+
+  function changeBusinessHours(hours: typeof businessHours) {
+    setBusinessHours(hours);
+    setOperatingHoursErrors({ businessHours: {}, holidayHours: {} });
+  }
+
+  function changeHolidayHours(hours: typeof holidayHours) {
+    setHolidayHours(hours);
+    setOperatingHoursErrors({ businessHours: {}, holidayHours: {} });
   }
 
   return (
@@ -164,9 +189,13 @@ export function SettingsForm({
         </GridTwo>
       </Section>
 
-      <Field label="Horarios" error={form.formState.errors.businessHoursJson?.message}>
-        <Textarea mono rows={8} {...form.register("businessHoursJson")} />
-      </Field>
+      <OperatingHoursEditor
+        businessHours={businessHours}
+        holidayHours={holidayHours}
+        errors={operatingHoursErrors}
+        onBusinessHoursChange={changeBusinessHours}
+        onHolidayHoursChange={changeHolidayHours}
+      />
 
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button type="submit" disabled={form.formState.isSubmitting}>
