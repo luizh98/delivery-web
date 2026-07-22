@@ -54,8 +54,8 @@ export function createHolidayHours(hours: HolidayHour[] = []): HolidayHour[] {
   }));
 }
 
-function invalidTimeRange(openTime?: string, closeTime?: string) {
-  return !openTime || !closeTime || closeTime <= openTime;
+function invalidTimeValues(openTime?: string, closeTime?: string) {
+  return !openTime || !closeTime || closeTime === openTime;
 }
 
 export function validateOperatingHours(
@@ -68,9 +68,9 @@ export function validateOperatingHours(
   };
 
   businessHours.forEach((hour) => {
-    if (!hour.closed && invalidTimeRange(hour.openTime, hour.closeTime)) {
+    if (!hour.closed && invalidTimeValues(hour.openTime, hour.closeTime)) {
       errors.businessHours[hour.dayOfWeek ?? ""] =
-        "Informe abertura e fechamento; fechamento deve ser depois da abertura.";
+        "Informe abertura e fechamento com horarios diferentes.";
     }
   });
 
@@ -95,9 +95,9 @@ export function validateOperatingHours(
       holidayErrors.name = "Informe o nome.";
     }
 
-    if (!holiday.closed && invalidTimeRange(holiday.openTime, holiday.closeTime)) {
+    if (!holiday.closed && invalidTimeValues(holiday.openTime, holiday.closeTime)) {
       holidayErrors.time =
-        "Informe abertura e fechamento; fechamento deve ser depois da abertura.";
+        "Informe abertura e fechamento com horarios diferentes.";
     }
 
     if (Object.keys(holidayErrors).length > 0) {
