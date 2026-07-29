@@ -36,6 +36,11 @@ export const TextareaRoot = styled("textarea", {
   paddingTop: "0.5rem",
   paddingBottom: "0.5rem",
 
+  "@media (max-width: 767px)": {
+    // iOS Safari zooms focused form controls whose font size is below 16px.
+    fontSize: "1rem",
+  },
+
   variants: {
     mono: {
       true: {

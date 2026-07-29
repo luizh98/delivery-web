@@ -147,6 +147,12 @@ export const ProductList = styled("div", {
 export const CategorySection = styled("section", {
   scrollMarginTop: "6rem",
   outline: "none",
+
+  "&:not(:first-of-type)": {
+    marginTop: "1rem",
+    borderTop: "1px solid var(--color-border)",
+    paddingTop: "1rem",
+  },
 });
 
 export const CategoryTitle = styled("h2", {
