@@ -9,6 +9,7 @@ import type {
   ProductCategory,
   ProductOptionGroupTemplate,
   RestaurantConfigResponse,
+  UpsellCampaign,
 } from "@/types/api";
 
 async function backendFetch<T>(path: string, init?: RequestInit) {
@@ -73,4 +74,8 @@ export async function getAdminProducts() {
 
 export async function getAdminProductOptionGroups() {
   return (await backendFetch<ProductOptionGroupTemplate[]>("admin/product-option-groups")) ?? [];
+}
+
+export async function getAdminUpsellCampaigns() {
+  return (await backendFetch<UpsellCampaign[]>("admin/upsell-campaigns")) ?? [];
 }

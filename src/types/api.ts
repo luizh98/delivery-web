@@ -176,3 +176,88 @@ export type CurrentUserResponse = {
   email: string;
   roles: string[];
 };
+
+export type UpsellTriggerType =
+  | "PRODUCT"
+  | "CATEGORY"
+  | "ANY_CART_ITEM"
+  | "CART_AMOUNT";
+
+export type UpsellOfferType = "PRODUCT" | "CATEGORY";
+export type UpsellBenefitType = "NONE" | "FIXED_PRICE";
+
+export type UpsellCampaignOffer = {
+  productId?: string;
+  categoryId?: string;
+  displayOrder: number;
+  maximumQuantity?: number;
+};
+
+export type UpsellCampaign = {
+  id: string;
+  name: string;
+  displayTitle: string;
+  active: boolean;
+  priority: number;
+  triggerType: UpsellTriggerType;
+  triggerProductIds: string[];
+  triggerCategoryIds: string[];
+  minimumCartAmountCents?: number | null;
+  maximumCartAmountCents?: number | null;
+  minimumItems: number;
+  maxSuggestions: number;
+  maximumQuantityPerOrder: number;
+  offerType: UpsellOfferType;
+  offers: UpsellCampaignOffer[];
+  benefitType: UpsellBenefitType;
+  fixedOfferPriceCents?: number | null;
+  allowDiscountStacking: boolean;
+  showSavings: boolean;
+  skipIfProductInCart: boolean;
+  skipIfOfferCategoryInCart: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type UpsellSuggestion = {
+  productId: string;
+  categoryId: string;
+  name: string;
+  imageUrl?: string;
+  originalPriceCents: number;
+  offerPriceCents: number;
+  discountAmountCents: number;
+  discountPercentage: number;
+  maximumQuantity: number;
+  requiresOptions: boolean;
+  showSavings: boolean;
+};
+
+export type UpsellPromotionAdjustment = {
+  lineId?: string;
+  productId: string;
+  campaignId: string;
+  eligible: boolean;
+  originalPriceCents: number;
+  offerPriceCents: number;
+  message?: string;
+};
+
+export type CartUpsellResponse = {
+  campaignId?: string;
+  title?: string;
+  suggestions: UpsellSuggestion[];
+  promotionAdjustments: UpsellPromotionAdjustment[];
+};
+
+export type UpsellOfferValidationResponse = {
+  campaignId: string;
+  productId: string;
+  originalPriceCents: number;
+  offerPriceCents: number;
+  discountAmountCents: number;
+  maximumQuantity: number;
+  requiresOptions: boolean;
+};

@@ -3,6 +3,7 @@ import {
   CookingPot,
   LayoutDashboard,
   Settings,
+  Sparkles,
   Tags,
 } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
+  { href: "/admin/catalog/upsell", label: "Upsell", icon: Sparkles },
   { href: "/admin/settings", label: "Config", icon: Settings },
 ];
 

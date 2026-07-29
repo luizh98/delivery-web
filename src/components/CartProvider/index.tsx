@@ -26,10 +26,21 @@ export type CartItem = {
   name: string;
   imageUrl?: string;
   quantity: number;
+  unitOriginalPriceCents?: number;
   unitPriceCents: number;
+  discountAmountCents?: number;
+  upsellCampaignId?: string;
+  maximumPromotionalQuantity?: number;
   observations?: string;
   options: CartOption[];
   totalCents: number;
+};
+
+export const PENDING_UPSELL_STORAGE_KEY = "delivery:pending-upsell";
+
+export type PendingUpsellOffer = {
+  campaignId: string;
+  productId: string;
 };
 
 export type CheckoutDraft = {
@@ -162,6 +173,12 @@ type CartContextValue = {
   addItem: (item: CartItem) => void;
   updateItemQuantity: (lineId: string, change: number) => void;
   removeItem: (lineId: string) => void;
+  applyPromotionAdjustment: (
+    lineId: string,
+    eligible: boolean,
+    originalPriceCents: number,
+    offerPriceCents: number,
+  ) => void;
   updateCheckout: (checkout: CheckoutDraft) => void;
   completeOrder: (order: OrderResponse) => void;
 };
@@ -193,7 +210,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             return item;
           }
 
-          const quantity = Math.max(1, item.quantity + change);
+          const maximumQuantity =
+            item.upsellCampaignId && item.maximumPromotionalQuantity
+              ? item.maximumPromotionalQuantity
+              : Number.MAX_SAFE_INTEGER;
+          const quantity = Math.min(
+            maximumQuantity,
+            Math.max(1, item.quantity + change),
+          );
           const optionsTotalCents = item.options.reduce(
             (sum, option) => sum + option.priceCents,
             0,
@@ -213,6 +237,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = useCallback(
     (lineId: string) => {
       updateItems(snapshot.items.filter((item) => item.lineId !== lineId));
+    },
+    [snapshot.items, updateItems],
+  );
+
+  const applyPromotionAdjustment = useCallback(
+    (
+      lineId: string,
+      eligible: boolean,
+      originalPriceCents: number,
+      offerPriceCents: number,
+    ) => {
+      updateItems(
+        snapshot.items.map((item) => {
+          if (item.lineId !== lineId) {
+            return item;
+          }
+          const unitPriceCents = eligible
+            ? offerPriceCents
+            : originalPriceCents;
+          const optionsTotalCents = item.options.reduce(
+            (sum, option) => sum + option.priceCents,
+            0,
+          );
+          return {
+            ...item,
+            unitOriginalPriceCents: originalPriceCents,
+            unitPriceCents,
+            discountAmountCents:
+              (originalPriceCents - unitPriceCents) * item.quantity,
+            upsellCampaignId: eligible ? item.upsellCampaignId : undefined,
+            maximumPromotionalQuantity: eligible
+              ? item.maximumPromotionalQuantity
+              : undefined,
+            totalCents: (unitPriceCents + optionsTotalCents) * item.quantity,
+          };
+        }),
+      );
     },
     [snapshot.items, updateItems],
   );
@@ -249,6 +310,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         updateItemQuantity,
         removeItem,
+        applyPromotionAdjustment,
         updateCheckout,
         completeOrder,
       }}

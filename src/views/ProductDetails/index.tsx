@@ -11,10 +11,20 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
-import { type CartOption, useCart } from "@/components/CartProvider";
+import {
+  PENDING_UPSELL_STORAGE_KEY,
+  type CartOption,
+  type PendingUpsellOffer,
+  useCart,
+} from "@/components/CartProvider";
 import { Field, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
-import type { ProductOptionGroup, ProductOptionItem } from "@/types/api";
+import { clientApi } from "@/services/api/client";
+import type {
+  ProductOptionGroup,
+  ProductOptionItem,
+  UpsellOfferValidationResponse,
+} from "@/types/api";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
 import {
@@ -56,7 +66,7 @@ const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
 
 export function ProductDetails({ product }: ProductDetailsProps) {
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, ProductOptionItem[]>
   >({});
@@ -64,6 +74,26 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const [observations, setObservations] = useState("");
   const [imageExpanded, setImageExpanded] = useState(false);
   const [invalidGroupIds, setInvalidGroupIds] = useState<string[]>([]);
+  const [pendingUpsell] = useState<PendingUpsellOffer | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    const raw = sessionStorage.getItem(PENDING_UPSELL_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    try {
+      const pending = JSON.parse(raw) as PendingUpsellOffer;
+      return pending.productId === product.id && pending.campaignId
+        ? pending
+        : null;
+    } catch {
+      sessionStorage.removeItem(PENDING_UPSELL_STORAGE_KEY);
+      return null;
+    }
+  });
+  const [upsellError, setUpsellError] = useState("");
+  const [adding, setAdding] = useState(false);
   const flags = activeProductFlags(product);
 
   useEffect(() => {
@@ -121,7 +151,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     }
   }
 
-  function addProduct() {
+  async function addProduct() {
     const invalidRequiredGroupIds = product.optionGroups
       .filter((group) => !group.deleted && group.required)
       .filter((group) => {
@@ -156,19 +186,78 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       0,
     );
 
-    addItem({
-      lineId: crypto.randomUUID(),
-      productId: product.id,
-      name: product.name,
-      imageUrl: product.imageUrl,
-      quantity,
-      unitPriceCents: product.priceCents,
-      observations,
-      options,
-      totalCents: (product.priceCents + optionsTotalCents) * quantity,
-    });
-    sessionStorage.setItem(CART_FEEDBACK_STORAGE_KEY, "true");
-    returnToMenu();
+    setUpsellError("");
+    setAdding(true);
+    try {
+      let originalPriceCents = product.priceCents;
+      let offerPriceCents = product.priceCents;
+      let maximumPromotionalQuantity: number | undefined;
+
+      if (pendingUpsell) {
+        const validation = await clientApi<UpsellOfferValidationResponse>(
+          "public/cart/upsell-offers/validate",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              campaignId: pendingUpsell.campaignId,
+              productId: product.id,
+              quantity,
+              options: options.map((option) => ({
+                groupId: option.groupId,
+                itemId: option.itemId,
+              })),
+              items: items.map((item) => ({
+                lineId: item.lineId,
+                productId: item.productId,
+                quantity: item.quantity,
+                upsellCampaignId: item.upsellCampaignId,
+                options: item.options.map((option) => ({
+                  groupId: option.groupId,
+                  itemId: option.itemId,
+                })),
+              })),
+            }),
+          },
+        );
+        originalPriceCents = validation.originalPriceCents;
+        offerPriceCents = validation.offerPriceCents;
+        maximumPromotionalQuantity = validation.maximumQuantity;
+      }
+
+      addItem({
+        lineId: crypto.randomUUID(),
+        productId: product.id,
+        name: product.name,
+        imageUrl: product.imageUrl,
+        quantity,
+        unitOriginalPriceCents: originalPriceCents,
+        unitPriceCents: offerPriceCents,
+        discountAmountCents:
+          (originalPriceCents - offerPriceCents) * quantity,
+        upsellCampaignId: pendingUpsell?.campaignId,
+        maximumPromotionalQuantity,
+        observations,
+        options,
+        totalCents: (offerPriceCents + optionsTotalCents) * quantity,
+      });
+      if (pendingUpsell) {
+        sessionStorage.removeItem(PENDING_UPSELL_STORAGE_KEY);
+        void clientApi<void>("public/cart/upsell-events", {
+          method: "POST",
+          body: JSON.stringify({
+            campaignId: pendingUpsell.campaignId,
+            productId: product.id,
+            type: "ADDED",
+          }),
+        }).catch(() => undefined);
+      }
+      sessionStorage.setItem(CART_FEEDBACK_STORAGE_KEY, "true");
+      returnToMenu();
+    } catch {
+      setUpsellError("A oferta não está mais disponível. Revise o carrinho.");
+    } finally {
+      setAdding(false);
+    }
   }
 
   return (
@@ -285,6 +374,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             />
           </Field>
 
+          {upsellError ? (
+            <OptionGroupError role="alert">{upsellError}</OptionGroupError>
+          ) : null}
           <QuantityRow>
             <QuantityControl>
               <QuantityButton
@@ -303,9 +395,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 <Plus size={16} />
               </QuantityButton>
             </QuantityControl>
-            <Button type="button" onClick={addProduct}>
+            <Button type="button" onClick={addProduct} disabled={adding}>
               <ShoppingCart size={16} />
-              Adicionar
+              {adding ? "Validando..." : "Adicionar"}
             </Button>
           </QuantityRow>
         </ProductContent>

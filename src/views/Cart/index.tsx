@@ -62,6 +62,7 @@ import {
   TotalsBox,
 } from "@/views/Home/styles";
 import { AddressAutocomplete, type AddressSelection } from "./AddressAutocomplete";
+import { UpsellBlock } from "./UpsellBlock";
 import {
   CartPageContent,
   CartPageHeader,
@@ -256,6 +257,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
           items: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
+            upsellCampaignId: item.upsellCampaignId,
             observations: item.observations,
             options: item.options.map((option) => ({
               groupId: option.groupId,
@@ -398,6 +400,8 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                   </CartItemRow>
                 ))}
               </CartList>
+
+              <UpsellBlock />
 
               <TotalsBox>
                 <TotalGrand>
