@@ -26,6 +26,23 @@ export const HeroBody = styled("div", {
   },
 });
 
+export const ClosedStoreNotice = styled("p", {
+  display: "inline-flex",
+  width: "fit-content",
+  alignItems: "center",
+  gap: "0.375rem",
+  border: "1px solid #dc2626",
+  borderRadius: "9999px",
+  padding: "0.375rem 0.75rem",
+  fontSize: "0.75rem",
+  fontWeight: 600,
+  color: "#dc2626",
+
+  svg: {
+    flexShrink: 0,
+  },
+});
+
 export const Eyebrow = styled("p", {
   fontSize: "0.75rem",
   fontWeight: 600,

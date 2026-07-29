@@ -24,7 +24,23 @@ npm run dev
 ```text
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_DEFAULT_TENANT_SLUG=demo
+GOOGLE_PLACES_API_KEY=
 ```
+
+## Google Places
+
+O checkout usa Places API (New) para sugerir e preencher enderecos de entrega.
+A chave fica somente nos Route Handlers do servidor.
+
+1. Ative faturamento e `Places API (New)` no Google Cloud.
+2. Crie uma chave restrita a Places API e, quando possivel, ao ambiente do servidor.
+3. Defina `GOOGLE_PLACES_API_KEY` em `.env.local`.
+
+Sem chave, checkout continua aceitando preenchimento manual.
+
+Antes de publicar, disponibilize Termos de Uso e Politica de Privacidade conforme
+as politicas da Google Maps Platform:
+https://developers.google.com/maps/documentation/places/web-service/policies
 
 ## Scripts
 

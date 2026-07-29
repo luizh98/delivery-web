@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Banknote,
   Bike,
+  ChevronLeft,
+  CreditCard,
   Minus,
   Plus,
-  ReceiptText,
+  QrCode,
   Store,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import {
   type CartItem,
@@ -22,13 +26,13 @@ import {
 import { Field, Input, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
-import type { OrderResponse } from "@/types/api";
+import type { OrderResponse, RestaurantConfigResponse } from "@/types/api";
 import { money } from "@/utils/format";
+import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import {
   AddressGrid,
   CartCard,
   CartCount,
-  CartHeader,
   CartItem as CartItemRow,
   CartItemContent,
   CartItemControlButton,
@@ -43,7 +47,6 @@ import {
   CartRemovalDialog,
   CartRemovalMessage,
   CartRemovalOverlay,
-  CartTitle,
   CheckoutError,
   CheckoutForm,
   ContinueShoppingButton,
@@ -58,25 +61,77 @@ import {
   TotalStrong,
   TotalsBox,
 } from "@/views/Home/styles";
+import { AddressAutocomplete, type AddressSelection } from "./AddressAutocomplete";
 import {
   CartPageContent,
   CartPageHeader,
   CartPageText,
   CartPageTitle,
+  CartPageTitleRow,
+  CartStepAction,
+  CheckoutConfirmation,
+  CheckoutConfirmationText,
+  CheckoutSection,
+  CheckoutSectionTitle,
+  PaymentGrid,
+  StepIndicator,
+  StepItem,
+  StepNumber,
 } from "./styles";
 
-const checkoutSchema = z.object({
-  customerName: z.string().min(2, "Informe seu nome."),
-  customerPhone: z.string().min(8, "Informe seu telefone."),
-  deliveryType: z.enum(["DELIVERY", "PICKUP"]),
-  street: z.string(),
-  number: z.string(),
-  neighborhood: z.string(),
-  city: z.string(),
-  notes: z.string(),
-});
+const paymentMethods = [
+  { value: "PIX", label: "PIX", icon: QrCode },
+  { value: "CREDIT_CARD", label: "Credito", icon: CreditCard },
+  { value: "DEBIT_CARD", label: "Debito", icon: CreditCard },
+  { value: "CASH", label: "Dinheiro", icon: Banknote },
+] as const;
 
-export function CartView() {
+const checkoutSchema = z
+  .object({
+    customerName: z.string().min(2, "Informe seu nome."),
+    customerPhone: z.string().min(8, "Informe seu telefone."),
+    deliveryType: z.enum(["DELIVERY", "PICKUP"]),
+    street: z.string(),
+    number: z.string(),
+    complement: z.string(),
+    neighborhood: z.string(),
+    city: z.string(),
+    state: z.string(),
+    zipCode: z.string(),
+    paymentMethod: z
+      .enum(["", "PIX", "CREDIT_CARD", "DEBIT_CARD", "CASH"])
+      .refine((value) => value !== "", "Selecione a forma de pagamento."),
+    notes: z.string(),
+  })
+  .superRefine((values, context) => {
+    if (values.deliveryType !== "DELIVERY") {
+      return;
+    }
+
+    const requiredAddressFields = [
+      ["street", values.street, "Informe a rua."],
+      ["number", values.number, "Informe o numero."],
+      ["neighborhood", values.neighborhood, "Informe o bairro."],
+      ["city", values.city, "Informe a cidade."],
+      ["state", values.state, "Informe o estado."],
+    ] as const;
+
+    requiredAddressFields.forEach(([path, value, message]) => {
+      if (!value.trim()) {
+        context.addIssue({
+          code: "custom",
+          path: [path],
+          message,
+        });
+      }
+    });
+  });
+
+type CartViewProps = {
+  restaurantConfig: RestaurantConfigResponse | null;
+};
+
+export function CartView({ restaurantConfig }: CartViewProps) {
   const router = useRouter();
   const {
     items,
@@ -88,6 +143,9 @@ export function CartView() {
     updateCheckout,
     completeOrder,
   } = useCart();
+  const [step, setStep] = useState<1 | 2>(1);
+  const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [itemPendingRemoval, setItemPendingRemoval] = useState<CartItem | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
 
@@ -96,30 +154,20 @@ export function CartView() {
     defaultValues: checkout,
     values: checkout,
   });
-  const watchedCheckout = useWatch({ control: form.control });
   const deliveryType = useWatch({
     control: form.control,
     name: "deliveryType",
   });
+  const paymentMethod = useWatch({
+    control: form.control,
+    name: "paymentMethod",
+  });
   const estimatedDeliveryFeeCents = deliveryType === "DELIVERY" ? 500 : 0;
   const totalCents = subtotalCents + estimatedDeliveryFeeCents;
-
-  useEffect(() => {
-    const nextCheckout: CheckoutDraft = {
-      customerName: watchedCheckout.customerName ?? "",
-      customerPhone: watchedCheckout.customerPhone ?? "",
-      deliveryType: watchedCheckout.deliveryType ?? "DELIVERY",
-      street: watchedCheckout.street ?? "",
-      number: watchedCheckout.number ?? "",
-      neighborhood: watchedCheckout.neighborhood ?? "",
-      city: watchedCheckout.city ?? "",
-      notes: watchedCheckout.notes ?? "",
-    };
-
-    if (JSON.stringify(nextCheckout) !== JSON.stringify(checkout)) {
-      updateCheckout(nextCheckout);
-    }
-  }, [checkout, updateCheckout, watchedCheckout]);
+  const restaurantOpen = restaurantConfig?.open !== false;
+  const closedStoreMessage = restaurantOpen
+    ? ""
+    : formatClosedStoreMessage(restaurantConfig?.nextOpeningAt);
 
   useEffect(() => {
     if (!itemPendingRemoval) {
@@ -136,8 +184,53 @@ export function CartView() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [itemPendingRemoval]);
 
+  function fillAddress(address: AddressSelection) {
+    const addressFields = {
+      street: address.street,
+      number: address.number,
+      neighborhood: address.neighborhood,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+    } as const;
+
+    Object.entries(addressFields).forEach(([field, value]) => {
+      form.setValue(field as keyof typeof addressFields, value, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    });
+
+    updateCheckout({
+      ...form.getValues(),
+      ...addressFields,
+    });
+  }
+
+  function persistRegisteredField(event: ChangeEvent<HTMLFormElement>) {
+    const field = event.target;
+
+    if (
+      (field instanceof HTMLInputElement ||
+        field instanceof HTMLTextAreaElement ||
+        field instanceof HTMLSelectElement) &&
+      field.name
+    ) {
+      updateCheckout(form.getValues());
+    }
+  }
+
   async function submitOrder(values: CheckoutDraft) {
     setCheckoutError("");
+
+    if (!restaurantOpen || !confirmed) {
+      if (!confirmed) {
+        setCheckoutError("Confirme os dados antes de enviar.");
+      }
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       const order = await clientApi<OrderResponse>("public/orders", {
@@ -151,10 +244,14 @@ export function CartView() {
               ? {
                   street: values.street,
                   number: values.number,
+                  complement: values.complement,
                   neighborhood: values.neighborhood,
                   city: values.city,
+                  state: values.state,
+                  zipCode: values.zipCode,
                 }
               : undefined,
+          paymentMethod: values.paymentMethod,
           notes: values.notes,
           items: items.map((item) => ({
             productId: item.productId,
@@ -169,18 +266,26 @@ export function CartView() {
       });
 
       completeOrder(order);
+      setConfirmed(false);
+      setStep(1);
       form.reset({
         customerName: "",
         customerPhone: "",
         deliveryType: "DELIVERY",
         street: "",
         number: "",
+        complement: "",
         neighborhood: "",
         city: "",
+        state: "",
+        zipCode: "",
+        paymentMethod: "",
         notes: "",
       });
     } catch {
       setCheckoutError("Nao foi possivel enviar o pedido.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -188,161 +293,336 @@ export function CartView() {
     <PageShell>
       <CartPageContent>
         <CartPageHeader>
-          <CartPageTitle>Seu carrinho</CartPageTitle>
-          <CartPageText>Revise os itens e informe os dados para concluir.</CartPageText>
+          <CartPageTitleRow>
+            <BackButton
+              onClick={() => (step === 2 ? setStep(1) : router.push("/"))}
+            />
+            <CartPageTitle>Seu pedido</CartPageTitle>
+            <CartCount>{items.length} item(ns)</CartCount>
+          </CartPageTitleRow>
+          <CartPageText>
+            {step === 1
+              ? "Revise os produtos antes de continuar."
+              : "Informe entrega, pagamento e confirme o pedido."}
+          </CartPageText>
         </CartPageHeader>
 
+        <StepIndicator aria-label="Etapas do pedido">
+          <StepItem active={step === 1}>
+            <StepNumber active={step === 1}>1</StepNumber>
+            Produtos
+          </StepItem>
+          <StepItem active={step === 2}>
+            <StepNumber active={step === 2}>2</StepNumber>
+            Conclusao
+          </StepItem>
+        </StepIndicator>
+
+        {items.length === 0 && lastOrder ? (
+          <SuccessBox>
+            Pedido confirmado. Status: {lastOrder.status}. Pagamento:{" "}
+            {paymentMethods.find((method) => method.value === lastOrder.paymentMethod)
+              ?.label ?? lastOrder.paymentMethod}
+          </SuccessBox>
+        ) : null}
+
         <CartCard>
-          <CartHeader>
-            <CartTitle>
-              <ReceiptText size={18} />
-              Seu pedido
-            </CartTitle>
-            <CartCount>{items.length} item(ns)</CartCount>
-          </CartHeader>
+          {step === 1 ? (
+            <>
+              <ContinueShoppingButton type="button" onClick={() => router.push("/")}>
+                <Plus size={16} />
+                Adicionar mais itens
+              </ContinueShoppingButton>
 
-          <ContinueShoppingButton type="button" onClick={() => router.push("/")}>
-            <Plus size={16} />
-            Adicionar mais itens
-          </ContinueShoppingButton>
-
-          <CartList>
-            {items.length === 0 ? <EmptyCart>Carrinho vazio.</EmptyCart> : null}
-            {items.map((item) => (
-              <CartItemRow key={item.lineId}>
-                <CartItemContent>
-                  {item.imageUrl ? (
-                    <CartItemImage
-                      role="img"
-                      aria-label={`Foto de ${item.name}`}
-                      style={{ backgroundImage: `url(${item.imageUrl})` }}
-                    />
-                  ) : null}
-                  <CartItemHeader>
-                    <div>
-                      <CartItemName>{item.name}</CartItemName>
-                      {item.options.map((option) => (
-                        <Muted key={`${option.groupId}-${option.itemId}`}>
-                          + {option.groupName}: {option.itemName}
-                        </Muted>
-                      ))}
-                      {item.observations ? (
-                        <Muted>Obs: {item.observations}</Muted>
+              <CartList>
+                {items.length === 0 ? <EmptyCart>Pedido vazio.</EmptyCart> : null}
+                {items.map((item) => (
+                  <CartItemRow key={item.lineId}>
+                    <CartItemContent>
+                      {item.imageUrl ? (
+                        <CartItemImage
+                          role="img"
+                          aria-label={`Foto de ${item.name}`}
+                          style={{ backgroundImage: `url(${item.imageUrl})` }}
+                        />
                       ) : null}
-                    </div>
-                    <CartItemControls>
-                      <CartItemControlButton
-                        type="button"
-                        destructive={item.quantity === 1}
-                        onClick={() =>
-                          item.quantity === 1
-                            ? setItemPendingRemoval(item)
-                            : updateItemQuantity(item.lineId, -1)
-                        }
-                        aria-label={
-                          item.quantity === 1
-                            ? `Remover ${item.name}`
-                            : `Diminuir quantidade de ${item.name}`
-                        }
-                      >
-                        {item.quantity === 1 ? (
-                          <Trash2 size={16} />
-                        ) : (
-                          <Minus size={16} />
-                        )}
-                      </CartItemControlButton>
-                      <CartItemQuantity aria-label={`Quantidade: ${item.quantity}`}>
-                        {item.quantity}
-                      </CartItemQuantity>
-                      <CartItemControlButton
-                        type="button"
-                        onClick={() => updateItemQuantity(item.lineId, 1)}
-                        aria-label={`Aumentar quantidade de ${item.name}`}
-                      >
-                        <Plus size={16} />
-                      </CartItemControlButton>
-                    </CartItemControls>
-                  </CartItemHeader>
-                </CartItemContent>
-                <CartItemTotal>{money(item.totalCents)}</CartItemTotal>
-              </CartItemRow>
-            ))}
-          </CartList>
+                      <CartItemHeader>
+                        <div>
+                          <CartItemName>{item.name}</CartItemName>
+                          {item.options.map((option) => (
+                            <Muted key={`${option.groupId}-${option.itemId}`}>
+                              + {option.groupName}: {option.itemName}
+                            </Muted>
+                          ))}
+                          {item.observations ? (
+                            <Muted>Obs: {item.observations}</Muted>
+                          ) : null}
+                        </div>
+                        <CartItemControls>
+                          <CartItemControlButton
+                            type="button"
+                            destructive={item.quantity === 1}
+                            onClick={() =>
+                              item.quantity === 1
+                                ? setItemPendingRemoval(item)
+                                : updateItemQuantity(item.lineId, -1)
+                            }
+                            aria-label={
+                              item.quantity === 1
+                                ? `Remover ${item.name}`
+                                : `Diminuir quantidade de ${item.name}`
+                            }
+                          >
+                            {item.quantity === 1 ? (
+                              <Trash2 size={16} />
+                            ) : (
+                              <Minus size={16} />
+                            )}
+                          </CartItemControlButton>
+                          <CartItemQuantity
+                            aria-label={`Quantidade: ${item.quantity}`}
+                          >
+                            {item.quantity}
+                          </CartItemQuantity>
+                          <CartItemControlButton
+                            type="button"
+                            onClick={() => updateItemQuantity(item.lineId, 1)}
+                            aria-label={`Aumentar quantidade de ${item.name}`}
+                          >
+                            <Plus size={16} />
+                          </CartItemControlButton>
+                        </CartItemControls>
+                      </CartItemHeader>
+                    </CartItemContent>
+                    <CartItemTotal>{money(item.totalCents)}</CartItemTotal>
+                  </CartItemRow>
+                ))}
+              </CartList>
 
-          <CheckoutForm onSubmit={form.handleSubmit(submitOrder)}>
-            <DeliveryToggleGrid>
-              <DeliveryButton
-                type="button"
-                selected={deliveryType === "DELIVERY"}
-                onClick={() => form.setValue("deliveryType", "DELIVERY", { shouldDirty: true })}
-              >
-                <Bike size={16} />
-                Entrega
-              </DeliveryButton>
-              <DeliveryButton
-                type="button"
-                selected={deliveryType === "PICKUP"}
-                onClick={() => form.setValue("deliveryType", "PICKUP", { shouldDirty: true })}
-              >
-                <Store size={16} />
-                Retirada
-              </DeliveryButton>
-            </DeliveryToggleGrid>
+              <TotalsBox>
+                <TotalGrand>
+                  Subtotal <TotalStrong>{money(subtotalCents)}</TotalStrong>
+                </TotalGrand>
+              </TotalsBox>
 
-            <Field label="Nome" error={form.formState.errors.customerName?.message}>
-              <Input {...form.register("customerName")} />
-            </Field>
-            <Field
-              label="WhatsApp"
-              error={form.formState.errors.customerPhone?.message}
+              <CartStepAction>
+                <Button
+                  type="button"
+                  disabled={items.length === 0}
+                  onClick={() => setStep(2)}
+                >
+                  Continuar
+                </Button>
+              </CartStepAction>
+            </>
+          ) : (
+            <CheckoutForm
+              onSubmit={form.handleSubmit(submitOrder)}
+              onChange={persistRegisteredField}
             >
-              <Input {...form.register("customerPhone")} />
-            </Field>
+              <Button type="button" variant="outline" onClick={() => setStep(1)}>
+                <ChevronLeft size={16} />
+                Voltar para produtos
+              </Button>
 
-            {deliveryType === "DELIVERY" ? (
-              <DeliveryFields>
-                <Field label="Rua">
-                  <Input {...form.register("street")} />
+              <CheckoutSection>
+                <CheckoutSectionTitle>Como deseja receber?</CheckoutSectionTitle>
+                <DeliveryToggleGrid>
+                  <DeliveryButton
+                    type="button"
+                    selected={deliveryType === "DELIVERY"}
+                    onClick={() => {
+                      form.setValue("deliveryType", "DELIVERY", {
+                        shouldDirty: true,
+                      });
+                      updateCheckout({
+                        ...form.getValues(),
+                        deliveryType: "DELIVERY",
+                      });
+                    }}
+                  >
+                    <Bike size={16} />
+                    Entrega
+                  </DeliveryButton>
+                  <DeliveryButton
+                    type="button"
+                    selected={deliveryType === "PICKUP"}
+                    onClick={() => {
+                      form.setValue("deliveryType", "PICKUP", {
+                        shouldDirty: true,
+                      });
+                      updateCheckout({
+                        ...form.getValues(),
+                        deliveryType: "PICKUP",
+                      });
+                    }}
+                  >
+                    <Store size={16} />
+                    Retirada
+                  </DeliveryButton>
+                </DeliveryToggleGrid>
+              </CheckoutSection>
+
+              <CheckoutSection>
+                <CheckoutSectionTitle>Seus dados</CheckoutSectionTitle>
+                <Field
+                  label="Nome"
+                  error={form.formState.errors.customerName?.message}
+                >
+                  <Input autoComplete="name" {...form.register("customerName")} />
                 </Field>
-                <AddressGrid>
-                  <Field label="Numero">
-                    <Input {...form.register("number")} />
-                  </Field>
-                  <Field label="Bairro">
-                    <Input {...form.register("neighborhood")} />
-                  </Field>
-                </AddressGrid>
-                <Field label="Cidade">
-                  <Input {...form.register("city")} />
+                <Field
+                  label="WhatsApp"
+                  error={form.formState.errors.customerPhone?.message}
+                >
+                  <Input
+                    type="tel"
+                    autoComplete="tel"
+                    {...form.register("customerPhone")}
+                  />
                 </Field>
-              </DeliveryFields>
-            ) : null}
+              </CheckoutSection>
 
-            <Field label="Observacoes do pedido">
-              <Textarea {...form.register("notes")} />
-            </Field>
+              {deliveryType === "DELIVERY" ? (
+                <CheckoutSection>
+                  <CheckoutSectionTitle>Endereco de entrega</CheckoutSectionTitle>
+                  <DeliveryFields>
+                    <AddressAutocomplete onSelect={fillAddress} />
+                    <Field
+                      label="Rua"
+                      error={form.formState.errors.street?.message}
+                    >
+                      <Input autoComplete="address-line1" {...form.register("street")} />
+                    </Field>
+                    <AddressGrid>
+                      <Field
+                        label="Numero"
+                        error={form.formState.errors.number?.message}
+                      >
+                        <Input {...form.register("number")} />
+                      </Field>
+                      <Field
+                        label="Bairro"
+                        error={form.formState.errors.neighborhood?.message}
+                      >
+                        <Input {...form.register("neighborhood")} />
+                      </Field>
+                    </AddressGrid>
+                    <Field label="Complemento">
+                      <Input autoComplete="address-line2" {...form.register("complement")} />
+                    </Field>
+                    <AddressGrid>
+                      <Field
+                        label="Cidade"
+                        error={form.formState.errors.city?.message}
+                      >
+                        <Input autoComplete="address-level2" {...form.register("city")} />
+                      </Field>
+                      <Field
+                        label="Estado"
+                        error={form.formState.errors.state?.message}
+                      >
+                        <Input
+                          maxLength={2}
+                          autoComplete="address-level1"
+                          {...form.register("state")}
+                        />
+                      </Field>
+                    </AddressGrid>
+                    <Field label="CEP">
+                      <Input
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        {...form.register("zipCode")}
+                      />
+                    </Field>
+                  </DeliveryFields>
+                </CheckoutSection>
+              ) : null}
 
-            <TotalsBox>
-              <TotalRow>
-                Subtotal <strong>{money(subtotalCents)}</strong>
-              </TotalRow>
-              <TotalRow>
-                Frete <strong>{money(estimatedDeliveryFeeCents)}</strong>
-              </TotalRow>
-              <TotalGrand>
-                Total <TotalStrong>{money(totalCents)}</TotalStrong>
-              </TotalGrand>
-            </TotalsBox>
+              <CheckoutSection>
+                <CheckoutSectionTitle>Forma de pagamento</CheckoutSectionTitle>
+                <PaymentGrid>
+                  {paymentMethods.map((method) => {
+                    const Icon = method.icon;
 
-            {checkoutError ? <CheckoutError>{checkoutError}</CheckoutError> : null}
-            {lastOrder ? (
-              <SuccessBox>Pedido enviado. Status: {lastOrder.status}</SuccessBox>
-            ) : null}
+                    return (
+                      <DeliveryButton
+                        key={method.value}
+                        type="button"
+                        selected={paymentMethod === method.value}
+                        onClick={() => {
+                          form.setValue("paymentMethod", method.value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                          updateCheckout({
+                            ...form.getValues(),
+                            paymentMethod: method.value,
+                          });
+                        }}
+                      >
+                        <Icon size={16} />
+                        {method.label}
+                      </DeliveryButton>
+                    );
+                  })}
+                </PaymentGrid>
+                {form.formState.errors.paymentMethod ? (
+                  <CheckoutError>
+                    {form.formState.errors.paymentMethod.message}
+                  </CheckoutError>
+                ) : null}
+              </CheckoutSection>
 
-            <Button type="submit" disabled={items.length === 0}>
-              Enviar pedido
-            </Button>
-          </CheckoutForm>
+              <Field label="Observacoes do pedido">
+                <Textarea {...form.register("notes")} />
+              </Field>
+
+              <TotalsBox>
+                <TotalRow>
+                  Subtotal <strong>{money(subtotalCents)}</strong>
+                </TotalRow>
+                <TotalRow>
+                  Frete <strong>{money(estimatedDeliveryFeeCents)}</strong>
+                </TotalRow>
+                <TotalGrand>
+                  Total <TotalStrong>{money(totalCents)}</TotalStrong>
+                </TotalGrand>
+              </TotalsBox>
+
+              <CheckoutConfirmation>
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(event) => setConfirmed(event.target.checked)}
+                />
+                <CheckoutConfirmationText>
+                  Revisei produtos, dados de entrega e pagamento. Confirmo o
+                  envio deste pedido.
+                </CheckoutConfirmationText>
+              </CheckoutConfirmation>
+
+              {checkoutError ? (
+                <CheckoutError role="alert">{checkoutError}</CheckoutError>
+              ) : null}
+              {!restaurantOpen ? (
+                <CheckoutError role="status">{closedStoreMessage}</CheckoutError>
+              ) : null}
+
+              <Button
+                type="submit"
+                disabled={
+                  items.length === 0 ||
+                  !restaurantOpen ||
+                  !confirmed ||
+                  submitting
+                }
+              >
+                {submitting ? "Enviando..." : "Confirmar pedido"}
+              </Button>
+            </CheckoutForm>
+          )}
         </CartCard>
       </CartPageContent>
 
@@ -360,7 +640,7 @@ export function CartView() {
           >
             <CartRemovalMessage id="cart-removal-message">
               Deseja remover <strong>{itemPendingRemoval.name}</strong> do seu
-              carrinho?
+              pedido?
             </CartRemovalMessage>
             <CartRemovalActions>
               <Button

@@ -7,7 +7,7 @@ import { Field, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import { money, statusLabel } from "@/utils/format";
-import type { OrderResponse, OrderStatus } from "@/types/api";
+import type { OrderResponse, OrderStatus, PaymentMethod } from "@/types/api";
 import type { OrdersManagerProps } from "./types";
 import {
   ActionsPanel,
@@ -42,6 +42,13 @@ const nextStatuses: OrderStatus[] = [
   "OUT_FOR_DELIVERY",
   "COMPLETED",
 ];
+
+const paymentLabels: Record<PaymentMethod, string> = {
+  PIX: "PIX",
+  CREDIT_CARD: "Credito",
+  DEBIT_CARD: "Debito",
+  CASH: "Dinheiro",
+};
 
 export function OrdersManager({ initialOrders, title, compact }: OrdersManagerProps) {
   const [orders, setOrders] = useState(initialOrders);
@@ -114,6 +121,11 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                   <CustomerName>{order.customer.name}</CustomerName>
                   <StatusBadge>{statusLabel(order.status)}</StatusBadge>
                   <MutedTiny>{order.deliveryType}</MutedTiny>
+                  <MutedTiny>
+                    {order.paymentMethod
+                      ? paymentLabels[order.paymentMethod]
+                      : "Pagamento nao informado"}
+                  </MutedTiny>
                 </OrderHeader>
                 <MutedText>{order.customer.phone}</MutedText>
                 <ItemList>

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   Minus,
   Plus,
   ShoppingCart,
@@ -10,6 +9,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { type CartOption, useCart } from "@/components/CartProvider";
 import { Field, Textarea } from "@/components/Field";
@@ -18,7 +18,6 @@ import type { ProductOptionGroup, ProductOptionItem } from "@/types/api";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
 import {
-  BackButton,
   ExpandedImage,
   FlagBadge,
   FlagBadges,
@@ -35,7 +34,9 @@ import {
   OptionGroup,
   OptionGroupTitle,
   OptionPrice,
+  OverlayCloseButton,
   ProductContent,
+  ProductBackButton,
   ProductDescription,
   ProductHeader,
   ProductImage,
@@ -51,6 +52,7 @@ import {
 import type { ProductDetailsProps } from "./types";
 
 const PRODUCT_FOCUS_STORAGE_KEY = "delivery:return-focus-product-id";
+const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
 
 export function ProductDetails({ product }: ProductDetailsProps) {
   const router = useRouter();
@@ -165,6 +167,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       options,
       totalCents: (product.priceCents + optionsTotalCents) * quantity,
     });
+    sessionStorage.setItem(CART_FEEDBACK_STORAGE_KEY, "true");
     returnToMenu();
   }
 
@@ -181,13 +184,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
             }}
           />
-          <BackButton
-            type="button"
-            onClick={returnToMenu}
-            aria-label="Voltar ao cardapio"
-          >
-            <ArrowLeft size={20} />
-          </BackButton>
+          <ProductBackButton>
+            <BackButton onClick={returnToMenu} />
+          </ProductBackButton>
           {product.imageUrl ? (
             <ZoomButton
               type="button"
@@ -268,7 +267,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             />
                             {item.name}
                           </span>
-                          <OptionPrice>{money(item.priceCents)}</OptionPrice>
+                          {item.priceCents > 0 ? (
+                            <OptionPrice>{money(item.priceCents)}</OptionPrice>
+                          ) : null}
                         </OptionLabel>
                       );
                     })}
@@ -312,14 +313,14 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
       {imageExpanded && product.imageUrl ? (
         <ImageOverlay role="dialog" aria-modal="true" aria-label="Foto ampliada">
-          <BackButton
+          <OverlayCloseButton
             type="button"
             onClick={() => setImageExpanded(false)}
             aria-label="Fechar foto ampliada"
             autoFocus
           >
             <X size={20} />
-          </BackButton>
+          </OverlayCloseButton>
           <ImageOverlayContent>
             <ExpandedImage src={product.imageUrl} alt={product.name} />
             <ImageOverlayHeader>

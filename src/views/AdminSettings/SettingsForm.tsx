@@ -63,7 +63,7 @@ export function SettingsForm({
       logoUrl: initialConfig?.logoUrl ?? "",
       bannerUrl: initialConfig?.bannerUrl ?? "",
       menuDescription: initialConfig?.menuDescription ??
-        "Escolha seus itens, revise o carrinho e envie o pedido.",
+        "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       primaryColor: initialConfig?.theme?.primaryColor ?? "#0f766e",
       secondaryColor: initialConfig?.theme?.secondaryColor ?? "#f59e0b",

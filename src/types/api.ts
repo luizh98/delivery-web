@@ -40,6 +40,8 @@ export type RestaurantConfigResponse = {
   theme?: Theme;
   businessHours?: BusinessHour[];
   holidayHours?: HolidayHour[];
+  open?: boolean;
+  nextOpeningAt?: string;
 };
 
 export type ProductCategory = {
@@ -104,6 +106,7 @@ export type MenuResponse = {
 };
 
 export type DeliveryType = "DELIVERY" | "PICKUP";
+export type PaymentMethod = "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "CASH";
 
 export type OrderStatus =
   | "RECEIVED"
@@ -147,6 +150,7 @@ export type OrderResponse = {
   };
   deliveryType: DeliveryType;
   deliveryAddress?: Address;
+  paymentMethod?: PaymentMethod;
   notes?: string;
   items: OrderItem[];
   status: OrderStatus;

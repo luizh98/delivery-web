@@ -1,0 +1,178 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { LoaderCircle, MapPin, Search } from "lucide-react";
+import { Field, Input } from "@/components/Field";
+import {
+  AddressSearchControl,
+  AddressSearchIcon,
+  AddressSearchStatus,
+  AddressSuggestion,
+  AddressSuggestions,
+  GoogleMapsAttribution,
+} from "./styles";
+
+export type AddressSelection = {
+  formattedAddress: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+};
+
+type Suggestion = {
+  placeId: string;
+  text: string;
+};
+
+type AddressAutocompleteProps = {
+  onSelect: (address: AddressSelection) => void;
+};
+
+export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
+  const sessionToken = useRef("");
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    sessionToken.current = crypto.randomUUID();
+  }, []);
+
+  useEffect(() => {
+    const input = query.trim();
+
+    if (input.length < 3 || selecting) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch("/api/places/autocomplete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            input,
+            sessionToken: sessionToken.current,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error();
+        }
+
+        const data = (await response.json()) as { suggestions?: Suggestion[] };
+        setSuggestions(data.suggestions ?? []);
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") {
+          return;
+        }
+
+        setSuggestions([]);
+        setError("Busca indisponivel. Preencha o endereco manualmente.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [query, selecting]);
+
+  async function selectSuggestion(suggestion: Suggestion) {
+    setSelecting(true);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/places/details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          placeId: suggestion.placeId,
+          sessionToken: sessionToken.current,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      const address = (await response.json()) as AddressSelection;
+      setQuery(address.formattedAddress || suggestion.text);
+      setSuggestions([]);
+      onSelect(address);
+      sessionToken.current = crypto.randomUUID();
+    } catch {
+      setError("Nao foi possivel preencher. Informe o endereco manualmente.");
+    } finally {
+      setLoading(false);
+      setSelecting(false);
+    }
+  }
+
+  return (
+    <Field label="Buscar endereco">
+      <AddressSearchControl>
+        <AddressSearchIcon aria-hidden="true">
+          {loading ? (
+            <LoaderCircle className="address-search-spinner" size={17} />
+          ) : (
+            <Search size={17} />
+          )}
+        </AddressSearchIcon>
+        <Input
+          value={query}
+          onChange={(event) => {
+            const nextQuery = event.target.value;
+            setQuery(nextQuery);
+
+            if (nextQuery.trim().length < 3) {
+              setSuggestions([]);
+              setError("");
+            }
+          }}
+          placeholder="Digite rua e numero"
+          autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={suggestions.length > 0}
+          aria-controls="address-suggestions"
+        />
+      </AddressSearchControl>
+
+      {suggestions.length > 0 ? (
+        <AddressSuggestions id="address-suggestions" role="listbox">
+          {suggestions.map((suggestion) => (
+            <AddressSuggestion
+              key={suggestion.placeId}
+              type="button"
+              role="option"
+              aria-selected="false"
+              onClick={() => selectSuggestion(suggestion)}
+            >
+              <MapPin size={16} />
+              <span>{suggestion.text}</span>
+            </AddressSuggestion>
+          ))}
+          <GoogleMapsAttribution translate="no">Google Maps</GoogleMapsAttribution>
+        </AddressSuggestions>
+      ) : null}
+
+      {error ? <AddressSearchStatus role="status">{error}</AddressSearchStatus> : null}
+    </Field>
+  );
+}

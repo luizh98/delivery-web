@@ -1,6 +1,6 @@
 import { styled } from "styles";
 
-export const BackButton = styled("button", {
+export const OverlayCloseButton = styled("button", {
   position: "absolute",
   top: "1rem",
   left: "1rem",
@@ -62,6 +62,24 @@ export const ProductLayout = styled("article", {
 export const ImageArea = styled("div", {
   position: "relative",
   minWidth: 0,
+});
+
+export const ProductBackButton = styled("div", {
+  position: "absolute",
+  top: "1rem",
+  left: "1rem",
+  zIndex: 2,
+
+  button: {
+    border: "1px solid rgb(255 255 255 / 0.35)",
+    background: "rgb(0 0 0 / 0.58)",
+    color: "#ffffff",
+    backdropFilter: "blur(6px)",
+  },
+
+  "button:hover": {
+    background: "rgb(0 0 0 / 0.75)",
+  },
 });
 
 export const ProductImage = styled("div", {
@@ -145,6 +163,7 @@ export const ProductHeader = styled("header", {
 });
 
 export const ProductTitle = styled("h1", {
+  minWidth: 0,
   fontSize: "1.5rem",
   fontWeight: 700,
 });

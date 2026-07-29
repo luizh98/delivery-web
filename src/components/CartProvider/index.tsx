@@ -38,8 +38,12 @@ export type CheckoutDraft = {
   deliveryType: "DELIVERY" | "PICKUP";
   street: string;
   number: string;
+  complement: string;
   neighborhood: string;
   city: string;
+  state: string;
+  zipCode: string;
+  paymentMethod: "" | "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "CASH";
   notes: string;
 };
 
@@ -49,8 +53,12 @@ const EMPTY_CHECKOUT: CheckoutDraft = {
   deliveryType: "DELIVERY",
   street: "",
   number: "",
+  complement: "",
   neighborhood: "",
   city: "",
+  state: "",
+  zipCode: "",
+  paymentMethod: "",
   notes: "",
 };
 
@@ -211,9 +219,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateCheckout = useCallback(
     (checkout: CheckoutDraft) => {
-      writeSnapshot({ ...snapshot, checkout });
+      writeSnapshot({ ...getSnapshot(), checkout });
     },
-    [snapshot],
+    [],
   );
 
   const completeOrder = useCallback(

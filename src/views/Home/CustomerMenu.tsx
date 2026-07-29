@@ -7,12 +7,19 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { Clock3, ShoppingBag, ShoppingCart } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Clock3,
+  ShoppingBag,
+  ShoppingCart,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { PageShell } from "@/components/PageShell";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
+import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import type { CustomerMenuProps } from "./types";
 import type { BusinessHour, Product } from "@/types/api";
 import {
@@ -22,6 +29,7 @@ import {
   CategoryProducts,
   CategorySection,
   CategoryTitle,
+  ClosedStoreNotice,
   ContentGrid,
   Empty,
   Eyebrow,
@@ -49,6 +57,9 @@ import {
 
 const PRODUCT_DESCRIPTION_MAX_LENGTH = 120;
 const PRODUCT_FOCUS_STORAGE_KEY = "delivery:return-focus-product-id";
+const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
+const CART_FEEDBACK_CHANGE_EVENT = "delivery-cart-feedback-change";
+const CART_FEEDBACK_DURATION_MS = 2_000;
 const WEEK_DAY_VALUES = [
   "SUNDAY",
   "MONDAY",
@@ -69,6 +80,22 @@ function getCurrentDay() {
 
 function getServerDay() {
   return null;
+}
+
+function subscribeToCartFeedback(onStoreChange: () => void) {
+  window.addEventListener(CART_FEEDBACK_CHANGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener(CART_FEEDBACK_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function getCartFeedback() {
+  return sessionStorage.getItem(CART_FEEDBACK_STORAGE_KEY) === "true";
+}
+
+function getServerCartFeedback() {
+  return false;
 }
 
 function summarizeProductDescription(description?: string) {
@@ -109,13 +136,18 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const { items: cart, subtotalCents } = useCart();
   const initialCategoryId =
     menu.categories.find((category) =>
-      menu.products.some((product) => product.categoryId === category.id),
+    menu.products.some((product) => product.categoryId === category.id),
     )?.id ?? "";
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
   const currentDay = useSyncExternalStore<string | null>(
     subscribeToCurrentDay,
     getCurrentDay,
     getServerDay,
+  );
+  const showCartFeedback = useSyncExternalStore(
+    subscribeToCartFeedback,
+    getCartFeedback,
+    getServerCartFeedback,
   );
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const productRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -124,6 +156,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     currentDay,
   );
   const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
+  const closedStoreMessage =
+    restaurantConfig?.open === false
+      ? formatClosedStoreMessage(restaurantConfig.nextOpeningAt)
+      : null;
 
   const productsByCategory = useMemo(() => {
     const groups = new Map<string, Product[]>();
@@ -147,17 +183,31 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   useEffect(() => {
     const productId = sessionStorage.getItem(PRODUCT_FOCUS_STORAGE_KEY);
 
-    if (!productId) {
+    if (productId) {
+      sessionStorage.removeItem(PRODUCT_FOCUS_STORAGE_KEY);
+
+      const productCard = productRefs.current[productId];
+
+      productCard?.focus({ preventScroll: true });
+      productCard?.scrollIntoView({ block: "center" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showCartFeedback) {
       return;
     }
 
-    sessionStorage.removeItem(PRODUCT_FOCUS_STORAGE_KEY);
+    const feedbackTimeout = window.setTimeout(
+      () => {
+        sessionStorage.removeItem(CART_FEEDBACK_STORAGE_KEY);
+        window.dispatchEvent(new Event(CART_FEEDBACK_CHANGE_EVENT));
+      },
+      CART_FEEDBACK_DURATION_MS,
+    );
 
-    const productCard = productRefs.current[productId];
-
-    productCard?.focus({ preventScroll: true });
-    productCard?.scrollIntoView({ block: "center" });
-  }, []);
+    return () => window.clearTimeout(feedbackTimeout);
+  }, [showCartFeedback]);
 
   function handleCategoryClick(categoryId: string) {
     setActiveCategoryId(categoryId);
@@ -184,11 +234,16 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           </HeroTitle>
           <HeroText>
             {restaurantConfig?.menuDescription?.trim() ||
-              "Escolha seus itens, revise o carrinho e envie o pedido."}
+              "Escolha seus itens, revise o pedido e envie."}
           </HeroText>
-          {todayBusinessHours || minimumOrderCents > 0 ? (
+          {closedStoreMessage || todayBusinessHours || minimumOrderCents > 0 ? (
             <HeroInfoGrid>
-              {todayBusinessHours ? (
+              {closedStoreMessage ? (
+                <ClosedStoreNotice role="status">
+                  <Clock3 size={14} />
+                  {closedStoreMessage}
+                </ClosedStoreNotice>
+              ) : todayBusinessHours ? (
                 <HeroInfoItem>
                   <Clock3 size={14} />
                   <span>Hoje:</span>
@@ -302,13 +357,29 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         <MobileSummary
           type="button"
           onClick={() => router.push("/cart")}
-          aria-label="Abrir pagina do carrinho"
+          aria-label={
+            showCartFeedback
+              ? "Item adicionado ao pedido. Abrir pagina do pedido"
+              : "Abrir pagina do pedido"
+          }
+          aria-live="polite"
+          feedback={showCartFeedback}
         >
-          <MobileSummaryLabel>
-            <ShoppingCart size={18} />
-            Carrinho ({cart.length})
-          </MobileSummaryLabel>
-          <MobileTotal>{money(subtotalCents)}</MobileTotal>
+          {showCartFeedback ? (
+            <MobileSummaryLabel>
+              <Check size={18} />
+              Item adicionado ao pedido
+            </MobileSummaryLabel>
+          ) : (
+            <>
+              <MobileSummaryLabel>
+                <ShoppingCart size={18} />
+                Ver pedido ({cart.length})
+                <ChevronRight size={18} aria-hidden="true" />
+              </MobileSummaryLabel>
+              <MobileTotal>{money(subtotalCents)}</MobileTotal>
+            </>
+          )}
         </MobileSummary>
       </MobileCart>
       </PageShell>
