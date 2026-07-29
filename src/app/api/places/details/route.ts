@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   if (!apiKey) {
     return Response.json(
-      { error: "Busca de endereco indisponivel." },
+      { error: "Busca de endereço indisponível." },
       { status: 503 },
     );
   }
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     typeof body?.sessionToken === "string" ? body.sessionToken : "";
 
   if (!placeId || !SESSION_TOKEN_PATTERN.test(sessionToken)) {
-    return Response.json({ error: "Endereco invalido." }, { status: 400 });
+    return Response.json({ error: "Endereço inválido." }, { status: 400 });
   }
 
   const query = new URLSearchParams({
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     if (!googleResponse.ok) {
       return Response.json(
-        { error: "Nao foi possivel carregar o endereco." },
+        { error: "Não foi possível carregar o endereço." },
         { status: 502 },
       );
     }
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     });
   } catch {
     return Response.json(
-      { error: "Nao foi possivel carregar o endereco." },
+      { error: "Não foi possível carregar o endereço." },
       { status: 502 },
     );
   }

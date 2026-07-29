@@ -6,7 +6,7 @@ type BackButtonProps = ComponentProps<"button">;
 
 export function BackButton({
   type = "button",
-  "aria-label": ariaLabel = "Voltar ao cardapio",
+  "aria-label": ariaLabel = "Voltar ao cardápio",
   ...props
 }: BackButtonProps) {
   return (

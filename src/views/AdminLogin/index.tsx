@@ -12,7 +12,7 @@ import { authApi } from "@/services/api/client";
 import { ErrorText, Form, Root, Subtitle, Title } from "./styles";
 
 const loginSchema = z.object({
-  email: z.string().email("Email invalido."),
+  email: z.string().email("Email inválido."),
   password: z.string().min(1, "Informe a senha."),
 });
 
@@ -39,7 +39,7 @@ export function AdminLoginView() {
       router.push("/admin");
       router.refresh();
     } catch {
-      setError("Credenciais invalidas.");
+      setError("Credenciais inválidas.");
     }
   }
 

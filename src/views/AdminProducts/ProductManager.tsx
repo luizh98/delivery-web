@@ -127,13 +127,13 @@ const PRODUCT_FLAGS: {
     },
     {
       field: "glutenFree",
-      label: "Nao contem gluten",
-      badge: "Sem gluten",
+      label: "Não contém glúten",
+      badge: "Sem glúten",
       styleClass: "flagGluten",
     },
     {
       field: "lactoseFree",
-      label: "Nao contem lactose",
+      label: "Não contém lactose",
       badge: "Sem lactose",
       styleClass: "flagLactose",
     },
@@ -202,16 +202,16 @@ function visibleItems(items: ProductOptionItem[]) {
 }
 
 function selectionsLabel(count: number) {
-  return count === 1 ? "selecao" : "selecoes";
+  return count === 1 ? "seleção" : "seleções";
 }
 
 function groupSummary(group: ProductOptionGroup | ProductOptionGroupTemplate) {
   const items = visibleItems(group.items);
-  const type = group.required ? "Obrigatorio" : "Opcional";
+  const type = group.required ? "Obrigatório" : "Opcional";
   const limit =
     group.minSelections > 0
       ? `${group.minSelections} a ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`
-      : `ate ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`;
+      : `até ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`;
   const itemCount = items.length === 1 ? "1 item" : `${items.length} itens`;
 
   return `${type} - ${limit} - ${itemCount}`;
@@ -459,7 +459,7 @@ export function ProductManager({
       setProducts(await clientApi<Product[]>("admin/products"));
       return true;
     } catch {
-      showToast("Dados salvos, mas nao foi possivel atualizar produtos.", "error");
+      showToast("Dados salvos, mas não foi possível atualizar produtos.", "error");
       return false;
     }
   }
@@ -519,7 +519,7 @@ export function ProductManager({
         showToast("Grupo salvo com sucesso");
       }
     } catch {
-      const message = "Nao foi possivel salvar grupo.";
+      const message = "Não foi possível salvar grupo.";
 
       setTemplateError(message);
       showToast(message, "error");
@@ -551,9 +551,9 @@ export function ProductManager({
       if (editingTemplateId === template.id) {
         cancelReusableGroupEdit();
       }
-      showToast("Grupo excluido com sucesso");
+      showToast("Grupo excluído com sucesso");
     } catch {
-      const message = "Nao foi possivel excluir grupo reutilizavel.";
+      const message = "Não foi possível excluir grupo reutilizável.";
 
       setTemplateError(message);
       showToast(message, "error");
@@ -583,9 +583,9 @@ export function ProductManager({
       if (editingProduct?.id === product.id) {
         resetForm();
       }
-      showToast("Produto excluido com sucesso");
+      showToast("Produto excluído com sucesso");
     } catch {
-      const message = "Nao foi possivel excluir produto.";
+      const message = "Não foi possível excluir produto.";
 
       setError(message);
       showToast(message, "error");
@@ -634,8 +634,8 @@ export function ProductManager({
       }
     } catch {
       const message = editingProduct
-        ? "Nao foi possivel salvar produto."
-        : "Nao foi possivel criar produto.";
+        ? "Não foi possível salvar produto."
+        : "Não foi possível criar produto.";
 
       setError(message);
       showToast(message, "error");
@@ -697,7 +697,7 @@ export function ProductManager({
       <PageHeader>
         <div>
           <PageTitle>Produtos</PageTitle>
-          <PageSubtitle>Itens, precos e opcionais.</PageSubtitle>
+          <PageSubtitle>Itens, preços e opcionais.</PageSubtitle>
         </div>
       </PageHeader>
 
@@ -773,14 +773,14 @@ export function ProductManager({
               </FormTitle>
               {editingProduct ? (
                 <Muted>
-                  Alterando produto e opcionais ja cadastrados.
+                  Alterando produto e opcionais já cadastrados.
                 </Muted>
               ) : null}
             </div>
             {editingProduct ? (
               <Button type="button" variant="ghost" onClick={cancelProductEdit}>
                 <X size={16} />
-                Cancelar edicao
+                Cancelar edição
               </Button>
             ) : null}
           </SectionHeader>
@@ -798,7 +798,7 @@ export function ProductManager({
             <Field label="Nome" error={form.formState.errors.name?.message}>
               <Input {...form.register("name")} />
             </Field>
-            <Field label="Preco (R$)">
+            <Field label="Preço (R$)">
               <Input
                 type="number"
                 min={0}
@@ -812,7 +812,7 @@ export function ProductManager({
             <Field label="Imagem URL">
               <Input {...form.register("imageUrl")} />
             </Field>
-            <Field label="Descricao">
+            <Field label="Descrição">
               <Input {...form.register("description")} />
             </Field>
             <CheckboxBackground>
@@ -841,7 +841,7 @@ export function ProductManager({
 
             <NestedDetails>
               <NestedSummary>
-                <SummaryTitle>Grupos disponiveis</SummaryTitle>
+                <SummaryTitle>Grupos disponíveis</SummaryTitle>
                 <SummaryMetaPlain>
                   <span>
                     {filteredProductTemplates.length} de {optionGroupTemplates.length}
@@ -1020,7 +1020,7 @@ export function ProductManager({
                 <div>
                   <CardTitle>{product.name}</CardTitle>
                   <ProductCategoryText>
-                    {category?.name ?? "Categoria indisponivel"}
+                    {category?.name ?? "Categoria indisponível"}
                   </ProductCategoryText>
                   <Description>{product.description}</Description>
                   <ProductMeta>

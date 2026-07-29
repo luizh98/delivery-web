@@ -5,22 +5,22 @@
 
 ## Description
 
-Ao adicionar um produto ou usar o botao "Voltar", restaurar foco e rolagem no card daquele produto no cardapio.
+Ao adicionar um produto ou usar o botão "Voltar", restaurar foco e rolagem no card daquele produto no cardápio.
 
 ## Files Changed
 
 - `src/views/ProductDetails/index.tsx` — guarda o produto que deve receber foco.
-- `src/views/Home/CustomerMenu.tsx` — restaura foco e posicao do produto na listagem.
+- `src/views/Home/CustomerMenu.tsx` — restaura foco e posição do produto na listagem.
 
 ## Verification
 
-- [x] Adicionar produto retorna ao cardapio com foco no card correspondente.
-- [x] Botao "Voltar" retorna ao cardapio com foco no card correspondente.
-- [x] Card focado fica visivel na tela.
-- [x] Marcador de retorno e removido depois do uso.
+- [x] Adicionar produto retorna ao cardápio com foco no card correspondente.
+- [x] Botão "Voltar" retorna ao cardápio com foco no card correspondente.
+- [x] Card focado fica visível na tela.
+- [x] Marcador de retorno é removido depois do uso.
 - [x] `npm run lint`
 - [x] `npm run build`
 
 ## Commit
 
-Nao criado: worktree possui alteracoes anteriores ainda nao commitadas.
+Não criado: worktree possui alterações anteriores ainda não commitadas.

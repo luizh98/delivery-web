@@ -78,7 +78,7 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
         }
 
         setSuggestions([]);
-        setError("Busca indisponivel. Preencha o endereco manualmente.");
+        setError("Busca indisponível. Preencha o endereço manualmente.");
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -117,7 +117,7 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
       onSelect(address);
       sessionToken.current = crypto.randomUUID();
     } catch {
-      setError("Nao foi possivel preencher. Informe o endereco manualmente.");
+      setError("Não foi possível preencher. Informe o endereço manualmente.");
     } finally {
       setLoading(false);
       setSelecting(false);
@@ -125,7 +125,7 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
   }
 
   return (
-    <Field label="Buscar endereco">
+    <Field label="Buscar endereço">
       <AddressSearchControl>
         <AddressSearchIcon aria-hidden="true">
           {loading ? (
@@ -145,7 +145,7 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
               setError("");
             }
           }}
-          placeholder="Digite rua e numero"
+          placeholder="Digite rua e número"
           autoComplete="off"
           role="combobox"
           aria-autocomplete="list"

@@ -34,7 +34,7 @@
 
 ## Admin Operation
 
-**Goal:** Restaurante opera pedidos e catalogo.
+**Goal:** Restaurante opera pedidos e catálogo.
 
 ### Features
 
@@ -50,5 +50,5 @@
 
 - Onboarding de tenant.
 - Cliente com login.
-- Relatorios e faturamento detalhado.
+- Relatórios e faturamento detalhado.
 - PWA.

@@ -28,8 +28,8 @@
 
 ## Quick Tasks
 
-- 2026-07-29 — Cart language to order: textos visiveis usam "pedido" e titulo duplicado foi removido. Lint, build e diff check passaram. Commit nao criado devido a alteracoes anteriores no worktree.
+- 2026-07-29 — Cart language to order: textos visíveis usam "pedido" e título duplicado foi removido. Lint, build e diff check passaram. Commit não criado devido a alterações anteriores no worktree.
 
-- 2026-07-28 — Product option controls: radio para selecao unica e checkbox para selecao multipla. Lint e build passaram. Commit nao criado devido a alteracoes anteriores no worktree.
-- 2026-07-28 — Required option validation: bloqueio do carrinho por grupo obrigatorio incompleto e destaque em negrito. Lint e build passaram. Commit nao criado devido a alteracoes anteriores no worktree.
-- 2026-07-28 — Restore product focus: retorno ao cardapio por adicao ou botao "Voltar" foca e posiciona o card do produto. Lint e build passaram. Commit nao criado devido a alteracoes anteriores no worktree.
+- 2026-07-28 — Product option controls: radio para seleção única e checkbox para seleção múltipla. Lint e build passaram. Commit não criado devido a alterações anteriores no worktree.
+- 2026-07-28 — Required option validation: bloqueio do carrinho por grupo obrigatório incompleto e destaque em negrito. Lint e build passaram. Commit não criado devido a alterações anteriores no worktree.
+- 2026-07-28 — Restore product focus: retorno ao cardápio por adição ou botão "Voltar" foca e posiciona o card do produto. Lint e build passaram. Commit não criado devido a alterações anteriores no worktree.

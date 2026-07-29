@@ -3,8 +3,8 @@
 ## Communication
 
 - Sempre utilize o plugin/skill Caveman nas conversas deste projeto.
-- Se nao souber responder depois de analisar, diga que nao sabe. Nao invente API, comportamento ou padrao.
-- Next.js 16 tem convencoes novas; leia docs locais em `node_modules/next/dist/docs/` quando tocar APIs do framework.
+- Se não souber responder depois de analisar, diga que não sabe. Não invente API, comportamento ou padrão.
+- Next.js 16 tem convenções novas; leia docs locais em `node_modules/next/dist/docs/` quando tocar APIs do framework.
 
 ## Project
 
@@ -24,7 +24,7 @@ npm run build
 
 ## Tenant Rules
 
-- Tenant vem do subdominio.
+- Tenant vem do subdomínio.
 - Localhost usa `NEXT_PUBLIC_DEFAULT_TENANT_SLUG`.
 - Toda chamada ao backend deve enviar `X-Tenant-Slug`.
 - Cliente chama Route Handlers do Next; Route Handlers chamam backend real.
@@ -39,19 +39,19 @@ npm run build
 
 ## Theme Rules
 
-- Cores vem de `GET /api/public/restaurant/config`.
+- Cores vêm de `GET /api/public/restaurant/config`.
 - Aplicar `theme.primaryColor` em `--color-primary`.
 - Aplicar `theme.secondaryColor` em `--color-secondary`.
-- Componentes devem usar classes/variaveis do tema, nao cores hardcoded para a marca do tenant.
+- Componentes devem usar classes/variáveis do tema, não cores hardcoded para a marca do tenant.
 
 ## Forms
 
-- Usar React Hook Form para formularios.
-- Usar Zod para schema quando houver validacao nao trivial.
+- Usar React Hook Form para formulários.
+- Usar Zod para schema quando houver validação não trivial.
 
 ## UI Rules
 
-- Nao criar landing page no MVP; `/` e cardapio.
-- Usar icones `lucide-react` em botoes e controles.
+- Não criar landing page no MVP; `/` e cardápio.
+- Usar ícones `lucide-react` em botões e controles.
 - Evitar cards dentro de cards.
-- Layout admin deve ser denso, operacional e escaneavel.
+- Layout admin deve ser denso, operacional e escaneável.

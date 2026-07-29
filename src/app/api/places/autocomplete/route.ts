@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
   if (!apiKey) {
     return Response.json(
-      { error: "Busca de endereco indisponivel." },
+      { error: "Busca de endereço indisponível." },
       { status: 503 },
     );
   }
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     typeof body?.sessionToken === "string" ? body.sessionToken : "";
 
   if (input.length < 3 || !SESSION_TOKEN_PATTERN.test(sessionToken)) {
-    return Response.json({ error: "Busca de endereco invalida." }, { status: 400 });
+    return Response.json({ error: "Busca de endereço inválida." }, { status: 400 });
   }
 
   try {
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     if (!googleResponse.ok) {
       return Response.json(
-        { error: "Nao foi possivel buscar enderecos." },
+        { error: "Não foi possível buscar endereços." },
         { status: 502 },
       );
     }
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     return Response.json({ suggestions });
   } catch {
     return Response.json(
-      { error: "Nao foi possivel buscar enderecos." },
+      { error: "Não foi possível buscar endereços." },
       { status: 502 },
     );
   }

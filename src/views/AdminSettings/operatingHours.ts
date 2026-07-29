@@ -2,11 +2,11 @@ import type { BusinessHour, HolidayHour } from "@/types/api";
 
 export const WEEK_DAYS = [
   { value: "MONDAY", label: "Segunda-feira" },
-  { value: "TUESDAY", label: "Terca-feira" },
+  { value: "TUESDAY", label: "Terça-feira" },
   { value: "WEDNESDAY", label: "Quarta-feira" },
   { value: "THURSDAY", label: "Quinta-feira" },
   { value: "FRIDAY", label: "Sexta-feira" },
-  { value: "SATURDAY", label: "Sabado" },
+  { value: "SATURDAY", label: "Sábado" },
   { value: "SUNDAY", label: "Domingo" },
 ] as const;
 
@@ -70,7 +70,7 @@ export function validateOperatingHours(
   businessHours.forEach((hour) => {
     if (!hour.closed && invalidTimeValues(hour.openTime, hour.closeTime)) {
       errors.businessHours[hour.dayOfWeek ?? ""] =
-        "Informe abertura e fechamento com horarios diferentes.";
+        "Informe abertura e fechamento com horários diferentes.";
     }
   });
 
@@ -88,7 +88,7 @@ export function validateOperatingHours(
     if (!holiday.date) {
       holidayErrors.date = "Informe a data.";
     } else if (dateCounts[holiday.date] > 1) {
-      holidayErrors.date = "Ja existe um feriado nesta data.";
+      holidayErrors.date = "Já existe um feriado nesta data.";
     }
 
     if (!holiday.name?.trim()) {
@@ -97,7 +97,7 @@ export function validateOperatingHours(
 
     if (!holiday.closed && invalidTimeValues(holiday.openTime, holiday.closeTime)) {
       holidayErrors.time =
-        "Informe abertura e fechamento com horarios diferentes.";
+        "Informe abertura e fechamento com horários diferentes.";
     }
 
     if (Object.keys(holidayErrors).length > 0) {

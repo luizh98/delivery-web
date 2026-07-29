@@ -2,15 +2,15 @@
 
 ## Result
 
-- Cardapio, feedback, acessibilidade e tela de fechamento agora usam "pedido".
-- Titulo principal da tela mudou de "Seu carrinho" para "Seu pedido".
-- Titulo interno repetido foi removido e a contagem ficou no cabecalho principal.
-- Descricao padrao do cardapio foi atualizada.
-- Nomes internos e rota `/cart` foram preservados para evitar mudanca tecnica desnecessaria.
+- Cardápio, feedback, acessibilidade e tela de fechamento agora usam "pedido".
+- Título principal da tela mudou de "Seu carrinho" para "Seu pedido".
+- Título interno repetido foi removido e a contagem ficou no cabeçalho principal.
+- Descrição padrão do cardápio foi atualizada.
+- Nomes internos e rota `/cart` foram preservados para evitar mudança técnica desnecessária.
 
 ## Verification
 
-- Busca em `src` por "carrinho" — nenhuma ocorrencia visivel encontrada.
+- Busca em `src` por "carrinho" — nenhuma ocorrencia visível encontrada.
 - Contagem de "Seu pedido" em `src/views/Cart/index.tsx` — uma ocorrencia.
 - `npx eslint src/views/Home/CustomerMenu.tsx src/views/Cart/index.tsx src/views/AdminSettings/SettingsForm.tsx` — passou.
 - `npm run lint` — passou.
@@ -19,4 +19,4 @@
 
 ## Commit
 
-Nao criado: worktree possui alteracoes anteriores ainda nao commitadas.
+Não criado: worktree possui alterações anteriores ainda não commitadas.

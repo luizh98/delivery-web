@@ -97,16 +97,16 @@ function toNumber(value: string) {
 }
 
 function selectionsLabel(count: number) {
-  return count === 1 ? "selecao" : "selecoes";
+  return count === 1 ? "seleção" : "seleções";
 }
 
 function groupSummary(group: ProductOptionGroup) {
   const visibleItems = group.items.filter((item) => !item.deleted);
-  const type = group.required ? "Obrigatorio" : "Opcional";
+  const type = group.required ? "Obrigatório" : "Opcional";
   const limit =
     group.minSelections > 0
       ? `${group.minSelections} a ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`
-      : `ate ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`;
+      : `até ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`;
   const items = visibleItems.length === 1 ? "1 item" : `${visibleItems.length} itens`;
 
   return `${type} - ${limit} - ${items}`;
@@ -228,7 +228,7 @@ export function ProductOptionsBuilder({
       {visibleGroups.length === 0 ? (
         <EmptyInfo>
           <p>Nenhum opcional cadastrado.</p>
-          <p>Use quando o cliente puder escolher molhos, adicionais ou variacoes.</p>
+          <p>Use quando o cliente puder escolher molhos, adicionais ou variações.</p>
         </EmptyInfo>
       ) : null}
 
@@ -301,7 +301,7 @@ export function ProductOptionsBuilder({
                       })
                     }
                   />
-                  Obrigatorio
+                  Obrigatório
                 </CheckboxSurface>
                 <Button type="button" variant="outline" onClick={() => addItem(groupIndex)}>
                   <Plus size={16} />
@@ -310,7 +310,7 @@ export function ProductOptionsBuilder({
               </GroupFields>
 
               <GridTwo>
-                <Field label="Minimo" error={groupErrors?.minSelections}>
+                <Field label="Mínimo" error={groupErrors?.minSelections}>
                   <Input
                     type="number"
                     min={0}
@@ -323,7 +323,7 @@ export function ProductOptionsBuilder({
                     }
                   />
                 </Field>
-                <Field label="Maximo" error={groupErrors?.maxSelections}>
+                <Field label="Máximo" error={groupErrors?.maxSelections}>
                   <Input
                     type="number"
                     min={1}
@@ -402,7 +402,7 @@ export function ProductOptionsBuilder({
                             placeholder="Ex: Barbecue"
                           />
                         </Field>
-                        <Field label="Preco (R$)" error={itemErrors?.priceCents}>
+                        <Field label="Preço (R$)" error={itemErrors?.priceCents}>
                           <Input
                             type="number"
                             min={0}

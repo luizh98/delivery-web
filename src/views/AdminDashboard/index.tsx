@@ -25,21 +25,21 @@ export async function AdminDashboardView() {
     { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
     { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
     { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
-    { href: "/admin/settings", label: "Configuracao", icon: Settings },
+    { href: "/admin/settings", label: "Configuração", icon: Settings },
   ];
 
   return (
     <Root>
       <div>
         <Title>Painel</Title>
-        <Subtitle>Operacao do restaurante.</Subtitle>
+        <Subtitle>Operação do restaurante.</Subtitle>
       </div>
 
       <MetricsGrid>
         <Metric label="Pedidos ativos" value={activeOrders.length.toString()} />
         <Metric label="Total de pedidos" value={orders.length.toString()} />
         <Metric
-          label="Ultimo status"
+          label="Último status"
           value={orders[0] ? statusLabel(orders[0].status) : "-"}
         />
       </MetricsGrid>

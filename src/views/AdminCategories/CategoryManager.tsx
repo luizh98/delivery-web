@@ -131,8 +131,8 @@ export function CategoryManager({
       showToast("Categoria salva com sucesso");
     } catch {
       const message = editingCategoryId
-        ? "Nao foi possivel salvar categoria."
-        : "Nao foi possivel criar categoria.";
+        ? "Não foi possível salvar categoria."
+        : "Não foi possível criar categoria.";
 
       setError(message);
       showToast(message, "error");
@@ -160,9 +160,9 @@ export function CategoryManager({
       if (editingCategoryId === category.id) {
         resetCategoryForm();
       }
-      showToast("Categoria excluida com sucesso");
+      showToast("Categoria excluída com sucesso");
     } catch {
-      const message = "Nao foi possivel excluir categoria.";
+      const message = "Não foi possível excluir categoria.";
 
       setError(message);
       showToast(message, "error");
@@ -176,7 +176,7 @@ export function CategoryManager({
       {showHeader ? (
         <div>
           <Title>Categorias</Title>
-          <Subtitle>Organizacao do cardapio.</Subtitle>
+          <Subtitle>Organização do cardápio.</Subtitle>
         </div>
       ) : null}
 
@@ -210,7 +210,7 @@ export function CategoryManager({
               <Field label="Nome" error={form.formState.errors.name?.message}>
                 <Input {...form.register("name")} />
               </Field>
-              <Field label="Descricao">
+              <Field label="Descrição">
                 <Input {...form.register("description")} />
               </Field>
               <Field label="Ordem">
@@ -240,7 +240,7 @@ export function CategoryManager({
           <div>
             <SectionTitle>Categorias cadastradas</SectionTitle>
             <SectionHelp>
-              {categories.length} categoria(s) disponivel(is)
+              {categories.length} categoria(s) disponível(is)
             </SectionHelp>
           </div>
 

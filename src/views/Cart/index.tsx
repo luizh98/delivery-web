@@ -81,8 +81,8 @@ import {
 
 const paymentMethods = [
   { value: "PIX", label: "PIX", icon: QrCode },
-  { value: "CREDIT_CARD", label: "Credito", icon: CreditCard },
-  { value: "DEBIT_CARD", label: "Debito", icon: CreditCard },
+  { value: "CREDIT_CARD", label: "Crédito", icon: CreditCard },
+  { value: "DEBIT_CARD", label: "Débito", icon: CreditCard },
   { value: "CASH", label: "Dinheiro", icon: Banknote },
 ] as const;
 
@@ -110,7 +110,7 @@ const checkoutSchema = z
 
     const requiredAddressFields = [
       ["street", values.street, "Informe a rua."],
-      ["number", values.number, "Informe o numero."],
+      ["number", values.number, "Informe o número."],
       ["neighborhood", values.neighborhood, "Informe o bairro."],
       ["city", values.city, "Informe a cidade."],
       ["state", values.state, "Informe o estado."],
@@ -283,7 +283,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
         notes: "",
       });
     } catch {
-      setCheckoutError("Nao foi possivel enviar o pedido.");
+      setCheckoutError("Não foi possível enviar o pedido.");
     } finally {
       setSubmitting(false);
     }
@@ -314,7 +314,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
           </StepItem>
           <StepItem active={step === 2}>
             <StepNumber active={step === 2}>2</StepNumber>
-            Conclusao
+            Conclusão
           </StepItem>
         </StepIndicator>
 
@@ -485,7 +485,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
 
               {deliveryType === "DELIVERY" ? (
                 <CheckoutSection>
-                  <CheckoutSectionTitle>Endereco de entrega</CheckoutSectionTitle>
+                  <CheckoutSectionTitle>Endereço de entrega</CheckoutSectionTitle>
                   <DeliveryFields>
                     <AddressAutocomplete onSelect={fillAddress} />
                     <Field
@@ -496,7 +496,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                     </Field>
                     <AddressGrid>
                       <Field
-                        label="Numero"
+                        label="Número"
                         error={form.formState.errors.number?.message}
                       >
                         <Input {...form.register("number")} />
@@ -575,7 +575,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                 ) : null}
               </CheckoutSection>
 
-              <Field label="Observacoes do pedido">
+              <Field label="Observações do pedido">
                 <Textarea {...form.register("notes")} />
               </Field>
 
@@ -634,7 +634,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
           <CartRemovalDialog
             role="dialog"
             aria-modal="true"
-            aria-label="Confirmar remocao de item"
+            aria-label="Confirmar remoção de item"
             aria-describedby="cart-removal-message"
             onClick={(event) => event.stopPropagation()}
           >

@@ -15,7 +15,7 @@ Delivery Web needs a mobile-first frontend foundation that can serve public orde
 
 ### P1: Public Menu
 
-**User Story**: As a customer, I want to see the restaurant menu on mobile so that I can start an order quickly.
+**User Story**: As a customer, I want to see the restaurant menu on mobile só that I can start an order quickly.
 
 **Acceptance Criteria**:
 
@@ -29,7 +29,7 @@ Delivery Web needs a mobile-first frontend foundation that can serve public orde
 
 ### P1: Tenant API Calls
 
-**User Story**: As SaaS operator, I want every backend call scoped by tenant so data stays isolated.
+**User Story**: As SaaS operator, I want every backend call scoped by tenant só data stays isolated.
 
 **Acceptance Criteria**:
 
@@ -43,7 +43,7 @@ Delivery Web needs a mobile-first frontend foundation that can serve public orde
 
 ### P1: Admin Auth
 
-**User Story**: As admin, I want login so that I can access protected admin pages.
+**User Story**: As admin, I want login só that I can access protected admin pages.
 
 **Acceptance Criteria**:
 
@@ -57,7 +57,7 @@ Delivery Web needs a mobile-first frontend foundation that can serve public orde
 
 ### P1: Admin Operation Skeleton
 
-**User Story**: As admin, I want basic screens for orders, kitchen, catalog and settings so that backend capabilities are usable.
+**User Story**: As admin, I want basic screens for orders, kitchen, catalog and settings só that backend capabilities are usable.
 
 **Acceptance Criteria**:
 

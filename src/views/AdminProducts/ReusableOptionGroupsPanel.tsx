@@ -55,16 +55,16 @@ function visibleItems(items: ProductOptionItem[]) {
 }
 
 function selectionsLabel(count: number) {
-  return count === 1 ? "selecao" : "selecoes";
+  return count === 1 ? "seleção" : "seleções";
 }
 
 function groupSummary(group: ProductOptionGroup | ProductOptionGroupTemplate) {
   const items = visibleItems(group.items);
-  const type = group.required ? "Obrigatorio" : "Opcional";
+  const type = group.required ? "Obrigatório" : "Opcional";
   const limit =
     group.minSelections > 0
       ? `${group.minSelections} a ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`
-      : `ate ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`;
+      : `até ${group.maxSelections} ${selectionsLabel(group.maxSelections)}`;
   const itemCount = items.length === 1 ? "1 item" : `${items.length} itens`;
 
   return `${type} - ${limit} - ${itemCount}`;
@@ -133,7 +133,7 @@ export function ReusableOptionGroupsPanel({
         <div>
           <BuilderTitle>Cadastro de grupos</BuilderTitle>
           <Muted>
-            Crie, pesquise, altere e exclua grupos reutilizaveis.
+            Crie, pesquise, altere e exclua grupos reutilizáveis.
           </Muted>
         </div>
       ) : null}
@@ -203,7 +203,7 @@ export function ReusableOptionGroupsPanel({
           <div>
             <SectionTitle>Grupos cadastrados</SectionTitle>
             <Muted>
-              {templates.length} grupo(s) disponivel(is)
+              {templates.length} grupo(s) disponível(is)
             </Muted>
           </div>
 

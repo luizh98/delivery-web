@@ -30,7 +30,7 @@ const settingsSchema = z.object({
   logoUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   menuDescription: z.string().optional(),
-  minimumOrderReais: z.number().min(0, "Pedido minimo nao pode ser negativo."),
+  minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   primaryColor: z.string().min(4),
   secondaryColor: z.string().min(4),
   street: z.string().optional(),
@@ -81,7 +81,7 @@ export function SettingsForm({
     setOperatingHoursErrors(hoursErrors);
 
     if (hasOperatingHoursErrors(hoursErrors)) {
-      const message = "Corrija os horarios e feriados destacados antes de salvar.";
+      const message = "Corrija os horários e feriados destacados antes de salvar.";
 
       setError(message);
       showToast(message, "error");
@@ -114,9 +114,9 @@ export function SettingsForm({
           holidayHours: normalizeHolidayHours(holidayHours),
         }),
       });
-      showToast("Configuracao salva com sucesso");
+      showToast("Configuração salva com sucesso");
     } catch {
-      const message = "Nao foi possivel salvar configuracao.";
+      const message = "Não foi possível salvar configuração.";
 
       setError(message);
       showToast(message, "error");
@@ -143,7 +143,7 @@ export function SettingsForm({
   return (
     <Form onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
       <div>
-        <Title>Configuracao</Title>
+        <Title>Configuração</Title>
         <Subtitle>Identidade, tema e funcionamento.</Subtitle>
       </div>
 
@@ -165,7 +165,7 @@ export function SettingsForm({
             <Textarea rows={3} {...form.register("menuDescription")} />
           </Field>
           <Field
-            label="Pedido minimo (R$)"
+            label="Pedido mínimo (R$)"
             error={form.formState.errors.minimumOrderReais?.message}
           >
             <Input
@@ -175,10 +175,10 @@ export function SettingsForm({
               {...form.register("minimumOrderReais", { valueAsNumber: true })}
             />
           </Field>
-          <Field label="Cor primaria">
+          <Field label="Cor primária">
             <Input type="color" {...form.register("primaryColor")} />
           </Field>
-          <Field label="Cor secundaria">
+          <Field label="Cor secundária">
             <Input type="color" {...form.register("secondaryColor")} />
           </Field>
         </GridTwo>
@@ -189,7 +189,7 @@ export function SettingsForm({
           <Field label="Rua">
             <Input {...form.register("street")} />
           </Field>
-          <Field label="Numero">
+          <Field label="Número">
             <Input {...form.register("number")} />
           </Field>
           <Field label="Bairro">

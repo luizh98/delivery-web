@@ -45,8 +45,8 @@ const nextStatuses: OrderStatus[] = [
 
 const paymentLabels: Record<PaymentMethod, string> = {
   PIX: "PIX",
-  CREDIT_CARD: "Credito",
-  DEBIT_CARD: "Debito",
+  CREDIT_CARD: "Crédito",
+  DEBIT_CARD: "Débito",
   CASH: "Dinheiro",
 };
 
@@ -66,7 +66,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
       showToast("Pedido atualizado com sucesso");
     } catch {
-      showToast("Nao foi possivel atualizar pedido.", "error");
+      showToast("Não foi possível atualizar pedido.", "error");
     }
   }
 
@@ -84,7 +84,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       setCancelReason("");
       showToast("Pedido cancelado com sucesso");
     } catch {
-      showToast("Nao foi possivel cancelar pedido.", "error");
+      showToast("Não foi possível cancelar pedido.", "error");
     }
   }
 
@@ -124,7 +124,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                   <MutedTiny>
                     {order.paymentMethod
                       ? paymentLabels[order.paymentMethod]
-                      : "Pagamento nao informado"}
+                      : "Pagamento não informado"}
                   </MutedTiny>
                 </OrderHeader>
                 <MutedText>{order.customer.phone}</MutedText>
@@ -193,7 +193,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
 
       {printText ? (
         <PrintSection>
-          <PrintTitle>Impressao</PrintTitle>
+          <PrintTitle>Impressão</PrintTitle>
           <PrintBody>
             {printText}
           </PrintBody>

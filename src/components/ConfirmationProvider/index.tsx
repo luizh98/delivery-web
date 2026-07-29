@@ -86,7 +86,7 @@ export function ConfirmationProvider({ children }: { children: ReactNode }) {
               </IconWrap>
               <Copy>
                 <Title id="confirmation-title">
-                  Confirmacao
+                  Confirmação
                 </Title>
                 <Message>{pendingConfirmation.message}</Message>
               </Copy>

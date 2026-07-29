@@ -99,7 +99,7 @@ function getServerCartFeedback() {
 }
 
 function summarizeProductDescription(description?: string) {
-  const text = description?.trim() || "Sem descricao.";
+  const text = description?.trim() || "Sem descrição.";
 
   if (text.length <= PRODUCT_DESCRIPTION_MAX_LENGTH) {
     return text;
@@ -128,7 +128,7 @@ function formatTodayBusinessHours(
 
   return hour.openTime && hour.closeTime
     ? `${hour.openTime.slice(0, 5)} - ${hour.closeTime.slice(0, 5)}`
-    : "Horario nao informado";
+    : "Horário não informado";
 }
 
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
@@ -228,7 +228,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           }}
         />
         <HeroBody>
-          <Eyebrow>Cardapio</Eyebrow>
+          <Eyebrow>Cardápio</Eyebrow>
           <HeroTitle>
             {restaurantConfig?.name ?? "Delivery"}
           </HeroTitle>
@@ -253,7 +253,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               {minimumOrderCents > 0 ? (
                 <HeroInfoItem>
                   <ShoppingBag size={14} />
-                  <span>Pedido minimo:</span>
+                  <span>Pedido mínimo:</span>
                   <strong>{money(minimumOrderCents)}</strong>
                 </HeroInfoItem>
               ) : null}
@@ -359,8 +359,8 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           onClick={() => router.push("/cart")}
           aria-label={
             showCartFeedback
-              ? "Item adicionado ao pedido. Abrir pagina do pedido"
-              : "Abrir pagina do pedido"
+              ? "Item adicionado ao pedido. Abrir página do pedido"
+              : "Abrir página do pedido"
           }
           aria-live="polite"
           feedback={showCartFeedback}

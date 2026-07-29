@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Delivery Web",
-  description: "Cardapio e painel admin para delivery.",
+  description: "Cardápio e painel admin para delivery.",
 };
 
 export const viewport: Viewport = {

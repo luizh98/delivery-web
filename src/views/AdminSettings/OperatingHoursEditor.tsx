@@ -68,7 +68,7 @@ function WorkStatusOptions({ closed, label, onChange }: WorkStatusOptionsProps) 
             }
           }}
         />
-        <span>Nao trabalha</span>
+        <span>Não trabalha</span>
       </StatusToggle>
     </StatusOptions>
   );
@@ -100,9 +100,9 @@ export function OperatingHoursEditor({
       <Section>
         <SectionHeader>
           <div>
-            <SectionTitle>Horario semanal</SectionTitle>
+            <SectionTitle>Horário semanal</SectionTitle>
             <SectionDescription>
-              Marque os dias abertos e informe o periodo de atendimento.
+              Marque os dias abertos e informe o período de atendimento.
             </SectionDescription>
           </div>
         </SectionHeader>
@@ -154,7 +154,7 @@ export function OperatingHoursEditor({
           <div>
             <SectionTitle>Feriados e datas especiais</SectionTitle>
             <SectionDescription>
-              Cadastre cada data e escolha se o restaurante fecha ou trabalha em horario especial.
+              Cadastre cada data e escolha se o restaurante fecha ou trabalha em horário especial.
             </SectionDescription>
           </div>
           <Button

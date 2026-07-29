@@ -229,16 +229,16 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                     <OptionGroupTitle>{group.name}</OptionGroupTitle>
                     <Muted>
                       {group.required ? (
-                        <strong>Obrigatorio</strong>
+                        <strong>Obrigatório</strong>
                       ) : (
                         "Opcional"
                       )}{" "}
-                      - selecione ate {group.maxSelections || 1}
+                      - selecione até {group.maxSelections || 1}
                     </Muted>
                     {isInvalid ? (
                       <OptionGroupError role="alert">
                         Selecione pelo menos {minimumSelections}{" "}
-                        {minimumSelections === 1 ? "opcao" : "opcoes"}.
+                        {minimumSelections === 1 ? "opção" : "opções"}.
                       </OptionGroupError>
                     ) : null}
                   </div>
@@ -277,7 +277,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               );
             })}
 
-          <Field label="Observacao">
+          <Field label="Observação">
             <Textarea
               value={observations}
               onChange={(event) => setObservations(event.target.value)}
@@ -326,7 +326,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             <ImageOverlayHeader>
               <ImageOverlayTitle>{product.name}</ImageOverlayTitle>
               <ImageOverlayDescription>
-                {product.description || "Sem descricao."}
+                {product.description || "Sem descrição."}
               </ImageOverlayDescription>
             </ImageOverlayHeader>
           </ImageOverlayContent>

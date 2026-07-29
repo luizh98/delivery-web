@@ -39,19 +39,19 @@ export function validateOptionGroups(
     }
 
     if (!Number.isInteger(group.minSelections) || group.minSelections < 0) {
-      groupErrors.minSelections = "Minimo deve ser zero ou maior.";
+      groupErrors.minSelections = "Mínimo deve ser zero ou maior.";
     }
 
     if (!Number.isInteger(group.maxSelections) || group.maxSelections < 1) {
-      groupErrors.maxSelections = "Maximo deve ser pelo menos 1.";
+      groupErrors.maxSelections = "Máximo deve ser pelo menos 1.";
     }
 
     if (group.required && group.minSelections < 1) {
-      groupErrors.minSelections = "Grupo obrigatorio precisa de minimo 1.";
+      groupErrors.minSelections = "Grupo obrigatório precisa de mínimo 1.";
     }
 
     if (group.maxSelections < group.minSelections) {
-      groupErrors.maxSelections = "Maximo deve ser maior ou igual ao minimo.";
+      groupErrors.maxSelections = "Máximo deve ser maior ou igual ao mínimo.";
     }
 
     if (!visibleItems.length) {
@@ -70,7 +70,7 @@ export function validateOptionGroups(
       }
 
       if (!Number.isInteger(item.priceCents) || item.priceCents < 0) {
-        itemErrors.priceCents = "Preco deve ser um valor em reais zero ou maior.";
+        itemErrors.priceCents = "Preço deve ser um valor em reais zero ou maior.";
       }
 
       if (Object.keys(itemErrors).length > 0) {

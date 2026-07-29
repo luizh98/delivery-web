@@ -2,11 +2,11 @@
 
 ## Result
 
-- Adicao ao carrinho e bloqueada quando grupo obrigatorio nao atinge o minimo.
-- Minimo efetivo usa `max(1, minSelections)`.
-- Grupo incompleto recebe mensagem de validacao.
-- Mensagem desaparece quando a selecao fica valida.
-- Texto "Obrigatorio" aparece em negrito, mantendo tamanho e fonte.
+- Adição ao carrinho é bloqueada quando grupo obrigatório não atinge o mínimo.
+- Mínimo efetivo usa `max(1, minSelections)`.
+- Grupo incompleto recebe mensagem de validação.
+- Mensagem desaparece quando a seleção fica valida.
+- Texto "Obrigatório" aparece em negrito, mantendo tamanho e fonte.
 
 ## Verification
 
@@ -15,4 +15,4 @@
 
 ## Commit
 
-Nao criado: worktree possui alteracoes anteriores ainda nao commitadas.
+Não criado: worktree possui alterações anteriores ainda não commitadas.

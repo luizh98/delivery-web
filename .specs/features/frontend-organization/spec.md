@@ -26,7 +26,7 @@ Delivery Web component files were grouped by feature/domain and then briefly mov
 
 ### P1: Layer-Based Navigation
 
-**User Story**: As a developer, I want files organized by technical responsibility so that I can locate routes, views, reusable components and API code quickly.
+**User Story**: As a developer, I want files organized by technical responsibility só that I can locate routes, views, reusable components and API code quickly.
 
 **Acceptance Criteria**:
 

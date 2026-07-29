@@ -4,8 +4,8 @@
 
 - Grupos com `maxSelections` igual a 1 exibem radio buttons.
 - Grupos com `maxSelections` maior que 1 exibem checkboxes.
-- Controles usam elementos HTML nativos e a cor primaria do tema.
-- Logica existente de selecao e limite maximo foi preservada.
+- Controles usam elementos HTML nativos e a cor primária do tema.
+- Lógica existente de seleção e limite máximo foi preservada.
 
 ## Verification
 
@@ -14,4 +14,4 @@
 
 ## Commit
 
-Nao criado: worktree possui alteracoes anteriores ainda nao commitadas.
+Não criado: worktree possui alterações anteriores ainda não commitadas.

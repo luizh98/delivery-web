@@ -5,18 +5,18 @@
 
 ## Description
 
-Trocar textos visiveis de carrinho por pedido e exibir o titulo "Seu pedido" uma unica vez na tela de fechamento.
+Trocar textos visíveis de carrinho por pedido e exibir o título "Seu pedido" uma única vez na tela de fechamento.
 
 ## Files Changed
 
-- `src/views/Home/CustomerMenu.tsx` — atualiza textos do cardapio, botao fixo, feedback e acessibilidade.
-- `src/views/Cart/index.tsx` — atualiza textos da tela e remove o titulo interno repetido.
-- `src/views/AdminSettings/SettingsForm.tsx` — atualiza a descricao padrao configuravel.
+- `src/views/Home/CustomerMenu.tsx` — atualiza textos do cardápio, botão fixo, feedback e acessibilidade.
+- `src/views/Cart/index.tsx` — atualiza textos da tela e remove o título interno repetido.
+- `src/views/AdminSettings/SettingsForm.tsx` — atualiza a descrição padrão configurável.
 
 ## Verification
 
-- [x] Nenhum texto visivel ou acessivel em `src` usa "carrinho".
-- [x] Tela de pedido exibe "Seu pedido" uma unica vez.
+- [x] Nenhum texto visível ou acessivel em `src` usa "carrinho".
+- [x] Tela de pedido exibe "Seu pedido" uma única vez.
 - [x] ESLint dos arquivos alterados passa.
 - [x] `npm run lint`
 - [x] `npm run build`
@@ -24,4 +24,4 @@ Trocar textos visiveis de carrinho por pedido e exibir o titulo "Seu pedido" uma
 
 ## Commit
 
-Nao criado: worktree possui alteracoes anteriores ainda nao commitadas.
+Não criado: worktree possui alterações anteriores ainda não commitadas.

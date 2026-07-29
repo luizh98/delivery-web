@@ -14,7 +14,7 @@ const PRODUCT_FLAGS: {
   tone: ProductFlagTone;
 }[] = [
   { field: "adultOnly", label: "+18", tone: "adult" },
-  { field: "glutenFree", label: "Sem gluten", tone: "gluten" },
+  { field: "glutenFree", label: "Sem glúten", tone: "gluten" },
   { field: "lactoseFree", label: "Sem lactose", tone: "lactose" },
   { field: "vegetarian", label: "Vegetariano", tone: "vegetarian" },
 ];

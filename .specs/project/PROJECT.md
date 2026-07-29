@@ -1,12 +1,12 @@
 # Delivery Web
 
 **Vision:** Frontend mobile-first para MVP SaaS de delivery, atendendo cliente final e painel admin no mesmo app.
-**For:** Restaurantes que vendem por cardapio web e operam pedidos em painel simples.
-**Solves:** Permite pedido online, checkout visitante, personalizacao visual por tenant e gestao operacional basica.
+**For:** Restaurantes que vendem por cardápio web e operam pedidos em painel simples.
+**Solves:** Permite pedido online, checkout visitante, personalização visual por tenant e gestão operacional básica.
 
 ## Goals
 
-- Renderizar cardapio e checkout usando dados tenant-scoped do backend.
+- Renderizar cardápio e checkout usando dados tenant-scoped do backend.
 - Proteger admin com JWT em cookie HttpOnly.
 - Aplicar tema do restaurante via cores vindas do backend.
 
@@ -29,12 +29,12 @@
 
 **v1 includes:**
 
-- Cardapio publico mobile-first.
+- Cardápio público mobile-first.
 - Carrinho e checkout visitante.
 - Admin login.
-- Admin pedidos, status, cancelamento e impressao simples.
+- Admin pedidos, status, cancelamento e impressão simples.
 - Admin config restaurante, categorias e produtos.
-- Tenant por subdominio e header `X-Tenant-Slug`.
+- Tenant por subdomínio e header `X-Tenant-Slug`.
 - Tema por `primaryColor` e `secondaryColor`.
 
 **Explicitly out of scope:**
