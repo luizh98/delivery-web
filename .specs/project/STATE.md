@@ -19,3 +19,9 @@
 ## Preferences
 
 - Keep communication terse using Caveman style.
+
+## Quick Tasks
+
+- 2026-07-28 — Product option controls: radio para selecao unica e checkbox para selecao multipla. Lint e build passaram. Commit nao criado devido a alteracoes anteriores no worktree.
+- 2026-07-28 — Required option validation: bloqueio do carrinho por grupo obrigatorio incompleto e destaque em negrito. Lint e build passaram. Commit nao criado devido a alteracoes anteriores no worktree.
+- 2026-07-28 — Restore product focus: retorno ao cardapio por adicao ou botao "Voltar" foca e posiciona o card do produto. Lint e build passaram. Commit nao criado devido a alteracoes anteriores no worktree.

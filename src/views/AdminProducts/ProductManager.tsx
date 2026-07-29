@@ -1,7 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, CopyPlus, Pencil, Save, Search, Trash2, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  CopyPlus,
+  Pencil,
+  Save,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -220,8 +230,12 @@ function itemsSummary(items: ProductOptionItem[]) {
     .join(", ");
 }
 
-function cloneTemplateItem(item: ProductOptionItem): ProductOptionItem {
+function cloneTemplateItem(
+  item: ProductOptionItem,
+  preserveId = false,
+): ProductOptionItem {
   return {
+    id: preserveId ? item.id : undefined,
     name: item.name,
     priceCents: item.priceCents,
     active: item.active,
@@ -230,13 +244,17 @@ function cloneTemplateItem(item: ProductOptionItem): ProductOptionItem {
 
 function templateToProductOptionGroup(
   template: ProductOptionGroupTemplate,
+  linkedToTemplate = false,
 ): ProductOptionGroup {
   return {
+    templateId: linkedToTemplate ? template.id : undefined,
     name: template.name,
     required: template.required,
     minSelections: template.minSelections,
     maxSelections: template.maxSelections,
-    items: template.items.filter((item) => !item.deleted).map(cloneTemplateItem),
+    items: template.items
+      .filter((item) => !item.deleted)
+      .map((item) => cloneTemplateItem(item, !linkedToTemplate)),
   };
 }
 
@@ -247,7 +265,9 @@ function optionGroupToTemplatePayload(group: ProductOptionGroup, sortOrder: numb
     minSelections: group.minSelections,
     maxSelections: group.maxSelections,
     sortOrder,
-    items: group.items.filter((item) => !item.deleted).map(cloneTemplateItem),
+    items: group.items
+      .filter((item) => !item.deleted)
+      .map((item) => cloneTemplateItem(item, true)),
   };
 }
 
@@ -318,6 +338,7 @@ export function ProductManager({
   const [productGroupSearch, setProductGroupSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
+  const [savedGroupsOpen, setSavedGroupsOpen] = useState(false);
   const [productFormOpen, setProductFormOpen] = useState(false);
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
@@ -339,6 +360,7 @@ export function ProductManager({
 
   function updateCategories(nextCategories: ProductCategory[]) {
     setCategories(nextCategories);
+    void refreshProducts();
     const currentCategoryId = form.getValues("categoryId");
     const currentCategoryExists = nextCategories.some(
       (category) => category.id === currentCategoryId,
@@ -377,7 +399,7 @@ export function ProductManager({
   }
 
   function addOptionGroupFromTemplate(template: ProductOptionGroupTemplate) {
-    updateOptionGroups([...optionGroups, templateToProductOptionGroup(template)]);
+    updateOptionGroups([...optionGroups, templateToProductOptionGroup(template, true)]);
     setTemplateError("");
   }
 
@@ -408,6 +430,38 @@ export function ProductManager({
         index === groupIndex ? { ...item, ...deletedPatch() } : item,
       ),
     );
+  }
+
+  function moveOptionGroup(groupIndex: number, direction: -1 | 1) {
+    setOptionGroups((groups) => {
+      const visibleIndexes = groups
+        .map((group, index) => ({ group, index }))
+        .filter(({ group }) => !group.deleted)
+        .map(({ index }) => index);
+      const visibleIndex = visibleIndexes.indexOf(groupIndex);
+      const targetIndex = visibleIndexes[visibleIndex + direction];
+
+      if (visibleIndex < 0 || targetIndex === undefined) {
+        return groups;
+      }
+
+      const reorderedGroups = [...groups];
+      [reorderedGroups[groupIndex], reorderedGroups[targetIndex]] = [
+        reorderedGroups[targetIndex],
+        reorderedGroups[groupIndex],
+      ];
+      return reorderedGroups;
+    });
+  }
+
+  async function refreshProducts() {
+    try {
+      setProducts(await clientApi<Product[]>("admin/products"));
+      return true;
+    } catch {
+      showToast("Dados salvos, mas nao foi possivel atualizar produtos.", "error");
+      return false;
+    }
   }
 
   async function saveReusableGroup(groupIndex: number) {
@@ -455,10 +509,15 @@ export function ProductManager({
           ? items.map((item) => (item.id === template.id ? template : item))
           : [...items, template],
       );
+      if (editingTemplateId) {
+        setSavedGroupsOpen(false);
+      }
       setEditingTemplateId(null);
       setTemplateDraftGroups([]);
       setTemplateDraftErrors(emptyProductOptionsErrors);
-      showToast("Grupo salvo com sucesso");
+      if (await refreshProducts()) {
+        showToast("Grupo salvo com sucesso");
+      }
     } catch {
       const message = "Nao foi possivel salvar grupo.";
 
@@ -567,9 +626,12 @@ export function ProductManager({
           ? items.map((item) => (item.id === product.id ? product : item))
           : [...items, product],
       );
+      const productsRefreshed = await refreshProducts();
       resetForm(values.categoryId);
       setProductFormOpen(false);
-      showToast("Produto salvo com sucesso");
+      if (productsRefreshed) {
+        showToast("Produto salvo com sucesso");
+      }
     } catch {
       const message = editingProduct
         ? "Nao foi possivel salvar produto."
@@ -582,7 +644,8 @@ export function ProductManager({
 
   const visibleSelectedGroups = optionGroups
     .map((group, index) => ({ group, groupIndex: index }))
-    .filter(({ group }) => !group.deleted);
+    .filter(({ group }) => !group.deleted)
+    .map((entry, visibleIndex) => ({ ...entry, visibleIndex }));
   const selectedGroupSignatures = new Set(
     visibleSelectedGroups.map(({ group }) => optionGroupSignature(group)),
   );
@@ -657,7 +720,10 @@ export function ProductManager({
         </DetailsBody>
       </DetailsCard>
 
-      <DetailsCard>
+      <DetailsCard
+        open={savedGroupsOpen}
+        onToggle={(event) => setSavedGroupsOpen(event.currentTarget.open)}
+      >
         <DetailsSummary>
           <SummaryTitle>Grupos salvos</SummaryTitle>
           <SummaryMeta>
@@ -849,20 +915,42 @@ export function ProductManager({
                   Nenhum grupo selecionado.
                 </Empty>
               ) : null}
-              {visibleSelectedGroups.map(({ group, groupIndex }) => (
+              {visibleSelectedGroups.map(({ group, groupIndex, visibleIndex }) => (
                 <SelectedGroupCard key={group.id ?? `${group.name}-${groupIndex}`}>
                   <div>
                     <ItemTitle>{group.name}</ItemTitle>
                     <Muted>{groupSummary(group)}</Muted>
                   </div>
-                  <Button
-                    type="button"
-                    variant="dangerText"
-                    onClick={() => removeOptionGroup(groupIndex)}
-                  >
-                    <Trash2 size={16} />
-                    Remover
-                  </Button>
+                  <ProductActions>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => moveOptionGroup(groupIndex, -1)}
+                      disabled={visibleIndex === 0}
+                      aria-label={`Mover ${group.name} para cima`}
+                      title="Mover para cima"
+                    >
+                      <ArrowUp size={16} />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => moveOptionGroup(groupIndex, 1)}
+                      disabled={visibleIndex === visibleSelectedGroups.length - 1}
+                      aria-label={`Mover ${group.name} para baixo`}
+                      title="Mover para baixo"
+                    >
+                      <ArrowDown size={16} />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="dangerText"
+                      onClick={() => removeOptionGroup(groupIndex)}
+                    >
+                      <Trash2 size={16} />
+                      Remover
+                    </Button>
+                  </ProductActions>
                 </SelectedGroupCard>
               ))}
             </SelectedGroups>

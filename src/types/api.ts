@@ -34,6 +34,7 @@ export type RestaurantConfigResponse = {
   logoUrl?: string;
   bannerUrl?: string;
   menuDescription?: string;
+  minimumOrderCents?: number;
   whatsapp?: string;
   address?: Address;
   theme?: Theme;
@@ -61,6 +62,7 @@ export type ProductOptionItem = {
 
 export type ProductOptionGroup = {
   id?: string;
+  templateId?: string;
   name: string;
   required: boolean;
   minSelections: number;

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { CartProvider } from "@/components/CartProvider";
 import { getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "./globals.css";
@@ -34,7 +35,9 @@ export default async function RootLayout({
       className={cx(geistSans.variable, geistMono.variable)}
     >
       <body>
-        <ThemeProvider theme={restaurantConfig?.theme}>{children}</ThemeProvider>
+        <ThemeProvider theme={restaurantConfig?.theme}>
+          <CartProvider>{children}</CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

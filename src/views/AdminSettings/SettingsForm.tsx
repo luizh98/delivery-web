@@ -10,6 +10,7 @@ import { Field, Input, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
+import { centsToReais, reaisToCents } from "@/utils/format";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
 import {
   createHolidayHours,
@@ -29,6 +30,7 @@ const settingsSchema = z.object({
   logoUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   menuDescription: z.string().optional(),
+  minimumOrderReais: z.number().min(0, "Pedido minimo nao pode ser negativo."),
   primaryColor: z.string().min(4),
   secondaryColor: z.string().min(4),
   street: z.string().optional(),
@@ -62,6 +64,7 @@ export function SettingsForm({
       bannerUrl: initialConfig?.bannerUrl ?? "",
       menuDescription: initialConfig?.menuDescription ??
         "Escolha seus itens, revise o carrinho e envie o pedido.",
+      minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       primaryColor: initialConfig?.theme?.primaryColor ?? "#0f766e",
       secondaryColor: initialConfig?.theme?.secondaryColor ?? "#f59e0b",
       street: initialConfig?.address?.street ?? "",
@@ -95,6 +98,7 @@ export function SettingsForm({
           logoUrl: values.logoUrl,
           bannerUrl: values.bannerUrl,
           menuDescription: values.menuDescription,
+          minimumOrderCents: reaisToCents(values.minimumOrderReais),
           theme: {
             primaryColor: values.primaryColor,
             secondaryColor: values.secondaryColor,
@@ -159,6 +163,17 @@ export function SettingsForm({
           </Field>
           <Field label="Descrição do cardápio">
             <Textarea rows={3} {...form.register("menuDescription")} />
+          </Field>
+          <Field
+            label="Pedido minimo (R$)"
+            error={form.formState.errors.minimumOrderReais?.message}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              {...form.register("minimumOrderReais", { valueAsNumber: true })}
+            />
           </Field>
           <Field label="Cor primaria">
             <Input type="color" {...form.register("primaryColor")} />
