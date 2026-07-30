@@ -23,11 +23,10 @@ import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type {
+  DayOfWeek,
   Product,
   ProductCategory,
   UpsellCampaign,
-  UpsellBenefitType,
-  UpsellOfferType,
   UpsellTriggerType,
 } from "@/types/api";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
@@ -44,7 +43,8 @@ import {
   FormActions,
   FormCard,
   GridTwo,
-  OrderedItem,
+  OfferCard,
+  OfferHeader,
   PageHeader,
   PageSubtitle,
   PageTitle,
@@ -53,7 +53,20 @@ import {
   StepButton,
   StepContent,
   StepNav,
+  WeekdayDetails,
+  WeekdayGrid,
+  WeekdayRow,
 } from "./styles";
+
+const dayOptions: { value: DayOfWeek; label: string }[] = [
+  { value: "MONDAY", label: "Segunda-feira" },
+  { value: "TUESDAY", label: "Terça-feira" },
+  { value: "WEDNESDAY", label: "Quarta-feira" },
+  { value: "THURSDAY", label: "Quinta-feira" },
+  { value: "FRIDAY", label: "Sexta-feira" },
+  { value: "SATURDAY", label: "Sábado" },
+  { value: "SUNDAY", label: "Domingo" },
+];
 
 const schema = z
   .object({
@@ -70,11 +83,31 @@ const schema = z
     minimumCartAmountReais: z.number().min(0).optional(),
     maximumCartAmountReais: z.number().min(0).optional(),
     minimumItems: z.number().int().min(1),
-    offerType: z.enum(["PRODUCT", "CATEGORY"]),
-    offerIds: z.array(z.string()),
+    offers: z
+      .array(
+        z.object({
+          targetType: z.enum(["PRODUCT", "CATEGORY"]),
+          targetId: z.string().min(1),
+          fixedOfferPriceReais: z.number().min(0).optional(),
+          weekdayPrices: z.array(
+            z.object({
+              dayOfWeek: z.enum([
+                "MONDAY",
+                "TUESDAY",
+                "WEDNESDAY",
+                "THURSDAY",
+                "FRIDAY",
+                "SATURDAY",
+                "SUNDAY",
+              ]),
+              enabled: z.boolean(),
+              priceReais: z.number().min(0).optional(),
+            }),
+          ),
+        }),
+      )
+      .min(1, "Selecione ao menos uma categoria ou produto."),
     maximumQuantityPerOrder: z.number().int().min(1),
-    benefitType: z.enum(["NONE", "FIXED_PRICE"]),
-    fixedOfferPriceReais: z.number().min(0).optional(),
     allowDiscountStacking: z.boolean(),
     showSavings: z.boolean(),
     skipIfProductInCart: z.boolean(),
@@ -90,12 +123,17 @@ const schema = z
     if (value.triggerType === "CART_AMOUNT" && value.minimumCartAmountReais === undefined) {
       context.addIssue({ code: "custom", path: ["minimumCartAmountReais"], message: "Informe o valor mínimo." });
     }
-    if (!value.offerIds.length) {
-      context.addIssue({ code: "custom", path: ["offerIds"], message: "Selecione ao menos uma oferta." });
-    }
-    if (value.benefitType === "FIXED_PRICE" && value.fixedOfferPriceReais === undefined) {
-      context.addIssue({ code: "custom", path: ["fixedOfferPriceReais"], message: "Informe o preço promocional." });
-    }
+    value.offers.forEach((offer, offerIndex) => {
+      offer.weekdayPrices.forEach((weekday, weekdayIndex) => {
+        if (weekday.enabled && weekday.priceReais === undefined) {
+          context.addIssue({
+            code: "custom",
+            path: ["offers", offerIndex, "weekdayPrices", weekdayIndex, "priceReais"],
+            message: "Informe o preço deste dia.",
+          });
+        }
+      });
+    });
   });
 
 type CampaignForm = z.infer<typeof schema>;
@@ -106,7 +144,15 @@ type Props = {
   categories: ProductCategory[];
 };
 
-const stepLabels = ["Geral", "Condições", "Ofertas", "Benefício", "Bloqueios"];
+const stepLabels = ["Geral", "Condições", "Ofertas", "Exibição", "Bloqueios"];
+
+function createWeekdayPrices() {
+  return dayOptions.map((day) => ({
+    dayOfWeek: day.value,
+    enabled: false,
+    priceReais: undefined,
+  }));
+}
 
 const defaults: CampaignForm = {
   name: "",
@@ -122,11 +168,8 @@ const defaults: CampaignForm = {
   minimumCartAmountReais: undefined,
   maximumCartAmountReais: undefined,
   minimumItems: 1,
-  offerType: "CATEGORY",
-  offerIds: [],
+  offers: [],
   maximumQuantityPerOrder: 1,
-  benefitType: "NONE",
-  fixedOfferPriceReais: undefined,
   allowDiscountStacking: false,
   showSavings: true,
   skipIfProductInCart: true,
@@ -161,16 +204,25 @@ function campaignToForm(campaign: UpsellCampaign): CampaignForm {
         ? undefined
         : centsToReais(campaign.maximumCartAmountCents),
     minimumItems: campaign.minimumItems,
-    offerType: campaign.offerType,
-    offerIds: campaign.offers.map((offer) =>
-      campaign.offerType === "PRODUCT" ? offer.productId! : offer.categoryId!,
-    ),
+    offers: campaign.offers.map((offer) => ({
+      targetType: offer.productId ? "PRODUCT" : "CATEGORY",
+      targetId: offer.productId ?? offer.categoryId ?? "",
+      fixedOfferPriceReais:
+        offer.fixedOfferPriceCents != null
+          ? centsToReais(offer.fixedOfferPriceCents)
+          : campaign.fixedOfferPriceCents != null
+            ? centsToReais(campaign.fixedOfferPriceCents)
+            : undefined,
+      weekdayPrices: dayOptions.map((day) => {
+        const saved = offer.weekdayPrices?.find((price) => price.dayOfWeek === day.value);
+        return {
+          dayOfWeek: day.value,
+          enabled: Boolean(saved),
+          priceReais: saved ? centsToReais(saved.priceCents) : undefined,
+        };
+      }),
+    })),
     maximumQuantityPerOrder: campaign.maximumQuantityPerOrder,
-    benefitType: campaign.benefitType,
-    fixedOfferPriceReais:
-      campaign.fixedOfferPriceCents == null
-        ? undefined
-        : centsToReais(campaign.fixedOfferPriceCents),
     allowDiscountStacking: campaign.allowDiscountStacking,
     showSavings: campaign.showSavings,
     skipIfProductInCart: campaign.skipIfProductInCart,
@@ -182,6 +234,14 @@ function optionalNumber(value: unknown) {
   return value === "" || value === undefined ? undefined : Number(value);
 }
 
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export function UpsellCampaignManager({
   initialCampaigns,
   products,
@@ -191,6 +251,7 @@ export function UpsellCampaignManager({
   const [editing, setEditing] = useState<UpsellCampaign | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [offerSearch, setOfferSearch] = useState("");
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirmation();
   const form = useForm<CampaignForm>({
@@ -206,9 +267,7 @@ export function UpsellCampaignManager({
     control: form.control,
     name: "triggerCategoryIds",
   });
-  const offerType = useWatch({ control: form.control, name: "offerType" });
-  const offerIds = useWatch({ control: form.control, name: "offerIds" });
-  const benefitType = useWatch({ control: form.control, name: "benefitType" });
+  const offers = useWatch({ control: form.control, name: "offers" });
   const categoryNames = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
@@ -217,10 +276,23 @@ export function UpsellCampaignManager({
     () => new Map(products.map((product) => [product.id, product.name])),
     [products],
   );
+  const filteredCategories = useMemo(() => {
+    const search = normalizeSearch(offerSearch);
+    return search
+      ? categories.filter((category) => normalizeSearch(category.name).includes(search))
+      : categories;
+  }, [categories, offerSearch]);
+  const filteredProducts = useMemo(() => {
+    const search = normalizeSearch(offerSearch);
+    return search
+      ? products.filter((product) => normalizeSearch(product.name).includes(search))
+      : products;
+  }, [offerSearch, products]);
 
   function openCreate() {
     setEditing(null);
     form.reset(defaults);
+    setOfferSearch("");
     setStep(0);
     setFormOpen(true);
   }
@@ -228,6 +300,7 @@ export function UpsellCampaignManager({
   function openEdit(campaign: UpsellCampaign) {
     setEditing(campaign);
     form.reset(campaignToForm(campaign));
+    setOfferSearch("");
     setStep(0);
     setFormOpen(true);
   }
@@ -236,9 +309,10 @@ export function UpsellCampaignManager({
     setFormOpen(false);
     setEditing(null);
     form.reset(defaults);
+    setOfferSearch("");
   }
 
-  function toggleArray(field: "triggerProductIds" | "triggerCategoryIds" | "offerIds", id: string) {
+  function toggleArray(field: "triggerProductIds" | "triggerCategoryIds", id: string) {
     const values = form.getValues(field);
     form.setValue(
       field,
@@ -247,15 +321,49 @@ export function UpsellCampaignManager({
     );
   }
 
+  function toggleOffer(targetType: "PRODUCT" | "CATEGORY", targetId: string) {
+    const current = form.getValues("offers");
+    const exists = current.some(
+      (offer) => offer.targetType === targetType && offer.targetId === targetId,
+    );
+    const next = exists
+      ? current.filter(
+          (offer) => offer.targetType !== targetType || offer.targetId !== targetId,
+        )
+      : [
+          ...current,
+          {
+            targetType,
+            targetId,
+            fixedOfferPriceReais: undefined,
+            weekdayPrices: createWeekdayPrices(),
+          },
+        ];
+    form.setValue("offers", next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }
+
   function moveOffer(index: number, direction: -1 | 1) {
     const target = index + direction;
-    if (target < 0 || target >= offerIds.length) return;
-    const next = [...offerIds];
+    if (target < 0 || target >= offers.length) return;
+    const next = [...offers];
     [next[index], next[target]] = [next[target], next[index]];
-    form.setValue("offerIds", next, { shouldDirty: true });
+    form.setValue("offers", next, { shouldDirty: true });
   }
 
   async function submit(values: CampaignForm) {
+    const hasProductOffers = values.offers.some((offer) => offer.targetType === "PRODUCT");
+    const hasCategoryOffers = values.offers.some((offer) => offer.targetType === "CATEGORY");
+    const offerType = hasProductOffers && hasCategoryOffers
+      ? "MIXED"
+      : hasProductOffers ? "PRODUCT" : "CATEGORY";
+    const hasConfiguredPrice = values.offers.some(
+      (offer) =>
+        offer.fixedOfferPriceReais !== undefined ||
+        offer.weekdayPrices.some((weekday) => weekday.enabled),
+    );
     const payload = {
       name: values.name,
       displayTitle: values.displayTitle,
@@ -276,19 +384,26 @@ export function UpsellCampaignManager({
           ? null
           : reaisToCents(values.maximumCartAmountReais),
       minimumItems: values.minimumItems,
-      offerType: values.offerType,
-      offers: values.offerIds.map((id, index) => ({
-        productId: values.offerType === "PRODUCT" ? id : null,
-        categoryId: values.offerType === "CATEGORY" ? id : null,
+      offerType,
+      offers: values.offers.map((offer, index) => ({
+        productId: offer.targetType === "PRODUCT" ? offer.targetId : null,
+        categoryId: offer.targetType === "CATEGORY" ? offer.targetId : null,
         displayOrder: index,
         maximumQuantity: values.maximumQuantityPerOrder,
+        fixedOfferPriceCents:
+          offer.fixedOfferPriceReais === undefined
+            ? null
+            : reaisToCents(offer.fixedOfferPriceReais),
+        weekdayPrices: offer.weekdayPrices
+          .filter((weekday) => weekday.enabled)
+          .map((weekday) => ({
+            dayOfWeek: weekday.dayOfWeek,
+            priceCents: reaisToCents(weekday.priceReais ?? 0),
+          })),
       })),
       maximumQuantityPerOrder: values.maximumQuantityPerOrder,
-      benefitType: values.benefitType,
-      fixedOfferPriceCents:
-        values.fixedOfferPriceReais === undefined
-          ? null
-          : reaisToCents(values.fixedOfferPriceReais),
+      benefitType: hasConfiguredPrice ? "FIXED_PRICE" : "NONE",
+      fixedOfferPriceCents: null,
       allowDiscountStacking: values.allowDiscountStacking,
       showSavings: values.showSavings,
       skipIfProductInCart: values.skipIfProductInCart,
@@ -365,20 +480,33 @@ export function UpsellCampaignManager({
     ANY_CART_ITEM: "Qualquer item",
     CART_AMOUNT: "Valor do carrinho",
   };
-  const benefitLabels: Record<UpsellBenefitType, string> = {
-    NONE: "Sem desconto",
-    FIXED_PRICE: "Preço fixo",
-  };
-
   function offerSummary(campaign: UpsellCampaign) {
     return campaign.offers
       .map((offer) =>
-        campaign.offerType === "PRODUCT"
+        offer.productId
           ? productNames.get(offer.productId ?? "")
           : categoryNames.get(offer.categoryId ?? ""),
       )
       .filter(Boolean)
       .join(", ");
+  }
+
+  function pricingSummary(campaign: UpsellCampaign) {
+    const weeklyRules = campaign.offers.reduce(
+      (total, offer) => total + (offer.weekdayPrices?.length ?? 0),
+      0,
+    );
+    const hasOfferPrices = campaign.offers.some(
+      (offer) => offer.fixedOfferPriceCents != null,
+    );
+    if (weeklyRules > 0) {
+      return `Preços por oferta • ${weeklyRules} regra(s) semanal(is)`;
+    }
+    if (hasOfferPrices) return "Preços por oferta";
+    if (campaign.fixedOfferPriceCents != null) {
+      return `Preço único ${money(campaign.fixedOfferPriceCents)}`;
+    }
+    return "Sem desconto";
   }
 
   function periodSummary(campaign: UpsellCampaign) {
@@ -518,70 +646,169 @@ export function UpsellCampaignManager({
 
             {step === 2 ? (
               <StepContent>
-                <Field label="Quais produtos devem ser sugeridos?">
-                  <Select
-                    {...form.register("offerType")}
-                    onChange={(event) => {
-                      form.setValue("offerType", event.target.value as UpsellOfferType);
-                      form.setValue("offerIds", []);
-                    }}
-                  >
-                    <option value="CATEGORY">Categorias selecionadas</option>
-                    <option value="PRODUCT">Produtos específicos</option>
-                  </Select>
+                <PageSubtitle>
+                  Escolha categorias inteiras, produtos específicos ou ambos. Produto específico
+                  prevalece quando também pertence a uma categoria selecionada.
+                </PageSubtitle>
+                <Field label="Pesquisar categoria ou produto">
+                  <Input
+                    type="search"
+                    value={offerSearch}
+                    onChange={(event) => setOfferSearch(event.target.value)}
+                    placeholder="Digite um nome..."
+                  />
                 </Field>
-                <ChoiceList>
-                  {(offerType === "PRODUCT" ? products : categories).map((item) => (
-                    <Checkbox key={item.id}>
-                      <input
-                        type="checkbox"
-                        checked={offerIds.includes(item.id)}
-                        onChange={() => toggleArray("offerIds", item.id)}
-                      />
-                      {item.name}
-                    </Checkbox>
-                  ))}
-                </ChoiceList>
-                {form.formState.errors.offerIds ? (
-                  <ErrorText>{form.formState.errors.offerIds.message}</ErrorText>
+                <GridTwo>
+                  <StepContent>
+                    <CampaignName>Categorias</CampaignName>
+                    <ChoiceList>
+                      {filteredCategories.map((category) => (
+                        <Checkbox key={category.id}>
+                          <input
+                            type="checkbox"
+                            checked={offers.some(
+                              (offer) =>
+                                offer.targetType === "CATEGORY" &&
+                                offer.targetId === category.id,
+                            )}
+                            onChange={() => toggleOffer("CATEGORY", category.id)}
+                          />
+                          {category.name}
+                        </Checkbox>
+                      ))}
+                      {!filteredCategories.length ? (
+                        <PageSubtitle>Nenhuma categoria encontrada.</PageSubtitle>
+                      ) : null}
+                    </ChoiceList>
+                  </StepContent>
+                  <StepContent>
+                    <CampaignName>Produtos específicos</CampaignName>
+                    <ChoiceList>
+                      {filteredProducts.map((product) => (
+                        <Checkbox key={product.id}>
+                          <input
+                            type="checkbox"
+                            checked={offers.some(
+                              (offer) =>
+                                offer.targetType === "PRODUCT" &&
+                                offer.targetId === product.id,
+                            )}
+                            onChange={() => toggleOffer("PRODUCT", product.id)}
+                          />
+                          {product.name}
+                        </Checkbox>
+                      ))}
+                      {!filteredProducts.length ? (
+                        <PageSubtitle>Nenhum produto encontrado.</PageSubtitle>
+                      ) : null}
+                    </ChoiceList>
+                  </StepContent>
+                </GridTwo>
+                {form.formState.errors.offers?.message ? (
+                  <ErrorText>{form.formState.errors.offers.message}</ErrorText>
                 ) : null}
-                {offerIds.map((id, index) => (
-                  <OrderedItem key={id}>
-                    <span>{offerType === "PRODUCT" ? productNames.get(id) : categoryNames.get(id)}</span>
-                    <Actions>
-                      <Button type="button" variant="ghost" disabled={index === 0} onClick={() => moveOffer(index, -1)}>
-                        <ArrowUp size={15} />
-                      </Button>
-                      <Button type="button" variant="ghost" disabled={index === offerIds.length - 1} onClick={() => moveOffer(index, 1)}>
-                        <ArrowDown size={15} />
-                      </Button>
-                    </Actions>
-                  </OrderedItem>
+                {offers.map((offer, index) => (
+                  <OfferCard key={`${offer.targetType}:${offer.targetId}`}>
+                    <OfferHeader>
+                      <div>
+                        <CampaignName>
+                          {offer.targetType === "PRODUCT"
+                            ? productNames.get(offer.targetId)
+                            : categoryNames.get(offer.targetId)}
+                        </CampaignName>
+                        <PageSubtitle>
+                          {offer.targetType === "PRODUCT" ? "Produto" : "Categoria"}
+                        </PageSubtitle>
+                      </div>
+                      <Actions>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          disabled={index === 0}
+                          onClick={() => moveOffer(index, -1)}
+                          aria-label="Mover oferta para cima"
+                        >
+                          <ArrowUp size={15} />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          disabled={index === offers.length - 1}
+                          onClick={() => moveOffer(index, 1)}
+                          aria-label="Mover oferta para baixo"
+                        >
+                          <ArrowDown size={15} />
+                        </Button>
+                      </Actions>
+                    </OfferHeader>
+                    <Field label="Preço padrão no upsell (opcional)">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="Vazio = preço normal"
+                        {...form.register(`offers.${index}.fixedOfferPriceReais`, {
+                          setValueAs: optionalNumber,
+                        })}
+                      />
+                    </Field>
+                    <WeekdayDetails>
+                      <summary>Preços por dia da semana (opcional)</summary>
+                      <WeekdayGrid>
+                        {offer.weekdayPrices.map((weekday, weekdayIndex) => (
+                          <WeekdayRow key={weekday.dayOfWeek}>
+                            <Checkbox>
+                              <input
+                                type="checkbox"
+                                {...form.register(
+                                  `offers.${index}.weekdayPrices.${weekdayIndex}.enabled`,
+                                )}
+                              />
+                              {dayOptions[weekdayIndex]?.label}
+                            </Checkbox>
+                            {weekday.enabled ? (
+                              <Field
+                                label="Preço no dia"
+                                error={
+                                  form.formState.errors.offers?.[index]
+                                    ?.weekdayPrices?.[weekdayIndex]?.priceReais?.message
+                                }
+                              >
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  {...form.register(
+                                    `offers.${index}.weekdayPrices.${weekdayIndex}.priceReais`,
+                                    { setValueAs: optionalNumber },
+                                  )}
+                                />
+                              </Field>
+                            ) : (
+                              <PageSubtitle>Usa o preço padrão</PageSubtitle>
+                            )}
+                          </WeekdayRow>
+                        ))}
+                      </WeekdayGrid>
+                    </WeekdayDetails>
+                  </OfferCard>
                 ))}
                 <Field label="Quantidade máxima por pedido">
-                  <Input type="number" min={1} {...form.register("maximumQuantityPerOrder", { valueAsNumber: true })} />
+                  <Input
+                    type="number"
+                    min={1}
+                    {...form.register("maximumQuantityPerOrder", { valueAsNumber: true })}
+                  />
                 </Field>
               </StepContent>
             ) : null}
 
             {step === 3 ? (
               <StepContent>
-                <Field label="Qual benefício será aplicado?">
-                  <Select {...form.register("benefitType")}>
-                    <option value="NONE">Sem desconto</option>
-                    <option value="FIXED_PRICE">Preço fixo promocional</option>
-                  </Select>
-                </Field>
-                {benefitType === "FIXED_PRICE" ? (
-                  <Field label="Preço promocional" error={form.formState.errors.fixedOfferPriceReais?.message}>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      {...form.register("fixedOfferPriceReais", { setValueAs: optionalNumber })}
-                    />
-                  </Field>
-                ) : null}
+                <PageSubtitle>
+                  Preços são configurados em cada oferta. Sem preço preenchido, produto usa valor
+                  normal do catálogo.
+                </PageSubtitle>
                 <Checkbox>
                   <input type="checkbox" {...form.register("showSavings")} />
                   Exibir economia para o cliente
@@ -615,11 +842,22 @@ export function UpsellCampaignManager({
                 ) : null}
               </div>
               {step < stepLabels.length - 1 ? (
-                <Button type="button" onClick={() => setStep((value) => value + 1)}>
+                <Button
+                  key="next-step"
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setStep((value) => Math.min(value + 1, stepLabels.length - 1));
+                  }}
+                >
                   Próxima <ArrowRight size={16} />
                 </Button>
               ) : (
-                <Button type="submit" disabled={form.formState.isSubmitting}>
+                <Button
+                  key="submit-campaign"
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                >
                   <Save size={16} /> Salvar campanha
                 </Button>
               )}
@@ -643,10 +881,7 @@ export function UpsellCampaignManager({
                   <span>Mínimo {money(campaign.minimumCartAmountCents)}</span>
                 ) : null}
                 <span>Ofertas: {offerSummary(campaign) || "itens removidos"}</span>
-                <span>{benefitLabels[campaign.benefitType]}</span>
-                {campaign.fixedOfferPriceCents != null ? (
-                  <span>{money(campaign.fixedOfferPriceCents)}</span>
-                ) : null}
+                <span>{pricingSummary(campaign)}</span>
                 <span>Até {campaign.maxSuggestions} sugestão(ões)</span>
                 <span>{periodSummary(campaign)}</span>
               </CampaignMeta>

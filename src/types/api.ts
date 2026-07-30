@@ -183,14 +183,29 @@ export type UpsellTriggerType =
   | "ANY_CART_ITEM"
   | "CART_AMOUNT";
 
-export type UpsellOfferType = "PRODUCT" | "CATEGORY";
+export type UpsellOfferType = "PRODUCT" | "CATEGORY" | "MIXED";
 export type UpsellBenefitType = "NONE" | "FIXED_PRICE";
+export type DayOfWeek =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY"
+  | "SATURDAY"
+  | "SUNDAY";
+
+export type UpsellWeekdayPrice = {
+  dayOfWeek: DayOfWeek;
+  priceCents: number;
+};
 
 export type UpsellCampaignOffer = {
   productId?: string;
   categoryId?: string;
   displayOrder: number;
   maximumQuantity?: number;
+  fixedOfferPriceCents?: number | null;
+  weekdayPrices: UpsellWeekdayPrice[];
 };
 
 export type UpsellCampaign = {

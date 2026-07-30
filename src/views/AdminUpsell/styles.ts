@@ -172,6 +172,49 @@ export const OrderedItem = styled("div", {
   fontSize: "0.82rem",
 });
 
+export const OfferCard = styled("section", {
+  display: "grid",
+  gap: "0.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.375rem",
+  background: "var(--color-background)",
+  padding: "0.75rem",
+});
+
+export const OfferHeader = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+});
+
+export const WeekdayDetails = styled("details", {
+  borderTop: "1px solid var(--color-border)",
+  paddingTop: "0.65rem",
+
+  summary: {
+    cursor: "pointer",
+    fontSize: "0.82rem",
+    fontWeight: 600,
+  },
+});
+
+export const WeekdayGrid = styled("div", {
+  display: "grid",
+  gap: "0.45rem",
+  marginTop: "0.65rem",
+});
+
+export const WeekdayRow = styled("div", {
+  display: "grid",
+  alignItems: "center",
+  gap: "0.5rem",
+
+  "@sm": {
+    gridTemplateColumns: "minmax(0, 1fr) minmax(10rem, 1fr)",
+  },
+});
+
 export const FormActions = styled("div", {
   display: "flex",
   flexWrap: "wrap",
