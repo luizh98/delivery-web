@@ -5,6 +5,7 @@ export const Root = styled("section", {
   gap: "0.75rem",
   borderTop: "1px solid var(--color-border)",
   paddingTop: "1rem",
+  marginBottom: "1rem",
 });
 
 export const Title = styled("h2", {
