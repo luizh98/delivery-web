@@ -221,7 +221,8 @@ export const FormActions = styled("div", {
   justifyContent: "space-between",
   gap: "0.5rem",
   borderTop: "1px solid var(--color-border)",
-  paddingTop: "0.75rem",
+  marginTop: "1.25rem",
+  paddingTop: "1rem",
 });
 
 export const Empty = styled("div", {

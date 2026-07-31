@@ -185,6 +185,7 @@ export type UpsellTriggerType =
 
 export type UpsellOfferType = "PRODUCT" | "CATEGORY" | "MIXED";
 export type UpsellBenefitType = "NONE" | "FIXED_PRICE";
+export type UpsellPriceType = "FIXED" | "PERCENTAGE";
 export type DayOfWeek =
   | "MONDAY"
   | "TUESDAY"
@@ -196,7 +197,9 @@ export type DayOfWeek =
 
 export type UpsellWeekdayPrice = {
   dayOfWeek: DayOfWeek;
-  priceCents: number;
+  priceType?: UpsellPriceType | null;
+  priceCents?: number | null;
+  discountPercentage?: number | null;
 };
 
 export type UpsellCampaignOffer = {
@@ -204,7 +207,9 @@ export type UpsellCampaignOffer = {
   categoryId?: string;
   displayOrder: number;
   maximumQuantity?: number;
+  priceType?: UpsellPriceType | null;
   fixedOfferPriceCents?: number | null;
+  discountPercentage?: number | null;
   weekdayPrices: UpsellWeekdayPrice[];
 };
 

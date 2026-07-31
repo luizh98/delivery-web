@@ -27,6 +27,7 @@ import type {
   Product,
   ProductCategory,
   UpsellCampaign,
+  UpsellPriceType,
   UpsellTriggerType,
 } from "@/types/api";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
@@ -88,7 +89,9 @@ const schema = z
         z.object({
           targetType: z.enum(["PRODUCT", "CATEGORY"]),
           targetId: z.string().min(1),
+          priceType: z.enum(["FIXED", "PERCENTAGE"]),
           fixedOfferPriceReais: z.number().min(0).optional(),
+          discountPercentage: z.number().int().min(0).max(100).optional(),
           weekdayPrices: z.array(
             z.object({
               dayOfWeek: z.enum([
@@ -101,7 +104,9 @@ const schema = z
                 "SUNDAY",
               ]),
               enabled: z.boolean(),
+              priceType: z.enum(["FIXED", "PERCENTAGE"]),
               priceReais: z.number().min(0).optional(),
+              discountPercentage: z.number().int().min(0).max(100).optional(),
             }),
           ),
         }),
@@ -125,11 +130,32 @@ const schema = z
     }
     value.offers.forEach((offer, offerIndex) => {
       offer.weekdayPrices.forEach((weekday, weekdayIndex) => {
-        if (weekday.enabled && weekday.priceReais === undefined) {
+        if (
+          weekday.enabled &&
+          weekday.priceType === "FIXED" &&
+          weekday.priceReais === undefined
+        ) {
           context.addIssue({
             code: "custom",
             path: ["offers", offerIndex, "weekdayPrices", weekdayIndex, "priceReais"],
             message: "Informe o preço deste dia.",
+          });
+        }
+        if (
+          weekday.enabled &&
+          weekday.priceType === "PERCENTAGE" &&
+          weekday.discountPercentage === undefined
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: [
+              "offers",
+              offerIndex,
+              "weekdayPrices",
+              weekdayIndex,
+              "discountPercentage",
+            ],
+            message: "Informe o desconto deste dia.",
           });
         }
       });
@@ -150,7 +176,9 @@ function createWeekdayPrices() {
   return dayOptions.map((day) => ({
     dayOfWeek: day.value,
     enabled: false,
+    priceType: "FIXED" as UpsellPriceType,
     priceReais: undefined,
+    discountPercentage: undefined,
   }));
 }
 
@@ -207,18 +235,27 @@ function campaignToForm(campaign: UpsellCampaign): CampaignForm {
     offers: campaign.offers.map((offer) => ({
       targetType: offer.productId ? "PRODUCT" : "CATEGORY",
       targetId: offer.productId ?? offer.categoryId ?? "",
+      priceType:
+        offer.priceType ??
+        (offer.discountPercentage != null ? "PERCENTAGE" : "FIXED"),
       fixedOfferPriceReais:
         offer.fixedOfferPriceCents != null
           ? centsToReais(offer.fixedOfferPriceCents)
           : campaign.fixedOfferPriceCents != null
             ? centsToReais(campaign.fixedOfferPriceCents)
             : undefined,
+      discountPercentage: offer.discountPercentage ?? undefined,
       weekdayPrices: dayOptions.map((day) => {
         const saved = offer.weekdayPrices?.find((price) => price.dayOfWeek === day.value);
         return {
           dayOfWeek: day.value,
           enabled: Boolean(saved),
-          priceReais: saved ? centsToReais(saved.priceCents) : undefined,
+          priceType:
+            saved?.priceType ??
+            (saved?.discountPercentage != null ? "PERCENTAGE" : "FIXED"),
+          priceReais:
+            saved?.priceCents == null ? undefined : centsToReais(saved.priceCents),
+          discountPercentage: saved?.discountPercentage ?? undefined,
         };
       }),
     })),
@@ -335,7 +372,9 @@ export function UpsellCampaignManager({
           {
             targetType,
             targetId,
+            priceType: "FIXED" as const,
             fixedOfferPriceReais: undefined,
+            discountPercentage: undefined,
             weekdayPrices: createWeekdayPrices(),
           },
         ];
@@ -361,7 +400,8 @@ export function UpsellCampaignManager({
       : hasProductOffers ? "PRODUCT" : "CATEGORY";
     const hasConfiguredPrice = values.offers.some(
       (offer) =>
-        offer.fixedOfferPriceReais !== undefined ||
+        (offer.priceType === "FIXED" && offer.fixedOfferPriceReais !== undefined) ||
+        (offer.priceType === "PERCENTAGE" && offer.discountPercentage !== undefined) ||
         offer.weekdayPrices.some((weekday) => weekday.enabled),
     );
     const payload = {
@@ -390,15 +430,26 @@ export function UpsellCampaignManager({
         categoryId: offer.targetType === "CATEGORY" ? offer.targetId : null,
         displayOrder: index,
         maximumQuantity: values.maximumQuantityPerOrder,
+        priceType: offer.priceType,
         fixedOfferPriceCents:
-          offer.fixedOfferPriceReais === undefined
+          offer.priceType !== "FIXED" || offer.fixedOfferPriceReais === undefined
             ? null
             : reaisToCents(offer.fixedOfferPriceReais),
+        discountPercentage:
+          offer.priceType === "PERCENTAGE" ? offer.discountPercentage ?? null : null,
         weekdayPrices: offer.weekdayPrices
           .filter((weekday) => weekday.enabled)
           .map((weekday) => ({
             dayOfWeek: weekday.dayOfWeek,
-            priceCents: reaisToCents(weekday.priceReais ?? 0),
+            priceType: weekday.priceType,
+            priceCents:
+              weekday.priceType === "FIXED"
+                ? reaisToCents(weekday.priceReais ?? 0)
+                : null,
+            discountPercentage:
+              weekday.priceType === "PERCENTAGE"
+                ? weekday.discountPercentage ?? null
+                : null,
           })),
       })),
       maximumQuantityPerOrder: values.maximumQuantityPerOrder,
@@ -741,17 +792,46 @@ export function UpsellCampaignManager({
                         </Button>
                       </Actions>
                     </OfferHeader>
-                    <Field label="Preço padrão no upsell (opcional)">
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="Vazio = preço normal"
-                        {...form.register(`offers.${index}.fixedOfferPriceReais`, {
-                          setValueAs: optionalNumber,
-                        })}
-                      />
-                    </Field>
+                    <GridTwo>
+                      <Field label="Tipo do preço padrão">
+                        <Select {...form.register(`offers.${index}.priceType`)}>
+                          <option value="FIXED">Valor fixo</option>
+                          <option value="PERCENTAGE">Porcentagem</option>
+                        </Select>
+                      </Field>
+                      {offer.priceType === "PERCENTAGE" ? (
+                        <Field
+                          label="Desconto padrão (%)"
+                          error={
+                            form.formState.errors.offers?.[index]?.discountPercentage
+                              ?.message
+                          }
+                        >
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            placeholder="Vazio = preço normal"
+                            {...form.register(`offers.${index}.discountPercentage`, {
+                              setValueAs: optionalNumber,
+                            })}
+                          />
+                        </Field>
+                      ) : (
+                        <Field label="Preço padrão no upsell (opcional)">
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="Vazio = preço normal"
+                            {...form.register(`offers.${index}.fixedOfferPriceReais`, {
+                              setValueAs: optionalNumber,
+                            })}
+                          />
+                        </Field>
+                      )}
+                    </GridTwo>
                     <WeekdayDetails>
                       <summary>Preços por dia da semana (opcional)</summary>
                       <WeekdayGrid>
@@ -767,23 +847,57 @@ export function UpsellCampaignManager({
                               {dayOptions[weekdayIndex]?.label}
                             </Checkbox>
                             {weekday.enabled ? (
-                              <Field
-                                label="Preço no dia"
-                                error={
-                                  form.formState.errors.offers?.[index]
-                                    ?.weekdayPrices?.[weekdayIndex]?.priceReais?.message
-                                }
-                              >
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  step="0.01"
-                                  {...form.register(
-                                    `offers.${index}.weekdayPrices.${weekdayIndex}.priceReais`,
-                                    { setValueAs: optionalNumber },
-                                  )}
-                                />
-                              </Field>
+                              <GridTwo>
+                                <Field label="Tipo">
+                                  <Select
+                                    {...form.register(
+                                      `offers.${index}.weekdayPrices.${weekdayIndex}.priceType`,
+                                    )}
+                                  >
+                                    <option value="FIXED">Valor fixo</option>
+                                    <option value="PERCENTAGE">Porcentagem</option>
+                                  </Select>
+                                </Field>
+                                {weekday.priceType === "PERCENTAGE" ? (
+                                  <Field
+                                    label="Desconto no dia (%)"
+                                    error={
+                                      form.formState.errors.offers?.[index]
+                                        ?.weekdayPrices?.[weekdayIndex]
+                                        ?.discountPercentage?.message
+                                    }
+                                  >
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      max={100}
+                                      step={1}
+                                      {...form.register(
+                                        `offers.${index}.weekdayPrices.${weekdayIndex}.discountPercentage`,
+                                        { setValueAs: optionalNumber },
+                                      )}
+                                    />
+                                  </Field>
+                                ) : (
+                                  <Field
+                                    label="Preço no dia"
+                                    error={
+                                      form.formState.errors.offers?.[index]
+                                        ?.weekdayPrices?.[weekdayIndex]?.priceReais?.message
+                                    }
+                                  >
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      step="0.01"
+                                      {...form.register(
+                                        `offers.${index}.weekdayPrices.${weekdayIndex}.priceReais`,
+                                        { setValueAs: optionalNumber },
+                                      )}
+                                    />
+                                  </Field>
+                                )}
+                              </GridTwo>
                             ) : (
                               <PageSubtitle>Usa o preço padrão</PageSubtitle>
                             )}
@@ -806,8 +920,8 @@ export function UpsellCampaignManager({
             {step === 3 ? (
               <StepContent>
                 <PageSubtitle>
-                  Preços são configurados em cada oferta. Sem preço preenchido, produto usa valor
-                  normal do catálogo.
+                  Valores fixos ou descontos percentuais são configurados em cada oferta. Sem
+                  valor preenchido, produto usa preço normal do catálogo.
                 </PageSubtitle>
                 <Checkbox>
                   <input type="checkbox" {...form.register("showSavings")} />
