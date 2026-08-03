@@ -548,7 +548,8 @@ export function UpsellCampaignManager({
       0,
     );
     const hasOfferPrices = campaign.offers.some(
-      (offer) => offer.fixedOfferPriceCents != null,
+      (offer) =>
+        offer.fixedOfferPriceCents != null || offer.discountPercentage != null,
     );
     if (weeklyRules > 0) {
       return `Preços por oferta • ${weeklyRules} regra(s) semanal(is)`;
