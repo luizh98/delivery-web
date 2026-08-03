@@ -575,7 +575,7 @@ export function UpsellCampaignManager({
     <Root>
       <PageHeader>
         <div>
-          <PageTitle>Upsell</PageTitle>
+          <PageTitle>Campanhas</PageTitle>
           <PageSubtitle>Campanhas de produtos complementares no carrinho.</PageSubtitle>
         </div>
         <Button type="button" onClick={openCreate}>
@@ -819,7 +819,7 @@ export function UpsellCampaignManager({
                           />
                         </Field>
                       ) : (
-                        <Field label="Preço padrão no upsell (opcional)">
+                        <Field label="Preço padrão na campanha (opcional)">
                           <Input
                             type="number"
                             min={0}
