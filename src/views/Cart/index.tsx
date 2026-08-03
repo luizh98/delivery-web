@@ -467,26 +467,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                 </DeliveryToggleGrid>
               </CheckoutSection>
 
-              <CheckoutSection>
-                <CheckoutSectionTitle>Seus dados</CheckoutSectionTitle>
-                <Field
-                  label="Nome"
-                  error={form.formState.errors.customerName?.message}
-                >
-                  <Input autoComplete="name" {...form.register("customerName")} />
-                </Field>
-                <Field
-                  label="WhatsApp"
-                  error={form.formState.errors.customerPhone?.message}
-                >
-                  <Input
-                    type="tel"
-                    autoComplete="tel"
-                    {...form.register("customerPhone")}
-                  />
-                </Field>
-              </CheckoutSection>
-
               {deliveryType === "DELIVERY" ? (
                 <CheckoutSection>
                   <CheckoutSectionTitle>Endereço de entrega</CheckoutSectionTitle>
@@ -543,6 +523,26 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                   </DeliveryFields>
                 </CheckoutSection>
               ) : null}
+
+              <CheckoutSection>
+                <CheckoutSectionTitle>Seus dados</CheckoutSectionTitle>
+                <Field
+                  label="Nome"
+                  error={form.formState.errors.customerName?.message}
+                >
+                  <Input autoComplete="name" {...form.register("customerName")} />
+                </Field>
+                <Field
+                  label="WhatsApp"
+                  error={form.formState.errors.customerPhone?.message}
+                >
+                  <Input
+                    type="tel"
+                    autoComplete="tel"
+                    {...form.register("customerPhone")}
+                  />
+                </Field>
+              </CheckoutSection>
 
               <CheckoutSection>
                 <CheckoutSectionTitle>Forma de pagamento</CheckoutSectionTitle>
