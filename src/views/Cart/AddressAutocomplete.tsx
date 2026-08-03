@@ -41,6 +41,7 @@ async function responseError(response: Response, fallback: string) {
 
 export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
   const sessionToken = useRef("");
+  const selectedQuery = useRef("");
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,11 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
   useEffect(() => {
     const input = query.trim();
 
-    if (input.length < 3 || selecting) {
+    if (
+      input.length < 3 ||
+      selecting ||
+      input === selectedQuery.current
+    ) {
       return;
     }
 
@@ -113,6 +118,7 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
     setSelecting(true);
     setLoading(true);
     setError("");
+    setSuggestions([]);
 
     try {
       const response = await fetch("/api/places/details", {
@@ -134,8 +140,9 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
       }
 
       const address = (await response.json()) as AddressSelection;
-      setQuery(address.formattedAddress || suggestion.text);
-      setSuggestions([]);
+      const selectedAddress = address.formattedAddress || suggestion.text;
+      selectedQuery.current = selectedAddress.trim();
+      setQuery(selectedAddress);
       onSelect(address);
       sessionToken.current = crypto.randomUUID();
     } catch (requestError) {
@@ -164,6 +171,7 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
           value={query}
           onChange={(event) => {
             const nextQuery = event.target.value;
+            selectedQuery.current = "";
             setQuery(nextQuery);
 
             if (nextQuery.trim().length < 3) {
