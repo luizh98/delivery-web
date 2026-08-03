@@ -1,3 +1,5 @@
+import { getRestaurantConfig } from "@/services/api/server";
+
 type DetailsRequest = {
   placeId?: unknown;
   sessionToken?: unknown;
@@ -15,6 +17,14 @@ type GooglePlaceDetails = {
 };
 
 const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,36}$/;
+
+function normalizeLocation(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+}
 
 function component(
   components: GoogleAddressComponent[],
@@ -47,6 +57,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "Endereço inválido." }, { status: 400 });
   }
 
+  const restaurantConfig = await getRestaurantConfig();
+  const configuredCity = restaurantConfig?.address?.city?.trim() ?? "";
+  const configuredState = restaurantConfig?.address?.state?.trim() ?? "";
+
+  if (!configuredCity) {
+    return Response.json(
+      { error: "Cidade do restaurante não configurada." },
+      { status: 503 },
+    );
+  }
+
   const query = new URLSearchParams({
     sessionToken,
     languageCode: "pt-BR",
@@ -74,6 +95,24 @@ export async function POST(request: Request) {
 
     const data = (await googleResponse.json()) as GooglePlaceDetails;
     const components = data.addressComponents ?? [];
+    const city = component(components, [
+      "locality",
+      "administrative_area_level_2",
+    ]);
+    const state = component(components, ["administrative_area_level_1"], true);
+
+    const cityMatches =
+      normalizeLocation(city) === normalizeLocation(configuredCity);
+    const stateMatches =
+      !configuredState ||
+      normalizeLocation(state) === normalizeLocation(configuredState);
+
+    if (!cityMatches || !stateMatches) {
+      return Response.json(
+        { error: `Selecione um endereço em ${configuredCity}.` },
+        { status: 422 },
+      );
+    }
 
     return Response.json({
       formattedAddress: data.formattedAddress ?? "",
@@ -84,11 +123,8 @@ export async function POST(request: Request) {
         "sublocality",
         "neighborhood",
       ]),
-      city: component(components, [
-        "locality",
-        "administrative_area_level_2",
-      ]),
-      state: component(components, ["administrative_area_level_1"], true),
+      city,
+      state,
       zipCode: component(components, ["postal_code"]),
     });
   } catch {

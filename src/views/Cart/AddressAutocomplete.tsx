@@ -31,6 +31,14 @@ type AddressAutocompleteProps = {
   onSelect: (address: AddressSelection) => void;
 };
 
+async function responseError(response: Response, fallback: string) {
+  const data = (await response.json().catch(() => null)) as {
+    error?: unknown;
+  } | null;
+
+  return typeof data?.error === "string" ? data.error : fallback;
+}
+
 export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
   const sessionToken = useRef("");
   const [query, setQuery] = useState("");
@@ -67,7 +75,12 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
         });
 
         if (!response.ok) {
-          throw new Error();
+          throw new Error(
+            await responseError(
+              response,
+              "Busca indisponível. Preencha o endereço manualmente.",
+            ),
+          );
         }
 
         const data = (await response.json()) as { suggestions?: Suggestion[] };
@@ -78,7 +91,11 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
         }
 
         setSuggestions([]);
-        setError("Busca indisponível. Preencha o endereço manualmente.");
+        setError(
+          requestError instanceof Error && requestError.message
+            ? requestError.message
+            : "Busca indisponível. Preencha o endereço manualmente.",
+        );
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -108,7 +125,12 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
       });
 
       if (!response.ok) {
-        throw new Error();
+        throw new Error(
+          await responseError(
+            response,
+            "Não foi possível preencher. Informe o endereço manualmente.",
+          ),
+        );
       }
 
       const address = (await response.json()) as AddressSelection;
@@ -116,8 +138,12 @@ export function AddressAutocomplete({ onSelect }: AddressAutocompleteProps) {
       setSuggestions([]);
       onSelect(address);
       sessionToken.current = crypto.randomUUID();
-    } catch {
-      setError("Não foi possível preencher. Informe o endereço manualmente.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error && requestError.message
+          ? requestError.message
+          : "Não foi possível preencher. Informe o endereço manualmente.",
+      );
     } finally {
       setLoading(false);
       setSelecting(false);
