@@ -43,13 +43,6 @@ export const ClosedStoreNotice = styled("p", {
   },
 });
 
-export const Eyebrow = styled("p", {
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  color: "var(--color-muted)",
-});
-
 export const HeroTitle = styled("h1", {
   fontSize: "1.5rem",
   fontWeight: 700,
@@ -66,8 +59,6 @@ export const HeroInfoGrid = styled("div", {
   alignItems: "center",
   gap: "0.5rem 1.25rem",
   marginTop: "0.25rem",
-  paddingTop: "0.75rem",
-  borderTop: "1px solid var(--color-border)",
 });
 
 export const HeroInfoItem = styled("p", {
@@ -92,7 +83,7 @@ export const CategoryBar = styled("div", {
   top: 0,
   zIndex: 10,
   overflowX: "auto",
-  margin: "1rem -1rem 0",
+  margin: "0 -1rem 0 0",
   borderTop: "1px solid var(--color-border)",
   borderBottom: "1px solid var(--color-border)",
   background: "color-mix(in srgb, var(--color-background) 95%, transparent)",
@@ -100,8 +91,7 @@ export const CategoryBar = styled("div", {
   backdropFilter: "blur(8px)",
 
   "@sm": {
-    marginLeft: 0,
-    marginRight: 0,
+    margin: "0 0 0 0",
     border: "1px solid var(--color-border)",
     borderRadius: "0.375rem",
   },

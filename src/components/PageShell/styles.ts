@@ -18,5 +18,10 @@ export const Shell = styled("main", {
         paddingBottom: "7rem",
       },
     },
+    flushTop: {
+      true: {
+        paddingTop: 0,
+      },
+    },
   },
 });

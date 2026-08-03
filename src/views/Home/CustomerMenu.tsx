@@ -32,7 +32,6 @@ import {
   ClosedStoreNotice,
   ContentGrid,
   Empty,
-  Eyebrow,
   FlagBadge,
   FlagBadges,
   Hero,
@@ -227,8 +226,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               : "linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))",
           }}
         />
-        <HeroBody>
-          <Eyebrow>Cardápio</Eyebrow>
+        <HeroBody>        
           <HeroTitle>
             {restaurantConfig?.name ?? "Delivery"}
           </HeroTitle>
@@ -262,7 +260,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         </HeroBody>
       </Hero>
 
-      <PageShell bottomPad>
+      <PageShell bottomPad flushTop>
       {visibleCategories.length > 0 ? (
         <CategoryBar>
           <CategoryList>
