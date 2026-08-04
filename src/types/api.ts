@@ -144,6 +144,7 @@ export type OrderTotals = {
 
 export type OrderResponse = {
   id: string;
+  trackingCode?: string;
   customer: {
     name: string;
     phone: string;
@@ -165,6 +166,25 @@ export type OrderResponse = {
     canceledAt: string;
   };
   whatsappMessage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type PublicOrderTrackingResponse = {
+  orderNumber: string;
+  deliveryType: DeliveryType;
+  paymentMethod?: PaymentMethod;
+  status: OrderStatus;
+  statusHistory: {
+    status: OrderStatus;
+    changedAt: string;
+    reason?: string;
+  }[];
+  totalCents: number;
+  cancellation?: {
+    reason: string;
+    canceledAt: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 };
