@@ -200,3 +200,138 @@ export const AddressSearchStatus = styled("span", {
   fontWeight: 400,
   color: "var(--color-muted)",
 });
+
+export const AddressSelectAction = styled("div", {
+  button: {
+    width: "100%",
+  },
+});
+
+export const AddressModalOverlay = styled("div", {
+  position: "fixed",
+  inset: 0,
+  zIndex: 100,
+  display: "grid",
+  alignItems: "end",
+  background: "rgb(0 0 0 / 0.5)",
+
+  "@md": {
+    alignItems: "center",
+    padding: "1rem",
+  },
+});
+
+export const AddressModalDialog = styled("div", {
+  display: "grid",
+  width: "100%",
+  maxWidth: "36rem",
+  maxHeight: "90vh",
+  justifySelf: "center",
+  gap: "1rem",
+  overflowY: "auto",
+  borderRadius: "0.75rem 0.75rem 0 0",
+  background: "var(--color-surface)",
+  padding: "1rem",
+  boxShadow: "0 24px 60px -20px rgb(0 0 0 / 0.45)",
+
+  "@md": {
+    borderRadius: "0.75rem",
+    padding: "1.25rem",
+  },
+});
+
+export const AddressModalHeader = styled("header", {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: "1rem",
+});
+
+export const AddressModalTitle = styled("h2", {
+  fontSize: "1.125rem",
+  fontWeight: 700,
+});
+
+export const AddressModalDescription = styled("p", {
+  marginTop: "0.25rem",
+  color: "var(--color-muted)",
+  fontSize: "0.875rem",
+  lineHeight: 1.5,
+});
+
+export const AddressModalCloseButton = styled("button", {
+  display: "grid",
+  width: "2.25rem",
+  height: "2.25rem",
+  flexShrink: 0,
+  placeItems: "center",
+  borderRadius: "9999px",
+  color: "var(--color-muted)",
+
+  "&:hover": {
+    background: "var(--color-surface-muted)",
+    color: "var(--color-text)",
+  },
+});
+
+export const AddressModalFields = styled("div", {
+  display: "grid",
+  gap: "0.75rem",
+});
+
+export const AddressModalActions = styled("div", {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "0.5rem",
+});
+
+export const AddressSummaryCard = styled("div", {
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr) auto",
+  alignItems: "start",
+  gap: "0.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.5rem",
+  background: "var(--color-surface-muted)",
+  padding: "0.75rem",
+});
+
+export const AddressSummaryIcon = styled("span", {
+  display: "grid",
+  width: "2rem",
+  height: "2rem",
+  placeItems: "center",
+  borderRadius: "9999px",
+  background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
+  color: "var(--color-primary)",
+});
+
+export const AddressSummaryContent = styled("div", {
+  minWidth: 0,
+});
+
+export const AddressSummaryTitle = styled("strong", {
+  display: "block",
+  marginBottom: "0.125rem",
+  fontSize: "0.8125rem",
+});
+
+export const AddressSummaryText = styled("span", {
+  display: "block",
+  color: "var(--color-muted)",
+  fontSize: "0.8125rem",
+  lineHeight: 1.45,
+});
+
+export const AddressSummaryEditButton = styled("button", {
+  display: "grid",
+  width: "2rem",
+  height: "2rem",
+  placeItems: "center",
+  borderRadius: "9999px",
+  color: "var(--color-primary)",
+
+  "&:hover": {
+    background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
+  },
+});
