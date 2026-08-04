@@ -1,3 +1,13 @@
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export async function clientApi<T>(
   path: string,
   init?: RequestInit,
@@ -11,7 +21,7 @@ export async function clientApi<T>(
   });
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw new ApiError(response.status, await response.text());
   }
 
   if (response.status === 204) {
