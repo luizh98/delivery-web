@@ -59,7 +59,6 @@ import {
   DeliveryToggleGrid,
   EmptyCart,
   Muted,
-  SuccessBox,
   TotalGrand,
   TotalRow,
   TotalStrong,
@@ -165,7 +164,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
   const {
     items,
     checkout,
-    lastOrder,
     subtotalCents,
     updateItemQuantity,
     removeItem,
@@ -317,22 +315,12 @@ export function CartView({ restaurantConfig }: CartViewProps) {
         }),
       });
 
+      if (!order.trackingCode) {
+        throw new Error("Order tracking code was not returned.");
+      }
+
       completeOrder(order);
-      setConfirmed(false);
-      setStep(1);
-      form.reset({
-        customerName: "",
-        customerPhone: "",
-        deliveryType: values.deliveryType,
-        street: values.street,
-        number: values.number,
-        complement: values.complement,
-        neighborhood: values.neighborhood,
-        city: values.city,
-        state: values.state,
-        zipCode: values.zipCode,
-        paymentMethod: "",
-      });
+      router.replace(`/orders/${encodeURIComponent(order.trackingCode)}`);
     } catch {
       setCheckoutError("Não foi possível enviar o pedido.");
     } finally {
@@ -368,14 +356,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
             Conclusão
           </StepItem>
         </StepIndicator>
-
-        {items.length === 0 && lastOrder ? (
-          <SuccessBox>
-            Pedido confirmado. Status: {lastOrder.status}. Pagamento:{" "}
-            {paymentMethods.find((method) => method.value === lastOrder.paymentMethod)
-              ?.label ?? lastOrder.paymentMethod}
-          </SuccessBox>
-        ) : null}
 
         <CartCard>
           {step === 1 ? (
