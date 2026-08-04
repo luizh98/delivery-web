@@ -287,10 +287,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const completeOrder = useCallback(
     (lastOrder: OrderResponse) => {
+      const { checkout } = getSnapshot();
+
       writeSnapshot({
         version: 1,
         items: [],
-        checkout: EMPTY_CHECKOUT,
+        checkout: {
+          ...EMPTY_CHECKOUT,
+          deliveryType: checkout.deliveryType,
+          street: checkout.street,
+          number: checkout.number,
+          complement: checkout.complement,
+          neighborhood: checkout.neighborhood,
+          city: checkout.city,
+          state: checkout.state,
+          zipCode: checkout.zipCode,
+        },
         lastOrder,
       });
     },
