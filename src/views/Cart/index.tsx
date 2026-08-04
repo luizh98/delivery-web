@@ -7,7 +7,9 @@ import {
   Bike,
   ChevronLeft,
   CreditCard,
+  MapPin,
   Minus,
+  Pencil,
   Plus,
   QrCode,
   Store,
@@ -26,11 +28,14 @@ import {
 import { Field, Input, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
-import type { OrderResponse, RestaurantConfigResponse } from "@/types/api";
+import type {
+  Address,
+  OrderResponse,
+  RestaurantConfigResponse,
+} from "@/types/api";
 import { money } from "@/utils/format";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import {
-  AddressGrid,
   CartCard,
   CartCount,
   CartItem as CartItemRow,
@@ -51,7 +56,6 @@ import {
   CheckoutForm,
   ContinueShoppingButton,
   DeliveryButton,
-  DeliveryFields,
   DeliveryToggleGrid,
   EmptyCart,
   Muted,
@@ -61,9 +65,19 @@ import {
   TotalStrong,
   TotalsBox,
 } from "@/views/Home/styles";
-import { AddressAutocomplete, type AddressSelection } from "./AddressAutocomplete";
+import {
+  DeliveryAddressModal,
+  type DeliveryAddress,
+} from "./DeliveryAddressModal";
 import { UpsellBlock } from "./UpsellBlock";
 import {
+  AddressSelectAction,
+  AddressSummaryCard,
+  AddressSummaryContent,
+  AddressSummaryEditButton,
+  AddressSummaryIcon,
+  AddressSummaryText,
+  AddressSummaryTitle,
   CartPageContent,
   CartPageHeader,
   CartPageText,
@@ -132,6 +146,21 @@ type CartViewProps = {
   restaurantConfig: RestaurantConfigResponse | null;
 };
 
+function formatAddressLines(address?: Address | null) {
+  const street = [address?.street?.trim(), address?.number?.trim()]
+    .filter(Boolean)
+    .join(", ");
+  const cityState = [address?.city?.trim(), address?.state?.trim()]
+    .filter(Boolean)
+    .join(" - ");
+  const neighborhood = [address?.neighborhood?.trim(), cityState]
+    .filter(Boolean)
+    .join(", ");
+
+  return [street, address?.complement?.trim(), neighborhood, address?.zipCode?.trim()]
+    .filter((line): line is string => Boolean(line));
+}
+
 export function CartView({ restaurantConfig }: CartViewProps) {
   const router = useRouter();
   const {
@@ -149,6 +178,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
   const [submitting, setSubmitting] = useState(false);
   const [itemPendingRemoval, setItemPendingRemoval] = useState<CartItem | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
 
   const form = useForm<CheckoutDraft>({
     resolver: zodResolver(checkoutSchema),
@@ -169,6 +199,26 @@ export function CartView({ restaurantConfig }: CartViewProps) {
   const closedStoreMessage = restaurantOpen
     ? ""
     : formatClosedStoreMessage(restaurantConfig?.nextOpeningAt);
+  const hasSavedDeliveryAddress = Boolean(
+    checkout.street.trim() &&
+      checkout.number.trim() &&
+      checkout.neighborhood.trim() &&
+      checkout.city.trim() &&
+      checkout.state.trim(),
+  );
+  const savedDeliveryAddress: DeliveryAddress | null = hasSavedDeliveryAddress
+    ? {
+        formattedAddress: "",
+        street: checkout.street,
+        number: checkout.number,
+        complement: checkout.complement,
+        neighborhood: checkout.neighborhood,
+        city: checkout.city,
+        state: checkout.state,
+        zipCode: checkout.zipCode,
+      }
+    : null;
+  const pickupAddressLines = formatAddressLines(restaurantConfig?.address);
 
   useEffect(() => {
     if (!itemPendingRemoval) {
@@ -185,10 +235,11 @@ export function CartView({ restaurantConfig }: CartViewProps) {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [itemPendingRemoval]);
 
-  function fillAddress(address: AddressSelection) {
+  function fillAddress(address: DeliveryAddress) {
     const addressFields = {
       street: address.street,
       number: address.number,
+      complement: address.complement,
       neighborhood: address.neighborhood,
       city: address.city,
       state: address.state,
@@ -206,6 +257,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
       ...form.getValues(),
       ...addressFields,
     });
+    setAddressModalOpen(false);
   }
 
   function persistRegisteredField(event: ChangeEvent<HTMLFormElement>) {
@@ -273,14 +325,14 @@ export function CartView({ restaurantConfig }: CartViewProps) {
       form.reset({
         customerName: "",
         customerPhone: "",
-        deliveryType: "DELIVERY",
-        street: "",
-        number: "",
-        complement: "",
-        neighborhood: "",
-        city: "",
-        state: "",
-        zipCode: "",
+        deliveryType: values.deliveryType,
+        street: values.street,
+        number: values.number,
+        complement: values.complement,
+        neighborhood: values.neighborhood,
+        city: values.city,
+        state: values.state,
+        zipCode: values.zipCode,
         paymentMethod: "",
         notes: "",
       });
@@ -470,59 +522,70 @@ export function CartView({ restaurantConfig }: CartViewProps) {
               {deliveryType === "DELIVERY" ? (
                 <CheckoutSection>
                   <CheckoutSectionTitle>Endereço de entrega</CheckoutSectionTitle>
-                  <DeliveryFields>
-                    <AddressAutocomplete onSelect={fillAddress} />
-                    <Field
-                      label="Rua"
-                      error={form.formState.errors.street?.message}
-                    >
-                      <Input autoComplete="address-line1" {...form.register("street")} />
-                    </Field>
-                    <AddressGrid>
-                      <Field
-                        label="Número"
-                        error={form.formState.errors.number?.message}
+                  {savedDeliveryAddress ? (
+                    <AddressSummaryCard>
+                      <AddressSummaryIcon>
+                        <MapPin size={16} />
+                      </AddressSummaryIcon>
+                      <AddressSummaryContent>
+                        <AddressSummaryTitle>
+                          Endereço selecionado
+                        </AddressSummaryTitle>
+                        {formatAddressLines(savedDeliveryAddress).map(
+                          (line, index) => (
+                            <AddressSummaryText key={`${line}-${index}`}>
+                              {line}
+                            </AddressSummaryText>
+                          ),
+                        )}
+                      </AddressSummaryContent>
+                      <AddressSummaryEditButton
+                        type="button"
+                        aria-label="Alterar endereço de entrega"
+                        onClick={() => setAddressModalOpen(true)}
                       >
-                        <Input {...form.register("number")} />
-                      </Field>
-                      <Field
-                        label="Bairro"
-                        error={form.formState.errors.neighborhood?.message}
+                        <Pencil size={16} />
+                      </AddressSummaryEditButton>
+                    </AddressSummaryCard>
+                  ) : (
+                    <AddressSelectAction>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setAddressModalOpen(true)}
                       >
-                        <Input {...form.register("neighborhood")} />
-                      </Field>
-                    </AddressGrid>
-                    <Field label="Complemento">
-                      <Input autoComplete="address-line2" {...form.register("complement")} />
-                    </Field>
-                    <AddressGrid>
-                      <Field
-                        label="Cidade"
-                        error={form.formState.errors.city?.message}
-                      >
-                        <Input autoComplete="address-level2" {...form.register("city")} />
-                      </Field>
-                      <Field
-                        label="Estado"
-                        error={form.formState.errors.state?.message}
-                      >
-                        <Input
-                          maxLength={2}
-                          autoComplete="address-level1"
-                          {...form.register("state")}
-                        />
-                      </Field>
-                    </AddressGrid>
-                    <Field label="CEP">
-                      <Input
-                        inputMode="numeric"
-                        autoComplete="postal-code"
-                        {...form.register("zipCode")}
-                      />
-                    </Field>
-                  </DeliveryFields>
+                        <MapPin size={16} />
+                        Selecionar endereço
+                      </Button>
+                    </AddressSelectAction>
+                  )}
                 </CheckoutSection>
-              ) : null}
+              ) : (
+                <CheckoutSection>
+                  <CheckoutSectionTitle>Endereço de retirada</CheckoutSectionTitle>
+                  <AddressSummaryCard>
+                    <AddressSummaryIcon>
+                      <Store size={16} />
+                    </AddressSummaryIcon>
+                    <AddressSummaryContent>
+                      <AddressSummaryTitle>
+                        Retire no restaurante
+                      </AddressSummaryTitle>
+                      {pickupAddressLines.length > 0 ? (
+                        pickupAddressLines.map((line, index) => (
+                          <AddressSummaryText key={`${line}-${index}`}>
+                            {line}
+                          </AddressSummaryText>
+                        ))
+                      ) : (
+                        <AddressSummaryText>
+                          Endereço de retirada não configurado.
+                        </AddressSummaryText>
+                      )}
+                    </AddressSummaryContent>
+                  </AddressSummaryCard>
+                </CheckoutSection>
+              )}
 
               <CheckoutSection>
                 <CheckoutSectionTitle>Seus dados</CheckoutSectionTitle>
@@ -629,6 +692,14 @@ export function CartView({ restaurantConfig }: CartViewProps) {
           )}
         </CartCard>
       </CartPageContent>
+
+      {addressModalOpen ? (
+        <DeliveryAddressModal
+          initialAddress={savedDeliveryAddress}
+          onClose={() => setAddressModalOpen(false)}
+          onSave={fillAddress}
+        />
+      ) : null}
 
       {itemPendingRemoval ? (
         <CartRemovalOverlay
