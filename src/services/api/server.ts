@@ -8,6 +8,7 @@ import type {
   Product,
   ProductCategory,
   ProductOptionGroupTemplate,
+  PublicOrderTrackingResponse,
   RestaurantConfigResponse,
   UpsellCampaign,
 } from "@/types/api";
@@ -45,6 +46,12 @@ async function backendFetch<T>(path: string, init?: RequestInit) {
 
 export async function getRestaurantConfig() {
   return backendFetch<RestaurantConfigResponse>("public/restaurant/config");
+}
+
+export async function getPublicOrderTracking(trackingCode: string) {
+  return backendFetch<PublicOrderTrackingResponse>(
+    `public/orders/tracking/${encodeURIComponent(trackingCode)}`,
+  );
 }
 
 export async function getMenu() {
