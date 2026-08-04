@@ -25,7 +25,7 @@ import {
   type CheckoutDraft,
   useCart,
 } from "@/components/CartProvider";
-import { Field, Input, Textarea } from "@/components/Field";
+import { Field, Input } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
 import type {
@@ -116,7 +116,6 @@ const checkoutSchema = z
     paymentMethod: z
       .enum(["", "PIX", "CREDIT_CARD", "DEBIT_CARD", "CASH"])
       .refine((value) => value !== "", "Selecione a forma de pagamento."),
-    notes: z.string(),
   })
   .superRefine((values, context) => {
     if (values.deliveryType !== "DELIVERY") {
@@ -305,7 +304,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                 }
               : undefined,
           paymentMethod: values.paymentMethod,
-          notes: values.notes,
           items: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -334,7 +332,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
         state: values.state,
         zipCode: values.zipCode,
         paymentMethod: "",
-        notes: "",
       });
     } catch {
       setCheckoutError("Não foi possível enviar o pedido.");
@@ -641,10 +638,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                   </CheckoutError>
                 ) : null}
               </CheckoutSection>
-
-              <Field label="Observações do pedido">
-                <Textarea {...form.register("notes")} />
-              </Field>
 
               <TotalsBox>
                 <TotalRow>
