@@ -195,7 +195,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     (item: CartItem) => {
-      updateItems([...snapshot.items, item], null);
+      updateItems([...snapshot.items, item]);
     },
     [snapshot.items, updateItems],
   );
