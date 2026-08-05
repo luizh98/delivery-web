@@ -1,5 +1,18 @@
 import { styled } from "styles";
 
+export const trackingPulseKeyframes = `
+  @keyframes order-tracking-current-pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+    50% {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-primary) 22%, transparent);
+    }
+  }
+`;
+
 export const TrackingPageContent = styled("section", {
   display: "grid",
   width: "100%",
@@ -119,6 +132,13 @@ export const TimelineMarker = styled("span", {
         borderColor: "var(--color-primary)",
         color: "var(--color-primary)",
         boxShadow: "0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent)",
+        animation: "order-tracking-current-pulse 1.6s ease-in-out infinite",
+        willChange: "transform, box-shadow",
+
+        "@motion-reduce": {
+          animation: "none",
+          willChange: "auto",
+        },
       },
       upcoming: {},
     },

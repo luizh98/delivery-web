@@ -35,6 +35,7 @@ import {
   TimelineRail,
   TimelineTime,
   TrackingPageContent,
+  trackingPulseKeyframes,
 } from "./styles";
 
 const POLLING_INTERVAL_MS = 60_000;
@@ -247,6 +248,7 @@ export function OrderTrackingView({
   return (
     <PageShell>
       <TrackingPageContent>
+        <style>{trackingPulseKeyframes}</style>
         <StatusCard aria-live="polite">
           <StatusIcon tone={iconTone}>
             {order.status === "CANCELED" ? (
