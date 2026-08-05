@@ -52,6 +52,7 @@ import {
   ProductList,
   ProductName,
   ProductPrice,
+  TrackingShortcut,
 } from "./styles";
 
 const PRODUCT_DESCRIPTION_MAX_LENGTH = 120;
@@ -132,7 +133,7 @@ function formatTodayBusinessHours(
 
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const router = useRouter();
-  const { items: cart, subtotalCents } = useCart();
+  const { items: cart, lastOrder, subtotalCents } = useCart();
   const initialCategoryId =
     menu.categories.find((category) =>
     menu.products.some((product) => product.categoryId === category.id),
@@ -159,6 +160,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     restaurantConfig?.open === false
       ? formatClosedStoreMessage(restaurantConfig.nextOpeningAt)
       : null;
+  const trackingCode = lastOrder?.trackingCode;
 
   const productsByCategory = useMemo(() => {
     const groups = new Map<string, Product[]>();
@@ -256,6 +258,18 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                 </HeroInfoItem>
               ) : null}
             </HeroInfoGrid>
+          ) : null}
+          {trackingCode ? (
+            <TrackingShortcut
+              type="button"
+              onClick={() =>
+                router.push(`/orders/${encodeURIComponent(trackingCode)}`)
+              }
+            >
+              <Clock3 size={16} aria-hidden="true" />
+              Acompanhar pedido
+              <ChevronRight size={16} aria-hidden="true" />
+            </TrackingShortcut>
           ) : null}
         </HeroBody>
       </Hero>

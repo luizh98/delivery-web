@@ -78,6 +78,32 @@ export const HeroInfoItem = styled("p", {
   },
 });
 
+export const TrackingShortcut = styled("button", {
+  display: "inline-flex",
+  width: "fit-content",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.375rem",
+  marginTop: "0.25rem",
+  border: "1px solid var(--color-primary)",
+  borderRadius: "0.625rem",
+  background: "var(--color-primary)",
+  padding: "0.625rem 0.875rem",
+  color: "#ffffff",
+  fontSize: "0.875rem",
+  fontWeight: 700,
+  cursor: "pointer",
+
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
+
+  svg: {
+    flexShrink: 0,
+  },
+});
+
 export const CategoryBar = styled("div", {
   position: "sticky",
   top: 0,
