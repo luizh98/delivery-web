@@ -11,6 +11,9 @@ import type { OrderResponse } from "@/types/api";
 
 const STORAGE_KEY = "delivery-order-v1";
 const CHANGE_EVENT = "delivery-cart-change";
+const MAX_RECENT_ORDERS = 10;
+const TRACKING_CODE_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type CartOption = {
   groupId: string;
@@ -71,23 +74,47 @@ const EMPTY_CHECKOUT: CheckoutDraft = {
   paymentMethod: "",
 };
 
-type CartStorageSnapshot = {
+type CartStorageSnapshotV1 = {
   version: 1;
   items: CartItem[];
   checkout: CheckoutDraft;
   lastOrder: OrderResponse | null;
 };
 
+type CartStorageSnapshot = {
+  version: 2;
+  items: CartItem[];
+  checkout: CheckoutDraft;
+  lastOrder: OrderResponse | null;
+  recentOrderTrackingCodes: string[];
+};
+
 const EMPTY_SNAPSHOT: CartStorageSnapshot = {
-  version: 1,
+  version: 2,
   items: [],
   checkout: EMPTY_CHECKOUT,
   lastOrder: null,
+  recentOrderTrackingCodes: [],
 };
 
 let memorySnapshot = EMPTY_SNAPSHOT;
 let cachedRaw: string | null = null;
 let cachedSnapshot = EMPTY_SNAPSHOT;
+
+function normalizeTrackingCodes(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .filter((code): code is string => typeof code === "string")
+        .map((code) => code.trim())
+        .filter((code) => TRACKING_CODE_PATTERN.test(code)),
+    ),
+  ).slice(0, MAX_RECENT_ORDERS);
+}
 
 function parseSnapshot(raw: string | null): CartStorageSnapshot {
   if (!raw) {
@@ -101,7 +128,7 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
       !parsed ||
       typeof parsed !== "object" ||
       !("version" in parsed) ||
-      parsed.version !== 1 ||
+      (parsed.version !== 1 && parsed.version !== 2) ||
       !("items" in parsed) ||
       !Array.isArray(parsed.items) ||
       !("checkout" in parsed) ||
@@ -111,12 +138,22 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
       return EMPTY_SNAPSHOT;
     }
 
+    const stored = parsed as CartStorageSnapshot | CartStorageSnapshotV1;
+    const lastOrder = "lastOrder" in stored ? stored.lastOrder : null;
+    const recentOrderTrackingCodes =
+      stored.version === 2
+        ? normalizeTrackingCodes(stored.recentOrderTrackingCodes)
+        : normalizeTrackingCodes([lastOrder?.trackingCode]);
+
     return {
-      ...(parsed as CartStorageSnapshot),
+      version: 2,
+      items: stored.items,
       checkout: {
         ...EMPTY_CHECKOUT,
-        ...(parsed as CartStorageSnapshot).checkout,
+        ...stored.checkout,
       },
+      lastOrder,
+      recentOrderTrackingCodes,
     };
   } catch {
     return EMPTY_SNAPSHOT;
@@ -167,6 +204,7 @@ type CartContextValue = {
   items: CartItem[];
   checkout: CheckoutDraft;
   lastOrder: OrderResponse | null;
+  recentOrderTrackingCodes: string[];
   subtotalCents: number;
   addItem: (item: CartItem) => void;
   updateItemQuantity: (lineId: string, change: number) => void;
@@ -285,10 +323,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const completeOrder = useCallback(
     (lastOrder: OrderResponse) => {
-      const { checkout } = getSnapshot();
+      const { checkout, recentOrderTrackingCodes } = getSnapshot();
+      const trackingCode = lastOrder.trackingCode?.trim();
 
       writeSnapshot({
-        version: 1,
+        version: 2,
         items: [],
         checkout: {
           ...EMPTY_CHECKOUT,
@@ -302,6 +341,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           zipCode: checkout.zipCode,
         },
         lastOrder,
+        recentOrderTrackingCodes: trackingCode
+          ? normalizeTrackingCodes([trackingCode, ...recentOrderTrackingCodes])
+          : recentOrderTrackingCodes,
       });
     },
     [],
@@ -313,6 +355,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items: snapshot.items,
         checkout: snapshot.checkout,
         lastOrder: snapshot.lastOrder,
+        recentOrderTrackingCodes: snapshot.recentOrderTrackingCodes,
         subtotalCents: snapshot.items.reduce(
           (sum, item) => sum + item.totalCents,
           0,
