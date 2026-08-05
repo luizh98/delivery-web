@@ -78,18 +78,22 @@ export const HeroInfoItem = styled("p", {
   },
 });
 
+export const TrackingActions = styled("div", {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.5rem",
+  marginTop: "0.25rem",
+});
+
 export const TrackingShortcut = styled("button", {
   display: "inline-flex",
   width: "fit-content",
   alignItems: "center",
   justifyContent: "center",
   gap: "0.375rem",
-  marginTop: "0.25rem",
   border: "1px solid var(--color-primary)",
   borderRadius: "0.625rem",
-  background: "var(--color-primary)",
   padding: "0.625rem 0.875rem",
-  color: "#ffffff",
   fontSize: "0.875rem",
   fontWeight: 700,
   cursor: "pointer",
@@ -101,6 +105,19 @@ export const TrackingShortcut = styled("button", {
 
   svg: {
     flexShrink: 0,
+  },
+
+  variants: {
+    tone: {
+      primary: {
+        background: "var(--color-primary)",
+        color: "#ffffff",
+      },
+      secondary: {
+        background: "var(--color-surface)",
+        color: "var(--color-primary)",
+      },
+    },
   },
 });
 
