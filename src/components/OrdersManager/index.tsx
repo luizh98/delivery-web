@@ -171,7 +171,9 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                       : "Pagamento não informado"}
                   </MutedTiny>
                 </OrderHeader>
-                <MutedText>{order.customer.phone}</MutedText>
+                <MutedText>
+                  Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.phone}
+                </MutedText>
                 <ItemList>
                   {order.items.map((item) => (
                     <Item key={`${order.id}-${item.productId}-${item.name}`}>
