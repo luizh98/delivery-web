@@ -20,4 +20,4 @@ Exibir tipo de entrega e forma de pagamento em português no painel administrati
 
 ## Commit
 
-`pending` — `fix(admin): localize order details and print receipt`
+`901cebd` — `fix(admin): localize order details and print receipt`
