@@ -135,8 +135,7 @@ function formatTodayBusinessHours(
 
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const router = useRouter();
-  const { items: cart, lastOrder, recentOrderTrackingCodes, subtotalCents } =
-    useCart();
+  const { items: cart, recentOrderTrackingCodes, subtotalCents } = useCart();
   const initialCategoryId =
     menu.categories.find((category) =>
     menu.products.some((product) => product.categoryId === category.id),
@@ -163,8 +162,6 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     restaurantConfig?.open === false
       ? formatClosedStoreMessage(restaurantConfig.nextOpeningAt)
       : null;
-  const trackingCode = lastOrder?.trackingCode;
-
   const productsByCategory = useMemo(() => {
     const groups = new Map<string, Product[]>();
 
@@ -262,31 +259,16 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               ) : null}
             </HeroInfoGrid>
           ) : null}
-          {trackingCode || recentOrderTrackingCodes.length > 0 ? (
+          {recentOrderTrackingCodes.length > 0 ? (
             <TrackingActions>
-              {trackingCode ? (
-                <TrackingShortcut
-                  type="button"
-                  tone="primary"
-                  onClick={() =>
-                    router.push(`/orders/${encodeURIComponent(trackingCode)}`)
-                  }
-                >
-                  <Clock3 size={16} aria-hidden="true" />
-                  Acompanhar pedido
-                  <ChevronRight size={16} aria-hidden="true" />
-                </TrackingShortcut>
-              ) : null}
-              {recentOrderTrackingCodes.length > 0 ? (
-                <TrackingShortcut
-                  type="button"
-                  tone="secondary"
-                  onClick={() => router.push("/orders")}
-                >
-                  <ClipboardList size={16} aria-hidden="true" />
-                  Meus pedidos
-                </TrackingShortcut>
-              ) : null}
+              <TrackingShortcut
+                type="button"
+                tone="secondary"
+                onClick={() => router.push("/orders")}
+              >
+                <ClipboardList size={16} aria-hidden="true" />
+                Meus pedidos
+              </TrackingShortcut>
             </TrackingActions>
           ) : null}
         </HeroBody>
