@@ -7,6 +7,7 @@
 
 - Tela de acompanhamento agora exibe "Status do pedido" ao lado do botão de voltar.
 - Cabeçalho permanece visível nos estados de carregamento, sucesso e erro.
+- Botão de voltar agora abre "Meus pedidos" (`/orders`) em todos os estados.
 - Títulos dos cards usam `h2`, preservando um único `h1` na página.
 
 ## Verificação
@@ -17,4 +18,4 @@
 
 ## Commit
 
-`feat(tracking): add order status page title`
+`feat(tracking): standardize order status header`

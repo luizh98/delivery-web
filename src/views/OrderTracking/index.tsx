@@ -189,7 +189,10 @@ export function OrderTrackingView({
       <PageShell>
         <TrackingPageContent>
           <TrackingPageHeader>
-            <BackButton onClick={() => router.push("/")} />
+            <BackButton
+              aria-label="Voltar para meus pedidos"
+              onClick={() => router.push("/orders")}
+            />
             <TrackingPageTitle>Status do pedido</TrackingPageTitle>
           </TrackingPageHeader>
           <EmptyState aria-live="polite">
@@ -207,7 +210,10 @@ export function OrderTrackingView({
       <PageShell>
         <TrackingPageContent>
           <TrackingPageHeader>
-            <BackButton onClick={() => router.push("/")} />
+            <BackButton
+              aria-label="Voltar para meus pedidos"
+              onClick={() => router.push("/orders")}
+            />
             <TrackingPageTitle>Status do pedido</TrackingPageTitle>
           </TrackingPageHeader>
           <EmptyState>
@@ -228,7 +234,10 @@ export function OrderTrackingView({
       <PageShell>
         <TrackingPageContent>
           <TrackingPageHeader>
-            <BackButton onClick={() => router.push("/")} />
+            <BackButton
+              aria-label="Voltar para meus pedidos"
+              onClick={() => router.push("/orders")}
+            />
             <TrackingPageTitle>Status do pedido</TrackingPageTitle>
           </TrackingPageHeader>
           <EmptyState>
@@ -265,7 +274,10 @@ export function OrderTrackingView({
       <TrackingPageContent>
         <style>{trackingPulseKeyframes}</style>
         <TrackingPageHeader>
-          <BackButton onClick={() => router.push("/")} />
+          <BackButton
+            aria-label="Voltar para meus pedidos"
+            onClick={() => router.push("/orders")}
+          />
           <TrackingPageTitle>Status do pedido</TrackingPageTitle>
         </TrackingPageHeader>
         <StatusCard aria-live="polite">
