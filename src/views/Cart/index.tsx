@@ -64,10 +64,6 @@ import {
   TotalStrong,
   TotalsBox,
 } from "@/views/Home/styles";
-import {
-  DeliveryAddressModal,
-  type DeliveryAddress,
-} from "./DeliveryAddressModal";
 import { UpsellBlock } from "./UpsellBlock";
 import {
   AddressSelectAction,
@@ -142,6 +138,7 @@ const checkoutSchema = z
 
 type CartViewProps = {
   restaurantConfig: RestaurantConfigResponse | null;
+  initialStep?: 1 | 2;
 };
 
 function formatAddressLines(address?: Address | null) {
@@ -159,7 +156,7 @@ function formatAddressLines(address?: Address | null) {
     .filter((line): line is string => Boolean(line));
 }
 
-export function CartView({ restaurantConfig }: CartViewProps) {
+export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   const router = useRouter();
   const {
     items,
@@ -170,12 +167,11 @@ export function CartView({ restaurantConfig }: CartViewProps) {
     updateCheckout,
     completeOrder,
   } = useCart();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2>(initialStep);
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [itemPendingRemoval, setItemPendingRemoval] = useState<CartItem | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
-  const [addressModalOpen, setAddressModalOpen] = useState(false);
 
   const form = useForm<CheckoutDraft>({
     resolver: zodResolver(checkoutSchema),
@@ -203,9 +199,8 @@ export function CartView({ restaurantConfig }: CartViewProps) {
       checkout.city.trim() &&
       checkout.state.trim(),
   );
-  const savedDeliveryAddress: DeliveryAddress | null = hasSavedDeliveryAddress
+  const savedDeliveryAddress: Address | null = hasSavedDeliveryAddress
     ? {
-        formattedAddress: "",
         street: checkout.street,
         number: checkout.number,
         complement: checkout.complement,
@@ -231,31 +226,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [itemPendingRemoval]);
-
-  function fillAddress(address: DeliveryAddress) {
-    const addressFields = {
-      street: address.street,
-      number: address.number,
-      complement: address.complement,
-      neighborhood: address.neighborhood,
-      city: address.city,
-      state: address.state,
-      zipCode: address.zipCode,
-    } as const;
-
-    Object.entries(addressFields).forEach(([field, value]) => {
-      form.setValue(field as keyof typeof addressFields, value, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    });
-
-    updateCheckout({
-      ...form.getValues(),
-      ...addressFields,
-    });
-    setAddressModalOpen(false);
-  }
 
   function persistRegisteredField(event: ChangeEvent<HTMLFormElement>) {
     const field = event.target;
@@ -519,7 +489,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                       <AddressSummaryEditButton
                         type="button"
                         aria-label="Alterar endereço de entrega"
-                        onClick={() => setAddressModalOpen(true)}
+                        onClick={() => router.push("/cart/address")}
                       >
                         <Pencil size={16} />
                       </AddressSummaryEditButton>
@@ -529,7 +499,7 @@ export function CartView({ restaurantConfig }: CartViewProps) {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setAddressModalOpen(true)}
+                        onClick={() => router.push("/cart/address")}
                       >
                         <MapPin size={16} />
                         Selecionar endereço
@@ -665,14 +635,6 @@ export function CartView({ restaurantConfig }: CartViewProps) {
           )}
         </CartCard>
       </CartPageContent>
-
-      {addressModalOpen ? (
-        <DeliveryAddressModal
-          initialAddress={savedDeliveryAddress}
-          onClose={() => setAddressModalOpen(false)}
-          onSave={fillAddress}
-        />
-      ) : null}
 
       {itemPendingRemoval ? (
         <CartRemovalOverlay

@@ -1,8 +1,18 @@
 import { getRestaurantConfig } from "@/services/api/server";
 import { CartView } from "@/views/Cart";
 
-export default async function CartPage() {
-  const restaurantConfig = await getRestaurantConfig();
+type CartPageProps = {
+  searchParams: Promise<{ step?: string | string[] }>;
+};
 
-  return <CartView restaurantConfig={restaurantConfig} />;
+export default async function CartPage({ searchParams }: CartPageProps) {
+  const [restaurantConfig, { step }] = await Promise.all([
+    getRestaurantConfig(),
+    searchParams,
+  ]);
+  const initialStep = step === "checkout" ? 2 : 1;
+
+  return (
+    <CartView restaurantConfig={restaurantConfig} initialStep={initialStep} />
+  );
 }

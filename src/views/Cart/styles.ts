@@ -207,95 +207,17 @@ export const AddressSelectAction = styled("div", {
   },
 });
 
-export const AddressModalOverlay = styled("div", {
-  position: "fixed",
-  inset: 0,
-  zIndex: 100,
+export const AddressPageForm = styled("form", {
   display: "grid",
-  alignItems: "end",
-  overflowY: "auto",
-  WebkitOverflowScrolling: "touch",
-  background: "rgb(0 0 0 / 0.5)",
-
-  "@md": {
-    alignItems: "center",
-    padding: "1rem",
-  },
-});
-
-export const AddressModalDialog = styled("div", {
-  display: "grid",
-  width: "100%",
-  maxWidth: "36rem",
-  maxHeight: "90vh",
-  justifySelf: "center",
-  gridTemplateRows: "auto minmax(0, 1fr) auto",
-  gap: "1rem",
-  overflow: "hidden",
-  borderRadius: "0.75rem 0.75rem 0 0",
-  background: "var(--color-surface)",
-  padding: "1rem",
-  boxShadow: "0 24px 60px -20px rgb(0 0 0 / 0.45)",
-
-  "@media (max-width: 767px)": {
-    maxHeight: "calc(100dvh - 1rem)",
-  },
-
-  "@md": {
-    borderRadius: "0.75rem",
-    padding: "1.25rem",
-  },
-});
-
-export const AddressModalContent = styled("div", {
-  display: "grid",
-  minHeight: 0,
-  gap: "1rem",
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-  WebkitOverflowScrolling: "touch",
-});
-
-export const AddressModalHeader = styled("header", {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
   gap: "1rem",
 });
 
-export const AddressModalTitle = styled("h2", {
-  fontSize: "1.125rem",
-  fontWeight: 700,
-});
-
-export const AddressModalDescription = styled("p", {
-  marginTop: "0.25rem",
-  color: "var(--color-muted)",
-  fontSize: "0.875rem",
-  lineHeight: 1.5,
-});
-
-export const AddressModalCloseButton = styled("button", {
-  display: "grid",
-  width: "2.25rem",
-  height: "2.25rem",
-  flexShrink: 0,
-  placeItems: "center",
-  borderRadius: "9999px",
-  color: "var(--color-muted)",
-
-  "&:hover": {
-    background: "var(--color-surface-muted)",
-    color: "var(--color-text)",
-  },
-});
-
-export const AddressModalFields = styled("div", {
+export const AddressFormFields = styled("div", {
   display: "grid",
   gap: "0.75rem",
 });
 
-export const AddressModalActions = styled("div", {
+export const AddressFormActions = styled("div", {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "0.5rem",
