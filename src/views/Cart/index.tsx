@@ -188,6 +188,8 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   });
   const estimatedDeliveryFeeCents = deliveryType === "DELIVERY" ? 500 : 0;
   const totalCents = subtotalCents + estimatedDeliveryFeeCents;
+  const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
+  const belowMinimumOrder = minimumOrderCents > 0 && subtotalCents < minimumOrderCents;
   const restaurantOpen = restaurantConfig?.open !== false;
   const closedStoreMessage = restaurantOpen
     ? ""
@@ -243,9 +245,11 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   async function submitOrder(values: CheckoutDraft) {
     setCheckoutError("");
 
-    if (!restaurantOpen || !confirmed) {
+    if (!restaurantOpen || !confirmed || belowMinimumOrder) {
       if (!confirmed) {
         setCheckoutError("Confirme os dados antes de enviar.");
+      } else if (belowMinimumOrder) {
+        setCheckoutError(`O pedido mínimo é ${money(minimumOrderCents)}.`);
       }
       return;
     }
@@ -406,12 +410,17 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                 <TotalGrand>
                   Subtotal <TotalStrong>{money(subtotalCents)}</TotalStrong>
                 </TotalGrand>
+                {belowMinimumOrder ? (
+                  <CheckoutError role="status">
+                    Pedido mínimo: {money(minimumOrderCents)}.
+                  </CheckoutError>
+                ) : null}
               </TotalsBox>
 
               <CartStepAction>
                 <Button
                   type="button"
-                  disabled={items.length === 0}
+                  disabled={items.length === 0 || belowMinimumOrder}
                   onClick={() => setStep(2)}
                 >
                   Continuar
@@ -619,11 +628,17 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
               {!restaurantOpen ? (
                 <CheckoutError role="status">{closedStoreMessage}</CheckoutError>
               ) : null}
+              {belowMinimumOrder ? (
+                <CheckoutError role="status">
+                  Adicione mais itens para atingir o pedido mínimo de {money(minimumOrderCents)}.
+                </CheckoutError>
+              ) : null}
 
               <Button
                 type="submit"
                 disabled={
                   items.length === 0 ||
+                  belowMinimumOrder ||
                   !restaurantOpen ||
                   !confirmed ||
                   submitting
