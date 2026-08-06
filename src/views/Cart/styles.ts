@@ -213,6 +213,8 @@ export const AddressModalOverlay = styled("div", {
   zIndex: 100,
   display: "grid",
   alignItems: "end",
+  overflowY: "auto",
+  WebkitOverflowScrolling: "touch",
   background: "rgb(0 0 0 / 0.5)",
 
   "@md": {
@@ -233,6 +235,10 @@ export const AddressModalDialog = styled("div", {
   background: "var(--color-surface)",
   padding: "1rem",
   boxShadow: "0 24px 60px -20px rgb(0 0 0 / 0.45)",
+
+  "@media (max-width: 767px)": {
+    maxHeight: "calc(100dvh - 1rem)",
+  },
 
   "@md": {
     borderRadius: "0.75rem",
