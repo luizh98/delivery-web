@@ -198,7 +198,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                     disabled={order.status === "CANCELED"}
                   >
                     <option value={order.status}>{statusLabel(order.status)}</option>
-                    {nextStatuses.map((status) => (
+                    {nextStatuses.filter((status) => status !== order.status).map((status) => (
                       <option key={status} value={status}>
                         {statusLabel(status)}
                       </option>
