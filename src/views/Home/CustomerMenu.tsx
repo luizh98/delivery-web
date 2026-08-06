@@ -38,6 +38,7 @@ import {
   Hero,
   HeroBanner,
   HeroBody,
+  HeroDetailsRow,
   HeroInfoGrid,
   HeroInfoItem,
   HeroText,
@@ -236,40 +237,47 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             {restaurantConfig?.menuDescription?.trim() ||
               "Escolha seus itens, revise o pedido e envie."}
           </HeroText>
-          {closedStoreMessage || todayBusinessHours || minimumOrderCents > 0 ? (
-            <HeroInfoGrid>
-              {closedStoreMessage ? (
-                <ClosedStoreNotice role="status">
-                  <Clock3 size={14} />
-                  {closedStoreMessage}
-                </ClosedStoreNotice>
-              ) : todayBusinessHours ? (
-                <HeroInfoItem>
-                  <Clock3 size={14} />
-                  <span>Hoje:</span>
-                  <strong>{todayBusinessHours}</strong>
-                </HeroInfoItem>
+          {closedStoreMessage ||
+          todayBusinessHours ||
+          minimumOrderCents > 0 ||
+          recentOrderTrackingCodes.length > 0 ? (
+            <HeroDetailsRow>
+              {closedStoreMessage || todayBusinessHours || minimumOrderCents > 0 ? (
+                <HeroInfoGrid>
+                  {closedStoreMessage ? (
+                    <ClosedStoreNotice role="status">
+                      <Clock3 size={14} />
+                      {closedStoreMessage}
+                    </ClosedStoreNotice>
+                  ) : todayBusinessHours ? (
+                    <HeroInfoItem>
+                      <Clock3 size={14} />
+                      <span>Hoje:</span>
+                      <strong>{todayBusinessHours}</strong>
+                    </HeroInfoItem>
+                  ) : null}
+                  {minimumOrderCents > 0 ? (
+                    <HeroInfoItem>
+                      <ShoppingBag size={14} />
+                      <span>Pedido mínimo:</span>
+                      <strong>{money(minimumOrderCents)}</strong>
+                    </HeroInfoItem>
+                  ) : null}
+                </HeroInfoGrid>
               ) : null}
-              {minimumOrderCents > 0 ? (
-                <HeroInfoItem>
-                  <ShoppingBag size={14} />
-                  <span>Pedido mínimo:</span>
-                  <strong>{money(minimumOrderCents)}</strong>
-                </HeroInfoItem>
+              {recentOrderTrackingCodes.length > 0 ? (
+                <TrackingActions>
+                  <TrackingShortcut
+                    type="button"
+                    tone="secondary"
+                    onClick={() => router.push("/orders")}
+                  >
+                    <ClipboardList size={16} aria-hidden="true" />
+                    Meus pedidos
+                  </TrackingShortcut>
+                </TrackingActions>
               ) : null}
-            </HeroInfoGrid>
-          ) : null}
-          {recentOrderTrackingCodes.length > 0 ? (
-            <TrackingActions>
-              <TrackingShortcut
-                type="button"
-                tone="secondary"
-                onClick={() => router.push("/orders")}
-              >
-                <ClipboardList size={16} aria-hidden="true" />
-                Meus pedidos
-              </TrackingShortcut>
-            </TrackingActions>
+            </HeroDetailsRow>
           ) : null}
         </HeroBody>
       </Hero>

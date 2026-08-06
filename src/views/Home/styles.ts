@@ -53,12 +53,20 @@ export const HeroText = styled("p", {
   color: "var(--color-muted)",
 });
 
+export const HeroDetailsRow = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "1rem",
+  marginTop: "0.25rem",
+});
+
 export const HeroInfoGrid = styled("div", {
   display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  gap: "0.5rem 1.25rem",
-  marginTop: "0.25rem",
+  minWidth: 0,
+  flexDirection: "column",
+  alignItems: "flex-start",
+  gap: "0.5rem",
 });
 
 export const HeroInfoItem = styled("p", {
@@ -80,9 +88,9 @@ export const HeroInfoItem = styled("p", {
 
 export const TrackingActions = styled("div", {
   display: "flex",
-  flexWrap: "wrap",
+  flexShrink: 0,
   gap: "0.5rem",
-  marginTop: "0.25rem",
+  marginLeft: "auto",
 });
 
 export const TrackingShortcut = styled("button", {
@@ -96,6 +104,7 @@ export const TrackingShortcut = styled("button", {
   padding: "0.625rem 0.875rem",
   fontSize: "0.875rem",
   fontWeight: 700,
+  whiteSpace: "nowrap",
   cursor: "pointer",
 
   "&:focus-visible": {
