@@ -12,7 +12,7 @@ import type {
   PublicOrderTrackingResponse,
 } from "@/types/api";
 import { money } from "@/utils/format";
-import { getStatusPresentation, getTrackingSteps } from "./status";
+import { getStatusPresentation, getTrackingStatus, getTrackingSteps } from "./status";
 import {
   Actions,
   EmptyState,
@@ -79,17 +79,20 @@ function historyTime(order: PublicOrderTrackingResponse, status: string) {
 }
 
 function progressStatus(order: PublicOrderTrackingResponse) {
+  let status = order.status;
+
   if (order.status !== "CANCELED") {
-    return order.status;
+    return getTrackingStatus(status, order.deliveryType);
   }
 
   for (let index = order.statusHistory.length - 1; index >= 0; index -= 1) {
     if (order.statusHistory[index].status !== "CANCELED") {
-      return order.statusHistory[index].status;
+      status = order.statusHistory[index].status;
+      break;
     }
   }
 
-  return "RECEIVED";
+  return getTrackingStatus(status === "CANCELED" ? "RECEIVED" : status, order.deliveryType);
 }
 
 export function OrderTrackingView({

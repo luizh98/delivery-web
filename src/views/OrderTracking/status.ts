@@ -14,7 +14,6 @@ const DELIVERY_STEPS: TrackingStep[] = [
   { status: "RECEIVED", label: "Recebido" },
   { status: "CONFIRMED", label: "Confirmado" },
   { status: "PREPARING", label: "Em preparo" },
-  { status: "READY", label: "Pronto" },
   { status: "OUT_FOR_DELIVERY", label: "Saiu para entrega" },
   { status: "COMPLETED", label: "Entregue" },
 ];
@@ -31,11 +30,18 @@ export function getTrackingSteps(deliveryType: DeliveryType) {
   return deliveryType === "DELIVERY" ? DELIVERY_STEPS : PICKUP_STEPS;
 }
 
+export function getTrackingStatus(
+  status: OrderStatus,
+  deliveryType: DeliveryType,
+): OrderStatus {
+  return deliveryType === "DELIVERY" && status === "READY" ? "PREPARING" : status;
+}
+
 export function getStatusPresentation(
-  status: string,
+  status: OrderStatus,
   deliveryType: DeliveryType,
 ): StatusPresentation {
-  switch (status) {
+  switch (getTrackingStatus(status, deliveryType)) {
     case "RECEIVED":
       return {
         title: "Pedido recebido!",
