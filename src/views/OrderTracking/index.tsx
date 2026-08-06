@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, CircleX, Clock3, RefreshCw, SearchX } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { PageShell } from "@/components/PageShell";
 import { ApiError, clientApi } from "@/services/api/client";
@@ -185,6 +186,7 @@ export function OrderTrackingView({
     return (
       <PageShell>
         <TrackingPageContent>
+          <BackButton onClick={() => router.push("/")} />
           <EmptyState aria-live="polite">
             <RefreshCw size={32} />
             <StatusTitle>Buscando seu pedido</StatusTitle>
@@ -199,6 +201,7 @@ export function OrderTrackingView({
     return (
       <PageShell>
         <TrackingPageContent>
+          <BackButton onClick={() => router.push("/")} />
           <EmptyState>
             <SearchX size={36} />
             <StatusTitle>Pedido não encontrado</StatusTitle>
@@ -216,6 +219,7 @@ export function OrderTrackingView({
     return (
       <PageShell>
         <TrackingPageContent>
+          <BackButton onClick={() => router.push("/")} />
           <EmptyState>
             <RefreshCw size={36} />
             <StatusTitle>Status indisponível</StatusTitle>
@@ -249,6 +253,7 @@ export function OrderTrackingView({
     <PageShell>
       <TrackingPageContent>
         <style>{trackingPulseKeyframes}</style>
+        <BackButton onClick={() => router.push("/")} />
         <StatusCard aria-live="polite">
           <StatusIcon tone={iconTone}>
             {order.status === "CANCELED" ? (

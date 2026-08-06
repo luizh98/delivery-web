@@ -8,6 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { useCart } from "@/components/CartProvider";
 import { PageShell } from "@/components/PageShell";
@@ -28,6 +29,7 @@ import {
   HistoryCard,
   HistoryContent,
   HistoryDescription,
+  HistoryHeading,
   HistoryHeader,
   HistoryList,
   HistoryTitle,
@@ -161,6 +163,7 @@ export function OrderHistoryView() {
     return (
       <PageShell>
         <HistoryContent>
+          <BackButton onClick={goToMenu} />
           <StateCard aria-live="polite">
             <StateIcon>
               <RefreshCw size={24} />
@@ -177,6 +180,7 @@ export function OrderHistoryView() {
     return (
       <PageShell>
         <HistoryContent>
+          <BackButton onClick={goToMenu} />
           <StateCard role="alert">
             <StateIcon>
               <AlertTriangle size={24} />
@@ -205,6 +209,7 @@ export function OrderHistoryView() {
     return (
       <PageShell>
         <HistoryContent>
+          <BackButton onClick={goToMenu} />
           <StateCard>
             <StateIcon>
               <ClipboardList size={24} />
@@ -232,10 +237,13 @@ export function OrderHistoryView() {
     <PageShell>
       <HistoryContent>
         <HistoryHeader>
-          <HistoryTitle>Meus pedidos</HistoryTitle>
-          <HistoryDescription>
-            Pedidos recentes feitos neste navegador, do mais novo para o mais antigo.
-          </HistoryDescription>
+          <BackButton onClick={goToMenu} />
+          <HistoryHeading>
+            <HistoryTitle>Meus pedidos</HistoryTitle>
+            <HistoryDescription>
+              Pedidos recentes feitos neste navegador, do mais novo para o mais antigo.
+            </HistoryDescription>
+          </HistoryHeading>
         </HistoryHeader>
 
         {failedCount > 0 ? (
@@ -308,7 +316,7 @@ export function OrderHistoryView() {
             <RefreshCw size={18} />
             {loading ? "Atualizando..." : "Atualizar pedidos"}
           </Button>
-          <Button type="button" variant="ghost" onClick={goToMenu}>
+          <Button type="button" onClick={goToMenu}>
             Voltar ao cardápio
           </Button>
         </StateActions>

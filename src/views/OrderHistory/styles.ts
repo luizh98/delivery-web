@@ -10,6 +10,14 @@ export const HistoryContent = styled("section", {
 
 export const HistoryHeader = styled("header", {
   display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  alignItems: "center",
+  gap: "0.75rem",
+});
+
+export const HistoryHeading = styled("div", {
+  display: "grid",
+  minWidth: 0,
   gap: "0.375rem",
 });
 
