@@ -21,6 +21,18 @@ export const TrackingPageContent = styled("section", {
   gap: "1rem",
 });
 
+export const TrackingPageHeader = styled("header", {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.75rem",
+});
+
+export const TrackingPageTitle = styled("h1", {
+  fontSize: "1.5rem",
+  fontWeight: 800,
+  lineHeight: 1.2,
+});
+
 export const StatusCard = styled("header", {
   display: "grid",
   justifyItems: "center",
@@ -57,7 +69,7 @@ export const StatusIcon = styled("div", {
   },
 });
 
-export const StatusTitle = styled("h1", {
+export const StatusTitle = styled("h2", {
   fontSize: "1.5rem",
   fontWeight: 800,
   lineHeight: 1.2,

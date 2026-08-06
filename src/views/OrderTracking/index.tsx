@@ -36,6 +36,8 @@ import {
   TimelineRail,
   TimelineTime,
   TrackingPageContent,
+  TrackingPageHeader,
+  TrackingPageTitle,
   trackingPulseKeyframes,
 } from "./styles";
 
@@ -186,7 +188,10 @@ export function OrderTrackingView({
     return (
       <PageShell>
         <TrackingPageContent>
-          <BackButton onClick={() => router.push("/")} />
+          <TrackingPageHeader>
+            <BackButton onClick={() => router.push("/")} />
+            <TrackingPageTitle>Status do pedido</TrackingPageTitle>
+          </TrackingPageHeader>
           <EmptyState aria-live="polite">
             <RefreshCw size={32} />
             <StatusTitle>Buscando seu pedido</StatusTitle>
@@ -201,7 +206,10 @@ export function OrderTrackingView({
     return (
       <PageShell>
         <TrackingPageContent>
-          <BackButton onClick={() => router.push("/")} />
+          <TrackingPageHeader>
+            <BackButton onClick={() => router.push("/")} />
+            <TrackingPageTitle>Status do pedido</TrackingPageTitle>
+          </TrackingPageHeader>
           <EmptyState>
             <SearchX size={36} />
             <StatusTitle>Pedido não encontrado</StatusTitle>
@@ -219,7 +227,10 @@ export function OrderTrackingView({
     return (
       <PageShell>
         <TrackingPageContent>
-          <BackButton onClick={() => router.push("/")} />
+          <TrackingPageHeader>
+            <BackButton onClick={() => router.push("/")} />
+            <TrackingPageTitle>Status do pedido</TrackingPageTitle>
+          </TrackingPageHeader>
           <EmptyState>
             <RefreshCw size={36} />
             <StatusTitle>Status indisponível</StatusTitle>
@@ -253,7 +264,10 @@ export function OrderTrackingView({
     <PageShell>
       <TrackingPageContent>
         <style>{trackingPulseKeyframes}</style>
-        <BackButton onClick={() => router.push("/")} />
+        <TrackingPageHeader>
+          <BackButton onClick={() => router.push("/")} />
+          <TrackingPageTitle>Status do pedido</TrackingPageTitle>
+        </TrackingPageHeader>
         <StatusCard aria-live="polite">
           <StatusIcon tone={iconTone}>
             {order.status === "CANCELED" ? (
