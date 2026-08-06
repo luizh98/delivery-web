@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-08-06
-**Current Work:** Feature admin-order-number - concluída
+**Current Work:** Quick Task 015 - concluída
 
 ---
 
@@ -30,6 +30,7 @@ Nenhuma.
 | 006 | Manter somente Meus pedidos no cardápio | 2026-08-06 | `fix(menu): keep only orders history shortcut` | ✅ Done |
 | 007 | Corrigir primeiro toque no botão Continuar do carrinho mobile | 2026-08-06 | pending | ✅ Done |
 | 010 | Padronizar cabeçalho e retorno do status do pedido | 2026-08-06 | `feat(tracking): standardize order status header` | ✅ Done |
+| 015 | Padronizar cor dos botões primários com a categoria da home | 2026-08-06 | `style(button): match home category color` | ✅ Done |
 | 001 | Localizar enums e imprimir pedido no admin | 2026-08-06 | `901cebd` | ✅ Done |
 
 ---

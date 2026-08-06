@@ -19,14 +19,14 @@ export const ButtonRoot = styled("button", {
   variants: {
     variant: {
       primary: {
-        background: "color-mix(in srgb, var(--color-primary) 82%, black)",
+        background: "var(--color-primary)",
         color: "#ffffff",
         boxShadow: "0 1px 2px rgb(0 0 0 / 0.05), 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent)",
-        border: "1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)",
+        border: "1px solid var(--color-primary)",
 
         "@(hover: hover)": {
           "&:hover": {
-            background: "color-mix(in srgb, var(--color-primary) 72%, black)",
+            opacity: 0.9,
           },
         },
 
