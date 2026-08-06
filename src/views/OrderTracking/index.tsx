@@ -372,20 +372,6 @@ export function OrderTrackingView({
           <Button type="button" onClick={() => router.push("/")}>
             Voltar ao cardápio
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            style={{
-              background: "var(--color-surface)",
-              borderColor: "var(--color-primary)",
-              color: "var(--color-primary)",
-            }}
-            onClick={() => void loadOrder()}
-            disabled={refreshing}
-          >
-            <RefreshCw size={16} />
-            {refreshing ? "Atualizando..." : "Atualizar status"}
-          </Button>
         </Actions>
       </TrackingPageContent>
     </PageShell>
