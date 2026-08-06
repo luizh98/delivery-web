@@ -11,6 +11,7 @@ import {
 import {
   AddressModalActions,
   AddressModalCloseButton,
+  AddressModalContent,
   AddressModalDescription,
   AddressModalDialog,
   AddressModalFields,
@@ -40,6 +41,7 @@ export function DeliveryAddressModal({
 }: DeliveryAddressModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<DeliveryAddress | null>(null);
   const [errors, setErrors] = useState<AddressErrors>({});
 
@@ -69,8 +71,8 @@ export function DeliveryAddressModal({
           overlay.style.height = `${viewport.height}px`;
         }
 
-        if (dialog && searchInput && searchInput === document.activeElement) {
-          dialog.scrollTo({ top: 0 });
+        if (searchInput && searchInput === document.activeElement) {
+          contentRef.current?.scrollTo({ top: 0 });
           searchInput.scrollIntoView({ block: "nearest", inline: "nearest" });
         }
       });
@@ -86,7 +88,7 @@ export function DeliveryAddressModal({
       dialog?.querySelector<HTMLInputElement>('input[role="combobox"]')?.focus({
         preventScroll: true,
       });
-      dialog?.scrollTo({ top: 0 });
+      contentRef.current?.scrollTo({ top: 0 });
     });
 
     function closeOnEscape(event: KeyboardEvent) {
@@ -178,53 +180,55 @@ export function DeliveryAddressModal({
           </AddressModalCloseButton>
         </AddressModalHeader>
 
-        <AddressAutocomplete onSelect={selectAddress} />
+        <AddressModalContent ref={contentRef}>
+          <AddressAutocomplete onSelect={selectAddress} />
 
-        {draft ? (
-          <AddressModalFields>
-            <Field label="Rua" error={errors.street}>
-              <Input
-                value={draft.street}
-                onChange={(event) => {
-                  setDraft({ ...draft, street: event.target.value });
-                  setErrors((current) => ({ ...current, street: undefined }));
-                }}
-                autoComplete="address-line1"
-              />
-            </Field>
-            <Field label="Número" error={errors.number}>
-              <Input
-                value={draft.number}
-                onChange={(event) => {
-                  setDraft({ ...draft, number: event.target.value });
-                  setErrors((current) => ({ ...current, number: undefined }));
-                }}
-                inputMode="numeric"
-              />
-            </Field>
-            <Field label="Complemento">
-              <Input
-                value={draft.complement}
-                onChange={(event) =>
-                  setDraft({ ...draft, complement: event.target.value })
-                }
-                autoComplete="address-line2"
-              />
-            </Field>
-            <Field label="Bairro" error={errors.neighborhood}>
-              <Input
-                value={draft.neighborhood}
-                onChange={(event) => {
-                  setDraft({ ...draft, neighborhood: event.target.value });
-                  setErrors((current) => ({
-                    ...current,
-                    neighborhood: undefined,
-                  }));
-                }}
-              />
-            </Field>
-          </AddressModalFields>
-        ) : null}
+          {draft ? (
+            <AddressModalFields>
+              <Field label="Rua" error={errors.street}>
+                <Input
+                  value={draft.street}
+                  onChange={(event) => {
+                    setDraft({ ...draft, street: event.target.value });
+                    setErrors((current) => ({ ...current, street: undefined }));
+                  }}
+                  autoComplete="address-line1"
+                />
+              </Field>
+              <Field label="Número" error={errors.number}>
+                <Input
+                  value={draft.number}
+                  onChange={(event) => {
+                    setDraft({ ...draft, number: event.target.value });
+                    setErrors((current) => ({ ...current, number: undefined }));
+                  }}
+                  inputMode="numeric"
+                />
+              </Field>
+              <Field label="Complemento">
+                <Input
+                  value={draft.complement}
+                  onChange={(event) =>
+                    setDraft({ ...draft, complement: event.target.value })
+                  }
+                  autoComplete="address-line2"
+                />
+              </Field>
+              <Field label="Bairro" error={errors.neighborhood}>
+                <Input
+                  value={draft.neighborhood}
+                  onChange={(event) => {
+                    setDraft({ ...draft, neighborhood: event.target.value });
+                    setErrors((current) => ({
+                      ...current,
+                      neighborhood: undefined,
+                    }));
+                  }}
+                />
+              </Field>
+            </AddressModalFields>
+          ) : null}
+        </AddressModalContent>
 
         <AddressModalActions>
           <Button type="button" variant="outline" onClick={onClose}>

@@ -229,8 +229,9 @@ export const AddressModalDialog = styled("div", {
   maxWidth: "36rem",
   maxHeight: "90vh",
   justifySelf: "center",
+  gridTemplateRows: "auto minmax(0, 1fr) auto",
   gap: "1rem",
-  overflowY: "auto",
+  overflow: "hidden",
   borderRadius: "0.75rem 0.75rem 0 0",
   background: "var(--color-surface)",
   padding: "1rem",
@@ -244,6 +245,15 @@ export const AddressModalDialog = styled("div", {
     borderRadius: "0.75rem",
     padding: "1.25rem",
   },
+});
+
+export const AddressModalContent = styled("div", {
+  display: "grid",
+  minHeight: 0,
+  gap: "1rem",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  WebkitOverflowScrolling: "touch",
 });
 
 export const AddressModalHeader = styled("header", {
