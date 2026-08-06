@@ -7,7 +7,12 @@ import { Field, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import { money, statusLabel } from "@/utils/format";
-import type { OrderResponse, OrderStatus, PaymentMethod } from "@/types/api";
+import type {
+  DeliveryType,
+  OrderResponse,
+  OrderStatus,
+  PaymentMethod,
+} from "@/types/api";
 import type { OrdersManagerProps } from "./types";
 import {
   ActionsPanel,
@@ -44,10 +49,15 @@ const nextStatuses: OrderStatus[] = [
 ];
 
 const paymentLabels: Record<PaymentMethod, string> = {
-  PIX: "PIX",
-  CREDIT_CARD: "Crédito",
-  DEBIT_CARD: "Débito",
+  PIX: "Pix",
+  CREDIT_CARD: "Cartão de crédito",
+  DEBIT_CARD: "Cartão de débito",
   CASH: "Dinheiro",
+};
+
+const deliveryLabels: Record<DeliveryType, string> = {
+  DELIVERY: "Entrega",
+  PICKUP: "Retirada",
 };
 
 export function OrdersManager({ initialOrders, title, compact }: OrdersManagerProps) {
@@ -89,8 +99,42 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
   }
 
   async function printOrder(order: OrderResponse) {
-    const response = await fetch(`/api/backend/admin/orders/${order.id}/print`);
-    setPrintText(await response.text());
+    const printWindow = window.open("", "_blank", "popup,width=480,height=640");
+
+    if (!printWindow) {
+      showToast("Permita pop-ups para imprimir o pedido.", "error");
+      return;
+    }
+
+    printWindow.document.body.textContent = "Preparando impressão...";
+
+    try {
+      const response = await fetch(`/api/backend/admin/orders/${order.id}/print`);
+
+      if (!response.ok) {
+        throw new Error("Não foi possível carregar impressão do pedido.");
+      }
+
+      const content = await response.text();
+      const printBody = printWindow.document.createElement("pre");
+
+      setPrintText(content);
+      printWindow.document.title = "Impressão do pedido";
+      printWindow.document.documentElement.lang = "pt-BR";
+      printWindow.document.body.replaceChildren(printBody);
+      printWindow.document.body.style.margin = "0";
+      printWindow.document.body.style.padding = "1rem";
+      printBody.style.margin = "0";
+      printBody.style.whiteSpace = "pre-wrap";
+      printBody.style.fontFamily = "monospace";
+      printBody.textContent = content;
+      printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
+      printWindow.focus();
+      printWindow.print();
+    } catch {
+      printWindow.close();
+      showToast("Não foi possível imprimir pedido.", "error");
+    }
   }
 
   return (
@@ -120,7 +164,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                 <OrderHeader>
                   <CustomerName>{order.customer.name}</CustomerName>
                   <StatusBadge>{statusLabel(order.status)}</StatusBadge>
-                  <MutedTiny>{order.deliveryType}</MutedTiny>
+                  <MutedTiny>{deliveryLabels[order.deliveryType]}</MutedTiny>
                   <MutedTiny>
                     {order.paymentMethod
                       ? paymentLabels[order.paymentMethod]
