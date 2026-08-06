@@ -349,6 +349,11 @@ export function OrderTrackingView({
           <Button
             type="button"
             variant="outline"
+            style={{
+              background: "var(--color-surface)",
+              borderColor: "var(--color-primary)",
+              color: "var(--color-primary)",
+            }}
             onClick={() => void loadOrder()}
             disabled={refreshing}
           >
