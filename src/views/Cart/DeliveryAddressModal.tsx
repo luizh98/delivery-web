@@ -38,6 +38,7 @@ export function DeliveryAddressModal({
   onClose,
   onSave,
 }: DeliveryAddressModalProps) {
+  const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<DeliveryAddress | null>(() =>
     initialAddress ? { ...initialAddress } : null,
@@ -47,6 +48,39 @@ export function DeliveryAddressModal({
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    const viewport = window.visualViewport;
+    let viewportFrame = 0;
+
+    function syncVisualViewport() {
+      if (!viewport) {
+        return;
+      }
+
+      window.cancelAnimationFrame(viewportFrame);
+      viewportFrame = window.requestAnimationFrame(() => {
+        const overlay = overlayRef.current;
+        const dialog = dialogRef.current;
+        const searchInput = dialog?.querySelector<HTMLInputElement>(
+          'input[role="combobox"]',
+        );
+
+        if (overlay) {
+          overlay.style.top = `${viewport.offsetTop}px`;
+          overlay.style.bottom = "auto";
+          overlay.style.height = `${viewport.height}px`;
+        }
+
+        if (dialog && searchInput && searchInput === document.activeElement) {
+          dialog.scrollTo({ top: 0 });
+          searchInput.scrollIntoView({ block: "nearest", inline: "nearest" });
+        }
+      });
+    }
+
+    syncVisualViewport();
+    viewport?.addEventListener("resize", syncVisualViewport);
+    viewport?.addEventListener("scroll", syncVisualViewport);
 
     const focusFrame = window.requestAnimationFrame(() => {
       const dialog = dialogRef.current;
@@ -67,6 +101,9 @@ export function DeliveryAddressModal({
 
     return () => {
       window.cancelAnimationFrame(focusFrame);
+      window.cancelAnimationFrame(viewportFrame);
+      viewport?.removeEventListener("resize", syncVisualViewport);
+      viewport?.removeEventListener("scroll", syncVisualViewport);
       window.removeEventListener("keydown", closeOnEscape);
       document.body.style.overflow = previousOverflow;
     };
@@ -113,7 +150,11 @@ export function DeliveryAddressModal({
   }
 
   return (
-    <AddressModalOverlay role="presentation" onClick={onClose}>
+    <AddressModalOverlay
+      ref={overlayRef}
+      role="presentation"
+      onClick={onClose}
+    >
       <AddressModalDialog
         ref={dialogRef}
         role="dialog"
