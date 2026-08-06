@@ -241,7 +241,7 @@ export function OrderHistoryView() {
           <HistoryHeading>
             <HistoryTitle>Meus pedidos</HistoryTitle>
             <HistoryDescription>
-              Pedidos recentes feitos neste navegador, do mais novo para o mais antigo.
+              Pedidos recentes feitos, do mais novo para o mais antigo.
             </HistoryDescription>
           </HistoryHeading>
         </HistoryHeader>
