@@ -27,6 +27,7 @@ Nenhuma.
 
 | # | Description | Date | Commit | Status |
 | --- | --- | --- | --- | --- |
+| 007 | Corrigir primeiro toque no botão Continuar do carrinho mobile | 2026-08-06 | pending | ✅ Done |
 | 001 | Localizar enums e imprimir pedido no admin | 2026-08-06 | `901cebd` | ✅ Done |
 
 ---

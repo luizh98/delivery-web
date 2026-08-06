@@ -24,8 +24,10 @@ export const ButtonRoot = styled("button", {
         boxShadow: "0 1px 2px rgb(0 0 0 / 0.05), 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent)",
         border: "1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)",
 
-        "&:hover": {
-          background: "color-mix(in srgb, var(--color-primary) 72%, black)",
+        "@(hover: hover)": {
+          "&:hover": {
+            background: "color-mix(in srgb, var(--color-primary) 72%, black)",
+          },
         },
 
         "&:active": {
