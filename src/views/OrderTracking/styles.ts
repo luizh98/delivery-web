@@ -29,8 +29,7 @@ export const TrackingPageHeader = styled("header", {
 
 export const TrackingPageTitle = styled("h1", {
   fontSize: "1.5rem",
-  fontWeight: 800,
-  lineHeight: 1.2,
+  fontWeight: 700,
 });
 
 export const StatusCard = styled("header", {
