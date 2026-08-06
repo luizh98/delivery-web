@@ -40,9 +40,7 @@ export function DeliveryAddressModal({
 }: DeliveryAddressModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [draft, setDraft] = useState<DeliveryAddress | null>(() =>
-    initialAddress ? { ...initialAddress } : null,
-  );
+  const [draft, setDraft] = useState<DeliveryAddress | null>(null);
   const [errors, setErrors] = useState<AddressErrors>({});
 
   useEffect(() => {
