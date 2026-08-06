@@ -49,7 +49,12 @@ export function DeliveryAddressModal({
     document.body.style.overflow = "hidden";
 
     const focusFrame = window.requestAnimationFrame(() => {
-      dialogRef.current?.querySelector("input")?.focus();
+      const dialog = dialogRef.current;
+
+      dialog?.querySelector<HTMLInputElement>('input[role="combobox"]')?.focus({
+        preventScroll: true,
+      });
+      dialog?.scrollTo({ top: 0 });
     });
 
     function closeOnEscape(event: KeyboardEvent) {
