@@ -196,6 +196,7 @@ export type OrderResponse = {
 };
 
 export type PublicOrderTrackingResponse = {
+  trackingCode: string;
   orderNumber: string;
   deliveryType: DeliveryType;
   paymentMethod?: PaymentMethod;

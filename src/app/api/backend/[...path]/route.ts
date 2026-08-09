@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/constants/api";
+import {
+  ADMIN_TOKEN_COOKIE,
+  CUSTOMER_TOKEN_COOKIE,
+  backendBaseUrl,
+} from "@/constants/api";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
 
 type RouteParams = {
@@ -17,7 +21,13 @@ async function forward(request: NextRequest, context: RouteParams) {
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   const accept = request.headers.get("accept");
-  const token = request.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
+  const adminRoute = path[0] === "admin" || (path[0] === "auth" && path[1] === "me");
+  const publicCustomerAuthRoute = path[0] === "customer" && path[1] === "auth";
+  const token = publicCustomerAuthRoute
+    ? undefined
+    : request.cookies.get(
+        adminRoute ? ADMIN_TOKEN_COOKIE : CUSTOMER_TOKEN_COOKIE,
+      )?.value;
 
   headers.set("X-Tenant-Slug", resolveTenantFromHeaders(request.headers));
   if (contentType) {

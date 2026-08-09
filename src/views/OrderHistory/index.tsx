@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { useCart } from "@/components/CartProvider";
+import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
 import { ApiError, clientApi } from "@/services/api/client";
 import type {
@@ -80,6 +81,7 @@ function getStatusTone(status: OrderStatus): StatusTone {
 export function OrderHistoryView() {
   const router = useRouter();
   const { recentOrderTrackingCodes } = useCart();
+  const { customer, loading: customerLoading } = useCustomerAuth();
   const [orders, setOrders] = useState<LoadedOrderHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [failedCount, setFailedCount] = useState(0);
@@ -88,6 +90,38 @@ export function OrderHistoryView() {
 
   const loadOrders = useCallback(async () => {
     activeRequest.current?.abort();
+
+    if (customerLoading) {
+      return;
+    }
+
+    if (customer) {
+      const controller = new AbortController();
+      activeRequest.current = controller;
+      setLoading(true);
+      setFailedCount(0);
+      setLoadError(false);
+      try {
+        const accountOrders = await clientApi<PublicOrderTrackingResponse[]>(
+          "customer/orders",
+          { signal: controller.signal, cache: "no-store" },
+        );
+        if (!controller.signal.aborted) {
+          setOrders(accountOrders.map((order) => ({ trackingCode: order.trackingCode, order })));
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setOrders([]);
+          setLoadError(true);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          activeRequest.current = null;
+        }
+      }
+      return;
+    }
 
     if (recentOrderTrackingCodes.length === 0) {
       setOrders([]);
@@ -144,7 +178,7 @@ export function OrderHistoryView() {
     setLoadError(loadedOrders.length === 0 && failures > 0);
     setLoading(false);
     activeRequest.current = null;
-  }, [recentOrderTrackingCodes]);
+  }, [customer, customerLoading, recentOrderTrackingCodes]);
 
   useEffect(() => {
     const loadTimeout = window.setTimeout(() => void loadOrders(), 0);
@@ -204,7 +238,7 @@ export function OrderHistoryView() {
   }
 
   if (orders.length === 0) {
-    const hasStoredCodes = recentOrderTrackingCodes.length > 0;
+    const hasStoredCodes = !customer && recentOrderTrackingCodes.length > 0;
 
     return (
       <PageShell>

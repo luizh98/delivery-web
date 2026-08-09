@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Banknote,
@@ -20,6 +20,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
+import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import {
   type CartItem,
   type CheckoutDraft,
@@ -159,6 +160,8 @@ function formatAddressLines(address?: Address | null) {
 
 export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   const router = useRouter();
+  const { customer, loading: customerLoading } = useCustomerAuth();
+  const appliedCustomerId = useRef<string | null>(null);
   const {
     items,
     checkout,
@@ -238,6 +241,30 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     deliveryQuoteKey === currentDeliveryQuoteKey && deliveryQuoteLoading;
   const estimatedDeliveryFeeCents = currentDeliveryQuote?.deliveryFeeCents ?? 0;
   const totalCents = subtotalCents + estimatedDeliveryFeeCents;
+
+  useEffect(() => {
+    if (customerLoading || !customer || appliedCustomerId.current === customer.id) {
+      return;
+    }
+
+    const current = form.getValues();
+    const address = customer.savedAddress;
+    const populated: CheckoutDraft = {
+      ...current,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      street: address?.street ?? current.street,
+      number: address?.number ?? current.number,
+      complement: address?.complement ?? current.complement,
+      neighborhood: address?.neighborhood ?? current.neighborhood,
+      city: address?.city ?? current.city,
+      state: address?.state ?? current.state,
+      zipCode: address?.zipCode ?? current.zipCode,
+    };
+    appliedCustomerId.current = customer.id;
+    form.reset(populated);
+    updateCheckout(populated);
+  }, [customer, customerLoading, form, updateCheckout]);
 
   useEffect(() => {
     if (step !== 2 || deliveryType !== "DELIVERY" || !hasSavedDeliveryAddress) {

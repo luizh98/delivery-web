@@ -14,9 +14,11 @@ import {
   Clock3,
   ShoppingBag,
   ShoppingCart,
+  UserRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
+import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
@@ -137,6 +139,7 @@ function formatTodayBusinessHours(
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const router = useRouter();
   const { items: cart, recentOrderTrackingCodes, subtotalCents } = useCart();
+  const { customer } = useCustomerAuth();
   const initialCategoryId =
     menu.categories.find((category) =>
     menu.products.some((product) => product.categoryId === category.id),
@@ -237,6 +240,26 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             {restaurantConfig?.menuDescription?.trim() ||
               "Escolha seus itens, revise o pedido e envie."}
           </HeroText>
+          <TrackingActions>
+            <TrackingShortcut
+              type="button"
+              tone="secondary"
+              onClick={() => router.push("/account")}
+            >
+              <UserRound size={16} aria-hidden="true" />
+              {customer ? customer.name : "Entrar ou criar conta"}
+            </TrackingShortcut>
+            {customer ? (
+              <TrackingShortcut
+                type="button"
+                tone="secondary"
+                onClick={() => router.push("/orders")}
+              >
+                <ClipboardList size={16} aria-hidden="true" />
+                Meus pedidos
+              </TrackingShortcut>
+            ) : null}
+          </TrackingActions>
           {closedStoreMessage ||
           todayBusinessHours ||
           minimumOrderCents > 0 ||

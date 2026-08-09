@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartProvider";
+import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
 import { getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "./globals.css";
@@ -43,7 +44,9 @@ export default async function RootLayout({
     >
       <body>
         <ThemeProvider theme={restaurantConfig?.theme}>
-          <CartProvider>{children}</CartProvider>
+          <CustomerAuthProvider>
+            <CartProvider>{children}</CartProvider>
+          </CustomerAuthProvider>
         </ThemeProvider>
       </body>
     </html>

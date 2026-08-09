@@ -53,3 +53,22 @@ export async function authApi<T>(
 
   return response.json() as Promise<T>;
 }
+
+export async function customerAuthApi<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const response = await fetch(`/api/customer-auth/${path.replace(/^\/+/, "")}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await response.text());
+  }
+
+  return response.json() as Promise<T>;
+}
