@@ -240,7 +240,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   const totalCents = subtotalCents + estimatedDeliveryFeeCents;
 
   useEffect(() => {
-    if (deliveryType !== "DELIVERY" || !hasSavedDeliveryAddress) {
+    if (step !== 2 || deliveryType !== "DELIVERY" || !hasSavedDeliveryAddress) {
       return;
     }
 
@@ -300,6 +300,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     currentDeliveryQuoteKey,
     deliveryType,
     hasSavedDeliveryAddress,
+    step,
     subtotalCents,
   ]);
 
