@@ -38,6 +38,9 @@ A chave fica somente nos Route Handlers do servidor.
 
 Sem chave, checkout continua aceitando preenchimento manual.
 
+O calculo rodoviario do frete ocorre no `delivery-api`; configure tambem
+`GOOGLE_MAPS_API_KEY` no processo do backend com Routes API habilitada.
+
 Antes de publicar, disponibilize Termos de Uso e Política de Privacidade conforme
 as políticas da Google Maps Platform:
 https://developers.google.com/maps/documentation/places/web-service/policies
