@@ -95,6 +95,33 @@ export const StatusToggle = styled("label", {
   },
 });
 
+export const RangeList = styled("div", {
+  display: "grid",
+  gap: "0.75rem",
+  paddingTop: "0.25rem",
+});
+
+export const RangeActions = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  flexWrap: "wrap",
+});
+
+export const RangeRow = styled("div", {
+  display: "grid",
+  gap: "0.75rem",
+  alignItems: "end",
+  padding: "0.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.375rem",
+
+  "@sm": {
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr)) auto",
+  },
+});
+
 export const StatusOptions = styled("div", {
   display: "flex",
   alignItems: "center",

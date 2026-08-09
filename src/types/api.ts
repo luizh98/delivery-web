@@ -30,10 +30,18 @@ export type Address = {
 
 export type DeliverySettings = {
   enabled?: boolean;
+  pricingMode?: "PER_KM" | "RANGE";
   maxDistanceKm?: number;
   pricePerKmCents?: number;
+  deliveryFeeRanges?: DeliveryFeeRange[];
   freeDeliveryMinimumOrderCents?: number;
   freeDeliveryDays?: DayOfWeek[];
+};
+
+export type DeliveryFeeRange = {
+  fromDistanceKm: number;
+  toDistanceKm: number;
+  feeCents: number;
 };
 
 export type RestaurantConfigResponse = {

@@ -1,12 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
-import { Field, Input, Textarea } from "@/components/Field";
+import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
@@ -22,7 +22,18 @@ import {
   validateOperatingHours,
 } from "./operatingHours";
 import type { SettingsFormProps } from "./types";
-import { ErrorText, Form, GridTwo, Section, Subtitle, Title } from "./styles";
+import {
+  ErrorText,
+  Form,
+  GridTwo,
+  RangeActions,
+  RangeList,
+  RangeRow,
+  Section,
+  StatusToggle,
+  Subtitle,
+  Title,
+} from "./styles";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
@@ -32,8 +43,14 @@ const settingsSchema = z.object({
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   deliveryEnabled: z.boolean(),
+  pricingMode: z.enum(["PER_KM", "RANGE"]),
   maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
   pricePerKmReais: z.number().min(0, "Valor por km não pode ser negativo."),
+  deliveryFeeRanges: z.array(z.object({
+    fromDistanceKm: z.number().min(0, "Distância inicial não pode ser negativa."),
+    toDistanceKm: z.number().min(0, "Distância final não pode ser negativa."),
+    feeReais: z.number().min(0, "Valor não pode ser negativo."),
+  })),
   freeDeliveryMinimumOrderReais: z.number().min(
     0,
     "Limite para frete grátis não pode ser negativo.",
@@ -59,18 +76,52 @@ const settingsSchema = z.object({
     return;
   }
 
-  if (values.maxDistanceKm <= 0) {
+  if (values.pricingMode === "PER_KM" && values.maxDistanceKm <= 0) {
     context.addIssue({
       code: "custom",
       path: ["maxDistanceKm"],
       message: "Informe uma distância maior que zero.",
     });
   }
-  if (values.pricePerKmReais <= 0) {
+  if (values.pricingMode === "PER_KM" && values.pricePerKmReais <= 0) {
     context.addIssue({
       code: "custom",
       path: ["pricePerKmReais"],
       message: "Informe um valor por km maior que zero.",
+    });
+  }
+
+  if (values.pricingMode === "RANGE") {
+    if (values.deliveryFeeRanges.length === 0) {
+      context.addIssue({
+        code: "custom",
+        path: ["deliveryFeeRanges"],
+        message: "Adicione pelo menos uma faixa de frete.",
+      });
+      return;
+    }
+
+    values.deliveryFeeRanges.forEach((range, index) => {
+      if (range.toDistanceKm <= range.fromDistanceKm) {
+        context.addIssue({
+          code: "custom",
+          path: ["deliveryFeeRanges", index, "toDistanceKm"],
+          message: "O fim deve ser maior que o início.",
+        });
+      }
+
+      const expectedStart = index === 0
+        ? 0
+        : values.deliveryFeeRanges[index - 1].toDistanceKm;
+      if (range.fromDistanceKm !== expectedStart) {
+        context.addIssue({
+          code: "custom",
+          path: ["deliveryFeeRanges", index, "fromDistanceKm"],
+          message: index === 0
+            ? "A primeira faixa deve começar em 0 km."
+            : `A faixa deve começar em ${expectedStart} km.`,
+        });
+      }
     });
   }
 });
@@ -111,9 +162,17 @@ export function SettingsForm({
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
+      pricingMode: initialConfig?.deliverySettings?.pricingMode ?? "PER_KM",
       maxDistanceKm: initialConfig?.deliverySettings?.maxDistanceKm ?? 0,
       pricePerKmReais: centsToReais(
         initialConfig?.deliverySettings?.pricePerKmCents ?? 0,
+      ),
+      deliveryFeeRanges: (initialConfig?.deliverySettings?.deliveryFeeRanges ?? []).map(
+        (range) => ({
+          fromDistanceKm: range.fromDistanceKm,
+          toDistanceKm: range.toDistanceKm,
+          feeReais: centsToReais(range.feeCents),
+        }),
       ),
       freeDeliveryMinimumOrderReais: centsToReais(
         initialConfig?.deliverySettings?.freeDeliveryMinimumOrderCents ?? 0,
@@ -127,6 +186,14 @@ export function SettingsForm({
       city: initialConfig?.address?.city ?? "",
       state: initialConfig?.address?.state ?? "",
     },
+  });
+  const deliveryRanges = useFieldArray({
+    control: form.control,
+    name: "deliveryFeeRanges",
+  });
+  const pricingMode = useWatch({
+    control: form.control,
+    name: "pricingMode",
   });
 
   async function submit(values: SettingsFormData) {
@@ -155,8 +222,14 @@ export function SettingsForm({
           minimumOrderCents: reaisToCents(values.minimumOrderReais),
           deliverySettings: {
             enabled: values.deliveryEnabled,
+            pricingMode: values.pricingMode,
             maxDistanceKm: values.maxDistanceKm,
             pricePerKmCents: reaisToCents(values.pricePerKmReais),
+            deliveryFeeRanges: values.deliveryFeeRanges.map((range) => ({
+              fromDistanceKm: range.fromDistanceKm,
+              toDistanceKm: range.toDistanceKm,
+              feeCents: reaisToCents(range.feeReais),
+            })),
             freeDeliveryMinimumOrderCents: reaisToCents(
               values.freeDeliveryMinimumOrderReais,
             ),
@@ -249,32 +322,43 @@ export function SettingsForm({
 
       <Section>
         <Subtitle>Frete por distância e promoções.</Subtitle>
+        <StatusToggle>
+          <input type="checkbox" {...form.register("deliveryEnabled")} />
+          Ativar cálculo de frete
+        </StatusToggle>
         <GridTwo>
-          <Field label="Cálculo de frete por km">
-            <input type="checkbox" {...form.register("deliveryEnabled")} />
+          <Field label="Modelo de cobrança">
+            <Select {...form.register("pricingMode")}>
+              <option value="PER_KM">Valor por km</option>
+              <option value="RANGE">Valor fixo por faixa</option>
+            </Select>
           </Field>
-          <Field
-            label="Distância máxima (km)"
-            error={form.formState.errors.maxDistanceKm?.message}
-          >
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              {...form.register("maxDistanceKm", { valueAsNumber: true })}
-            />
-          </Field>
-          <Field
-            label="Valor por km (R$)"
-            error={form.formState.errors.pricePerKmReais?.message}
-          >
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              {...form.register("pricePerKmReais", { valueAsNumber: true })}
-            />
-          </Field>
+          {pricingMode === "PER_KM" ? (
+            <>
+              <Field
+                label="Distância máxima (km)"
+                error={form.formState.errors.maxDistanceKm?.message}
+              >
+                <Input
+                  type="number"
+                  min="0"
+                  step="1"
+                  {...form.register("maxDistanceKm", { valueAsNumber: true })}
+                />
+              </Field>
+              <Field
+                label="Valor por km (R$)"
+                error={form.formState.errors.pricePerKmReais?.message}
+              >
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  {...form.register("pricePerKmReais", { valueAsNumber: true })}
+                />
+              </Field>
+            </>
+          ) : null}
           <Field
             label="Frete grátis acima de (R$)"
             error={form.formState.errors.freeDeliveryMinimumOrderReais?.message}
@@ -289,6 +373,85 @@ export function SettingsForm({
             />
           </Field>
         </GridTwo>
+        {pricingMode === "RANGE" ? (
+          <RangeList>
+            <RangeActions>
+              <strong>Faixas de distância</strong>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const previous = form.getValues("deliveryFeeRanges").at(-1);
+                  const fromDistanceKm = previous?.toDistanceKm ?? 0;
+                  deliveryRanges.append({
+                    fromDistanceKm,
+                    toDistanceKm: fromDistanceKm + 3,
+                    feeReais: 0,
+                  });
+                }}
+              >
+                <Plus size={16} />
+                Adicionar faixa
+              </Button>
+            </RangeActions>
+            {deliveryRanges.fields.map((range, index) => (
+              <RangeRow key={range.id}>
+                <Field
+                  label="De (km)"
+                  error={form.formState.errors.deliveryFeeRanges?.[index]
+                    ?.fromDistanceKm?.message}
+                >
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    {...form.register(`deliveryFeeRanges.${index}.fromDistanceKm`, {
+                      valueAsNumber: true,
+                    })}
+                  />
+                </Field>
+                <Field
+                  label="Até (km)"
+                  error={form.formState.errors.deliveryFeeRanges?.[index]
+                    ?.toDistanceKm?.message}
+                >
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    {...form.register(`deliveryFeeRanges.${index}.toDistanceKm`, {
+                      valueAsNumber: true,
+                    })}
+                  />
+                </Field>
+                <Field
+                  label="Valor (R$)"
+                  error={form.formState.errors.deliveryFeeRanges?.[index]?.feeReais?.message}
+                >
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    {...form.register(`deliveryFeeRanges.${index}.feeReais`, {
+                      valueAsNumber: true,
+                    })}
+                  />
+                </Field>
+                <Button
+                  type="button"
+                  variant="dangerGhost"
+                  aria-label={`Remover faixa ${index + 1}`}
+                  onClick={() => deliveryRanges.remove(index)}
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </RangeRow>
+            ))}
+            {typeof form.formState.errors.deliveryFeeRanges?.message === "string" ? (
+              <ErrorText>{form.formState.errors.deliveryFeeRanges.message}</ErrorText>
+            ) : null}
+          </RangeList>
+        ) : null}
         <div>
           <strong>Dias com frete grátis</strong>
           <GridTwo>
