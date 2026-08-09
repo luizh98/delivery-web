@@ -31,6 +31,22 @@ const settingsSchema = z.object({
   bannerUrl: z.string().optional(),
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
+  deliveryEnabled: z.boolean(),
+  maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
+  pricePerKmReais: z.number().min(0, "Valor por km não pode ser negativo."),
+  freeDeliveryMinimumOrderReais: z.number().min(
+    0,
+    "Limite para frete grátis não pode ser negativo.",
+  ),
+  freeDeliveryDays: z.array(z.enum([
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY",
+  ])),
   primaryColor: z.string().min(4),
   secondaryColor: z.string().min(4),
   street: z.string().optional(),
@@ -38,7 +54,36 @@ const settingsSchema = z.object({
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+}).superRefine((values, context) => {
+  if (!values.deliveryEnabled) {
+    return;
+  }
+
+  if (values.maxDistanceKm <= 0) {
+    context.addIssue({
+      code: "custom",
+      path: ["maxDistanceKm"],
+      message: "Informe uma distância maior que zero.",
+    });
+  }
+  if (values.pricePerKmReais <= 0) {
+    context.addIssue({
+      code: "custom",
+      path: ["pricePerKmReais"],
+      message: "Informe um valor por km maior que zero.",
+    });
+  }
 });
+
+const deliveryWeekDays = [
+  { value: "MONDAY", label: "Segunda" },
+  { value: "TUESDAY", label: "Terça" },
+  { value: "WEDNESDAY", label: "Quarta" },
+  { value: "THURSDAY", label: "Quinta" },
+  { value: "FRIDAY", label: "Sexta" },
+  { value: "SATURDAY", label: "Sábado" },
+  { value: "SUNDAY", label: "Domingo" },
+] as const;
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
@@ -65,6 +110,15 @@ export function SettingsForm({
       menuDescription: initialConfig?.menuDescription ??
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
+      deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
+      maxDistanceKm: initialConfig?.deliverySettings?.maxDistanceKm ?? 0,
+      pricePerKmReais: centsToReais(
+        initialConfig?.deliverySettings?.pricePerKmCents ?? 0,
+      ),
+      freeDeliveryMinimumOrderReais: centsToReais(
+        initialConfig?.deliverySettings?.freeDeliveryMinimumOrderCents ?? 0,
+      ),
+      freeDeliveryDays: initialConfig?.deliverySettings?.freeDeliveryDays ?? [],
       primaryColor: initialConfig?.theme?.primaryColor ?? "#0f766e",
       secondaryColor: initialConfig?.theme?.secondaryColor ?? "#f59e0b",
       street: initialConfig?.address?.street ?? "",
@@ -99,6 +153,15 @@ export function SettingsForm({
           bannerUrl: values.bannerUrl,
           menuDescription: values.menuDescription,
           minimumOrderCents: reaisToCents(values.minimumOrderReais),
+          deliverySettings: {
+            enabled: values.deliveryEnabled,
+            maxDistanceKm: values.maxDistanceKm,
+            pricePerKmCents: reaisToCents(values.pricePerKmReais),
+            freeDeliveryMinimumOrderCents: reaisToCents(
+              values.freeDeliveryMinimumOrderReais,
+            ),
+            freeDeliveryDays: values.freeDeliveryDays,
+          },
           theme: {
             primaryColor: values.primaryColor,
             secondaryColor: values.secondaryColor,
@@ -182,6 +245,65 @@ export function SettingsForm({
             <Input type="color" {...form.register("secondaryColor")} />
           </Field>
         </GridTwo>
+      </Section>
+
+      <Section>
+        <Subtitle>Frete por distância e promoções.</Subtitle>
+        <GridTwo>
+          <Field label="Cálculo de frete por km">
+            <input type="checkbox" {...form.register("deliveryEnabled")} />
+          </Field>
+          <Field
+            label="Distância máxima (km)"
+            error={form.formState.errors.maxDistanceKm?.message}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              {...form.register("maxDistanceKm", { valueAsNumber: true })}
+            />
+          </Field>
+          <Field
+            label="Valor por km (R$)"
+            error={form.formState.errors.pricePerKmReais?.message}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              {...form.register("pricePerKmReais", { valueAsNumber: true })}
+            />
+          </Field>
+          <Field
+            label="Frete grátis acima de (R$)"
+            error={form.formState.errors.freeDeliveryMinimumOrderReais?.message}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              {...form.register("freeDeliveryMinimumOrderReais", {
+                valueAsNumber: true,
+              })}
+            />
+          </Field>
+        </GridTwo>
+        <div>
+          <strong>Dias com frete grátis</strong>
+          <GridTwo>
+            {deliveryWeekDays.map((day) => (
+              <label key={day.value}>
+                <input
+                  type="checkbox"
+                  value={day.value}
+                  {...form.register("freeDeliveryDays")}
+                />{" "}
+                {day.label}
+              </label>
+            ))}
+          </GridTwo>
+        </div>
       </Section>
 
       <Section>

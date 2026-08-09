@@ -28,6 +28,14 @@ export type Address = {
   zipCode?: string;
 };
 
+export type DeliverySettings = {
+  enabled?: boolean;
+  maxDistanceKm?: number;
+  pricePerKmCents?: number;
+  freeDeliveryMinimumOrderCents?: number;
+  freeDeliveryDays?: DayOfWeek[];
+};
+
 export type RestaurantConfigResponse = {
   id?: string;
   name?: string;
@@ -40,6 +48,7 @@ export type RestaurantConfigResponse = {
   theme?: Theme;
   businessHours?: BusinessHour[];
   holidayHours?: HolidayHour[];
+  deliverySettings?: DeliverySettings;
   open?: boolean;
   nextOpeningAt?: string;
 };
