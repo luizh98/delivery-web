@@ -40,7 +40,7 @@ export type DeliverySettings = {
 
 export type DeliveryFeeRange = {
   fromDistanceKm: number;
-  toDistanceKm: number;
+  toDistanceKm: number | null;
   feeCents: number;
 };
 

@@ -48,7 +48,7 @@ const settingsSchema = z.object({
   pricePerKmReais: z.number().min(0, "Valor por km não pode ser negativo."),
   deliveryFeeRanges: z.array(z.object({
     fromDistanceKm: z.number().min(0, "Distância inicial não pode ser negativa."),
-    toDistanceKm: z.number().min(0, "Distância final não pode ser negativa."),
+    toDistanceKm: z.number().min(0, "Distância final não pode ser negativa.").nullable(),
     feeReais: z.number().min(0, "Valor não pode ser negativo."),
   })),
   freeDeliveryMinimumOrderReais: z.number().min(
@@ -102,11 +102,19 @@ const settingsSchema = z.object({
     }
 
     values.deliveryFeeRanges.forEach((range, index) => {
-      if (range.toDistanceKm <= range.fromDistanceKm) {
+      if (range.toDistanceKm !== null
+        && range.toDistanceKm <= range.fromDistanceKm) {
         context.addIssue({
           code: "custom",
           path: ["deliveryFeeRanges", index, "toDistanceKm"],
           message: "O fim deve ser maior que o início.",
+        });
+      }
+      if (range.toDistanceKm === null && index < values.deliveryFeeRanges.length - 1) {
+        context.addIssue({
+          code: "custom",
+          path: ["deliveryFeeRanges", index, "toDistanceKm"],
+          message: "Somente a última faixa pode ficar sem limite.",
         });
       }
 
@@ -119,7 +127,9 @@ const settingsSchema = z.object({
           path: ["deliveryFeeRanges", index, "fromDistanceKm"],
           message: index === 0
             ? "A primeira faixa deve começar em 0 km."
-            : `A faixa deve começar em ${expectedStart} km.`,
+            : expectedStart === null
+              ? "A faixa anterior não pode ser ilimitada."
+              : `A faixa deve começar em ${expectedStart} km.`,
         });
       }
     });
@@ -194,6 +204,10 @@ export function SettingsForm({
   const pricingMode = useWatch({
     control: form.control,
     name: "pricingMode",
+  });
+  const rangeValues = useWatch({
+    control: form.control,
+    name: "deliveryFeeRanges",
   });
 
   async function submit(values: SettingsFormData) {
@@ -380,8 +394,12 @@ export function SettingsForm({
               <Button
                 type="button"
                 variant="outline"
+                disabled={rangeValues.at(-1)?.toDistanceKm === null}
                 onClick={() => {
                   const previous = form.getValues("deliveryFeeRanges").at(-1);
+                  if (previous?.toDistanceKm === null) {
+                    return;
+                  }
                   const fromDistanceKm = previous?.toDistanceKm ?? 0;
                   deliveryRanges.append({
                     fromDistanceKm,
@@ -404,7 +422,7 @@ export function SettingsForm({
                   <Input
                     type="number"
                     min="0"
-                    step="1"
+                    step="0.1"
                     {...form.register(`deliveryFeeRanges.${index}.fromDistanceKm`, {
                       valueAsNumber: true,
                     })}
@@ -418,11 +436,30 @@ export function SettingsForm({
                   <Input
                     type="number"
                     min="0"
-                    step="1"
+                    step="0.1"
+                    readOnly={rangeValues[index]?.toDistanceKm === null}
                     {...form.register(`deliveryFeeRanges.${index}.toDistanceKm`, {
-                      valueAsNumber: true,
+                      setValueAs: (value) => value === "" ? null : Number(value),
                     })}
                   />
+                  <StatusToggle>
+                    <input
+                      type="checkbox"
+                      checked={rangeValues[index]?.toDistanceKm === null}
+                      onChange={(event) => {
+                        const field = `deliveryFeeRanges.${index}.toDistanceKm` as const;
+                        const fromDistanceKm = form.getValues(
+                          `deliveryFeeRanges.${index}.fromDistanceKm`,
+                        );
+                        form.setValue(
+                          field,
+                          event.target.checked ? null : fromDistanceKm + 1,
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                      }}
+                    />
+                    Sem limite (acima de {rangeValues[index]?.fromDistanceKm ?? 0} km)
+                  </StatusToggle>
                 </Field>
                 <Field
                   label="Valor (R$)"
