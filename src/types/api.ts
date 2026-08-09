@@ -151,6 +151,14 @@ export type OrderTotals = {
   totalCents: number;
 };
 
+export type DeliveryQuoteResponse = {
+  distanceMeters: number;
+  billableDistanceKm: number;
+  deliveryFeeCents: number;
+  freeDelivery: boolean;
+  freeDeliveryReason?: "MINIMUM_ORDER" | "WEEKDAY";
+};
+
 export type OrderResponse = {
   id: string;
   trackingCode?: string;

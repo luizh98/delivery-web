@@ -30,6 +30,7 @@ import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
 import type {
   Address,
+  DeliveryQuoteResponse,
   OrderResponse,
   RestaurantConfigResponse,
 } from "@/types/api";
@@ -172,6 +173,10 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   const [submitting, setSubmitting] = useState(false);
   const [itemPendingRemoval, setItemPendingRemoval] = useState<CartItem | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuoteResponse | null>(null);
+  const [deliveryQuoteKey, setDeliveryQuoteKey] = useState("");
+  const [deliveryQuoteLoading, setDeliveryQuoteLoading] = useState(false);
+  const [deliveryQuoteError, setDeliveryQuoteError] = useState("");
 
   const form = useForm<CheckoutDraft>({
     resolver: zodResolver(checkoutSchema),
@@ -186,8 +191,6 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     control: form.control,
     name: "paymentMethod",
   });
-  const estimatedDeliveryFeeCents = deliveryType === "DELIVERY" ? 500 : 0;
-  const totalCents = subtotalCents + estimatedDeliveryFeeCents;
   const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
   const belowMinimumOrder = minimumOrderCents > 0 && subtotalCents < minimumOrderCents;
   const restaurantOpen = restaurantConfig?.open !== false;
@@ -213,6 +216,96 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
       }
     : null;
   const pickupAddressLines = formatAddressLines(restaurantConfig?.address);
+  const currentDeliveryQuoteKey = JSON.stringify([
+    checkout.street,
+    checkout.number,
+    checkout.complement,
+    checkout.neighborhood,
+    checkout.city,
+    checkout.state,
+    checkout.zipCode,
+    subtotalCents,
+  ]);
+  const currentDeliveryQuote = deliveryType === "DELIVERY" &&
+    deliveryQuoteKey === currentDeliveryQuoteKey
+    ? deliveryQuote
+    : null;
+  const currentDeliveryQuoteError = deliveryType === "DELIVERY" &&
+    deliveryQuoteKey === currentDeliveryQuoteKey
+    ? deliveryQuoteError
+    : "";
+  const currentDeliveryQuoteLoading = deliveryType === "DELIVERY" &&
+    deliveryQuoteKey === currentDeliveryQuoteKey && deliveryQuoteLoading;
+  const estimatedDeliveryFeeCents = currentDeliveryQuote?.deliveryFeeCents ?? 0;
+  const totalCents = subtotalCents + estimatedDeliveryFeeCents;
+
+  useEffect(() => {
+    if (deliveryType !== "DELIVERY" || !hasSavedDeliveryAddress) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setDeliveryQuoteKey(currentDeliveryQuoteKey);
+      setDeliveryQuote(null);
+      setDeliveryQuoteError("");
+      setDeliveryQuoteLoading(true);
+
+      try {
+        const quote = await clientApi<DeliveryQuoteResponse>(
+          "public/delivery/quote",
+          {
+            method: "POST",
+            signal: controller.signal,
+            body: JSON.stringify({
+              subtotalCents,
+              deliveryAddress: {
+                street: checkout.street,
+                number: checkout.number,
+                complement: checkout.complement,
+                neighborhood: checkout.neighborhood,
+                city: checkout.city,
+                state: checkout.state,
+                zipCode: checkout.zipCode,
+              },
+            }),
+          },
+        );
+        setDeliveryQuote(quote);
+      } catch {
+        if (!controller.signal.aborted) {
+          setDeliveryQuoteError(
+            "Não foi possível calcular o frete. Verifique se o endereço está na área de entrega.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setDeliveryQuoteLoading(false);
+        }
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [
+    checkout.city,
+    checkout.complement,
+    checkout.neighborhood,
+    checkout.number,
+    checkout.state,
+    checkout.street,
+    checkout.zipCode,
+    currentDeliveryQuoteKey,
+    deliveryType,
+    hasSavedDeliveryAddress,
+    subtotalCents,
+  ]);
+
+  const deliveryQuotePending = deliveryType === "DELIVERY" &&
+    hasSavedDeliveryAddress &&
+    (currentDeliveryQuoteLoading || !currentDeliveryQuote);
 
   useEffect(() => {
     if (!itemPendingRemoval) {
@@ -603,7 +696,14 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   Subtotal <strong>{money(subtotalCents)}</strong>
                 </TotalRow>
                 <TotalRow>
-                  Frete <strong>{money(estimatedDeliveryFeeCents)}</strong>
+                  Frete{" "}
+                  <strong>
+                    {currentDeliveryQuoteLoading
+                      ? "Calculando..."
+                      : currentDeliveryQuote?.freeDelivery
+                        ? "Grátis"
+                        : money(estimatedDeliveryFeeCents)}
+                  </strong>
                 </TotalRow>
                 <TotalGrand>
                   Total <TotalStrong>{money(totalCents)}</TotalStrong>
@@ -625,6 +725,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
               {checkoutError ? (
                 <CheckoutError role="alert">{checkoutError}</CheckoutError>
               ) : null}
+              {currentDeliveryQuoteError ? (
+                <CheckoutError role="alert">{currentDeliveryQuoteError}</CheckoutError>
+              ) : null}
               {!restaurantOpen ? (
                 <CheckoutError role="status">{closedStoreMessage}</CheckoutError>
               ) : null}
@@ -640,6 +743,8 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   items.length === 0 ||
                   belowMinimumOrder ||
                   !restaurantOpen ||
+                  deliveryQuotePending ||
+                  Boolean(currentDeliveryQuoteError) ||
                   !confirmed ||
                   submitting
                 }
