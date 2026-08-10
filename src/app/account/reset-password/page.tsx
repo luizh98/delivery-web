@@ -1,5 +1,5 @@
-import { CustomerAccountView } from "@/views/CustomerAccount";
+import { redirect } from "next/navigation";
 
 export default function CustomerResetPasswordPage() {
-  return <CustomerAccountView mode="reset" />;
+  redirect("/login/reset-password");
 }

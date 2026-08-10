@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, LogOut, UserPlus } from "lucide-react";
+import { LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -13,73 +13,48 @@ import { Field, Input } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { clientApi, customerAuthApi } from "@/services/api/client";
 import {
+  brazilianDateToIso,
+  formatBrazilianDateInput,
+  isValidBrazilianMobile,
+  isValidPastBrazilianDate,
+  normalizeBrazilianMobile,
+} from "@/utils/customerInput";
+import {
   AccountActions,
   AccountCard,
   AccountContent,
-  AccountDetail,
-  AccountDetails,
   AccountError,
   AccountForm,
   AccountHeader,
-  AccountLabel,
   AccountLink,
   AccountSuccess,
   AccountText,
   AccountTitle,
-  AccountValue,
 } from "./styles";
 
 const loginSchema = z.object({
-  phone: z.string().min(10, "Informe o WhatsApp."),
+  phone: z.string().refine(isValidBrazilianMobile, "Informe um celular válido com DDD."),
   password: z.string().min(1, "Informe a senha."),
 });
 const registerSchema = loginSchema.extend({
   name: z.string().min(2, "Informe o nome."),
-  birthDate: z.string().min(1, "Informe a data de nascimento."),
+  birthDate: z.string().refine(isValidPastBrazilianDate, "Informe uma data válida em DD/MM/AAAA."),
   password: z.string().min(8, "A senha deve ter ao menos 8 caracteres."),
 });
-const resetRequestSchema = z.object({ phone: z.string().min(10, "Informe o WhatsApp.") });
+const resetRequestSchema = z.object({
+  phone: z.string().refine(isValidBrazilianMobile, "Informe um celular válido com DDD."),
+});
 const resetConfirmSchema = z.object({
   code: z.string().regex(/^\d{6}$/, "Informe o código de 6 dígitos."),
   newPassword: z.string().min(8, "A senha deve ter ao menos 8 caracteres."),
 });
 
-type AccountMode = "account" | "login" | "register" | "reset";
+type AccountMode = "login" | "reset";
 
 export function CustomerAccountView({ mode }: { mode: AccountMode }) {
   const router = useRouter();
-  const { customer, loading, refresh, logout } = useCustomerAuth();
+  const { refresh } = useCustomerAuth();
 
-  if (mode === "account") {
-    return (
-      <AccountShell title="Minha conta" description="Dados usados nos seus próximos pedidos.">
-        {loading ? <AccountText>Carregando...</AccountText> : customer ? (
-          <>
-            <AccountDetails>
-              <AccountDetail><AccountLabel>Nome</AccountLabel><AccountValue>{customer.name}</AccountValue></AccountDetail>
-              <AccountDetail><AccountLabel>WhatsApp</AccountLabel><AccountValue>{customer.phone}</AccountValue></AccountDetail>
-              <AccountDetail><AccountLabel>Nascimento</AccountLabel><AccountValue>{customer.birthDate}</AccountValue></AccountDetail>
-            </AccountDetails>
-            <AccountActions>
-              <Button type="button" onClick={() => router.push("/orders")}>Meus pedidos</Button>
-              <Button type="button" variant="outline" onClick={async () => { await logout(); router.push("/"); }}>
-                <LogOut size={16} /> Sair
-              </Button>
-            </AccountActions>
-          </>
-        ) : (
-          <AccountActions>
-            <Button type="button" onClick={() => router.push("/account/login")}><LogIn size={16} /> Entrar</Button>
-            <Button type="button" variant="outline" onClick={() => router.push("/account/register")}><UserPlus size={16} /> Criar conta</Button>
-          </AccountActions>
-        )}
-      </AccountShell>
-    );
-  }
-
-  if (mode === "register") {
-    return <RegisterForm onAuthenticated={async () => { await refresh(); router.push("/"); }} />;
-  }
   if (mode === "reset") {
     return <ResetForm />;
   }
@@ -103,46 +78,58 @@ function AccountShell({ title, description, children }: { title: string; descrip
 
 function LoginForm({ onAuthenticated }: { onAuthenticated: () => Promise<void> }) {
   const router = useRouter();
+  const [showRegister, setShowRegister] = useState(false);
   const [error, setError] = useState("");
   const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema), defaultValues: { phone: "", password: "" } });
+
+  if (showRegister) {
+    return <RegisterForm onAuthenticated={onAuthenticated} onBack={() => setShowRegister(false)} />;
+  }
+
   return (
-    <AccountShell title="Entrar" description="Use seu WhatsApp e senha para acessar pedidos e endereço.">
+    <AccountShell title="Entrar" description="Use seu celular e senha para acessar pedidos e endereço.">
       <AccountForm onSubmit={form.handleSubmit(async (values) => {
         setError("");
         try { await customerAuthApi<{ ok: boolean }>("login", { method: "POST", body: JSON.stringify(values) }); await onAuthenticated(); }
-        catch { setError("WhatsApp ou senha inválidos."); }
+        catch { setError("Celular ou senha inválidos."); }
       })}>
-        <Field label="WhatsApp" error={form.formState.errors.phone?.message}><Input inputMode="tel" autoComplete="tel" {...form.register("phone")} /></Field>
+        <Field label="Celular" error={form.formState.errors.phone?.message}>
+          <Input inputMode="numeric" autoComplete="tel" maxLength={11} {...form.register("phone")} onInput={normalizeMobileInput} />
+        </Field>
         <Field label="Senha" error={form.formState.errors.password?.message}><Input type="password" autoComplete="current-password" {...form.register("password")} /></Field>
         {error ? <AccountError>{error}</AccountError> : null}
         <Button type="submit" disabled={form.formState.isSubmitting}><LogIn size={16} /> Entrar</Button>
         <AccountActions>
-          <AccountLink type="button" onClick={() => router.push("/account/register")}>Criar conta</AccountLink>
-          <AccountLink type="button" onClick={() => router.push("/account/reset-password")}>Esqueci minha senha</AccountLink>
+          <AccountLink type="button" onClick={() => setShowRegister(true)}>Criar conta</AccountLink>
+          <AccountLink type="button" onClick={() => router.push("/login/reset-password")}>Esqueci minha senha</AccountLink>
         </AccountActions>
       </AccountForm>
     </AccountShell>
   );
 }
 
-function RegisterForm({ onAuthenticated }: { onAuthenticated: () => Promise<void> }) {
-  const router = useRouter();
+function RegisterForm({ onAuthenticated, onBack }: { onAuthenticated: () => Promise<void>; onBack: () => void }) {
   const [error, setError] = useState("");
   const form = useForm<z.infer<typeof registerSchema>>({ resolver: zodResolver(registerSchema), defaultValues: { phone: "", name: "", birthDate: "", password: "" } });
   return (
     <AccountShell title="Criar conta" description="Cadastro opcional para usar seus dados em qualquer navegador.">
       <AccountForm onSubmit={form.handleSubmit(async (values) => {
         setError("");
-        try { await customerAuthApi<{ ok: boolean }>("register", { method: "POST", body: JSON.stringify(values) }); await onAuthenticated(); }
+        const birthDate = brazilianDateToIso(values.birthDate);
+        try { await customerAuthApi<{ ok: boolean }>("register", { method: "POST", body: JSON.stringify({ ...values, birthDate }) }); await onAuthenticated(); }
         catch { setError("Não foi possível criar a conta. Confira os dados ou use outro número."); }
       })}>
         <Field label="Nome" error={form.formState.errors.name?.message}><Input autoComplete="name" {...form.register("name")} /></Field>
-        <Field label="WhatsApp" error={form.formState.errors.phone?.message}><Input inputMode="tel" autoComplete="tel" {...form.register("phone")} /></Field>
-        <Field label="Data de nascimento" error={form.formState.errors.birthDate?.message}><Input type="date" autoComplete="bday" {...form.register("birthDate")} /></Field>
+        <Field label="Celular" error={form.formState.errors.phone?.message}>
+          <Input inputMode="numeric" autoComplete="tel" maxLength={11} {...form.register("phone")} onInput={normalizeMobileInput} />
+        </Field>
+        <Field label="Data de nascimento" error={form.formState.errors.birthDate?.message}>
+          <Input inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} autoComplete="bday" {...form.register("birthDate")} onInput={formatBirthDateInput} />
+        </Field>
         <Field label="Senha" error={form.formState.errors.password?.message}><Input type="password" autoComplete="new-password" {...form.register("password")} /></Field>
         {error ? <AccountError>{error}</AccountError> : null}
         <Button type="submit" disabled={form.formState.isSubmitting}><UserPlus size={16} /> Criar conta</Button>
-        <AccountLink type="button" onClick={() => router.push("/account/login")}>Já tenho conta</AccountLink>
+        <AccountLink type="button" onClick={onBack}>Já tenho conta</AccountLink>
       </AccountForm>
     </AccountShell>
   );
@@ -157,14 +144,16 @@ function ResetForm() {
   const requestForm = useForm<z.infer<typeof resetRequestSchema>>({ resolver: zodResolver(resetRequestSchema), defaultValues: { phone: "" } });
   const confirmForm = useForm<z.infer<typeof resetConfirmSchema>>({ resolver: zodResolver(resetConfirmSchema), defaultValues: { code: "", newPassword: "" } });
   return (
-    <AccountShell title="Redefinir senha" description="Enviaremos um código para o WhatsApp cadastrado.">
+    <AccountShell title="Redefinir senha" description="Enviaremos um código para o celular cadastrado.">
       {!requested ? (
         <AccountForm onSubmit={requestForm.handleSubmit(async (values) => {
           setError("");
           try { await clientApi("customer/auth/password-reset/request", { method: "POST", body: JSON.stringify(values) }); setPhone(values.phone); setRequested(true); }
           catch { setError("Não foi possível solicitar o código."); }
         })}>
-          <Field label="WhatsApp" error={requestForm.formState.errors.phone?.message}><Input inputMode="tel" {...requestForm.register("phone")} /></Field>
+          <Field label="Celular" error={requestForm.formState.errors.phone?.message}>
+            <Input inputMode="numeric" maxLength={11} {...requestForm.register("phone")} onInput={normalizeMobileInput} />
+          </Field>
           {error ? <AccountError>{error}</AccountError> : null}
           <Button type="submit" disabled={requestForm.formState.isSubmitting}>Enviar código</Button>
         </AccountForm>
@@ -179,9 +168,17 @@ function ResetForm() {
           {error ? <AccountError>{error}</AccountError> : null}
           {success ? <AccountSuccess>{success}</AccountSuccess> : null}
           <Button type="submit" disabled={confirmForm.formState.isSubmitting}>Alterar senha</Button>
-          {success ? <AccountLink type="button" onClick={() => router.push("/account/login")}>Ir para login</AccountLink> : null}
+          {success ? <AccountLink type="button" onClick={() => router.push("/login")}>Ir para login</AccountLink> : null}
         </AccountForm>
       )}
     </AccountShell>
   );
+}
+
+function normalizeMobileInput(event: React.FormEvent<HTMLInputElement>) {
+  event.currentTarget.value = normalizeBrazilianMobile(event.currentTarget.value);
+}
+
+function formatBirthDateInput(event: React.FormEvent<HTMLInputElement>) {
+  event.currentTarget.value = formatBrazilianDateInput(event.currentTarget.value);
 }

@@ -10,6 +10,7 @@ import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
+import { isValidBrazilianMobile, normalizeBrazilianMobile } from "@/utils/customerInput";
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
 import {
@@ -37,7 +38,10 @@ import {
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
-  whatsapp: z.string().min(8, "Informe o WhatsApp."),
+  whatsapp: z.string().refine(
+    isValidBrazilianMobile,
+    "Informe um celular válido com DDD.",
+  ),
   logoUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   menuDescription: z.string().optional(),
@@ -165,7 +169,7 @@ export function SettingsForm({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: initialConfig?.name ?? "",
-      whatsapp: initialConfig?.whatsapp ?? "",
+      whatsapp: normalizeBrazilianMobile(initialConfig?.whatsapp ?? ""),
       logoUrl: initialConfig?.logoUrl ?? "",
       bannerUrl: initialConfig?.bannerUrl ?? "",
       menuDescription: initialConfig?.menuDescription ??
@@ -302,8 +306,18 @@ export function SettingsForm({
           <Field label="Nome" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} />
           </Field>
-          <Field label="WhatsApp" error={form.formState.errors.whatsapp?.message}>
-            <Input {...form.register("whatsapp")} />
+          <Field label="Celular" error={form.formState.errors.whatsapp?.message}>
+            <Input
+              inputMode="numeric"
+              autoComplete="tel"
+              maxLength={11}
+              {...form.register("whatsapp")}
+              onInput={(event) => {
+                event.currentTarget.value = normalizeBrazilianMobile(
+                  event.currentTarget.value,
+                );
+              }}
+            />
           </Field>
           <Field label="Logo URL">
             <Input {...form.register("logoUrl")} />

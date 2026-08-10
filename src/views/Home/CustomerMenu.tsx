@@ -241,14 +241,6 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               "Escolha seus itens, revise o pedido e envie."}
           </HeroText>
           <TrackingActions>
-            <TrackingShortcut
-              type="button"
-              tone="secondary"
-              onClick={() => router.push("/account")}
-            >
-              <UserRound size={16} aria-hidden="true" />
-              {customer ? customer.name : "Entrar ou criar conta"}
-            </TrackingShortcut>
             {customer ? (
               <TrackingShortcut
                 type="button"
@@ -258,7 +250,16 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                 <ClipboardList size={16} aria-hidden="true" />
                 Meus pedidos
               </TrackingShortcut>
-            ) : null}
+            ) : (
+              <TrackingShortcut
+                type="button"
+                tone="secondary"
+                onClick={() => router.push("/login")}
+              >
+                <UserRound size={16} aria-hidden="true" />
+                Entrar ou criar conta
+              </TrackingShortcut>
+            )}
           </TrackingActions>
           {closedStoreMessage ||
           todayBusinessHours ||
@@ -288,7 +289,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                   ) : null}
                 </HeroInfoGrid>
               ) : null}
-              {recentOrderTrackingCodes.length > 0 ? (
+              {!customer && recentOrderTrackingCodes.length > 0 ? (
                 <TrackingActions>
                   <TrackingShortcut
                     type="button"

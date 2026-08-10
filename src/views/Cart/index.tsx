@@ -35,6 +35,7 @@ import type {
   OrderResponse,
   RestaurantConfigResponse,
 } from "@/types/api";
+import { isValidBrazilianMobile, normalizeBrazilianMobile } from "@/utils/customerInput";
 import { money } from "@/utils/format";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import {
@@ -101,7 +102,10 @@ const paymentMethods = [
 const checkoutSchema = z
   .object({
     customerName: z.string().min(2, "Informe seu nome."),
-    customerPhone: z.string().min(8, "Informe seu telefone."),
+    customerPhone: z.string().refine(
+      isValidBrazilianMobile,
+      "Informe um celular válido com DDD.",
+    ),
     deliveryType: z.enum(["DELIVERY", "PICKUP"]),
     street: z.string(),
     number: z.string(),
@@ -673,13 +677,19 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   <Input autoComplete="name" {...form.register("customerName")} />
                 </Field>
                 <Field
-                  label="WhatsApp"
+                  label="Celular"
                   error={form.formState.errors.customerPhone?.message}
                 >
                   <Input
-                    type="tel"
+                    inputMode="numeric"
                     autoComplete="tel"
+                    maxLength={11}
                     {...form.register("customerPhone")}
+                    onInput={(event) => {
+                      event.currentTarget.value = normalizeBrazilianMobile(
+                        event.currentTarget.value,
+                      );
+                    }}
                   />
                 </Field>
               </CheckoutSection>
