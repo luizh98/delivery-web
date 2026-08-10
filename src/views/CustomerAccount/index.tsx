@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { BackButton } from "@/components/BackButton";
@@ -15,6 +15,7 @@ import { clientApi, customerAuthApi } from "@/services/api/client";
 import {
   brazilianDateToIso,
   formatBrazilianDateInput,
+  formatIsoDateToBrazilian,
   formatBrazilianMobileInput,
   isValidBrazilianMobile,
   isValidPastBrazilianDate,
@@ -24,13 +25,17 @@ import {
   AccountActions,
   AccountCard,
   AccountContent,
+  AccountDetail,
+  AccountDetails,
   AccountError,
   AccountForm,
   AccountHeader,
+  AccountLabel,
   AccountLink,
   AccountSuccess,
   AccountText,
   AccountTitle,
+  AccountValue,
 } from "./styles";
 
 const loginSchema = z.object({
@@ -50,7 +55,7 @@ const resetConfirmSchema = z.object({
   newPassword: z.string().min(8, "A senha deve ter ao menos 8 caracteres."),
 });
 
-type AccountMode = "login" | "reset";
+type AccountMode = "login" | "profile" | "reset";
 
 export function CustomerAccountView({ mode }: { mode: AccountMode }) {
   const router = useRouter();
@@ -59,10 +64,47 @@ export function CustomerAccountView({ mode }: { mode: AccountMode }) {
   if (mode === "reset") {
     return <ResetForm />;
   }
+  if (mode === "profile") {
+    return <ProfileView />;
+  }
   return <LoginForm onAuthenticated={async () => { await refresh(); router.push("/"); }} />;
 }
 
-function AccountShell({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function ProfileView() {
+  const router = useRouter();
+  const { customer, loading } = useCustomerAuth();
+
+  useEffect(() => {
+    if (!loading && !customer) {
+      router.replace("/login");
+    }
+  }, [customer, loading, router]);
+
+  if (loading || !customer) {
+    return <AccountShell title="Minha conta" description="Carregando seus dados..." />;
+  }
+
+  return (
+    <AccountShell title="Minha conta" description="Confira seus dados cadastrados.">
+      <AccountDetails>
+        <AccountDetail>
+          <AccountLabel>Nome</AccountLabel>
+          <AccountValue>{customer.name}</AccountValue>
+        </AccountDetail>
+        <AccountDetail>
+          <AccountLabel>Celular</AccountLabel>
+          <AccountValue>{formatBrazilianMobileInput(customer.phone)}</AccountValue>
+        </AccountDetail>
+        <AccountDetail>
+          <AccountLabel>Data de nascimento</AccountLabel>
+          <AccountValue>{formatIsoDateToBrazilian(customer.birthDate)}</AccountValue>
+        </AccountDetail>
+      </AccountDetails>
+    </AccountShell>
+  );
+}
+
+function AccountShell({ title, description, children }: { title: string; description: string; children?: React.ReactNode }) {
   const router = useRouter();
   return (
     <PageShell>

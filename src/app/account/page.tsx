@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { CustomerAccountView } from "@/views/CustomerAccount";
 
 export default function AccountPage() {
-  redirect("/login");
+  return <CustomerAccountView mode="profile" />;
 }
