@@ -64,9 +64,9 @@ export const HeroDetailsRow = styled("div", {
 export const HeroInfoGrid = styled("div", {
   display: "flex",
   minWidth: 0,
-  flexDirection: "column",
-  alignItems: "flex-start",
-  gap: "0.5rem",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: "0.5rem 1rem",
 });
 
 export const HeroInfoItem = styled("p", {
@@ -88,9 +88,8 @@ export const HeroInfoItem = styled("p", {
 
 export const TrackingActions = styled("div", {
   display: "flex",
-  flexShrink: 0,
+  flexWrap: "wrap",
   gap: "0.5rem",
-  marginLeft: "auto",
 });
 
 export const TrackingShortcut = styled("button", {

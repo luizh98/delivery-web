@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
-import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
@@ -138,8 +137,7 @@ function formatTodayBusinessHours(
 
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const router = useRouter();
-  const { items: cart, recentOrderTrackingCodes, subtotalCents } = useCart();
-  const { customer } = useCustomerAuth();
+  const { items: cart, subtotalCents } = useCart();
   const initialCategoryId =
     menu.categories.find((category) =>
     menu.products.some((product) => product.categoryId === category.id),
@@ -241,66 +239,48 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               "Escolha seus itens, revise o pedido e envie."}
           </HeroText>
           <TrackingActions>
-            {customer ? (
-              <TrackingShortcut
-                type="button"
-                tone="secondary"
-                onClick={() => router.push("/orders")}
-              >
-                <ClipboardList size={16} aria-hidden="true" />
-                Meus pedidos
-              </TrackingShortcut>
-            ) : (
-              <TrackingShortcut
-                type="button"
-                tone="secondary"
-                onClick={() => router.push("/login")}
-              >
-                <UserRound size={16} aria-hidden="true" />
-                Entrar ou criar conta
-              </TrackingShortcut>
-            )}
+            <TrackingShortcut
+              type="button"
+              tone="secondary"
+              onClick={() => router.push("/login")}
+            >
+              <UserRound size={16} aria-hidden="true" />
+              Entrar ou criar conta
+            </TrackingShortcut>
+            <TrackingShortcut
+              type="button"
+              tone="secondary"
+              onClick={() => router.push("/orders")}
+            >
+              <ClipboardList size={16} aria-hidden="true" />
+              Meus pedidos
+            </TrackingShortcut>
           </TrackingActions>
           {closedStoreMessage ||
           todayBusinessHours ||
-          minimumOrderCents > 0 ||
-          recentOrderTrackingCodes.length > 0 ? (
+          minimumOrderCents > 0 ? (
             <HeroDetailsRow>
-              {closedStoreMessage || todayBusinessHours || minimumOrderCents > 0 ? (
-                <HeroInfoGrid>
-                  {closedStoreMessage ? (
-                    <ClosedStoreNotice role="status">
-                      <Clock3 size={14} />
-                      {closedStoreMessage}
-                    </ClosedStoreNotice>
-                  ) : todayBusinessHours ? (
-                    <HeroInfoItem>
-                      <Clock3 size={14} />
-                      <span>Hoje:</span>
-                      <strong>{todayBusinessHours}</strong>
-                    </HeroInfoItem>
-                  ) : null}
-                  {minimumOrderCents > 0 ? (
-                    <HeroInfoItem>
-                      <ShoppingBag size={14} />
-                      <span>Pedido mínimo:</span>
-                      <strong>{money(minimumOrderCents)}</strong>
-                    </HeroInfoItem>
-                  ) : null}
-                </HeroInfoGrid>
-              ) : null}
-              {!customer && recentOrderTrackingCodes.length > 0 ? (
-                <TrackingActions>
-                  <TrackingShortcut
-                    type="button"
-                    tone="secondary"
-                    onClick={() => router.push("/orders")}
-                  >
-                    <ClipboardList size={16} aria-hidden="true" />
-                    Meus pedidos
-                  </TrackingShortcut>
-                </TrackingActions>
-              ) : null}
+              <HeroInfoGrid>
+                {closedStoreMessage ? (
+                  <ClosedStoreNotice role="status">
+                    <Clock3 size={14} />
+                    {closedStoreMessage}
+                  </ClosedStoreNotice>
+                ) : todayBusinessHours ? (
+                  <HeroInfoItem>
+                    <Clock3 size={14} />
+                    <span>Hoje:</span>
+                    <strong>{todayBusinessHours}</strong>
+                  </HeroInfoItem>
+                ) : null}
+                {minimumOrderCents > 0 ? (
+                  <HeroInfoItem>
+                    <ShoppingBag size={14} />
+                    <span>Pedido mínimo:</span>
+                    <strong>{money(minimumOrderCents)}</strong>
+                  </HeroInfoItem>
+                ) : null}
+              </HeroInfoGrid>
             </HeroDetailsRow>
           ) : null}
         </HeroBody>
