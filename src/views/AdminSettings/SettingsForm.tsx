@@ -342,9 +342,22 @@ export function SettingsForm({
         </StatusToggle>
         <GridTwo>
           <Field label="Modelo de cobrança">
-            <Select {...form.register("pricingMode")}>
+            <Select
+              {...form.register("pricingMode", {
+                onChange: (event) => {
+                  if (event.target.value === "RANGE"
+                    && form.getValues("deliveryFeeRanges").length === 0) {
+                    deliveryRanges.append({
+                      fromDistanceKm: 0,
+                      toDistanceKm: 1,
+                      feeReais: 0,
+                    });
+                  }
+                },
+              })}
+            >
               <option value="PER_KM">Valor por km</option>
-              <option value="RANGE">Valor fixo por faixa</option>
+              <option value="RANGE">Faixas de distância (valor fixo)</option>
             </Select>
           </Field>
           {pricingMode === "PER_KM" ? (
@@ -390,7 +403,13 @@ export function SettingsForm({
         {pricingMode === "RANGE" ? (
           <RangeList>
             <RangeActions>
-              <strong>Faixas de distância</strong>
+              <div>
+                <strong>Faixas de distância</strong>
+                <p>
+                  Cada distância usa uma única faixa. Exemplo: até 1 km = R$ 0;
+                  acima de 1 até 2,5 km = R$ 6.
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -423,6 +442,7 @@ export function SettingsForm({
                     type="number"
                     min="0"
                     step="0.1"
+                    readOnly
                     {...form.register(`deliveryFeeRanges.${index}.fromDistanceKm`, {
                       valueAsNumber: true,
                     })}
@@ -440,6 +460,19 @@ export function SettingsForm({
                     readOnly={rangeValues[index]?.toDistanceKm === null}
                     {...form.register(`deliveryFeeRanges.${index}.toDistanceKm`, {
                       setValueAs: (value) => value === "" ? null : Number(value),
+                      onChange: (event) => {
+                        const nextRange = form.getValues("deliveryFeeRanges")[index + 1];
+                        const value = event.target.value === ""
+                          ? null
+                          : Number(event.target.value);
+                        if (nextRange && value !== null) {
+                          form.setValue(
+                            `deliveryFeeRanges.${index + 1}.fromDistanceKm`,
+                            value,
+                            { shouldDirty: true, shouldValidate: true },
+                          );
+                        }
+                      },
                     })}
                   />
                   <StatusToggle>
@@ -478,7 +511,18 @@ export function SettingsForm({
                   type="button"
                   variant="dangerGhost"
                   aria-label={`Remover faixa ${index + 1}`}
-                  onClick={() => deliveryRanges.remove(index)}
+                  onClick={() => {
+                    const remainingRanges = form.getValues("deliveryFeeRanges")
+                      .filter((_, rangeIndex) => rangeIndex !== index);
+                    const nextRange = remainingRanges[index];
+                    if (nextRange) {
+                      nextRange.fromDistanceKm = index === 0
+                        ? 0
+                        : remainingRanges[index - 1].toDistanceKm
+                          ?? nextRange.fromDistanceKm;
+                    }
+                    deliveryRanges.replace(remainingRanges);
+                  }}
                 >
                   <Trash2 size={16} />
                 </Button>
