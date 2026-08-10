@@ -29,6 +29,7 @@ import {
   GridTwo,
   RangeActions,
   RangeList,
+  RangeOptions,
   RangeRow,
   Section,
   StatusToggle,
@@ -456,7 +457,6 @@ export function SettingsForm({
                     type="number"
                     min="0"
                     step="0.1"
-                    readOnly
                     {...form.register(`deliveryFeeRanges.${index}.fromDistanceKm`, {
                       valueAsNumber: true,
                     })}
@@ -489,24 +489,6 @@ export function SettingsForm({
                       },
                     })}
                   />
-                  <StatusToggle>
-                    <input
-                      type="checkbox"
-                      checked={rangeValues[index]?.toDistanceKm === null}
-                      onChange={(event) => {
-                        const field = `deliveryFeeRanges.${index}.toDistanceKm` as const;
-                        const fromDistanceKm = form.getValues(
-                          `deliveryFeeRanges.${index}.fromDistanceKm`,
-                        );
-                        form.setValue(
-                          field,
-                          event.target.checked ? null : fromDistanceKm + 1,
-                          { shouldDirty: true, shouldValidate: true },
-                        );
-                      }}
-                    />
-                    Sem limite (acima de {rangeValues[index]?.fromDistanceKm ?? 0} km)
-                  </StatusToggle>
                 </Field>
                 <Field
                   label="Valor (R$)"
@@ -540,6 +522,26 @@ export function SettingsForm({
                 >
                   <Trash2 size={16} />
                 </Button>
+                <RangeOptions>
+                  <StatusToggle>
+                    <input
+                      type="checkbox"
+                      checked={rangeValues[index]?.toDistanceKm === null}
+                      onChange={(event) => {
+                        const field = `deliveryFeeRanges.${index}.toDistanceKm` as const;
+                        const fromDistanceKm = form.getValues(
+                          `deliveryFeeRanges.${index}.fromDistanceKm`,
+                        );
+                        form.setValue(
+                          field,
+                          event.target.checked ? null : fromDistanceKm + 1,
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                      }}
+                    />
+                    Sem limite (acima de {rangeValues[index]?.fromDistanceKm ?? 0} km)
+                  </StatusToggle>
+                </RangeOptions>
               </RangeRow>
             ))}
             {typeof form.formState.errors.deliveryFeeRanges?.message === "string" ? (

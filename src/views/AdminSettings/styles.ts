@@ -122,6 +122,12 @@ export const RangeRow = styled("div", {
   },
 });
 
+export const RangeOptions = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  gridColumn: "1 / -1",
+});
+
 export const StatusOptions = styled("div", {
   display: "flex",
   alignItems: "center",
