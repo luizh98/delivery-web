@@ -9,8 +9,24 @@ export function normalizeBrazilianMobile(value: string) {
   return nationalNumber.slice(0, 11);
 }
 
+export function formatBrazilianMobileInput(value: string) {
+  const digits = normalizeBrazilianMobile(value);
+
+  if (!digits) {
+    return "";
+  }
+  if (digits.length <= 2) {
+    return `(${digits}`;
+  }
+  if (digits.length <= 7) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  }
+
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 export function isValidBrazilianMobile(value: string) {
-  return /^[1-9]\d9\d{8}$/.test(value);
+  return /^[1-9]\d9\d{8}$/.test(normalizeBrazilianMobile(value));
 }
 
 export function formatBrazilianDateInput(value: string) {

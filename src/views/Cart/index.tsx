@@ -35,7 +35,11 @@ import type {
   OrderResponse,
   RestaurantConfigResponse,
 } from "@/types/api";
-import { isValidBrazilianMobile, normalizeBrazilianMobile } from "@/utils/customerInput";
+import {
+  formatBrazilianMobileInput,
+  isValidBrazilianMobile,
+  normalizeBrazilianMobile,
+} from "@/utils/customerInput";
 import { money } from "@/utils/format";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import {
@@ -187,8 +191,14 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
 
   const form = useForm<CheckoutDraft>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: checkout,
-    values: checkout,
+    defaultValues: {
+      ...checkout,
+      customerPhone: formatBrazilianMobileInput(checkout.customerPhone),
+    },
+    values: {
+      ...checkout,
+      customerPhone: formatBrazilianMobileInput(checkout.customerPhone),
+    },
   });
   const deliveryType = useWatch({
     control: form.control,
@@ -256,7 +266,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     const populated: CheckoutDraft = {
       ...current,
       customerName: customer.name,
-      customerPhone: customer.phone,
+      customerPhone: formatBrazilianMobileInput(customer.phone),
       street: address?.street ?? current.street,
       number: address?.number ?? current.number,
       complement: address?.complement ?? current.complement,
@@ -386,7 +396,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
         method: "POST",
         body: JSON.stringify({
           customerName: values.customerName,
-          customerPhone: values.customerPhone,
+          customerPhone: normalizeBrazilianMobile(values.customerPhone),
           deliveryType: values.deliveryType,
           deliveryAddress:
             values.deliveryType === "DELIVERY"
@@ -683,10 +693,10 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   <Input
                     inputMode="numeric"
                     autoComplete="tel"
-                    maxLength={11}
+                    maxLength={17}
                     {...form.register("customerPhone")}
                     onInput={(event) => {
-                      event.currentTarget.value = normalizeBrazilianMobile(
+                      event.currentTarget.value = formatBrazilianMobileInput(
                         event.currentTarget.value,
                       );
                     }}

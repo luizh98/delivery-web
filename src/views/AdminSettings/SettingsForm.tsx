@@ -10,7 +10,11 @@ import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
-import { isValidBrazilianMobile, normalizeBrazilianMobile } from "@/utils/customerInput";
+import {
+  formatBrazilianMobileInput,
+  isValidBrazilianMobile,
+  normalizeBrazilianMobile,
+} from "@/utils/customerInput";
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
 import {
@@ -170,7 +174,7 @@ export function SettingsForm({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: initialConfig?.name ?? "",
-      whatsapp: normalizeBrazilianMobile(initialConfig?.whatsapp ?? ""),
+      whatsapp: formatBrazilianMobileInput(initialConfig?.whatsapp ?? ""),
       logoUrl: initialConfig?.logoUrl ?? "",
       bannerUrl: initialConfig?.bannerUrl ?? "",
       menuDescription: initialConfig?.menuDescription ??
@@ -234,7 +238,7 @@ export function SettingsForm({
         method: "PUT",
         body: JSON.stringify({
           name: values.name,
-          whatsapp: values.whatsapp,
+          whatsapp: normalizeBrazilianMobile(values.whatsapp),
           logoUrl: values.logoUrl,
           bannerUrl: values.bannerUrl,
           menuDescription: values.menuDescription,
@@ -311,10 +315,10 @@ export function SettingsForm({
             <Input
               inputMode="numeric"
               autoComplete="tel"
-              maxLength={11}
+              maxLength={17}
               {...form.register("whatsapp")}
               onInput={(event) => {
-                event.currentTarget.value = normalizeBrazilianMobile(
+                event.currentTarget.value = formatBrazilianMobileInput(
                   event.currentTarget.value,
                 );
               }}
