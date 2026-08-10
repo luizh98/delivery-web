@@ -185,7 +185,7 @@ export function SettingsForm({
       deliveryFeeRanges: (initialConfig?.deliverySettings?.deliveryFeeRanges ?? []).map(
         (range) => ({
           fromDistanceKm: range.fromDistanceKm,
-          toDistanceKm: range.toDistanceKm,
+          toDistanceKm: range.toDistanceKm ?? null,
           feeReais: centsToReais(range.feeCents),
         }),
       ),
@@ -246,7 +246,7 @@ export function SettingsForm({
             pricePerKmCents: reaisToCents(values.pricePerKmReais),
             deliveryFeeRanges: values.deliveryFeeRanges.map((range) => ({
               fromDistanceKm: range.fromDistanceKm,
-              toDistanceKm: range.toDistanceKm,
+              toDistanceKm: range.toDistanceKm ?? null,
               feeCents: reaisToCents(range.feeReais),
             })),
             freeDeliveryMinimumOrderCents: reaisToCents(
