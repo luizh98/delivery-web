@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
+import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
@@ -138,6 +139,7 @@ function formatTodayBusinessHours(
 export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const router = useRouter();
   const { items: cart, subtotalCents } = useCart();
+  const { customer } = useCustomerAuth();
   const initialCategoryId =
     menu.categories.find((category) =>
     menu.products.some((product) => product.categoryId === category.id),
@@ -242,10 +244,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             <TrackingShortcut
               type="button"
               tone="secondary"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push(customer ? "/account" : "/login")}
             >
               <UserRound size={16} aria-hidden="true" />
-              Entrar ou criar conta
+              {customer?.name.trim() || "Entrar ou criar conta"}
             </TrackingShortcut>
             <TrackingShortcut
               type="button"
