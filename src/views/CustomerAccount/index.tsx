@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, LogOut, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -72,13 +72,28 @@ export function CustomerAccountView({ mode }: { mode: AccountMode }) {
 
 function ProfileView() {
   const router = useRouter();
-  const { customer, loading } = useCustomerAuth();
+  const { customer, loading, logout } = useCustomerAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
 
   useEffect(() => {
-    if (!loading && !customer) {
+    if (!loading && !customer && !isLoggingOut) {
       router.replace("/login");
     }
-  }, [customer, loading, router]);
+  }, [customer, isLoggingOut, loading, router]);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    setLogoutError("");
+
+    try {
+      await logout();
+      router.replace("/");
+    } catch {
+      setLogoutError("Não foi possível sair da conta. Tente novamente.");
+      setIsLoggingOut(false);
+    }
+  }
 
   if (loading || !customer) {
     return <AccountShell title="Minha conta" description="Carregando seus dados..." />;
@@ -100,6 +115,10 @@ function ProfileView() {
           <AccountValue>{formatIsoDateToBrazilian(customer.birthDate)}</AccountValue>
         </AccountDetail>
       </AccountDetails>
+      {logoutError ? <AccountError>{logoutError}</AccountError> : null}
+      <Button type="button" variant="danger" disabled={isLoggingOut} onClick={handleLogout}>
+        <LogOut size={16} /> {isLoggingOut ? "Saindo..." : "Sair da conta"}
+      </Button>
     </AccountShell>
   );
 }
