@@ -341,15 +341,6 @@ export function OrderHistoryView() {
         </HistoryList>
 
         <StateActions>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={loading}
-            onClick={() => void loadOrders()}
-          >
-            <RefreshCw size={18} />
-            {loading ? "Atualizando..." : "Atualizar pedidos"}
-          </Button>
           <Button type="button" onClick={goToMenu}>
             Voltar ao cardápio
           </Button>
