@@ -58,6 +58,7 @@ const settingsSchema = z.object({
   deliveryFeeRanges: z.array(z.object({
     fromDistanceKm: z.number().min(0, "Distância inicial não pode ser negativa."),
     toDistanceKm: z.number().min(0, "Distância final não pode ser negativa.").nullable(),
+    isUnlimited: z.boolean(),
     feeReais: z.number().min(0, "Valor não pode ser negativo."),
   })),
   freeDeliveryMinimumOrderReais: z.number().min(
@@ -190,6 +191,7 @@ export function SettingsForm({
         (range) => ({
           fromDistanceKm: range.fromDistanceKm,
           toDistanceKm: range.toDistanceKm ?? null,
+          isUnlimited: range.toDistanceKm == null,
           feeReais: centsToReais(range.feeCents),
         }),
       ),
@@ -250,7 +252,7 @@ export function SettingsForm({
             pricePerKmCents: reaisToCents(values.pricePerKmReais),
             deliveryFeeRanges: values.deliveryFeeRanges.map((range) => ({
               fromDistanceKm: range.fromDistanceKm,
-              toDistanceKm: range.toDistanceKm ?? null,
+              toDistanceKm: range.isUnlimited ? null : range.toDistanceKm,
               feeCents: reaisToCents(range.feeReais),
             })),
             freeDeliveryMinimumOrderCents: reaisToCents(
@@ -369,6 +371,7 @@ export function SettingsForm({
                     deliveryRanges.append({
                       fromDistanceKm: 0,
                       toDistanceKm: 1,
+                      isUnlimited: false,
                       feeReais: 0,
                     });
                   }
@@ -442,6 +445,7 @@ export function SettingsForm({
                   deliveryRanges.append({
                     fromDistanceKm,
                     toDistanceKm: fromDistanceKm + 3,
+                    isUnlimited: false,
                     feeReais: 0,
                   });
                 }}
@@ -475,9 +479,11 @@ export function SettingsForm({
                     type="number"
                     min="0"
                     step="0.1"
-                    readOnly={rangeValues[index]?.toDistanceKm === null}
+                    readOnly={rangeValues[index]?.isUnlimited}
                     {...form.register(`deliveryFeeRanges.${index}.toDistanceKm`, {
-                      setValueAs: (value) => value === "" ? null : Number(value),
+                      setValueAs: (value) => value == null || value === ""
+                        ? null
+                        : Number(value),
                       onChange: (event) => {
                         const nextRange = form.getValues("deliveryFeeRanges")[index + 1];
                         const value = event.target.value === ""
@@ -530,15 +536,20 @@ export function SettingsForm({
                   <StatusToggle>
                     <input
                       type="checkbox"
-                      checked={rangeValues[index]?.toDistanceKm === null}
+                      checked={rangeValues[index]?.isUnlimited ?? false}
                       onChange={(event) => {
-                        const field = `deliveryFeeRanges.${index}.toDistanceKm` as const;
+                        const isUnlimited = event.target.checked;
                         const fromDistanceKm = form.getValues(
                           `deliveryFeeRanges.${index}.fromDistanceKm`,
                         );
                         form.setValue(
-                          field,
-                          event.target.checked ? null : fromDistanceKm + 1,
+                          `deliveryFeeRanges.${index}.isUnlimited`,
+                          isUnlimited,
+                          { shouldDirty: true },
+                        );
+                        form.setValue(
+                          `deliveryFeeRanges.${index}.toDistanceKm`,
+                          isUnlimited ? null : fromDistanceKm + 1,
                           { shouldDirty: true, shouldValidate: true },
                         );
                       }}
