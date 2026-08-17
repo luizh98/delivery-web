@@ -81,7 +81,7 @@ type CartStorageSnapshotV1 = {
   lastOrder: OrderResponse | null;
 };
 
-type CartStorageSnapshot = {
+type CartStorageSnapshotV2 = {
   version: 2;
   items: CartItem[];
   checkout: CheckoutDraft;
@@ -89,12 +89,22 @@ type CartStorageSnapshot = {
   recentOrderTrackingCodes: string[];
 };
 
+type CartStorageSnapshot = {
+  version: 3;
+  items: CartItem[];
+  checkout: CheckoutDraft;
+  lastOrder: OrderResponse | null;
+  recentOrderTrackingCodes: string[];
+  recentOrders: OrderResponse[];
+};
+
 const EMPTY_SNAPSHOT: CartStorageSnapshot = {
-  version: 2,
+  version: 3,
   items: [],
   checkout: EMPTY_CHECKOUT,
   lastOrder: null,
   recentOrderTrackingCodes: [],
+  recentOrders: [],
 };
 
 let memorySnapshot = EMPTY_SNAPSHOT;
@@ -116,6 +126,31 @@ function normalizeTrackingCodes(value: unknown) {
   ).slice(0, MAX_RECENT_ORDERS);
 }
 
+function normalizeRecentOrders(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const trackingCodes = new Set<string>();
+
+  return value
+    .filter((order): order is OrderResponse => {
+      if (!order || typeof order !== "object" || !Array.isArray(order.items)) {
+        return false;
+      }
+
+      const trackingCode = order.trackingCode?.trim();
+
+      if (!trackingCode || !TRACKING_CODE_PATTERN.test(trackingCode) || trackingCodes.has(trackingCode)) {
+        return false;
+      }
+
+      trackingCodes.add(trackingCode);
+      return true;
+    })
+    .slice(0, MAX_RECENT_ORDERS);
+}
+
 function parseSnapshot(raw: string | null): CartStorageSnapshot {
   if (!raw) {
     return EMPTY_SNAPSHOT;
@@ -128,7 +163,7 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
       !parsed ||
       typeof parsed !== "object" ||
       !("version" in parsed) ||
-      (parsed.version !== 1 && parsed.version !== 2) ||
+      (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3) ||
       !("items" in parsed) ||
       !Array.isArray(parsed.items) ||
       !("checkout" in parsed) ||
@@ -138,15 +173,22 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
       return EMPTY_SNAPSHOT;
     }
 
-    const stored = parsed as CartStorageSnapshot | CartStorageSnapshotV1;
+    const stored = parsed as
+      | CartStorageSnapshot
+      | CartStorageSnapshotV2
+      | CartStorageSnapshotV1;
     const lastOrder = "lastOrder" in stored ? stored.lastOrder : null;
     const recentOrderTrackingCodes =
-      stored.version === 2
+      stored.version === 2 || stored.version === 3
         ? normalizeTrackingCodes(stored.recentOrderTrackingCodes)
         : normalizeTrackingCodes([lastOrder?.trackingCode]);
+    const recentOrders =
+      stored.version === 3
+        ? normalizeRecentOrders(stored.recentOrders)
+        : normalizeRecentOrders([lastOrder]);
 
     return {
-      version: 2,
+      version: 3,
       items: stored.items,
       checkout: {
         ...EMPTY_CHECKOUT,
@@ -154,6 +196,7 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
       },
       lastOrder,
       recentOrderTrackingCodes,
+      recentOrders,
     };
   } catch {
     return EMPTY_SNAPSHOT;
@@ -205,6 +248,7 @@ type CartContextValue = {
   checkout: CheckoutDraft;
   lastOrder: OrderResponse | null;
   recentOrderTrackingCodes: string[];
+  recentOrders: OrderResponse[];
   subtotalCents: number;
   addItem: (item: CartItem) => void;
   addItems: (items: CartItem[]) => void;
@@ -329,11 +373,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const completeOrder = useCallback(
     (lastOrder: OrderResponse) => {
-      const { checkout, recentOrderTrackingCodes } = getSnapshot();
+      const { checkout, recentOrderTrackingCodes, recentOrders } = getSnapshot();
       const trackingCode = lastOrder.trackingCode?.trim();
 
       writeSnapshot({
-        version: 2,
+        version: 3,
         items: [],
         checkout: {
           ...EMPTY_CHECKOUT,
@@ -350,6 +394,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         recentOrderTrackingCodes: trackingCode
           ? normalizeTrackingCodes([trackingCode, ...recentOrderTrackingCodes])
           : recentOrderTrackingCodes,
+        recentOrders: trackingCode
+          ? normalizeRecentOrders([lastOrder, ...recentOrders])
+          : recentOrders,
       });
     },
     [],
@@ -362,6 +409,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         checkout: snapshot.checkout,
         lastOrder: snapshot.lastOrder,
         recentOrderTrackingCodes: snapshot.recentOrderTrackingCodes,
+        recentOrders: snapshot.recentOrders,
         subtotalCents: snapshot.items.reduce(
           (sum, item) => sum + item.totalCents,
           0,

@@ -83,7 +83,7 @@ function getStatusTone(status: OrderStatus): StatusTone {
 
 export function OrderHistoryView() {
   const router = useRouter();
-  const { addItems, recentOrderTrackingCodes } = useCart();
+  const { addItems, recentOrders, recentOrderTrackingCodes } = useCart();
   const { customer, loading: customerLoading } = useCustomerAuth();
   const [orders, setOrders] = useState<LoadedOrderHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -148,7 +148,14 @@ export function OrderHistoryView() {
             { signal: controller.signal, cache: "no-store" },
           );
 
-          return { trackingCode, order };
+          const savedOrder = recentOrders.find(
+            (recentOrder) => recentOrder.trackingCode === trackingCode,
+          );
+
+          return {
+            trackingCode,
+            order: savedOrder ? { ...order, items: savedOrder.items } : order,
+          };
         } catch (error) {
           if (error instanceof ApiError && error.status === 404) {
             return null;
@@ -181,7 +188,7 @@ export function OrderHistoryView() {
     setLoadError(loadedOrders.length === 0 && failures > 0);
     setLoading(false);
     activeRequest.current = null;
-  }, [customer, customerLoading, recentOrderTrackingCodes]);
+  }, [customer, customerLoading, recentOrders, recentOrderTrackingCodes]);
 
   useEffect(() => {
     const loadTimeout = window.setTimeout(() => void loadOrders(), 0);
