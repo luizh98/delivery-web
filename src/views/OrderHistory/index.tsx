@@ -216,7 +216,7 @@ export function OrderHistoryView() {
         totalCents: item.totalCents,
       })),
     );
-    router.push("/cart?step=checkout");
+    router.push("/cart");
   }
 
   if (loading && orders.length === 0) {
@@ -362,7 +362,7 @@ export function OrderHistoryView() {
                       Acompanhar pedido
                       <ChevronRight size={18} aria-hidden="true" />
                     </CardAction>
-                    {"items" in order ? (
+                    {order.status === "COMPLETED" && "items" in order ? (
                       <Button type="button" onClick={() => repeatOrder(order)}>
                         <ShoppingCart size={18} aria-hidden="true" />
                         Pedir novamente
