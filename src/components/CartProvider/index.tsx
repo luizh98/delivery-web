@@ -207,6 +207,7 @@ type CartContextValue = {
   recentOrderTrackingCodes: string[];
   subtotalCents: number;
   addItem: (item: CartItem) => void;
+  addItems: (items: CartItem[]) => void;
   updateItemQuantity: (lineId: string, change: number) => void;
   removeItem: (lineId: string) => void;
   applyPromotionAdjustment: (
@@ -237,6 +238,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [snapshot.items, updateItems],
   );
+
+  const addItems = useCallback((items: CartItem[]) => {
+    const current = getSnapshot();
+    writeSnapshot({ ...current, items: [...current.items, ...items] });
+  }, []);
 
   const updateItemQuantity = useCallback(
     (lineId: string, change: number) => {
@@ -361,6 +367,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           0,
         ),
         addItem,
+        addItems,
         updateItemQuantity,
         removeItem,
         applyPromotionAdjustment,

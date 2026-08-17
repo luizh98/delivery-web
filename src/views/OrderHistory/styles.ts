@@ -37,7 +37,7 @@ export const HistoryList = styled("ol", {
   gap: "0.75rem",
 });
 
-export const HistoryCard = styled("button", {
+export const HistoryCard = styled("article", {
   display: "grid",
   width: "100%",
   gap: "0.875rem",
@@ -47,16 +47,6 @@ export const HistoryCard = styled("button", {
   padding: "1rem",
   color: "var(--color-foreground)",
   textAlign: "left",
-  cursor: "pointer",
-
-  "&:hover": {
-    borderColor: "var(--color-primary)",
-  },
-
-  "&:focus-visible": {
-    outline: "2px solid var(--color-primary)",
-    outlineOffset: "2px",
-  },
 });
 
 export const CardHeader = styled("span", {
@@ -141,16 +131,35 @@ export const DetailValue = styled("strong", {
   whiteSpace: "nowrap",
 });
 
-export const CardAction = styled("span", {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "space-between",
+export const CardActions = styled("span", {
+  display: "grid",
   gap: "0.5rem",
   borderTop: "1px solid var(--color-border)",
   paddingTop: "0.75rem",
+
+  "@sm": {
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  },
+});
+
+export const CardAction = styled("button", {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.5rem",
+  border: 0,
+  borderRadius: "0.5rem",
+  background: "transparent",
+  padding: "0.625rem",
   color: "var(--color-primary)",
+  cursor: "pointer",
   fontSize: "0.875rem",
   fontWeight: 700,
+
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
 });
 
 export const Notice = styled("div", {

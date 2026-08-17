@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ClipboardList,
   RefreshCw,
+  ShoppingCart,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
@@ -15,6 +16,7 @@ import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
 import { ApiError, clientApi } from "@/services/api/client";
 import type {
+  CustomerOrderHistoryResponse,
   OrderStatus,
   PublicOrderTrackingResponse,
 } from "@/types/api";
@@ -22,6 +24,7 @@ import { money } from "@/utils/format";
 import { getStatusPresentation } from "@/views/OrderTracking/status";
 import {
   CardAction,
+  CardActions,
   CardDetail,
   CardDetails,
   CardHeader,
@@ -48,7 +51,7 @@ import {
 
 type LoadedOrderHistoryItem = {
   trackingCode: string;
-  order: PublicOrderTrackingResponse;
+  order: PublicOrderTrackingResponse | CustomerOrderHistoryResponse;
 };
 
 type StatusTone = "active" | "completed" | "canceled";
@@ -80,7 +83,7 @@ function getStatusTone(status: OrderStatus): StatusTone {
 
 export function OrderHistoryView() {
   const router = useRouter();
-  const { recentOrderTrackingCodes } = useCart();
+  const { addItems, recentOrderTrackingCodes } = useCart();
   const { customer, loading: customerLoading } = useCustomerAuth();
   const [orders, setOrders] = useState<LoadedOrderHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -102,7 +105,7 @@ export function OrderHistoryView() {
       setFailedCount(0);
       setLoadError(false);
       try {
-        const accountOrders = await clientApi<PublicOrderTrackingResponse[]>(
+        const accountOrders = await clientApi<CustomerOrderHistoryResponse[]>(
           "customer/orders",
           { signal: controller.signal, cache: "no-store" },
         );
@@ -191,6 +194,22 @@ export function OrderHistoryView() {
 
   function goToMenu() {
     router.push("/");
+  }
+
+  function repeatOrder(order: CustomerOrderHistoryResponse) {
+    addItems(
+      order.items.map((item) => ({
+        lineId: crypto.randomUUID(),
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCents,
+        observations: item.observations,
+        options: item.options,
+        totalCents: item.totalCents,
+      })),
+    );
+    router.push("/cart?step=checkout");
   }
 
   if (loading && orders.length === 0) {
@@ -297,11 +316,6 @@ export function OrderHistoryView() {
             return (
               <span key={trackingCode} role="listitem">
                 <HistoryCard
-                  type="button"
-                  onClick={() =>
-                    router.push(`/orders/${encodeURIComponent(trackingCode)}`)
-                  }
-                  aria-label={`Abrir acompanhamento do pedido ${order.orderNumber}`}
                 >
                   <CardHeader>
                     <OrderIdentity>
@@ -330,10 +344,24 @@ export function OrderHistoryView() {
                     </CardDetail>
                   </CardDetails>
 
-                  <CardAction>
-                    Acompanhar pedido
-                    <ChevronRight size={18} aria-hidden="true" />
-                  </CardAction>
+                  <CardActions>
+                    <CardAction
+                      type="button"
+                      onClick={() =>
+                        router.push(`/orders/${encodeURIComponent(trackingCode)}`)
+                      }
+                      aria-label={`Abrir acompanhamento do pedido ${order.orderNumber}`}
+                    >
+                      Acompanhar pedido
+                      <ChevronRight size={18} aria-hidden="true" />
+                    </CardAction>
+                    {"items" in order ? (
+                      <Button type="button" onClick={() => repeatOrder(order)}>
+                        <ShoppingCart size={18} aria-hidden="true" />
+                        Pedir novamente
+                      </Button>
+                    ) : null}
+                  </CardActions>
                 </HistoryCard>
               </span>
             );

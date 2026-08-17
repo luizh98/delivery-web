@@ -215,6 +215,10 @@ export type PublicOrderTrackingResponse = {
   updatedAt?: string;
 };
 
+export type CustomerOrderHistoryResponse = PublicOrderTrackingResponse & {
+  items: OrderItem[];
+};
+
 export type CurrentUserResponse = {
   id: string;
   tenantId: string;
