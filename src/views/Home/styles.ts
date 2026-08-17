@@ -48,6 +48,12 @@ export const HeroTitle = styled("h1", {
   fontWeight: 700,
 });
 
+export const HeroTitleRow = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.375rem",
+});
+
 export const HeroText = styled("p", {
   fontSize: "0.875rem",
   color: "var(--color-muted)",
@@ -131,30 +137,27 @@ export const TrackingShortcut = styled("button", {
 
 export const WhatsAppShortcut = styled("a", {
   display: "inline-flex",
-  width: "fit-content",
+  width: "2rem",
+  height: "2rem",
+  flexShrink: 0,
   alignItems: "center",
   justifyContent: "center",
-  gap: "0.375rem",
-  border: "1px solid #128c7e",
-  borderRadius: "0.625rem",
-  background: "#128c7e",
-  padding: "0.625rem 0.875rem",
-  color: "#ffffff",
-  fontSize: "0.875rem",
-  fontWeight: 700,
+  borderRadius: "9999px",
+  color: "#25d366",
   textDecoration: "none",
-  whiteSpace: "nowrap",
 
   "&:hover": {
-    background: "#0f766e",
+    background: "color-mix(in srgb, #25d366 12%, transparent)",
   },
 
   "&:focus-visible": {
-    outline: "2px solid #128c7e",
+    outline: "2px solid #25d366",
     outlineOffset: "2px",
   },
 
   svg: {
+    width: "1.375rem",
+    height: "1.375rem",
     flexShrink: 0,
   },
 });
