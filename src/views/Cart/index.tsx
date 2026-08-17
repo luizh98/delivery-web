@@ -40,7 +40,7 @@ import {
   isValidBrazilianMobile,
   normalizeBrazilianMobile,
 } from "@/utils/customerInput";
-import { money } from "@/utils/format";
+import { money, reaisToCents } from "@/utils/format";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import {
   CartCard,
@@ -121,6 +121,9 @@ const checkoutSchema = z
     paymentMethod: z
       .enum(["", "PIX", "CREDIT_CARD", "DEBIT_CARD", "CASH"])
       .refine((value) => value !== "", "Selecione a forma de pagamento."),
+    changeForReais: z
+      .number({ message: "Informe um valor válido." })
+      .min(0, "O valor do troco não pode ser negativo."),
   })
   .superRefine((values, context) => {
     if (values.deliveryType !== "DELIVERY") {
@@ -411,6 +414,10 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                 }
               : undefined,
           paymentMethod: values.paymentMethod,
+          changeForCents:
+            values.paymentMethod === "CASH"
+              ? reaisToCents(values.changeForReais)
+              : 0,
           items: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -716,13 +723,22 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                         type="button"
                         selected={paymentMethod === method.value}
                         onClick={() => {
+                          const changeForReais =
+                            method.value === "CASH"
+                              ? form.getValues("changeForReais")
+                              : 0;
                           form.setValue("paymentMethod", method.value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                          form.setValue("changeForReais", changeForReais, {
                             shouldDirty: true,
                             shouldValidate: true,
                           });
                           updateCheckout({
                             ...form.getValues(),
                             paymentMethod: method.value,
+                            changeForReais,
                           });
                         }}
                       >
@@ -736,6 +752,22 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   <CheckoutError>
                     {form.formState.errors.paymentMethod.message}
                   </CheckoutError>
+                ) : null}
+                {paymentMethod === "CASH" ? (
+                  <Field
+                    label="Troco para quanto? (R$)"
+                    error={form.formState.errors.changeForReais?.message}
+                  >
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      {...form.register("changeForReais", {
+                        valueAsNumber: true,
+                      })}
+                    />
+                  </Field>
                 ) : null}
               </CheckoutSection>
 

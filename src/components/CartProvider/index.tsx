@@ -58,6 +58,7 @@ export type CheckoutDraft = {
   state: string;
   zipCode: string;
   paymentMethod: "" | "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "CASH";
+  changeForReais: number;
 };
 
 const EMPTY_CHECKOUT: CheckoutDraft = {
@@ -72,6 +73,7 @@ const EMPTY_CHECKOUT: CheckoutDraft = {
   state: "",
   zipCode: "",
   paymentMethod: "",
+  changeForReais: 0,
 };
 
 type CartStorageSnapshotV1 = {

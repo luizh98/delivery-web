@@ -177,6 +177,7 @@ export type OrderResponse = {
   deliveryType: DeliveryType;
   deliveryAddress?: Address;
   paymentMethod?: PaymentMethod;
+  changeForCents?: number;
   notes?: string;
   items: OrderItem[];
   status: OrderStatus;
