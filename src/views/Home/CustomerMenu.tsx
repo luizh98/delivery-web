@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ClipboardList,
   Clock3,
+  MessageCircle,
   ShoppingBag,
   ShoppingCart,
   UserRound,
@@ -20,6 +21,10 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
+import {
+  isValidBrazilianMobile,
+  normalizeBrazilianMobile,
+} from "@/utils/customerInput";
 import { money } from "@/utils/format";
 import { activeProductFlags } from "@/utils/productFlags";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
@@ -58,6 +63,7 @@ import {
   ProductPrice,
   TrackingActions,
   TrackingShortcut,
+  WhatsAppShortcut,
 } from "./styles";
 
 const PRODUCT_DESCRIPTION_MAX_LENGTH = 120;
@@ -162,6 +168,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     currentDay,
   );
   const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
+  const whatsapp = normalizeBrazilianMobile(restaurantConfig?.whatsapp ?? "");
+  const whatsappHref = isValidBrazilianMobile(whatsapp)
+    ? `https://wa.me/55${whatsapp}`
+    : null;
   const closedStoreMessage =
     restaurantConfig?.open === false
       ? formatClosedStoreMessage(restaurantConfig.nextOpeningAt)
@@ -257,6 +267,17 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               <ClipboardList size={16} aria-hidden="true" />
               Meus pedidos
             </TrackingShortcut>
+            {whatsappHref ? (
+              <WhatsAppShortcut
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Conversar com o estabelecimento pelo WhatsApp"
+              >
+                <MessageCircle size={16} aria-hidden="true" />
+                WhatsApp
+              </WhatsAppShortcut>
+            ) : null}
           </TrackingActions>
           {closedStoreMessage ||
           todayBusinessHours ||
