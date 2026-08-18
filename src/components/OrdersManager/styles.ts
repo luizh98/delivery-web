@@ -125,9 +125,18 @@ export const Empty = styled("div", {
 export const List = styled("section", {
   display: "grid",
   gap: "0.75rem",
+
+  "@md": {
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  },
+
+  "@lg": {
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  },
 });
 
 export const Card = styled("article", {
+  minWidth: 0,
   borderRadius: "0.375rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-surface)",
@@ -136,11 +145,9 @@ export const Card = styled("article", {
 
 export const CardGrid = styled("div", {
   display: "grid",
+  height: "100%",
+  gridTemplateRows: "1fr auto",
   gap: "0.75rem",
-
-  "@lg": {
-    gridTemplateColumns: "1fr 280px",
-  },
 });
 
 export const OrderInfo = styled("div", {
@@ -213,7 +220,12 @@ export const ActionsPanel = styled("div", {
 
 export const ButtonRow = styled("div", {
   display: "flex",
+  flexWrap: "wrap",
   gap: "0.5rem",
+
+  button: {
+    flex: "1 1 auto",
+  },
 });
 
 export const CancelBox = styled("div", {

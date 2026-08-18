@@ -48,6 +48,7 @@ Como operador, quero enxergar tempo de espera e itens rapidamente para priorizar
 1. WHEN um pedido possuir evento de recebimento THEN o sistema SHALL mostrar há quanto tempo ele foi recebido.
 2. WHEN a tela permanecer aberta THEN o sistema SHALL atualizar o tempo decorrido a cada minuto.
 3. WHEN um pedido possuir vários itens THEN o sistema SHALL mostrá-los lado a lado com quebra responsiva.
+4. WHEN a tela estiver em largura desktop THEN o sistema SHALL mostrar três pedidos por linha em cards.
 
 ### P1: Filtrar por período
 
@@ -88,6 +89,7 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 | ORD-FLT-10 | Contadores respeitam período | Verificado |
 | ORD-FLT-11 | Itens lado a lado | Verificado |
 | ORD-FLT-12 | Painel em tela cheia | Verificado |
+| ORD-FLT-13 | Três cards de pedido por linha | Verificado |
 
 ## Critério de sucesso
 
