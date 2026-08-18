@@ -3,6 +3,13 @@ import { styled } from "styles";
 export const Root = styled("div", {
   display: "grid",
   gap: "1rem",
+
+  "&:fullscreen": {
+    height: "100vh",
+    overflowY: "auto",
+    background: "var(--color-background)",
+    padding: "1rem",
+  },
 });
 
 export const Toolbar = styled("div", {
@@ -11,6 +18,11 @@ export const Toolbar = styled("div", {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "0.75rem",
+});
+
+export const ToolbarActions = styled("div", {
+  display: "flex",
+  gap: "0.5rem",
 });
 
 export const Title = styled("h1", {
@@ -93,7 +105,12 @@ export const StatusCount = styled("strong", {
 });
 
 export const SearchFilter = styled("div", {
-  maxWidth: "32rem",
+  display: "grid",
+  gap: "0.75rem",
+
+  "@md": {
+    gridTemplateColumns: "minmax(0, 2fr) minmax(9rem, 1fr) minmax(9rem, 1fr)",
+  },
 });
 
 export const Empty = styled("div", {
@@ -161,12 +178,25 @@ export const MutedText = styled("p", {
   color: "var(--color-muted)",
 });
 
+export const ReceivedTime = styled("p", {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.3rem",
+  fontSize: "0.8rem",
+  fontWeight: 600,
+  color: "var(--color-primary)",
+});
+
 export const ItemList = styled("div", {
-  display: "grid",
-  gap: "0.25rem",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.375rem",
 });
 
 export const Item = styled("p", {
+  borderRadius: "0.375rem",
+  background: "var(--color-surface-muted)",
+  padding: "0.3rem 0.5rem",
   fontSize: "0.875rem",
 });
 

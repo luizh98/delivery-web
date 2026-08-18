@@ -9,11 +9,14 @@ As telas de Pedidos e Cozinha não oferecem uma leitura rápida do volume por st
 - Exibir a quantidade de pedidos por status nas duas telas.
 - Permitir filtrar pedidos pelo status selecionado.
 - Permitir buscar por nome, ID do pedido ou celular do cliente.
+- Permitir filtrar pedidos por período.
+- Melhorar leitura operacional do tempo e dos itens do pedido.
+- Permitir operação em tela cheia sem o menu administrativo.
 
 ## Fora de escopo
 
 - Alterar endpoints ou persistir filtros.
-- Paginação, ordenação ou filtros por data.
+- Paginação ou ordenação.
 
 ## Histórias e critérios de aceite
 
@@ -38,6 +41,31 @@ Como operador, quero buscar por nome, ID ou celular para localizar rapidamente u
 4. WHEN busca e status estiverem ativos THEN o sistema SHALL aplicar ambos os filtros.
 5. WHEN nenhum pedido corresponder THEN o sistema SHALL mostrar estado vazio.
 
+### P1: Acompanhar operação
+
+Como operador, quero enxergar tempo de espera e itens rapidamente para priorizar o preparo.
+
+1. WHEN um pedido possuir evento de recebimento THEN o sistema SHALL mostrar há quanto tempo ele foi recebido.
+2. WHEN a tela permanecer aberta THEN o sistema SHALL atualizar o tempo decorrido a cada minuto.
+3. WHEN um pedido possuir vários itens THEN o sistema SHALL mostrá-los lado a lado com quebra responsiva.
+
+### P1: Filtrar por período
+
+Como operador, quero definir datas inicial e final para analisar pedidos de um período específico.
+
+1. WHEN uma data inicial for definida THEN o sistema SHALL mostrar pedidos recebidos nessa data ou depois.
+2. WHEN uma data final for definida THEN o sistema SHALL mostrar pedidos recebidos nessa data ou antes.
+3. WHEN o período mudar THEN os contadores por status SHALL refletir os pedidos do período.
+4. WHEN período, busca e status estiverem ativos THEN o sistema SHALL combinar os filtros.
+
+### P1: Operar em tela cheia
+
+Como operador, quero expandir o painel para usar toda a tela sem distrações do menu.
+
+1. WHEN o operador clicar no botão de expandir THEN o sistema SHALL exibir somente o painel em tela cheia.
+2. WHEN o painel estiver em tela cheia THEN o sistema SHALL oferecer botão para sair desse modo.
+3. WHEN o operador pressionar Esc THEN o sistema SHALL restaurar o layout administrativo.
+
 ## Casos de borda
 
 - Busca vazia não restringe resultados.
@@ -55,6 +83,11 @@ Como operador, quero buscar por nome, ID ou celular para localizar rapidamente u
 | ORD-FLT-05 | Atualização após mudança de status | Verificado |
 | ORD-FLT-06 | Filtros em linha única no desktop | Verificado |
 | ORD-FLT-07 | Ícone semântico por status | Verificado |
+| ORD-FLT-08 | Tempo desde o recebimento | Verificado |
+| ORD-FLT-09 | Filtro inclusivo por período | Verificado |
+| ORD-FLT-10 | Contadores respeitam período | Verificado |
+| ORD-FLT-11 | Itens lado a lado | Verificado |
+| ORD-FLT-12 | Painel em tela cheia | Verificado |
 
 ## Critério de sucesso
 

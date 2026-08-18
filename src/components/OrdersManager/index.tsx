@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   Ban,
   BellRing,
   CircleCheck,
   CircleX,
+  Clock3,
   CookingPot,
   Inbox,
+  Maximize2,
+  Minimize2,
   Printer,
   RefreshCw,
   Truck,
@@ -44,6 +47,7 @@ import {
   PrintSection,
   PrintTitle,
   Root,
+  ReceivedTime,
   SearchFilter,
   StatusCount,
   StatusFilter,
@@ -53,6 +57,7 @@ import {
   Subtitle,
   Title,
   Toolbar,
+  ToolbarActions,
   Total,
 } from "./styles";
 
@@ -104,36 +109,81 @@ const deliveryLabels: Record<DeliveryType, string> = {
 };
 
 export function OrdersManager({ initialOrders, title, compact }: OrdersManagerProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [printText, setPrintText] = useState("");
   const { showToast } = useToast();
   const availableStatuses = compact ? kitchenStatuses : orderStatuses;
-  const filteredOrders = useMemo(() => {
+  const matchingOrders = useMemo(() => {
     const normalizedSearch = normalizeSearch(search);
     const idSearch = normalizedSearch.replace(/^#/, "");
     const phoneSearch = search.replace(/\D/g, "");
 
     return orders.filter((order) => {
-      if (statusFilter && order.status !== statusFilter) {
+      const receivedAt = getReceivedAt(order);
+      const receivedDate = receivedAt ? localDateKey(receivedAt) : null;
+
+      if ((startDate || endDate) && !receivedDate) {
         return false;
       }
 
-      if (!normalizedSearch) {
-        return true;
+      if (startDate && receivedDate && receivedDate < startDate) {
+        return false;
       }
 
-      return (
+      if (endDate && receivedDate && receivedDate > endDate) {
+        return false;
+      }
+
+      return !normalizedSearch || (
         normalizeSearch(order.customer.name).includes(normalizedSearch) ||
         normalizeSearch(order.id).includes(idSearch) ||
         (phoneSearch.length > 0 &&
           order.customer.phone.replace(/\D/g, "").includes(phoneSearch))
       );
     });
-  }, [orders, search, statusFilter]);
+  }, [endDate, orders, search, startDate]);
+  const filteredOrders = useMemo(
+    () => statusFilter
+      ? matchingOrders.filter((order) => order.status === statusFilter)
+      : matchingOrders,
+    [matchingOrders, statusFilter],
+  );
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(document.fullscreenElement === rootRef.current);
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === rootRef.current) {
+        await document.exitFullscreen();
+      } else {
+        await rootRef.current?.requestFullscreen();
+      }
+    } catch {
+      showToast("Não foi possível alterar o modo de tela cheia.", "error");
+    }
+  }
 
   async function updateStatus(order: OrderResponse, status: OrderStatus) {
     try {
@@ -206,16 +256,26 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
   }
 
   return (
-    <Root>
+    <Root ref={rootRef}>
       <Toolbar>
         <div>
           <Title>{title}</Title>
           <Subtitle>{filteredOrders.length} pedido(s) encontrado(s)</Subtitle>
         </div>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          <RefreshCw size={16} />
-          Atualizar
-        </Button>
+        <ToolbarActions>
+          <Button
+            variant="outline"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "Sair da tela cheia" : "Expandir tela"}
+            title={isFullscreen ? "Sair da tela cheia" : "Expandir tela"}
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </Button>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            <RefreshCw size={16} />
+            Atualizar
+          </Button>
+        </ToolbarActions>
       </Toolbar>
 
       <StatusFilters aria-label="Filtrar pedidos por status">
@@ -234,7 +294,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
               <StatusIcon size={17} aria-hidden="true" />
               <StatusFilterLabel>{statusLabel(status)}</StatusFilterLabel>
               <StatusCount>
-                {orders.filter((order) => order.status === status).length}
+                {matchingOrders.filter((order) => order.status === status).length}
               </StatusCount>
             </StatusFilter>
           );
@@ -248,6 +308,22 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Nome, ID do pedido ou celular"
+          />
+        </Field>
+        <Field label="Data inicial">
+          <Input
+            type="date"
+            value={startDate}
+            max={endDate || undefined}
+            onChange={(event) => setStartDate(event.target.value)}
+          />
+        </Field>
+        <Field label="Data final">
+          <Input
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(event) => setEndDate(event.target.value)}
           />
         </Field>
       </SearchFilter>
@@ -276,6 +352,10 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                 <MutedText>
                   Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.phone}
                 </MutedText>
+                <ReceivedTime>
+                  <Clock3 size={14} aria-hidden="true" />
+                  {formatReceivedAgo(order, now)}
+                </ReceivedTime>
                 <ItemList>
                   {order.items.map((item) => (
                     <Item key={`${order.id}-${item.productId}-${item.name}`}>
@@ -357,4 +437,55 @@ function normalizeSearch(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase();
+}
+
+function getReceivedAt(order: OrderResponse) {
+  return order.statusHistory.find((history) => history.status === "RECEIVED")?.changedAt
+    ?? order.createdAt;
+}
+
+function localDateKey(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatReceivedAgo(order: OrderResponse, now: number) {
+  const receivedAt = getReceivedAt(order);
+
+  if (!receivedAt) {
+    return "Horário de recebimento indisponível";
+  }
+
+  const timestamp = new Date(receivedAt).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return "Horário de recebimento indisponível";
+  }
+
+  const minutes = Math.max(0, Math.floor((now - timestamp) / 60_000));
+
+  if (minutes < 1) {
+    return "Recebido agora";
+  }
+
+  if (minutes < 60) {
+    return `Recebido há ${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `Recebido há ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `Recebido há ${days} ${days === 1 ? "dia" : "dias"}`;
 }
