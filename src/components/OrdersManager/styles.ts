@@ -79,7 +79,7 @@ export const StatusFilter = styled("button", {
 
 export const StatusFilterLabel = styled("span", {
   overflow: "hidden",
-  fontSize: "0.7rem",
+  fontSize: "0.75rem",
   lineHeight: 1.2,
   color: "var(--color-muted)",
   textOverflow: "ellipsis",
@@ -87,7 +87,7 @@ export const StatusFilterLabel = styled("span", {
 });
 
 export const StatusCount = styled("strong", {
-  fontSize: "1.35rem",
+  fontSize: "1.5rem",
   lineHeight: 1,
   color: "var(--color-foreground)",
 });
