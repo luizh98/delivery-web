@@ -391,7 +391,7 @@ export function OrdersManager({
   }
 
   return (
-    <Root ref={rootRef}>
+    <Root ref={rootRef} data-fullscreen={isFullscreen ? "true" : undefined}>
       <Toolbar>
         <div>
           <Title>{title}</Title>

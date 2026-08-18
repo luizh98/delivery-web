@@ -144,7 +144,9 @@ export const List = styled("section", {
   },
 
   "@(min-width: 1536px)": {
-    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+    '[data-fullscreen="true"] &': {
+      gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+    },
   },
 });
 
