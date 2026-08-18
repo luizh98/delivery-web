@@ -7,5 +7,12 @@ export async function AdminKitchenView() {
     ["RECEIVED", "CONFIRMED", "PREPARING", "READY"].includes(order.status),
   );
 
-  return <OrdersManager initialOrders={kitchenOrders} title="Cozinha" compact />;
+  return (
+    <OrdersManager
+      initialOrders={kitchenOrders}
+      allOrders={orders}
+      title="Cozinha"
+      compact
+    />
+  );
 }
