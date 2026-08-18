@@ -23,6 +23,66 @@ export const Subtitle = styled("p", {
   color: "var(--color-muted)",
 });
 
+export const StatusFilters = styled("section", {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "0.5rem",
+
+  "@sm": {
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  },
+});
+
+export const StatusFilter = styled("button", {
+  display: "grid",
+  minWidth: 0,
+  gap: "0.25rem",
+  borderRadius: "0.375rem",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-surface)",
+  padding: "0.75rem",
+  textAlign: "left",
+  cursor: "pointer",
+  transition: "border-color 150ms ease, box-shadow 150ms ease",
+
+  "&:hover": {
+    borderColor: "var(--color-primary)",
+  },
+
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
+
+  variants: {
+    active: {
+      true: {
+        borderColor: "var(--color-primary)",
+        background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
+        boxShadow: "inset 0 0 0 1px var(--color-primary)",
+      },
+    },
+  },
+});
+
+export const StatusFilterLabel = styled("span", {
+  overflow: "hidden",
+  fontSize: "0.75rem",
+  color: "var(--color-muted)",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+});
+
+export const StatusCount = styled("strong", {
+  fontSize: "1.75rem",
+  lineHeight: 1,
+  color: "var(--color-foreground)",
+});
+
+export const SearchFilter = styled("div", {
+  maxWidth: "32rem",
+});
+
 export const Empty = styled("div", {
   borderRadius: "0.375rem",
   border: "1px dashed var(--color-border)",

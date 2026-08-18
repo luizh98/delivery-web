@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Ban, Printer, RefreshCw } from "lucide-react";
 import { Button } from "@/components/Button";
-import { Field, Select, Textarea } from "@/components/Field";
+import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import { money, statusLabel } from "@/utils/format";
@@ -33,6 +33,11 @@ import {
   PrintSection,
   PrintTitle,
   Root,
+  SearchFilter,
+  StatusCount,
+  StatusFilter,
+  StatusFilterLabel,
+  StatusFilters,
   StatusBadge,
   Subtitle,
   Title,
@@ -46,6 +51,23 @@ const nextStatuses: OrderStatus[] = [
   "READY",
   "OUT_FOR_DELIVERY",
   "COMPLETED",
+];
+
+const orderStatuses: OrderStatus[] = [
+  "RECEIVED",
+  "CONFIRMED",
+  "PREPARING",
+  "READY",
+  "OUT_FOR_DELIVERY",
+  "COMPLETED",
+  "CANCELED",
+];
+
+const kitchenStatuses: OrderStatus[] = [
+  "RECEIVED",
+  "CONFIRMED",
+  "PREPARING",
+  "READY",
 ];
 
 const paymentLabels: Record<PaymentMethod, string> = {
@@ -62,10 +84,35 @@ const deliveryLabels: Record<DeliveryType, string> = {
 
 export function OrdersManager({ initialOrders, title, compact }: OrdersManagerProps) {
   const [orders, setOrders] = useState(initialOrders);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
+  const [search, setSearch] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [printText, setPrintText] = useState("");
   const { showToast } = useToast();
+  const availableStatuses = compact ? kitchenStatuses : orderStatuses;
+  const filteredOrders = useMemo(() => {
+    const normalizedSearch = normalizeSearch(search);
+    const idSearch = normalizedSearch.replace(/^#/, "");
+    const phoneSearch = search.replace(/\D/g, "");
+
+    return orders.filter((order) => {
+      if (statusFilter && order.status !== statusFilter) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return (
+        normalizeSearch(order.customer.name).includes(normalizedSearch) ||
+        normalizeSearch(order.id).includes(idSearch) ||
+        (phoneSearch.length > 0 &&
+          order.customer.phone.replace(/\D/g, "").includes(phoneSearch))
+      );
+    });
+  }, [orders, search, statusFilter]);
 
   async function updateStatus(order: OrderResponse, status: OrderStatus) {
     try {
@@ -142,7 +189,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       <Toolbar>
         <div>
           <Title>{title}</Title>
-          <Subtitle>{orders.length} pedido(s)</Subtitle>
+          <Subtitle>{filteredOrders.length} pedido(s) encontrado(s)</Subtitle>
         </div>
         <Button variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw size={16} />
@@ -150,14 +197,46 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
         </Button>
       </Toolbar>
 
-      {orders.length === 0 ? (
+      <StatusFilters aria-label="Filtrar pedidos por status">
+        {availableStatuses.map((status) => {
+          const active = statusFilter === status;
+
+          return (
+            <StatusFilter
+              key={status}
+              type="button"
+              active={active}
+              aria-pressed={active}
+              onClick={() => setStatusFilter(active ? null : status)}
+            >
+              <StatusFilterLabel>{statusLabel(status)}</StatusFilterLabel>
+              <StatusCount>
+                {orders.filter((order) => order.status === status).length}
+              </StatusCount>
+            </StatusFilter>
+          );
+        })}
+      </StatusFilters>
+
+      <SearchFilter>
+        <Field label="Buscar pedido">
+          <Input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Nome, ID do pedido ou celular"
+          />
+        </Field>
+      </SearchFilter>
+
+      {filteredOrders.length === 0 ? (
         <Empty>
           Nenhum pedido encontrado.
         </Empty>
       ) : null}
 
       <List>
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <Card key={order.id}>
             <CardGrid>
               <OrderInfo>
@@ -247,4 +326,12 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       ) : null}
     </Root>
   );
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 }

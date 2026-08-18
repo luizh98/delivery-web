@@ -46,11 +46,11 @@ Como operador, quero buscar por nome, ID ou celular para localizar rapidamente u
 
 | ID | Requisito | Status |
 | --- | --- | --- |
-| ORD-FLT-01 | Contadores por status | Implementando |
-| ORD-FLT-02 | Clique filtra e desfaz filtro | Implementando |
-| ORD-FLT-03 | Busca por nome, ID e celular | Implementando |
-| ORD-FLT-04 | Combinação dos filtros | Implementando |
-| ORD-FLT-05 | Atualização após mudança de status | Implementando |
+| ORD-FLT-01 | Contadores por status | Verificado |
+| ORD-FLT-02 | Clique filtra e desfaz filtro | Verificado |
+| ORD-FLT-03 | Busca por nome, ID e celular | Verificado |
+| ORD-FLT-04 | Combinação dos filtros | Verificado |
+| ORD-FLT-05 | Atualização após mudança de status | Verificado |
 
 ## Critério de sucesso
 
