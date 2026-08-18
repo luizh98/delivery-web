@@ -427,7 +427,9 @@ export function OrdersManager({
               onClick={() => setStatusFilter(active ? null : status)}
             >
               <StatusIcon size={17} aria-hidden="true" />
-              <StatusFilterLabel>{statusLabel(status)}</StatusFilterLabel>
+              <StatusFilterLabel>
+                {status === "OUT_FOR_DELIVERY" ? "Entrega" : statusLabel(status)}
+              </StatusFilterLabel>
               <StatusCount>
                 {matchingOrders.filter((order) => order.status === status).length}
               </StatusCount>
