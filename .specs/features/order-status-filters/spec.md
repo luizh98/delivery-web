@@ -96,6 +96,9 @@ Como operador, quero alternar entre períodos comuns e selecionar um intervalo n
 4. WHEN o operador selecionar início e fim THEN o sistema SHALL marcar visualmente todo o intervalo no calendário.
 5. WHEN o operador confirmar um intervalo completo THEN o sistema SHALL aplicar as datas de forma inclusiva.
 6. WHEN o intervalo estiver incompleto THEN o sistema SHALL manter a confirmação desabilitada.
+7. WHEN "Personalizado" for selecionado novamente THEN o sistema SHALL reabrir o seletor sempre.
+8. WHEN o seletor personalizado abrir THEN o sistema SHALL aparecer como popover compacto ancorado ao filtro, sem overlay de tela inteira.
+9. WHEN datas e intervalo forem exibidos THEN o sistema SHALL usar as cores primária e secundária configuradas para o restaurante.
 
 ### P1: Reforçar resumo financeiro do card
 
@@ -155,6 +158,7 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 | ORD-FLT-24 | Períodos rápidos e calendário de intervalo | Verificado |
 | ORD-FLT-25 | Impressão exclusiva com endereço de entrega | Verificado |
 | ORD-FLT-26 | Ações operacionais no modal | Verificado |
+| ORD-FLT-27 | Popover personalizado reabrível e tematizado | Verificado |
 
 ## Critério de sucesso
 

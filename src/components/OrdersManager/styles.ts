@@ -90,7 +90,7 @@ export const StatusFilter = styled("button", {
 });
 
 export const StatusFilterLabel = styled("span", {
-  overflow: "hidden",
+  overflow: "visible",
   fontSize: "0.75rem",
   lineHeight: 1.2,
   color: "var(--color-muted)",
@@ -111,6 +111,11 @@ export const SearchFilter = styled("div", {
   "@md": {
     gridTemplateColumns: "minmax(0, 2fr) minmax(14rem, 1fr)",
   },
+});
+
+export const DateFilterWrap = styled("div", {
+  position: "relative",
+  minWidth: 0,
 });
 
 export const Empty = styled("div", {
@@ -310,17 +315,50 @@ export const Modal = styled("div", {
   boxShadow: "0 24px 48px rgb(0 0 0 / 0.2)",
 });
 
-export const DateModal = styled("div", {
+export const DatePopover = styled("div", {
+  position: "absolute",
+  top: "calc(100% + 0.65rem)",
+  right: 0,
+  zIndex: 40,
   display: "grid",
-  width: "100%",
-  maxWidth: "28rem",
-  maxHeight: "calc(100vh - 2rem)",
+  width: "min(22rem, calc(100vw - 2rem))",
+  maxHeight: "min(36rem, calc(100vh - 2rem))",
   gridTemplateRows: "auto minmax(0, 1fr)",
-  overflow: "hidden",
-  borderRadius: "0.5rem",
+  overflow: "visible",
+  borderRadius: "0.625rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-surface)",
-  boxShadow: "0 24px 48px rgb(0 0 0 / 0.2)",
+  boxShadow: "0 14px 32px rgb(15 23 42 / 0.18)",
+
+  "&::before": {
+    position: "absolute",
+    top: "-0.35rem",
+    right: "1.5rem",
+    width: "0.7rem",
+    height: "0.7rem",
+    borderTop: "1px solid var(--color-border)",
+    borderLeft: "1px solid var(--color-border)",
+    background: "var(--color-surface)",
+    content: "",
+    transform: "rotate(45deg)",
+  },
+});
+
+export const DatePopoverHeader = styled("header", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  borderBottom: "1px solid var(--color-border)",
+  padding: "0.65rem 0.75rem",
+});
+
+export const DatePopoverBody = styled("div", {
+  display: "grid",
+  gap: "0.65rem",
+  maxHeight: "calc(100vh - 8rem)",
+  overflowY: "auto",
+  padding: "0.65rem 0.75rem 0.75rem",
 });
 
 export const ModalHeader = styled("header", {
@@ -353,12 +391,20 @@ export const CalendarPanel = styled("div", {
 
   ".rdp-root": {
     "--rdp-accent-color": "var(--color-primary)",
-    "--rdp-accent-background-color": "color-mix(in srgb, var(--color-primary) 14%, transparent)",
-    "--rdp-range_middle-background-color": "color-mix(in srgb, var(--color-primary) 14%, transparent)",
+    "--rdp-accent-background-color": "color-mix(in srgb, var(--color-secondary) 22%, transparent)",
+    "--rdp-selected-border": "2px solid var(--color-primary)",
+    "--rdp-range_middle-background-color": "color-mix(in srgb, var(--color-secondary) 30%, transparent)",
     "--rdp-range_middle-color": "var(--color-foreground)",
-    "--rdp-range_start-background": "var(--color-primary)",
-    "--rdp-range_end-background": "var(--color-primary)",
-    "--rdp-today-color": "var(--color-primary)",
+    "--rdp-range_start-date-background-color": "var(--color-primary)",
+    "--rdp-range_end-date-background-color": "var(--color-primary)",
+    "--rdp-today-color": "var(--color-secondary)",
+    "--rdp-day-height": "36px",
+    "--rdp-day-width": "36px",
+    "--rdp-day_button-height": "34px",
+    "--rdp-day_button-width": "34px",
+    "--rdp-nav_button-height": "2rem",
+    "--rdp-nav_button-width": "2rem",
+    fontSize: "0.825rem",
   },
 });
 

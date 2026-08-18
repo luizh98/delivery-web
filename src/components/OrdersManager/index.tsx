@@ -53,8 +53,11 @@ import {
   CustomerOrderBadge,
   CustomerName,
   DetailRow,
-  DateModal,
+  DateFilterWrap,
   DateModalActions,
+  DatePopover,
+  DatePopoverBody,
+  DatePopoverHeader,
   DateRangeText,
   Empty,
   Item,
@@ -150,6 +153,14 @@ const nextStatusLabels: Partial<Record<OrderStatus, string>> = {
   COMPLETED: "Concluir",
 };
 
+const datePresetLabels: Record<DatePreset, string> = {
+  last7: "Últimos 7 dias",
+  yesterday: "Ontem",
+  today: "Hoje",
+  thisMonth: "Este mês",
+  custom: "Personalizado",
+};
+
 export function OrdersManager({
   initialOrders,
   allOrders,
@@ -157,6 +168,7 @@ export function OrdersManager({
   compact,
 }: OrdersManagerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const datePopoverRef = useRef<HTMLDivElement>(null);
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
@@ -164,7 +176,7 @@ export function OrdersManager({
   const [{ startDate, endDate }, setDateRange] = useState(
     () => getPresetDateRange("last7"),
   );
-  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [draftDateRange, setDraftDateRange] = useState<DateRange>();
   const [now, setNow] = useState(() => Date.now());
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -230,20 +242,35 @@ export function OrdersManager({
   }, []);
 
   useEffect(() => {
-    if (!detailsOrderId && !isDateModalOpen) {
+    if (!detailsOrderId && !isDatePopoverOpen) {
       return;
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setDetailsOrderId("");
-        setIsDateModalOpen(false);
+        setIsDatePopoverOpen(false);
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [detailsOrderId, isDateModalOpen]);
+  }, [detailsOrderId, isDatePopoverOpen]);
+
+  useEffect(() => {
+    if (!isDatePopoverOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!datePopoverRef.current?.contains(event.target as Node)) {
+        setIsDatePopoverOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isDatePopoverOpen]);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -260,7 +287,7 @@ export function OrdersManager({
         from: dateFromKey(startDate),
         to: dateFromKey(endDate),
       });
-      setIsDateModalOpen(true);
+      setIsDatePopoverOpen(true);
       return;
     }
 
@@ -279,7 +306,7 @@ export function OrdersManager({
       startDate: dateKey(draftDateRange.from),
       endDate: dateKey(draftDateRange.to),
     });
-    setIsDateModalOpen(false);
+    setIsDatePopoverOpen(false);
   }
 
   async function toggleFullscreen() {
@@ -418,18 +445,77 @@ export function OrdersManager({
             placeholder="Nome, ID do pedido ou celular"
           />
         </Field>
-        <Field label={`Período: ${formatDateRange(startDate, endDate)}`}>
-          <Select
-            value={datePreset}
-            onChange={(event) => selectDatePreset(event.target.value as DatePreset)}
-          >
-            <option value="last7">Últimos 7 dias</option>
-            <option value="yesterday">Ontem</option>
-            <option value="today">Hoje</option>
-            <option value="thisMonth">Este mês</option>
-            <option value="custom">Personalizado</option>
-          </Select>
-        </Field>
+        <DateFilterWrap ref={datePopoverRef}>
+          <Field label={`Período: ${formatDateRange(startDate, endDate)}`}>
+            <Select
+              value=""
+              onChange={(event) => selectDatePreset(event.target.value as DatePreset)}
+            >
+              <option value="" disabled>{datePresetLabels[datePreset]}</option>
+              <option value="last7">Últimos 7 dias</option>
+              <option value="yesterday">Ontem</option>
+              <option value="today">Hoje</option>
+              <option value="thisMonth">Este mês</option>
+              <option value="custom">Personalizado</option>
+            </Select>
+          </Field>
+
+          {isDatePopoverOpen ? (
+            <DatePopover
+              role="dialog"
+              aria-labelledby="date-range-title"
+            >
+              <DatePopoverHeader>
+                <div>
+                  <strong id="date-range-title">Período personalizado</strong>
+                  <Subtitle>Selecione início e fim.</Subtitle>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  aria-label="Fechar seleção de período"
+                  onClick={() => setIsDatePopoverOpen(false)}
+                >
+                  <X size={16} />
+                </Button>
+              </DatePopoverHeader>
+              <DatePopoverBody>
+                <CalendarPanel>
+                  <DayPicker
+                    mode="range"
+                    locale={ptBR}
+                    selected={draftDateRange}
+                    onSelect={setDraftDateRange}
+                    defaultMonth={draftDateRange?.from}
+                    resetOnSelect
+                  />
+                </CalendarPanel>
+                <DateRangeText>
+                  <CalendarDays size={16} aria-hidden="true" />
+                  {draftDateRange?.from && draftDateRange.to
+                    ? formatDateRange(dateKey(draftDateRange.from), dateKey(draftDateRange.to))
+                    : "Selecione o início e o fim do período"}
+                </DateRangeText>
+                <DateModalActions>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDatePopoverOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={!draftDateRange?.from || !draftDateRange.to}
+                    onClick={applyCustomDateRange}
+                  >
+                    Aplicar período
+                  </Button>
+                </DateModalActions>
+              </DatePopoverBody>
+            </DatePopover>
+          ) : null}
+        </DateFilterWrap>
       </SearchFilter>
 
       {filteredOrders.length === 0 ? (
@@ -550,69 +636,6 @@ export function OrdersManager({
           );
         })}
       </List>
-
-      {isDateModalOpen ? (
-        <ModalOverlay
-          role="presentation"
-          onClick={() => setIsDateModalOpen(false)}
-        >
-          <DateModal
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="date-range-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <ModalHeader>
-              <div>
-                <Title id="date-range-title">Período personalizado</Title>
-                <Subtitle>Selecione a data inicial e a data final.</Subtitle>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                aria-label="Fechar seleção de período"
-                onClick={() => setIsDateModalOpen(false)}
-              >
-                <X size={16} />
-              </Button>
-            </ModalHeader>
-            <ModalBody>
-              <CalendarPanel>
-                <DayPicker
-                  mode="range"
-                  locale={ptBR}
-                  selected={draftDateRange}
-                  onSelect={setDraftDateRange}
-                  defaultMonth={draftDateRange?.from}
-                  resetOnSelect
-                />
-              </CalendarPanel>
-              <DateRangeText>
-                <CalendarDays size={16} aria-hidden="true" />
-                {draftDateRange?.from && draftDateRange.to
-                  ? formatDateRange(dateKey(draftDateRange.from), dateKey(draftDateRange.to))
-                  : "Selecione o início e o fim do período"}
-              </DateRangeText>
-              <DateModalActions>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDateModalOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  disabled={!draftDateRange?.from || !draftDateRange.to}
-                  onClick={applyCustomDateRange}
-                >
-                  Aplicar período
-                </Button>
-              </DateModalActions>
-            </ModalBody>
-          </DateModal>
-        </ModalOverlay>
-      ) : null}
 
       {detailsOrder ? (
         <ModalOverlay
