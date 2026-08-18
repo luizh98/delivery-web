@@ -15,6 +15,7 @@ import {
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input } from "@/components/Field";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
 import type {
   Address,
@@ -191,7 +192,7 @@ export function CustomerManager({ initialPage }: CustomerManagerProps) {
                         rel="noreferrer"
                         aria-label={`Conversar com ${customer.name} no WhatsApp`}
                       >
-                        <MessageCircle size={16} />
+                        <WhatsAppIcon size={16} />
                       </ActionLink>
                     </Actions>
                   </td>
