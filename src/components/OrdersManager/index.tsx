@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Ban, Printer, RefreshCw } from "lucide-react";
+import {
+  BadgeCheck,
+  Ban,
+  BellRing,
+  CircleCheck,
+  CircleX,
+  CookingPot,
+  Inbox,
+  Printer,
+  RefreshCw,
+  Truck,
+} from "lucide-react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
@@ -69,6 +80,16 @@ const kitchenStatuses: OrderStatus[] = [
   "PREPARING",
   "READY",
 ];
+
+const statusIcons = {
+  RECEIVED: Inbox,
+  CONFIRMED: BadgeCheck,
+  PREPARING: CookingPot,
+  READY: BellRing,
+  OUT_FOR_DELIVERY: Truck,
+  COMPLETED: CircleCheck,
+  CANCELED: CircleX,
+} satisfies Record<OrderStatus, typeof Inbox>;
 
 const paymentLabels: Record<PaymentMethod, string> = {
   PIX: "Pix",
@@ -200,6 +221,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       <StatusFilters aria-label="Filtrar pedidos por status">
         {availableStatuses.map((status) => {
           const active = statusFilter === status;
+          const StatusIcon = statusIcons[status];
 
           return (
             <StatusFilter
@@ -209,6 +231,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
               aria-pressed={active}
               onClick={() => setStatusFilter(active ? null : status)}
             >
+              <StatusIcon size={17} aria-hidden="true" />
               <StatusFilterLabel>{statusLabel(status)}</StatusFilterLabel>
               <StatusCount>
                 {orders.filter((order) => order.status === status).length}

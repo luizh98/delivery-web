@@ -25,6 +25,8 @@ Como operador, quero ver e selecionar os totais por status para focar na etapa d
 2. WHEN o operador clicar em um contador THEN o sistema SHALL listar somente pedidos daquele status.
 3. WHEN o operador clicar novamente no status ativo THEN o sistema SHALL remover o filtro de status.
 4. WHEN um pedido mudar de status THEN o sistema SHALL atualizar os contadores e a lista filtrada.
+5. WHEN a tela estiver em largura desktop THEN o sistema SHALL mostrar todos os filtros de status em uma única linha.
+6. WHEN os filtros forem exibidos THEN cada status SHALL possuir um ícone visual correspondente.
 
 ### P1: Localizar pedido
 
@@ -51,6 +53,8 @@ Como operador, quero buscar por nome, ID ou celular para localizar rapidamente u
 | ORD-FLT-03 | Busca por nome, ID e celular | Verificado |
 | ORD-FLT-04 | Combinação dos filtros | Verificado |
 | ORD-FLT-05 | Atualização após mudança de status | Verificado |
+| ORD-FLT-06 | Filtros em linha única no desktop | Verificado |
+| ORD-FLT-07 | Ícone semântico por status | Verificado |
 
 ## Critério de sucesso
 

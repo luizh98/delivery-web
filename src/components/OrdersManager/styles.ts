@@ -26,24 +26,36 @@ export const Subtitle = styled("p", {
 export const StatusFilters = styled("section", {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "0.5rem",
+  gap: "0.4rem",
 
   "@sm": {
     gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  },
+
+  "@lg": {
+    display: "flex",
   },
 });
 
 export const StatusFilter = styled("button", {
   display: "grid",
+  flex: "1 1 0",
+  gridTemplateColumns: "auto minmax(0, 1fr) auto",
   minWidth: 0,
-  gap: "0.25rem",
+  alignItems: "center",
+  gap: "0.4rem",
   borderRadius: "0.375rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-surface)",
-  padding: "0.75rem",
+  padding: "0.55rem 0.65rem",
   textAlign: "left",
   cursor: "pointer",
   transition: "border-color 150ms ease, box-shadow 150ms ease",
+
+  svg: {
+    flexShrink: 0,
+    color: "var(--color-primary)",
+  },
 
   "&:hover": {
     borderColor: "var(--color-primary)",
@@ -67,14 +79,15 @@ export const StatusFilter = styled("button", {
 
 export const StatusFilterLabel = styled("span", {
   overflow: "hidden",
-  fontSize: "0.75rem",
+  fontSize: "0.7rem",
+  lineHeight: 1.2,
   color: "var(--color-muted)",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 });
 
 export const StatusCount = styled("strong", {
-  fontSize: "1.75rem",
+  fontSize: "1.35rem",
   lineHeight: 1,
   color: "var(--color-foreground)",
 });
