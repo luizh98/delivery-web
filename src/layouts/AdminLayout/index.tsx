@@ -5,6 +5,7 @@ import {
   Settings,
   Sparkles,
   Tags,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { ConfirmationProvider } from "@/components/ConfirmationProvider";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
+  { href: "/admin/customers", label: "Clientes", icon: Users },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
   { href: "/admin/catalog/upsell", label: "Campanhas", icon: Sparkles },
   { href: "/admin/settings", label: "Config", icon: Settings },
