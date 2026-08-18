@@ -172,9 +172,9 @@ export function OrdersManager({
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
-  const [datePreset, setDatePreset] = useState<DatePreset>("last7");
+  const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [{ startDate, endDate }, setDateRange] = useState(
-    () => getPresetDateRange("last7"),
+    () => getPresetDateRange("today"),
   );
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [draftDateRange, setDraftDateRange] = useState<DateRange>();
@@ -452,9 +452,9 @@ export function OrdersManager({
               onChange={(event) => selectDatePreset(event.target.value as DatePreset)}
             >
               <option value="" disabled>{datePresetLabels[datePreset]}</option>
-              <option value="last7">Últimos 7 dias</option>
-              <option value="yesterday">Ontem</option>
               <option value="today">Hoje</option>
+              <option value="yesterday">Ontem</option>
+              <option value="last7">Últimos 7 dias</option>
               <option value="thisMonth">Este mês</option>
               <option value="custom">Personalizado</option>
             </Select>

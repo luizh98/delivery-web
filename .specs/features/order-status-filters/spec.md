@@ -90,7 +90,7 @@ Como operador, quero definir datas inicial e final para analisar pedidos de um p
 
 Como operador, quero alternar entre períodos comuns e selecionar um intervalo no calendário para consultar pedidos com menos esforço.
 
-1. WHEN a tela abrir THEN o sistema SHALL selecionar "Últimos 7 dias", incluindo hoje.
+1. WHEN a tela abrir THEN o sistema SHALL selecionar "Hoje".
 2. WHEN o operador selecionar "Ontem", "Hoje" ou "Este mês" THEN o sistema SHALL aplicar imediatamente o período correspondente.
 3. WHEN o operador selecionar "Personalizado" THEN o sistema SHALL abrir um modal compacto com calendário em português.
 4. WHEN o operador selecionar início e fim THEN o sistema SHALL marcar visualmente todo o intervalo no calendário.
@@ -99,6 +99,7 @@ Como operador, quero alternar entre períodos comuns e selecionar um intervalo n
 7. WHEN "Personalizado" for selecionado novamente THEN o sistema SHALL reabrir o seletor sempre.
 8. WHEN o seletor personalizado abrir THEN o sistema SHALL aparecer como popover compacto ancorado ao filtro, sem overlay de tela inteira.
 9. WHEN datas e intervalo forem exibidos THEN o sistema SHALL usar as cores primária e secundária configuradas para o restaurante.
+10. WHEN as opções de período forem exibidas THEN o sistema SHALL ordenar "Hoje", "Ontem", "Últimos 7 dias", "Este mês" e "Personalizado".
 
 ### P1: Reforçar resumo financeiro do card
 

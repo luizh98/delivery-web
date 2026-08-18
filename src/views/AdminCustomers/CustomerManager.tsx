@@ -192,7 +192,6 @@ export function CustomerManager({ initialPage }: CustomerManagerProps) {
                         aria-label={`Conversar com ${customer.name} no WhatsApp`}
                       >
                         <MessageCircle size={16} />
-                        WhatsApp
                       </ActionLink>
                     </Actions>
                   </td>

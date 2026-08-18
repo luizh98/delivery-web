@@ -103,12 +103,12 @@ export const Actions = styled("div", {
 export const ActionLink = styled("a", {
   display: "inline-flex",
   height: "2.25rem",
+  width: "2.25rem",
   alignItems: "center",
   justifyContent: "center",
   gap: "0.4rem",
   borderRadius: "0.375rem",
   background: "#16a34a",
-  padding: "0 0.75rem",
   color: "#ffffff",
   fontSize: "0.875rem",
   fontWeight: 600,
@@ -218,7 +218,7 @@ export const InfoCard = styled("div", {
 });
 
 export const InfoLabel = styled("p", {
-  fontSize: "0.7rem",
+  fontSize: "calc(0.7rem + 1px)",
   color: "var(--color-muted)",
 });
 
