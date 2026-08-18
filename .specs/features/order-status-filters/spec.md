@@ -116,13 +116,13 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 | ORD-FLT-11 | Itens lado a lado | Substituído por ORD-FLT-15 |
 | ORD-FLT-12 | Painel em tela cheia | Verificado |
 | ORD-FLT-13 | Três cards de pedido por linha | Verificado |
-| ORD-FLT-14 | Card compacto e clicável | Em tarefas |
-| ORD-FLT-15 | Modal com produtos | Em tarefas |
-| ORD-FLT-16 | Cliente e endereço com ícones | Em tarefas |
-| ORD-FLT-17 | Link de endereço para Google Maps | Em tarefas |
-| ORD-FLT-18 | Totais e frete no modal | Em tarefas |
-| ORD-FLT-19 | Ordinal do pedido por cliente | Em tarefas |
-| ORD-FLT-20 | Card ordenado com ícones | Em tarefas |
+| ORD-FLT-14 | Card compacto e clicável | Verificado |
+| ORD-FLT-15 | Modal com produtos | Verificado |
+| ORD-FLT-16 | Cliente e endereço com ícones | Verificado |
+| ORD-FLT-17 | Link de endereço para Google Maps | Verificado |
+| ORD-FLT-18 | Totais e frete no modal | Verificado |
+| ORD-FLT-19 | Ordinal do pedido por cliente | Verificado |
+| ORD-FLT-20 | Card ordenado com ícones | Verificado |
 
 ## Critério de sucesso
 

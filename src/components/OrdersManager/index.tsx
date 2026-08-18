@@ -9,12 +9,21 @@ import {
   CircleX,
   Clock3,
   CookingPot,
+  CreditCard,
+  ExternalLink,
+  Hash,
   Inbox,
+  MapPin,
   Maximize2,
   Minimize2,
+  Phone,
   Printer,
+  ReceiptText,
   RefreshCw,
+  ShoppingBag,
   Truck,
+  UserRound,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select, Textarea } from "@/components/Field";
@@ -34,13 +43,25 @@ import {
   CancelBox,
   Card,
   CardGrid,
+  CustomerOrderBadge,
   CustomerName,
+  DetailRow,
   Empty,
   Item,
   ItemList,
   List,
-  MutedText,
-  MutedTiny,
+  MapsLink,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalInfo,
+  ModalInfoGrid,
+  ModalLabel,
+  ModalOverlay,
+  ModalProductHeader,
+  ModalProductMeta,
+  ModalSection,
+  ModalSectionTitle,
   OrderHeader,
   OrderInfo,
   PrintBody,
@@ -58,7 +79,8 @@ import {
   Title,
   Toolbar,
   ToolbarActions,
-  Total,
+  TotalRow,
+  Totals,
 } from "./styles";
 
 const nextStatuses: OrderStatus[] = [
@@ -108,7 +130,12 @@ const deliveryLabels: Record<DeliveryType, string> = {
   PICKUP: "Retirada",
 };
 
-export function OrdersManager({ initialOrders, title, compact }: OrdersManagerProps) {
+export function OrdersManager({
+  initialOrders,
+  allOrders,
+  title,
+  compact,
+}: OrdersManagerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
@@ -117,6 +144,7 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
   const [endDate, setEndDate] = useState("");
   const [now, setNow] = useState(() => Date.now());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [detailsOrderId, setDetailsOrderId] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [printText, setPrintText] = useState("");
@@ -157,12 +185,40 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       : matchingOrders,
     [matchingOrders, statusFilter],
   );
+  const customerOrderNumbers = useMemo(
+    () => buildCustomerOrderNumbers(allOrders ?? orders),
+    [allOrders, orders],
+  );
+  const detailsOrder = detailsOrderId
+    ? orders.find((order) => order.id === detailsOrderId) ?? null
+    : null;
+  const detailsAddress = detailsOrder
+    ? formatAddress(detailsOrder.deliveryAddress)
+    : "";
+  const mapsUrl = detailsOrder?.deliveryType === "DELIVERY" && detailsAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detailsAddress)}`
+    : null;
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 60_000);
 
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!detailsOrderId) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setDetailsOrderId("");
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [detailsOrderId]);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -335,39 +391,57 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
       ) : null}
 
       <List>
-        {filteredOrders.map((order) => (
-          <Card key={order.id}>
-            <CardGrid>
-              <OrderInfo>
+        {filteredOrders.map((order) => {
+          const customerOrderNumber = customerOrderNumbers.get(order.id) ?? 1;
+
+          return (
+            <Card key={order.id}>
+              <CardGrid>
+                <OrderInfo
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Ver detalhes do pedido ${order.id.slice(-6).toUpperCase()}`}
+                  onClick={() => setDetailsOrderId(order.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setDetailsOrderId(order.id);
+                    }
+                  }}
+                >
                 <OrderHeader>
-                  <CustomerName>{order.customer.name}</CustomerName>
+                  <DetailRow>
+                    <Hash size={16} aria-hidden="true" />
+                    <strong>Pedido #{order.id.slice(-6).toUpperCase()}</strong>
+                  </DetailRow>
                   <StatusBadge>{statusLabel(order.status)}</StatusBadge>
-                  <MutedTiny>{deliveryLabels[order.deliveryType]}</MutedTiny>
-                  <MutedTiny>
+                </OrderHeader>
+                <DetailRow>
+                  <UserRound size={16} aria-hidden="true" />
+                  <CustomerName>{order.customer.name}</CustomerName>
+                  <CustomerOrderBadge
+                    title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
+                    aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
+                  >
+                    {customerOrderNumber}º
+                  </CustomerOrderBadge>
+                </DetailRow>
+                <DetailRow>
+                  <Truck size={16} aria-hidden="true" />
+                  <span>{deliveryLabels[order.deliveryType]}</span>
+                </DetailRow>
+                <DetailRow>
+                  <CreditCard size={16} aria-hidden="true" />
+                  <span>
                     {order.paymentMethod
                       ? paymentLabels[order.paymentMethod]
                       : "Pagamento não informado"}
-                  </MutedTiny>
-                </OrderHeader>
-                <MutedText>
-                  Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.phone}
-                </MutedText>
+                  </span>
+                </DetailRow>
                 <ReceivedTime>
                   <Clock3 size={14} aria-hidden="true" />
                   {formatReceivedAgo(order, now)}
                 </ReceivedTime>
-                <ItemList>
-                  {order.items.map((item) => (
-                    <Item key={`${order.id}-${item.productId}-${item.name}`}>
-                      {item.quantity}x {item.name} - {money(item.totalCents)}
-                    </Item>
-                  ))}
-                </ItemList>
-                {!compact ? (
-                  <Total>
-                    Total {money(order.totals.totalCents)}
-                  </Total>
-                ) : null}
               </OrderInfo>
 
               <ActionsPanel>
@@ -413,11 +487,155 @@ export function OrdersManager({ initialOrders, title, compact }: OrdersManagerPr
                     </Button>
                   </CancelBox>
                 ) : null}
-              </ActionsPanel>
-            </CardGrid>
-          </Card>
-        ))}
+                </ActionsPanel>
+              </CardGrid>
+            </Card>
+          );
+        })}
       </List>
+
+      {detailsOrder ? (
+        <ModalOverlay
+          role="presentation"
+          onClick={() => setDetailsOrderId("")}
+        >
+          <Modal
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="order-details-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <ModalHeader>
+              <div>
+                <Title id="order-details-title">
+                  Pedido #{detailsOrder.id.slice(-6).toUpperCase()}
+                </Title>
+                <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Fechar detalhes"
+                title="Fechar detalhes"
+                onClick={() => setDetailsOrderId("")}
+              >
+                <X size={16} />
+              </Button>
+            </ModalHeader>
+
+            <ModalBody>
+              <ModalSection>
+                <ModalSectionTitle>
+                  <UserRound size={18} aria-hidden="true" />
+                  Cliente
+                </ModalSectionTitle>
+                <ModalInfoGrid>
+                  <ModalInfo>
+                    <UserRound size={16} aria-hidden="true" />
+                    <div>
+                      <ModalLabel>Nome</ModalLabel>
+                      <strong>{detailsOrder.customer.name}</strong>
+                    </div>
+                  </ModalInfo>
+                  <ModalInfo>
+                    <Phone size={16} aria-hidden="true" />
+                    <div>
+                      <ModalLabel>Celular</ModalLabel>
+                      <strong>{detailsOrder.customer.phone}</strong>
+                    </div>
+                  </ModalInfo>
+                  <ModalInfo>
+                    <Truck size={16} aria-hidden="true" />
+                    <div>
+                      <ModalLabel>Entrega</ModalLabel>
+                      <strong>{deliveryLabels[detailsOrder.deliveryType]}</strong>
+                    </div>
+                  </ModalInfo>
+                  <ModalInfo>
+                    <CreditCard size={16} aria-hidden="true" />
+                    <div>
+                      <ModalLabel>Pagamento</ModalLabel>
+                      <strong>
+                        {detailsOrder.paymentMethod
+                          ? paymentLabels[detailsOrder.paymentMethod]
+                          : "Pagamento não informado"}
+                      </strong>
+                    </div>
+                  </ModalInfo>
+                </ModalInfoGrid>
+              </ModalSection>
+
+              <ModalSection>
+                <ModalSectionTitle>
+                  <MapPin size={18} aria-hidden="true" />
+                  Endereço de entrega
+                </ModalSectionTitle>
+                <p>
+                  {detailsOrder.deliveryType === "PICKUP"
+                    ? "Retirada no restaurante"
+                    : detailsAddress || "Endereço não informado"}
+                </p>
+                {mapsUrl ? (
+                  <MapsLink href={mapsUrl} target="_blank" rel="noreferrer">
+                    Ver no Google Maps
+                    <ExternalLink size={14} aria-hidden="true" />
+                  </MapsLink>
+                ) : null}
+              </ModalSection>
+
+              <ModalSection>
+                <ModalSectionTitle>
+                  <ShoppingBag size={18} aria-hidden="true" />
+                  Produtos
+                </ModalSectionTitle>
+                <ItemList>
+                  {detailsOrder.items.map((item, index) => (
+                    <Item key={`${detailsOrder.id}-${item.productId}-${index}`}>
+                      <ModalProductHeader>
+                        <strong>{item.quantity}x {item.name}</strong>
+                        <strong>{money(item.totalCents)}</strong>
+                      </ModalProductHeader>
+                      {item.options.length > 0 ? (
+                        <ModalProductMeta>
+                          {item.options.map((option) => option.itemName).join(", ")}
+                        </ModalProductMeta>
+                      ) : null}
+                      {item.observations ? (
+                        <ModalProductMeta>Observação: {item.observations}</ModalProductMeta>
+                      ) : null}
+                    </Item>
+                  ))}
+                </ItemList>
+              </ModalSection>
+
+              <ModalSection>
+                <ModalSectionTitle>
+                  <ReceiptText size={18} aria-hidden="true" />
+                  Valores
+                </ModalSectionTitle>
+                <Totals>
+                  <TotalRow>
+                    <span>Subtotal</span>
+                    <strong>{money(detailsOrder.totals.subtotalCents)}</strong>
+                  </TotalRow>
+                  <TotalRow>
+                    <span>Frete</span>
+                    <strong>{money(detailsOrder.totals.deliveryFeeCents)}</strong>
+                  </TotalRow>
+                  <TotalRow>
+                    <span>Desconto</span>
+                    <strong>{money(detailsOrder.totals.discountCents)}</strong>
+                  </TotalRow>
+                  <TotalRow emphasis>
+                    <span>Total</span>
+                    <strong>{money(detailsOrder.totals.totalCents)}</strong>
+                  </TotalRow>
+                </Totals>
+              </ModalSection>
+            </ModalBody>
+          </Modal>
+        </ModalOverlay>
+      ) : null}
 
       {printText ? (
         <PrintSection>
@@ -488,4 +706,57 @@ function formatReceivedAgo(order: OrderResponse, now: number) {
 
   const days = Math.floor(hours / 24);
   return `Recebido há ${days} ${days === 1 ? "dia" : "dias"}`;
+}
+
+function buildCustomerOrderNumbers(orders: OrderResponse[]) {
+  const groupedOrders = new Map<string, OrderResponse[]>();
+
+  for (const order of orders) {
+    const phone = order.customer.phone.replace(/\D/g, "");
+    const customerKey = phone || normalizeSearch(order.customer.name);
+    const customerOrders = groupedOrders.get(customerKey) ?? [];
+    customerOrders.push(order);
+    groupedOrders.set(customerKey, customerOrders);
+  }
+
+  const orderNumbers = new Map<string, number>();
+
+  for (const customerOrders of groupedOrders.values()) {
+    customerOrders
+      .sort((left, right) => orderTimestamp(left) - orderTimestamp(right)
+        || left.id.localeCompare(right.id))
+      .forEach((order, index) => orderNumbers.set(order.id, index + 1));
+  }
+
+  return orderNumbers;
+}
+
+function orderTimestamp(order: OrderResponse) {
+  const value = getReceivedAt(order);
+
+  if (!value) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+}
+
+function formatAddress(address: OrderResponse["deliveryAddress"]) {
+  const street = [address?.street?.trim(), address?.number?.trim()]
+    .filter(Boolean)
+    .join(", ");
+  const cityState = [address?.city?.trim(), address?.state?.trim()]
+    .filter(Boolean)
+    .join(" - ");
+
+  return [
+    street,
+    address?.complement?.trim(),
+    address?.neighborhood?.trim(),
+    cityState,
+    address?.zipCode?.trim(),
+  ]
+    .filter(Boolean)
+    .join(", ");
 }

@@ -1,7 +1,7 @@
 # Detalhes operacionais de pedidos — Tarefas
 
 **Design**: `.specs/features/order-status-filters/design.md`
-**Status**: Em andamento
+**Status**: Concluído
 
 ## Plano
 
@@ -17,9 +17,9 @@ T1 → T2 → T3 → T4
 
 **Concluído quando**:
 
-- [ ] Prop opcional `allOrders` tipada.
-- [ ] Cozinha passa histórico completo sem alterar lista operacional exibida.
-- [ ] Build TypeScript passa.
+- [x] Prop opcional `allOrders` tipada.
+- [x] Cozinha passa histórico completo sem alterar lista operacional exibida.
+- [x] Build TypeScript passa.
 
 ### T2: Implementar resumo e modal
 
@@ -30,11 +30,11 @@ T1 → T2 → T3 → T4
 
 **Concluído quando**:
 
-- [ ] Produtos removidos do card e exibidos no modal.
-- [ ] Cliente, endereço, mapa e totais aparecem no modal.
-- [ ] Ordinal por cliente é calculado pelo histórico completo.
-- [ ] Card segue ordem iconográfica solicitada.
-- [ ] Modal fecha por botão, overlay e Esc.
+- [x] Produtos removidos do card e exibidos no modal.
+- [x] Cliente, endereço, mapa e totais aparecem no modal.
+- [x] Ordinal por cliente é calculado pelo histórico completo.
+- [x] Card segue ordem iconográfica solicitada.
+- [x] Modal fecha por botão, overlay e Esc.
 
 ### T3: Estilizar card clicável e modal
 
@@ -45,9 +45,9 @@ T1 → T2 → T3 → T4
 
 **Concluído quando**:
 
-- [ ] Hover/foco deixa interação evidente.
-- [ ] Modal é responsivo e rolável.
-- [ ] Badge ordinal possui destaque cinza e tooltip nativo.
+- [x] Hover/foco deixa interação evidente.
+- [x] Modal é responsivo e rolável.
+- [x] Badge ordinal possui destaque cinza e tooltip nativo.
 
 ### T4: Validar e publicar
 
@@ -57,7 +57,7 @@ T1 → T2 → T3 → T4
 
 **Concluído quando**:
 
-- [ ] Lint passa.
-- [ ] Build passa.
-- [ ] Rastreabilidade fica verificada.
-- [ ] Commits publicados na `main`.
+- [x] Lint passa.
+- [x] Build passa.
+- [x] Rastreabilidade fica verificada.
+- [x] Commits publicados na `main`.
