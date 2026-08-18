@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DayPicker, type DateRange } from "@daypicker/react";
+import { ptBR } from "@daypicker/react/locale";
 import {
   BadgeCheck,
+  Banknote,
   Ban,
   BellRing,
+  CalendarDays,
   CircleCheck,
   CircleX,
   Clock3,
@@ -40,12 +44,18 @@ import type { OrdersManagerProps } from "./types";
 import {
   ActionsPanel,
   ButtonRow,
+  CalendarPanel,
   CancelBox,
   Card,
+  CardFooter,
   CardGrid,
+  CardTotal,
   CustomerOrderBadge,
   CustomerName,
   DetailRow,
+  DateModal,
+  DateModalActions,
+  DateRangeText,
   Empty,
   Item,
   ItemList,
@@ -53,6 +63,7 @@ import {
   MapsLink,
   Modal,
   ModalBody,
+  ModalFooter,
   ModalHeader,
   ModalInfo,
   ModalInfoGrid,
@@ -64,9 +75,6 @@ import {
   ModalSectionTitle,
   OrderHeader,
   OrderInfo,
-  PrintBody,
-  PrintSection,
-  PrintTitle,
   Root,
   ReceivedTime,
   SearchFilter,
@@ -82,6 +90,10 @@ import {
   TotalRow,
   Totals,
 } from "./styles";
+
+type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
+
+const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 
 const nextStatuses: OrderStatus[] = [
   "CONFIRMED",
@@ -130,6 +142,14 @@ const deliveryLabels: Record<DeliveryType, string> = {
   PICKUP: "Retirada",
 };
 
+const nextStatusLabels: Partial<Record<OrderStatus, string>> = {
+  CONFIRMED: "Confirmar",
+  PREPARING: "Preparando",
+  READY: "Pronto",
+  OUT_FOR_DELIVERY: "Saiu para entrega",
+  COMPLETED: "Concluir",
+};
+
 export function OrdersManager({
   initialOrders,
   allOrders,
@@ -140,14 +160,17 @@ export function OrdersManager({
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [datePreset, setDatePreset] = useState<DatePreset>("last7");
+  const [{ startDate, endDate }, setDateRange] = useState(
+    () => getPresetDateRange("last7"),
+  );
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [draftDateRange, setDraftDateRange] = useState<DateRange>();
   const [now, setNow] = useState(() => Date.now());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [detailsOrderId, setDetailsOrderId] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
-  const [printText, setPrintText] = useState("");
   const { showToast } = useToast();
   const availableStatuses = compact ? kitchenStatuses : orderStatuses;
   const matchingOrders = useMemo(() => {
@@ -192,6 +215,7 @@ export function OrdersManager({
   const detailsOrder = detailsOrderId
     ? orders.find((order) => order.id === detailsOrderId) ?? null
     : null;
+  const detailsNextStatus = detailsOrder ? getNextOrderStatus(detailsOrder) : null;
   const detailsAddress = detailsOrder
     ? formatAddress(detailsOrder.deliveryAddress)
     : "";
@@ -206,19 +230,20 @@ export function OrdersManager({
   }, []);
 
   useEffect(() => {
-    if (!detailsOrderId) {
+    if (!detailsOrderId && !isDateModalOpen) {
       return;
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setDetailsOrderId("");
+        setIsDateModalOpen(false);
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [detailsOrderId]);
+  }, [detailsOrderId, isDateModalOpen]);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -228,6 +253,34 @@ export function OrdersManager({
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
+
+  function selectDatePreset(preset: DatePreset) {
+    if (preset === "custom") {
+      setDraftDateRange({
+        from: dateFromKey(startDate),
+        to: dateFromKey(endDate),
+      });
+      setIsDateModalOpen(true);
+      return;
+    }
+
+    const range = getPresetDateRange(preset);
+    setDatePreset(preset);
+    setDateRange(range);
+  }
+
+  function applyCustomDateRange() {
+    if (!draftDateRange?.from || !draftDateRange.to) {
+      return;
+    }
+
+    setDatePreset("custom");
+    setDateRange({
+      startDate: dateKey(draftDateRange.from),
+      endDate: dateKey(draftDateRange.to),
+    });
+    setIsDateModalOpen(false);
+  }
 
   async function toggleFullscreen() {
     try {
@@ -292,7 +345,6 @@ export function OrdersManager({
       const content = await response.text();
       const printBody = printWindow.document.createElement("pre");
 
-      setPrintText(content);
       printWindow.document.title = "Impressão do pedido";
       printWindow.document.documentElement.lang = "pt-BR";
       printWindow.document.body.replaceChildren(printBody);
@@ -366,21 +418,17 @@ export function OrdersManager({
             placeholder="Nome, ID do pedido ou celular"
           />
         </Field>
-        <Field label="Data inicial">
-          <Input
-            type="date"
-            value={startDate}
-            max={endDate || undefined}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
-        </Field>
-        <Field label="Data final">
-          <Input
-            type="date"
-            value={endDate}
-            min={startDate || undefined}
-            onChange={(event) => setEndDate(event.target.value)}
-          />
+        <Field label={`Período: ${formatDateRange(startDate, endDate)}`}>
+          <Select
+            value={datePreset}
+            onChange={(event) => selectDatePreset(event.target.value as DatePreset)}
+          >
+            <option value="last7">Últimos 7 dias</option>
+            <option value="yesterday">Ontem</option>
+            <option value="today">Hoje</option>
+            <option value="thisMonth">Este mês</option>
+            <option value="custom">Personalizado</option>
+          </Select>
         </Field>
       </SearchFilter>
 
@@ -438,10 +486,19 @@ export function OrdersManager({
                       : "Pagamento não informado"}
                   </span>
                 </DetailRow>
-                <ReceivedTime>
-                  <Clock3 size={14} aria-hidden="true" />
-                  {formatReceivedAgo(order, now)}
-                </ReceivedTime>
+                {hasCashChange(order) ? (
+                  <DetailRow>
+                    <Banknote size={16} aria-hidden="true" />
+                    <span>Troco para {money(order.changeForCents!)}</span>
+                  </DetailRow>
+                ) : null}
+                <CardFooter>
+                  <ReceivedTime>
+                    <Clock3 size={14} aria-hidden="true" />
+                    {formatReceivedAgo(order, now)}
+                  </ReceivedTime>
+                  <CardTotal>{money(order.totals.totalCents)}</CardTotal>
+                </CardFooter>
               </OrderInfo>
 
               <ActionsPanel>
@@ -493,6 +550,69 @@ export function OrdersManager({
           );
         })}
       </List>
+
+      {isDateModalOpen ? (
+        <ModalOverlay
+          role="presentation"
+          onClick={() => setIsDateModalOpen(false)}
+        >
+          <DateModal
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="date-range-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <ModalHeader>
+              <div>
+                <Title id="date-range-title">Período personalizado</Title>
+                <Subtitle>Selecione a data inicial e a data final.</Subtitle>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Fechar seleção de período"
+                onClick={() => setIsDateModalOpen(false)}
+              >
+                <X size={16} />
+              </Button>
+            </ModalHeader>
+            <ModalBody>
+              <CalendarPanel>
+                <DayPicker
+                  mode="range"
+                  locale={ptBR}
+                  selected={draftDateRange}
+                  onSelect={setDraftDateRange}
+                  defaultMonth={draftDateRange?.from}
+                  resetOnSelect
+                />
+              </CalendarPanel>
+              <DateRangeText>
+                <CalendarDays size={16} aria-hidden="true" />
+                {draftDateRange?.from && draftDateRange.to
+                  ? formatDateRange(dateKey(draftDateRange.from), dateKey(draftDateRange.to))
+                  : "Selecione o início e o fim do período"}
+              </DateRangeText>
+              <DateModalActions>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDateModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!draftDateRange?.from || !draftDateRange.to}
+                  onClick={applyCustomDateRange}
+                >
+                  Aplicar período
+                </Button>
+              </DateModalActions>
+            </ModalBody>
+          </DateModal>
+        </ModalOverlay>
+      ) : null}
 
       {detailsOrder ? (
         <ModalOverlay
@@ -562,6 +682,15 @@ export function OrdersManager({
                       </strong>
                     </div>
                   </ModalInfo>
+                  {hasCashChange(detailsOrder) ? (
+                    <ModalInfo>
+                      <Banknote size={16} aria-hidden="true" />
+                      <div>
+                        <ModalLabel>Troco para</ModalLabel>
+                        <strong>{money(detailsOrder.changeForCents!)}</strong>
+                      </div>
+                    </ModalInfo>
+                  ) : null}
                 </ModalInfoGrid>
               </ModalSection>
 
@@ -633,18 +762,60 @@ export function OrdersManager({
                 </Totals>
               </ModalSection>
             </ModalBody>
+            <ModalFooter>
+              <ButtonRow>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => printOrder(detailsOrder)}
+                >
+                  <Printer size={16} />
+                  Imprimir
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  disabled={detailsOrder.status === "CANCELED" || detailsOrder.status === "COMPLETED"}
+                  onClick={() => {
+                    setSelectedOrderId((current) => current === detailsOrder.id ? "" : detailsOrder.id);
+                    setCancelReason("");
+                  }}
+                >
+                  <Ban size={16} />
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!detailsNextStatus}
+                  onClick={() => {
+                    if (detailsNextStatus) {
+                      updateStatus(detailsOrder, detailsNextStatus);
+                    }
+                  }}
+                >
+                  {detailsNextStatus
+                    ? nextStatusLabels[detailsNextStatus]
+                    : detailsOrder.status === "CANCELED" ? "Pedido cancelado" : "Pedido concluído"}
+                </Button>
+              </ButtonRow>
+              {selectedOrderId === detailsOrder.id ? (
+                <CancelBox>
+                  <Field label="Motivo do cancelamento">
+                    <Textarea
+                      value={cancelReason}
+                      onChange={(event) => setCancelReason(event.target.value)}
+                    />
+                  </Field>
+                  <Button variant="danger" onClick={() => cancelOrder(detailsOrder)}>
+                    Confirmar cancelamento
+                  </Button>
+                </CancelBox>
+              ) : null}
+            </ModalFooter>
           </Modal>
         </ModalOverlay>
       ) : null}
 
-      {printText ? (
-        <PrintSection>
-          <PrintTitle>Impressão</PrintTitle>
-          <PrintBody>
-            {printText}
-          </PrintBody>
-        </PrintSection>
-      ) : null}
     </Root>
   );
 }
@@ -669,10 +840,57 @@ function localDateKey(value: string) {
     return null;
   }
 
+  return dateKey(date);
+}
+
+function getPresetDateRange(preset: Exclude<DatePreset, "custom">) {
+  const today = new Date();
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const start = new Date(end);
+
+  if (preset === "last7") {
+    start.setDate(start.getDate() - 6);
+  } else if (preset === "yesterday") {
+    start.setDate(start.getDate() - 1);
+    end.setDate(end.getDate() - 1);
+  } else if (preset === "thisMonth") {
+    start.setDate(1);
+  }
+
+  return { startDate: dateKey(start), endDate: dateKey(end) };
+}
+
+function dateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function dateFromKey(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatDateRange(startDate: string, endDate: string) {
+  return `${dateFormatter.format(dateFromKey(startDate))} a ${dateFormatter.format(dateFromKey(endDate))}`;
+}
+
+function hasCashChange(order: OrderResponse) {
+  return order.paymentMethod === "CASH"
+    && order.changeForCents != null
+    && order.changeForCents > 0;
+}
+
+function getNextOrderStatus(order: OrderResponse): OrderStatus | null {
+  if (order.status === "RECEIVED") return "CONFIRMED";
+  if (order.status === "CONFIRMED") return "PREPARING";
+  if (order.status === "PREPARING") return "READY";
+  if (order.status === "READY") {
+    return order.deliveryType === "DELIVERY" ? "OUT_FOR_DELIVERY" : "COMPLETED";
+  }
+  if (order.status === "OUT_FOR_DELIVERY") return "COMPLETED";
+  return null;
 }
 
 function formatReceivedAgo(order: OrderResponse, now: number) {

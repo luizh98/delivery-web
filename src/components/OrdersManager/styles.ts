@@ -109,7 +109,7 @@ export const SearchFilter = styled("div", {
   gap: "0.75rem",
 
   "@md": {
-    gridTemplateColumns: "minmax(0, 2fr) minmax(9rem, 1fr) minmax(9rem, 1fr)",
+    gridTemplateColumns: "minmax(0, 2fr) minmax(14rem, 1fr)",
   },
 });
 
@@ -139,13 +139,14 @@ export const Card = styled("article", {
   minWidth: 0,
   borderRadius: "0.375rem",
   border: "1px solid var(--color-border)",
+  outline: "3px solid transparent",
+  outlineOffset: "2px",
   background: "var(--color-surface)",
   padding: "1rem",
-  transition: "border-color 150ms ease, box-shadow 150ms ease",
+  transition: "outline-color 150ms ease",
 
-  "&:hover": {
-    borderColor: "color-mix(in srgb, var(--color-primary) 55%, var(--color-border))",
-    boxShadow: "0 8px 18px rgb(15 23 42 / 0.08)",
+  "&:hover, &:focus-within": {
+    outlineColor: "var(--color-primary)",
   },
 });
 
@@ -163,15 +164,9 @@ export const OrderInfo = styled("div", {
   borderRadius: "0.375rem",
   padding: "0.5rem",
   cursor: "pointer",
-  transition: "background 150ms ease, box-shadow 150ms ease",
-
-  "&:hover": {
-    background: "var(--color-surface-muted)",
-  },
 
   "&:focus-visible": {
     outline: "none",
-    boxShadow: "0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent)",
   },
 });
 
@@ -230,6 +225,19 @@ export const ReceivedTime = styled("p", {
   fontSize: "0.8rem",
   fontWeight: 600,
   color: "var(--color-primary)",
+});
+
+export const CardFooter = styled("div", {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.5rem",
+});
+
+export const CardTotal = styled("strong", {
+  fontSize: "0.9rem",
+  color: "#111827",
 });
 
 export const ItemList = styled("div", {
@@ -294,6 +302,19 @@ export const Modal = styled("div", {
   width: "100%",
   maxWidth: "50rem",
   maxHeight: "calc(100vh - 2rem)",
+  gridTemplateRows: "auto minmax(0, 1fr) auto",
+  overflow: "hidden",
+  borderRadius: "0.5rem",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-surface)",
+  boxShadow: "0 24px 48px rgb(0 0 0 / 0.2)",
+});
+
+export const DateModal = styled("div", {
+  display: "grid",
+  width: "100%",
+  maxWidth: "28rem",
+  maxHeight: "calc(100vh - 2rem)",
   gridTemplateRows: "auto minmax(0, 1fr)",
   overflow: "hidden",
   borderRadius: "0.5rem",
@@ -316,6 +337,49 @@ export const ModalBody = styled("div", {
   gap: "1rem",
   overflowY: "auto",
   padding: "1rem",
+});
+
+export const ModalFooter = styled("footer", {
+  display: "grid",
+  gap: "0.75rem",
+  borderTop: "1px solid var(--color-border)",
+  padding: "1rem",
+});
+
+export const CalendarPanel = styled("div", {
+  display: "grid",
+  placeItems: "center",
+  overflowX: "auto",
+
+  ".rdp-root": {
+    "--rdp-accent-color": "var(--color-primary)",
+    "--rdp-accent-background-color": "color-mix(in srgb, var(--color-primary) 14%, transparent)",
+    "--rdp-range_middle-background-color": "color-mix(in srgb, var(--color-primary) 14%, transparent)",
+    "--rdp-range_middle-color": "var(--color-foreground)",
+    "--rdp-range_start-background": "var(--color-primary)",
+    "--rdp-range_end-background": "var(--color-primary)",
+    "--rdp-today-color": "var(--color-primary)",
+  },
+});
+
+export const DateRangeText = styled("p", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.4rem",
+  fontSize: "0.85rem",
+  fontWeight: 600,
+  color: "var(--color-foreground)",
+
+  svg: {
+    color: "var(--color-primary)",
+  },
+});
+
+export const DateModalActions = styled("div", {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "0.5rem",
 });
 
 export const ModalSection = styled("section", {
@@ -401,25 +465,4 @@ export const TotalRow = styled("div", {
       },
     },
   },
-});
-
-export const PrintSection = styled("section", {
-  borderRadius: "0.375rem",
-  border: "1px solid var(--color-border)",
-  background: "var(--color-surface)",
-  padding: "1rem",
-});
-
-export const PrintTitle = styled("h2", {
-  fontWeight: 700,
-});
-
-export const PrintBody = styled("pre", {
-  marginTop: "0.75rem",
-  overflow: "auto",
-  whiteSpace: "pre-wrap",
-  borderRadius: "0.375rem",
-  background: "var(--color-surface-muted)",
-  padding: "0.75rem",
-  fontSize: "0.875rem",
 });

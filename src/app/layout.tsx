@@ -5,6 +5,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
 import { getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
+import "@daypicker/react/style.css";
 import "./globals.css";
 
 const geistSans = Geist({

@@ -5,7 +5,7 @@
 
 ## Plano
 
-T1 → T2 → T3 → T4
+T1 → T2 → T3 → T4 → T5 → T6 → T7
 
 ## Tarefas
 
@@ -57,6 +57,51 @@ T1 → T2 → T3 → T4
 
 **Concluído quando**:
 
+- [x] Lint passa.
+- [x] Build passa.
+- [x] Rastreabilidade fica verificada.
+- [x] Commits publicados na `main`.
+
+### T5: Implementar resumo financeiro e contorno
+
+**Onde**: `src/components/OrdersManager/index.tsx`, `src/components/OrdersManager/styles.ts`, `delivery-api/.../OrderMessageFormatter.java`
+**Depende de**: T4
+**Requisitos**: ORD-FLT-21 a ORD-FLT-23, ORD-FLT-25, ORD-FLT-26
+**Ferramentas**: edição local, context-mode
+
+**Concluído quando**:
+
+- [x] Rodapé mostra tempo e total em texto preto.
+- [x] Troco positivo em dinheiro aparece no card e no modal.
+- [x] Hover/foco mostra somente contorno primário no card inteiro.
+- [x] Impressão não renderiza recibo abaixo da página.
+- [x] Impressão de entrega inclui endereço completo; retirada não inclui.
+- [x] Modal oferece imprimir, cancelar com motivo e próxima etapa contextual.
+
+### T6: Implementar períodos rápidos e calendário
+
+**Onde**: `package.json`, `package-lock.json`, `src/app/layout.tsx`, `src/components/OrdersManager/index.tsx`, `src/components/OrdersManager/styles.ts`
+**Depende de**: T5
+**Requisitos**: ORD-FLT-24
+**Ferramentas**: `@daypicker/react`, edição local, context-mode
+
+**Concluído quando**:
+
+- [x] Últimos 7 dias fica ativo por padrão.
+- [x] Ontem, hoje e este mês aplicam imediatamente.
+- [x] Personalizado abre modal com intervalo marcado e só aplica seleção completa.
+- [x] Calendário fica localizado em português e responsivo.
+
+### T7: Validar e publicar ajustes
+
+**Onde**: arquivos da feature e documentação
+**Depende de**: T5, T6
+**Requisitos**: ORD-FLT-21 a ORD-FLT-26
+**Ferramentas**: context-mode, GitHub publish
+
+**Concluído quando**:
+
+- [x] TypeScript passa.
 - [x] Lint passa.
 - [x] Build passa.
 - [x] Rastreabilidade fica verificada.

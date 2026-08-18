@@ -14,6 +14,7 @@ As telas de Pedidos e Cozinha não oferecem uma leitura rápida do volume por st
 - Permitir operação em tela cheia sem o menu administrativo.
 - Resumir os cards e concentrar detalhes completos em um modal.
 - Identificar visualmente a recorrência do cliente.
+- Destacar total, troco e seleção temporal sem aumentar o conteúdo dos cards.
 
 ## Fora de escopo
 
@@ -63,6 +64,8 @@ Como operador, quero abrir os detalhes a partir do card para manter a grade comp
 5. WHEN o operador clicar no link do mapa THEN o sistema SHALL abrir nova aba com o endereço pesquisado.
 6. WHEN o modal abrir THEN o sistema SHALL mostrar subtotal, frete, desconto e total do pedido.
 7. WHEN o operador pressionar Esc ou selecionar fechar THEN o sistema SHALL fechar o modal.
+8. WHEN o modal abrir THEN o sistema SHALL oferecer ações de imprimir, cancelar e avançar para a próxima etapa.
+9. WHEN o pedido for retirada e estiver pronto THEN a próxima etapa SHALL ser concluído, sem passar por saída para entrega.
 
 ### P1: Identificar cliente recorrente
 
@@ -83,6 +86,27 @@ Como operador, quero definir datas inicial e final para analisar pedidos de um p
 3. WHEN o período mudar THEN os contadores por status SHALL refletir os pedidos do período.
 4. WHEN período, busca e status estiverem ativos THEN o sistema SHALL combinar os filtros.
 
+### P1: Usar períodos rápidos e calendário visual
+
+Como operador, quero alternar entre períodos comuns e selecionar um intervalo no calendário para consultar pedidos com menos esforço.
+
+1. WHEN a tela abrir THEN o sistema SHALL selecionar "Últimos 7 dias", incluindo hoje.
+2. WHEN o operador selecionar "Ontem", "Hoje" ou "Este mês" THEN o sistema SHALL aplicar imediatamente o período correspondente.
+3. WHEN o operador selecionar "Personalizado" THEN o sistema SHALL abrir um modal compacto com calendário em português.
+4. WHEN o operador selecionar início e fim THEN o sistema SHALL marcar visualmente todo o intervalo no calendário.
+5. WHEN o operador confirmar um intervalo completo THEN o sistema SHALL aplicar as datas de forma inclusiva.
+6. WHEN o intervalo estiver incompleto THEN o sistema SHALL manter a confirmação desabilitada.
+
+### P1: Reforçar resumo financeiro do card
+
+Como operador, quero visualizar total e necessidade de troco sem abrir os detalhes para agilizar atendimento e expedição.
+
+1. WHEN o card for exibido THEN o sistema SHALL mostrar o total ao lado do tempo de recebimento em texto preto.
+2. WHEN o pagamento for dinheiro e houver valor de troco informado THEN o sistema SHALL mostrar "Troco para" no card e no modal.
+3. WHEN o operador passar o mouse ou focar o card THEN o sistema SHALL mostrar somente um contorno maior na cor primária ao redor do card inteiro.
+4. WHEN o operador clicar em imprimir THEN o sistema SHALL abrir somente a janela de impressão/PDF, sem renderizar o recibo abaixo da página.
+5. WHEN a impressão for de um pedido de entrega THEN o sistema SHALL incluir o endereço completo do cliente.
+
 ### P1: Operar em tela cheia
 
 Como operador, quero expandir o painel para usar toda a tela sem distrações do menu.
@@ -98,6 +122,8 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 - Espaços externos na busca são ignorados.
 - Pedido para retirada ou sem endereço não exibe link do Google Maps.
 - Pedidos do mesmo cliente são correlacionados pelo celular sem máscara.
+- Período personalizado incompleto não altera o filtro ativo.
+- Pedido em dinheiro sem `changeForCents` positivo não mostra informação de troco.
 
 ## Rastreabilidade
 
@@ -123,6 +149,12 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 | ORD-FLT-18 | Totais e frete no modal | Verificado |
 | ORD-FLT-19 | Ordinal do pedido por cliente | Verificado |
 | ORD-FLT-20 | Card ordenado com ícones | Verificado |
+| ORD-FLT-21 | Total ao lado do tempo recebido | Verificado |
+| ORD-FLT-22 | Contorno primário no card inteiro | Verificado |
+| ORD-FLT-23 | Troco no card e no modal | Verificado |
+| ORD-FLT-24 | Períodos rápidos e calendário de intervalo | Verificado |
+| ORD-FLT-25 | Impressão exclusiva com endereço de entrega | Verificado |
+| ORD-FLT-26 | Ações operacionais no modal | Verificado |
 
 ## Critério de sucesso
 
