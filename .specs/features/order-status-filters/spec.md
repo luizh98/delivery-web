@@ -51,7 +51,7 @@ Como operador, quero enxergar tempo de espera e itens rapidamente para priorizar
 1. WHEN um pedido possuir evento de recebimento THEN o sistema SHALL mostrar há quanto tempo ele foi recebido.
 2. WHEN a tela permanecer aberta THEN o sistema SHALL atualizar o tempo decorrido a cada minuto.
 3. WHEN um card for exibido THEN o sistema SHALL ocultar a lista de produtos.
-4. WHEN a tela estiver em largura desktop THEN o sistema SHALL mostrar três pedidos por linha em cards.
+4. WHEN a largura disponível aumentar THEN o sistema SHALL mostrar progressivamente até cinco pedidos por linha em cards, sem ultrapassar cinco colunas.
 
 ### P1: Consultar detalhes do pedido
 
@@ -145,7 +145,7 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 | ORD-FLT-10 | Contadores respeitam período | Verificado |
 | ORD-FLT-11 | Itens lado a lado | Substituído por ORD-FLT-15 |
 | ORD-FLT-12 | Painel em tela cheia | Verificado |
-| ORD-FLT-13 | Três cards de pedido por linha | Verificado |
+| ORD-FLT-13 | Grade responsiva com até cinco cards por linha | Verificado |
 | ORD-FLT-14 | Card compacto e clicável | Verificado |
 | ORD-FLT-15 | Modal com produtos | Verificado |
 | ORD-FLT-16 | Cliente e endereço com ícones | Verificado |

@@ -138,6 +138,14 @@ export const List = styled("section", {
   "@lg": {
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   },
+
+  "@xl": {
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  },
+
+  "@(min-width: 1536px)": {
+    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  },
 });
 
 export const Card = styled("article", {
