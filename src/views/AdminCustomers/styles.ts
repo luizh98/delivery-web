@@ -218,7 +218,7 @@ export const InfoCard = styled("div", {
 });
 
 export const InfoLabel = styled("p", {
-  fontSize: "calc(0.7rem + 1px)",
+  fontSize: "0.9rem",
   color: "var(--color-muted)",
 });
 
