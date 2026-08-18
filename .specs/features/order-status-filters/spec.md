@@ -12,6 +12,8 @@ As telas de Pedidos e Cozinha não oferecem uma leitura rápida do volume por st
 - Permitir filtrar pedidos por período.
 - Melhorar leitura operacional do tempo e dos itens do pedido.
 - Permitir operação em tela cheia sem o menu administrativo.
+- Resumir os cards e concentrar detalhes completos em um modal.
+- Identificar visualmente a recorrência do cliente.
 
 ## Fora de escopo
 
@@ -47,8 +49,30 @@ Como operador, quero enxergar tempo de espera e itens rapidamente para priorizar
 
 1. WHEN um pedido possuir evento de recebimento THEN o sistema SHALL mostrar há quanto tempo ele foi recebido.
 2. WHEN a tela permanecer aberta THEN o sistema SHALL atualizar o tempo decorrido a cada minuto.
-3. WHEN um pedido possuir vários itens THEN o sistema SHALL mostrá-los lado a lado com quebra responsiva.
+3. WHEN um card for exibido THEN o sistema SHALL ocultar a lista de produtos.
 4. WHEN a tela estiver em largura desktop THEN o sistema SHALL mostrar três pedidos por linha em cards.
+
+### P1: Consultar detalhes do pedido
+
+Como operador, quero abrir os detalhes a partir do card para manter a grade compacta sem perder informações.
+
+1. WHEN o operador passar o mouse ou focar o resumo THEN o sistema SHALL indicar visualmente que o card é clicável.
+2. WHEN o operador selecionar o resumo do card THEN o sistema SHALL abrir um modal com os produtos.
+3. WHEN o modal abrir THEN o sistema SHALL mostrar nome e celular do cliente com ícones.
+4. WHEN o pedido for entrega THEN o sistema SHALL mostrar endereço completo e link "Ver no Google Maps".
+5. WHEN o operador clicar no link do mapa THEN o sistema SHALL abrir nova aba com o endereço pesquisado.
+6. WHEN o modal abrir THEN o sistema SHALL mostrar subtotal, frete, desconto e total do pedido.
+7. WHEN o operador pressionar Esc ou selecionar fechar THEN o sistema SHALL fechar o modal.
+
+### P1: Identificar cliente recorrente
+
+Como operador, quero ver a ordem de recorrência do cliente e dados essenciais com ícones para reconhecer o pedido rapidamente.
+
+1. WHEN o card for exibido THEN o sistema SHALL começar pelo ID do pedido.
+2. WHEN o card for exibido THEN o sistema SHALL mostrar linhas com ícones para cliente, entrega e pagamento.
+3. WHEN houver histórico completo THEN o sistema SHALL calcular o ordinal do pedido pelo celular do cliente e pela data de recebimento.
+4. WHEN o ordinal for exibido THEN o sistema SHALL mostrá-lo em uma caixa cinza ao lado do nome.
+5. WHEN o operador passar o mouse no ordinal THEN o sistema SHALL informar "Este é o Nº pedido de [nome].".
 
 ### P1: Filtrar por período
 
@@ -72,6 +96,8 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 - Busca vazia não restringe resultados.
 - Status sem pedidos exibe contador zero e lista vazia quando selecionado.
 - Espaços externos na busca são ignorados.
+- Pedido para retirada ou sem endereço não exibe link do Google Maps.
+- Pedidos do mesmo cliente são correlacionados pelo celular sem máscara.
 
 ## Rastreabilidade
 
@@ -87,9 +113,16 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 | ORD-FLT-08 | Tempo desde o recebimento | Verificado |
 | ORD-FLT-09 | Filtro inclusivo por período | Verificado |
 | ORD-FLT-10 | Contadores respeitam período | Verificado |
-| ORD-FLT-11 | Itens lado a lado | Verificado |
+| ORD-FLT-11 | Itens lado a lado | Substituído por ORD-FLT-15 |
 | ORD-FLT-12 | Painel em tela cheia | Verificado |
 | ORD-FLT-13 | Três cards de pedido por linha | Verificado |
+| ORD-FLT-14 | Card compacto e clicável | Em tarefas |
+| ORD-FLT-15 | Modal com produtos | Em tarefas |
+| ORD-FLT-16 | Cliente e endereço com ícones | Em tarefas |
+| ORD-FLT-17 | Link de endereço para Google Maps | Em tarefas |
+| ORD-FLT-18 | Totais e frete no modal | Em tarefas |
+| ORD-FLT-19 | Ordinal do pedido por cliente | Em tarefas |
+| ORD-FLT-20 | Card ordenado com ícones | Em tarefas |
 
 ## Critério de sucesso
 
