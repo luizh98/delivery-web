@@ -228,6 +228,29 @@ export type CurrentUserResponse = {
   roles: string[];
 };
 
+export type AdminCustomerSummary = {
+  id: string;
+  name: string;
+  phone: string;
+  phoneNormalized: string;
+  customerSince: string;
+  lastOrderAt: string;
+  orderCount: number;
+};
+
+export type AdminCustomerDetails = AdminCustomerSummary & {
+  totalSpentCents: number;
+  lastAddress?: Address;
+};
+
+export type AdminCustomerPage = {
+  items: AdminCustomerSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
 export type UpsellTriggerType =
   | "PRODUCT"
   | "CATEGORY"

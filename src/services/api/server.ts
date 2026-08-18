@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/constants/api";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
 import type {
+  AdminCustomerPage,
   CurrentUserResponse,
   MenuResponse,
   OrderResponse,
@@ -12,6 +13,14 @@ import type {
   RestaurantConfigResponse,
   UpsellCampaign,
 } from "@/types/api";
+
+const emptyAdminCustomerPage: AdminCustomerPage = {
+  items: [],
+  page: 0,
+  size: 20,
+  totalElements: 0,
+  totalPages: 0,
+};
 
 async function backendFetch<T>(path: string, init?: RequestInit) {
   const headerStore = await headers();
@@ -69,6 +78,13 @@ export async function getAdminUser() {
 
 export async function getAdminOrders() {
   return (await backendFetch<OrderResponse[]>("admin/orders")) ?? [];
+}
+
+export async function getAdminCustomers() {
+  return (
+    (await backendFetch<AdminCustomerPage>("admin/customers?page=0&size=20")) ??
+    emptyAdminCustomerPage
+  );
 }
 
 export async function getAdminCategories() {
