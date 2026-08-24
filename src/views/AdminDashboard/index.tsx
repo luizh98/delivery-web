@@ -23,10 +23,10 @@ export async function AdminDashboardView() {
 
   const links = [
     { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
+    { href: "/admin/printer", label: "Impressora", icon: Printer },
     { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
     { href: "/admin/customers", label: "Clientes", icon: Users },
     { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
-    { href: "/admin/printer", label: "Impressora", icon: Printer },
     { href: "/admin/settings", label: "Configuração", icon: Settings },
   ];
 
