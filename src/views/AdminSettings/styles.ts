@@ -2,7 +2,6 @@ import { styled } from "styles";
 
 export const Form = styled("form", {
   display: "grid",
-  maxWidth: "48rem",
   gap: "1rem",
 });
 
