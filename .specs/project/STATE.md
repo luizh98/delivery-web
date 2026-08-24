@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-08-24
-**Current Work:** Alerta global de novo pedido no admin - concluído
+**Current Work:** Alerta recorrente para pedidos recebidos - concluído
 
 ---
 
@@ -47,6 +47,7 @@ Nenhum.
 | 015 | Padronizar cor dos botões primários com a categoria da home | 2026-08-06 | `style(button): match home category color` | ✅ Done |
 | 001 | Localizar enums e imprimir pedido no admin | 2026-08-06 | `901cebd` | ✅ Done |
 | 016 | Tornar alerta de novo pedido global e ativável no admin | 2026-08-24 | `fix(admin): play new order sound across admin` | ✅ Done |
+| 017 | Repetir alerta enquanto houver pedido recebido | 2026-08-24 | `fix(admin): repeat sound for received orders` | ✅ Done |
 
 ---
 

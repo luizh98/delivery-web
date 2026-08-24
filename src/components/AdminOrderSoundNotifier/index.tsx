@@ -7,33 +7,31 @@ import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 
 type OrderSummary = {
-  id: string;
+  status: string;
 };
 
 export function AdminOrderSoundNotifier() {
   const { showToast } = useToast();
   const [soundEnabled, setSoundEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const knownOrderIdsRef = useRef<Set<string> | null>(null);
-  const pendingSoundCountRef = useRef(0);
+  const soundEnabledRef = useRef(false);
   const isPlayingSoundRef = useRef(false);
 
-  const playNextSound = useCallback(() => {
+  const playAlertSound = useCallback(() => {
     const audio = audioRef.current;
 
-    if (!audio || isPlayingSoundRef.current || pendingSoundCountRef.current === 0) {
+    if (!soundEnabledRef.current || !audio || isPlayingSoundRef.current) {
       return;
     }
 
-    pendingSoundCountRef.current -= 1;
     isPlayingSoundRef.current = true;
     audio.currentTime = 0;
 
     void audio.play()
-      .then(() => setSoundEnabled(true))
       .catch(() => {
         isPlayingSoundRef.current = false;
-        pendingSoundCountRef.current = 0;
+        soundEnabledRef.current = false;
+        setSoundEnabled(false);
         showToast(
           "O navegador bloqueou o som. Clique em Ativar som no menu.",
           "error",
@@ -53,11 +51,13 @@ export function AdminOrderSoundNotifier() {
 
     void audio.play()
       .then(() => {
+        soundEnabledRef.current = true;
         setSoundEnabled(true);
         showToast("Som do admin ativado.");
       })
       .catch(() => {
         isPlayingSoundRef.current = false;
+        soundEnabledRef.current = false;
         showToast("Não foi possível ativar o som neste navegador.", "error");
       });
   }
@@ -70,7 +70,6 @@ export function AdminOrderSoundNotifier() {
 
     function finishSound() {
       isPlayingSoundRef.current = false;
-      playNextSound();
     }
 
     audio.addEventListener("ended", finishSound);
@@ -82,7 +81,7 @@ export function AdminOrderSoundNotifier() {
       audio.pause();
       audioRef.current = null;
     };
-  }, [playNextSound]);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -100,19 +99,8 @@ export function AdminOrderSoundNotifier() {
           return;
         }
 
-        if (!knownOrderIdsRef.current) {
-          knownOrderIdsRef.current = new Set(orders.map((order) => order.id));
-          return;
-        }
-
-        const newOrders = orders.filter(
-          (order) => !knownOrderIdsRef.current?.has(order.id),
-        );
-        orders.forEach((order) => knownOrderIdsRef.current?.add(order.id));
-
-        if (newOrders.length > 0) {
-          pendingSoundCountRef.current += newOrders.length;
-          playNextSound();
+        if (orders.some((order) => order.status === "RECEIVED")) {
+          playAlertSound();
         }
       } catch {
         // Próximo ciclo tenta novamente sem interromper operação do admin.
@@ -128,7 +116,7 @@ export function AdminOrderSoundNotifier() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [playNextSound]);
+  }, [playAlertSound]);
 
   return (
     <Button
