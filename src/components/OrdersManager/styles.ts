@@ -6,6 +6,7 @@ export const Root = styled("div", {
 
   "&:fullscreen": {
     height: "100vh",
+    alignContent: "start",
     overflowY: "auto",
     background: "var(--color-background)",
     padding: "1rem",
