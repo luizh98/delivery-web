@@ -1,8 +1,11 @@
 import { OrdersManager } from "@/components/OrdersManager";
-import { getAdminOrders } from "@/services/api/server";
+import { getAdminOrders, getRestaurantConfig } from "@/services/api/server";
 
 export async function AdminKitchenView() {
-  const orders = await getAdminOrders();
+  const [orders, config] = await Promise.all([
+    getAdminOrders(),
+    getRestaurantConfig(),
+  ]);
   const kitchenOrders = orders.filter((order) =>
     ["RECEIVED", "CONFIRMED", "PREPARING", "READY"].includes(order.status),
   );
@@ -13,6 +16,7 @@ export async function AdminKitchenView() {
       allOrders={orders}
       title="Cozinha"
       compact
+      automaticOrderConfirmation={config?.automaticOrderConfirmation}
     />
   );
 }

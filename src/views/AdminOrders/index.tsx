@@ -1,8 +1,17 @@
 import { OrdersManager } from "@/components/OrdersManager";
-import { getAdminOrders } from "@/services/api/server";
+import { getAdminOrders, getRestaurantConfig } from "@/services/api/server";
 
 export async function AdminOrdersView() {
-  const orders = await getAdminOrders();
+  const [orders, config] = await Promise.all([
+    getAdminOrders(),
+    getRestaurantConfig(),
+  ]);
 
-  return <OrdersManager initialOrders={orders} title="Pedidos" />;
+  return (
+    <OrdersManager
+      initialOrders={orders}
+      title="Pedidos"
+      automaticOrderConfirmation={config?.automaticOrderConfirmation}
+    />
+  );
 }

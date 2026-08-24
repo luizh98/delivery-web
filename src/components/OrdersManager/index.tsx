@@ -97,6 +97,100 @@ import {
 type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR");
+const automaticPrintedOrdersKey = "delivery:auto-printed-orders";
+
+async function getPrintContent(order: OrderResponse) {
+  const response = await fetch(`/api/backend/admin/orders/${order.id}/print`);
+
+  if (!response.ok) {
+    throw new Error("Não foi possível carregar impressão do pedido.");
+  }
+
+  return response.text();
+}
+
+function renderPrintContent(printWindow: Window, content: string) {
+  const printBody = printWindow.document.createElement("pre");
+
+  printWindow.document.title = "Impressão do pedido";
+  printWindow.document.documentElement.lang = "pt-BR";
+  printWindow.document.body.replaceChildren(printBody);
+  printWindow.document.body.style.margin = "0";
+  printWindow.document.body.style.padding = "1rem";
+  printBody.style.margin = "0";
+  printBody.style.whiteSpace = "pre-wrap";
+  printBody.style.fontFamily = "monospace";
+  printBody.textContent = content;
+}
+
+function claimAutomaticPrint(orderId: string) {
+  try {
+    const printedOrderIds = (window.localStorage.getItem(automaticPrintedOrdersKey) ?? "")
+      .split(",")
+      .filter(Boolean);
+
+    if (printedOrderIds.includes(orderId)) {
+      return false;
+    }
+
+    window.localStorage.setItem(
+      automaticPrintedOrdersKey,
+      [orderId, ...printedOrderIds].slice(0, 200).join(","),
+    );
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function releaseAutomaticPrint(orderId: string) {
+  try {
+    const printedOrderIds = (window.localStorage.getItem(automaticPrintedOrdersKey) ?? "")
+      .split(",")
+      .filter((id) => id && id !== orderId);
+
+    window.localStorage.setItem(automaticPrintedOrdersKey, printedOrderIds.join(","));
+  } catch {
+    // Falha de storage não deve bloquear nova tentativa de impressão.
+  }
+}
+
+async function printOrderDirectly(order: OrderResponse, automatic = false) {
+  if (automatic && !claimAutomaticPrint(order.id)) {
+    return;
+  }
+
+  let printFrame: HTMLIFrameElement | null = null;
+
+  try {
+    const content = await getPrintContent(order);
+    printFrame = document.createElement("iframe");
+    printFrame.setAttribute("aria-hidden", "true");
+    printFrame.style.position = "fixed";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "0";
+    document.body.appendChild(printFrame);
+
+    const printWindow = printFrame.contentWindow;
+    if (!printWindow) {
+      throw new Error("Janela de impressão indisponível.");
+    }
+
+    renderPrintContent(printWindow, content);
+    const cleanup = () => printFrame?.remove();
+    printWindow.addEventListener("afterprint", cleanup, { once: true });
+    window.setTimeout(cleanup, 60_000);
+    printWindow.focus();
+    printWindow.print();
+  } catch (error) {
+    printFrame?.remove();
+    if (automatic) {
+      releaseAutomaticPrint(order.id);
+    }
+    throw error;
+  }
+}
 
 const nextStatuses: OrderStatus[] = [
   "CONFIRMED",
@@ -166,9 +260,11 @@ export function OrdersManager({
   allOrders,
   title,
   compact,
+  automaticOrderConfirmation,
 }: OrdersManagerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
+  const knownOrderIdsRef = useRef(new Set(initialOrders.map((order) => order.id)));
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
@@ -240,6 +336,54 @@ export function OrdersManager({
 
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!automaticOrderConfirmation) {
+      return;
+    }
+
+    let active = true;
+    let refreshing = false;
+
+    async function refreshOrders() {
+      if (refreshing) {
+        return;
+      }
+      refreshing = true;
+
+      try {
+        const refreshedOrders = await clientApi<OrderResponse[]>("admin/orders");
+        if (!active) {
+          return;
+        }
+
+        const newConfirmedOrders = refreshedOrders.filter(
+          (order) => order.status === "CONFIRMED"
+            && !knownOrderIdsRef.current.has(order.id),
+        );
+        refreshedOrders.forEach((order) => knownOrderIdsRef.current.add(order.id));
+        setOrders(compact
+          ? refreshedOrders.filter((order) => kitchenStatuses.includes(order.status))
+          : refreshedOrders);
+
+        newConfirmedOrders.forEach((order) => {
+          void printOrderDirectly(order, true).catch(() => {
+            showToast("Não foi possível imprimir pedido automaticamente.", "error");
+          });
+        });
+      } catch {
+        // Próximo ciclo tenta novamente sem interromper operação da tela.
+      } finally {
+        refreshing = false;
+      }
+    }
+
+    const interval = window.setInterval(refreshOrders, 5_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [automaticOrderConfirmation, compact, showToast]);
 
   useEffect(() => {
     if (!detailsOrderId && !isDatePopoverOpen) {
@@ -329,6 +473,11 @@ export function OrdersManager({
       });
       setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
       showToast("Pedido atualizado com sucesso");
+      if (status === "CONFIRMED") {
+        void printOrderDirectly(updated).catch(() => {
+          showToast("Pedido confirmado, mas não foi possível imprimir.", "error");
+        });
+      }
     } catch {
       showToast("Não foi possível atualizar pedido.", "error");
     }
@@ -363,24 +512,8 @@ export function OrdersManager({
     printWindow.document.body.textContent = "Preparando impressão...";
 
     try {
-      const response = await fetch(`/api/backend/admin/orders/${order.id}/print`);
-
-      if (!response.ok) {
-        throw new Error("Não foi possível carregar impressão do pedido.");
-      }
-
-      const content = await response.text();
-      const printBody = printWindow.document.createElement("pre");
-
-      printWindow.document.title = "Impressão do pedido";
-      printWindow.document.documentElement.lang = "pt-BR";
-      printWindow.document.body.replaceChildren(printBody);
-      printWindow.document.body.style.margin = "0";
-      printWindow.document.body.style.padding = "1rem";
-      printBody.style.margin = "0";
-      printBody.style.whiteSpace = "pre-wrap";
-      printBody.style.fontFamily = "monospace";
-      printBody.textContent = content;
+      const content = await getPrintContent(order);
+      renderPrintContent(printWindow, content);
       printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
       printWindow.focus();
       printWindow.print();

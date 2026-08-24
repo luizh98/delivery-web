@@ -51,6 +51,7 @@ const settingsSchema = z.object({
   bannerUrl: z.string().optional(),
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
+  automaticOrderConfirmation: z.boolean(),
   deliveryEnabled: z.boolean(),
   pricingMode: z.enum(["PER_KM", "RANGE"]),
   maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
@@ -181,6 +182,7 @@ export function SettingsForm({
       menuDescription: initialConfig?.menuDescription ??
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
+      automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
       pricingMode: initialConfig?.deliverySettings?.pricingMode ?? "PER_KM",
       maxDistanceKm: initialConfig?.deliverySettings?.maxDistanceKm ?? 0,
@@ -245,6 +247,7 @@ export function SettingsForm({
           bannerUrl: values.bannerUrl,
           menuDescription: values.menuDescription,
           minimumOrderCents: reaisToCents(values.minimumOrderReais),
+          automaticOrderConfirmation: values.automaticOrderConfirmation,
           deliverySettings: {
             enabled: values.deliveryEnabled,
             pricingMode: values.pricingMode,
@@ -353,6 +356,10 @@ export function SettingsForm({
             <Input type="color" {...form.register("secondaryColor")} />
           </Field>
         </GridTwo>
+        <StatusToggle>
+          <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
+          Confirmar pedidos automaticamente e enviar para impressão
+        </StatusToggle>
       </Section>
 
       <Section>

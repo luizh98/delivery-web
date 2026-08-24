@@ -57,6 +57,7 @@ export type RestaurantConfigResponse = {
   businessHours?: BusinessHour[];
   holidayHours?: HolidayHour[];
   deliverySettings?: DeliverySettings;
+  automaticOrderConfirmation?: boolean;
   open?: boolean;
   nextOpeningAt?: string;
 };

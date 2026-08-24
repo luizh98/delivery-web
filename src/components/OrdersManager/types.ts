@@ -5,4 +5,5 @@ export type OrdersManagerProps = {
   allOrders?: OrderResponse[];
   title: string;
   compact?: boolean;
+  automaticOrderConfirmation?: boolean;
 };
