@@ -9,6 +9,13 @@ export type LocalPrinters = {
   defaultPrinter: string | null;
 };
 
+export class QzServerConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "QzServerConfigurationError";
+  }
+}
+
 function configureSecurity() {
   if (securityConfigured) {
     return;
@@ -17,7 +24,7 @@ function configureSecurity() {
   qz.security.setCertificatePromise(async () => {
     const response = await fetch("/api/backend/admin/printing/qz/certificate");
     if (!response.ok) {
-      throw new Error("Certificado QZ não configurado no servidor.");
+      throw new QzServerConfigurationError("Certificado QZ não configurado no servidor.");
     }
     return response.text();
   }, { rejectOnFailure: true });
@@ -29,11 +36,19 @@ function configureSecurity() {
       body: JSON.stringify({ data }),
     });
     if (!response.ok) {
-      throw new Error("Não foi possível assinar a requisição QZ.");
+      throw new QzServerConfigurationError("Não foi possível assinar a requisição QZ no servidor.");
     }
     return response.text();
   });
   securityConfigured = true;
+}
+
+export function getQzErrorMessage(error: unknown) {
+  if (error instanceof QzServerConfigurationError) {
+    return error.message;
+  }
+
+  return "Não foi possível conectar ao QZ Tray. Confirme se ele está aberto neste computador.";
 }
 
 export async function connectQz() {

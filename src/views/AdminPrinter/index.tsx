@@ -7,6 +7,7 @@ import { Field, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import {
   getSelectedPrinter,
+  getQzErrorMessage,
   listLocalPrinters,
   printTextWithQz,
   setSelectedPrinter,
@@ -46,8 +47,8 @@ export function AdminPrinterView() {
       if (nextSelected && nextSelected !== saved) {
         setSelectedPrinter(nextSelected);
       }
-    } catch {
-      setError("QZ Tray não foi encontrado ou o certificado não está configurado.");
+    } catch (cause) {
+      setError(getQzErrorMessage(cause));
     } finally {
       setLoading(false);
     }
@@ -71,8 +72,8 @@ export function AdminPrinterView() {
         selected,
       );
       showToast("Teste enviado para a impressora");
-    } catch {
-      showToast("Não foi possível enviar o teste. Verifique o QZ Tray.", "error");
+    } catch (cause) {
+      showToast(getQzErrorMessage(cause), "error");
     }
   }
 
