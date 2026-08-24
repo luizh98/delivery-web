@@ -137,15 +137,6 @@ export const PathCode = styled("code", {
   overflowWrap: "anywhere",
 });
 
-export const SecurityNote = styled("p", {
-  padding: "0.75rem",
-  borderRadius: "0.375rem",
-  background: "#f0fdf4",
-  color: "#166534",
-  fontSize: "0.8125rem",
-  lineHeight: 1.5,
-});
-
 export const Status = styled("p", {
   display: "inline-flex",
   alignItems: "center",

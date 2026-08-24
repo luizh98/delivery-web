@@ -24,7 +24,6 @@ import {
   PanelTitle,
   PathCode,
   Root,
-  SecurityNote,
   Status,
   StatusDot,
   Step,
@@ -173,9 +172,6 @@ export function AdminPrinterView() {
           </Step>
         </StepList>
 
-        <SecurityNote>
-          Este download contém somente o certificado público. A chave privada permanece protegida no servidor.
-        </SecurityNote>
       </Panel>
 
       <Panel>
