@@ -271,7 +271,9 @@ export function OrdersManager({
 }: OrdersManagerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
-  const knownOrderIdsRef = useRef(new Set(initialOrders.map((order) => order.id)));
+  const knownOrderIdsRef = useRef(
+    new Set((allOrders ?? initialOrders).map((order) => order.id)),
+  );
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
@@ -345,12 +347,33 @@ export function OrdersManager({
   }, []);
 
   useEffect(() => {
-    if (!automaticOrderConfirmation) {
-      return;
-    }
-
     let active = true;
     let refreshing = false;
+    let pendingSoundCount = 0;
+    let isPlayingSound = false;
+    const newOrderAudio = new Audio("/sounds/new-order.mp3");
+    newOrderAudio.preload = "auto";
+
+    function playNextSound() {
+      if (!active || isPlayingSound || pendingSoundCount === 0) {
+        return;
+      }
+
+      pendingSoundCount -= 1;
+      isPlayingSound = true;
+      newOrderAudio.currentTime = 0;
+
+      function finishSound() {
+        newOrderAudio.removeEventListener("ended", finishSound);
+        newOrderAudio.removeEventListener("error", finishSound);
+        isPlayingSound = false;
+        playNextSound();
+      }
+
+      newOrderAudio.addEventListener("ended", finishSound);
+      newOrderAudio.addEventListener("error", finishSound);
+      void newOrderAudio.play().catch(finishSound);
+    }
 
     async function refreshOrders() {
       if (refreshing) {
@@ -364,20 +387,28 @@ export function OrdersManager({
           return;
         }
 
-        const newConfirmedOrders = refreshedOrders.filter(
-          (order) => order.status === "CONFIRMED"
-            && !knownOrderIdsRef.current.has(order.id),
+        const newOrders = refreshedOrders.filter(
+          (order) => !knownOrderIdsRef.current.has(order.id),
         );
         refreshedOrders.forEach((order) => knownOrderIdsRef.current.add(order.id));
         setOrders(compact
           ? refreshedOrders.filter((order) => kitchenStatuses.includes(order.status))
           : refreshedOrders);
 
-        newConfirmedOrders.forEach((order) => {
-          void printOrderDirectly(order, true).catch(() => {
-            showToast("Não foi possível imprimir pedido automaticamente.", "error");
-          });
-        });
+        if (newOrders.length > 0) {
+          pendingSoundCount += newOrders.length;
+          playNextSound();
+        }
+
+        if (automaticOrderConfirmation) {
+          newOrders
+            .filter((order) => order.status === "CONFIRMED")
+            .forEach((order) => {
+              void printOrderDirectly(order, true).catch(() => {
+                showToast("Não foi possível imprimir pedido automaticamente.", "error");
+              });
+            });
+        }
       } catch {
         // Próximo ciclo tenta novamente sem interromper operação da tela.
       } finally {
@@ -389,6 +420,7 @@ export function OrdersManager({
     return () => {
       active = false;
       window.clearInterval(interval);
+      newOrderAudio.pause();
     };
   }, [automaticOrderConfirmation, compact, showToast]);
 
