@@ -26,6 +26,7 @@ export const Section = styled("section", {
 
 export const GridTwo = styled("div", {
   display: "grid",
+  alignItems: "start",
   gap: "0.75rem",
 
   "@sm": {
