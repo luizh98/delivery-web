@@ -159,6 +159,23 @@ export const GridTwo = styled("div", {
   },
 });
 
+export const ProductImagePreview = styled("div", {
+  display: "grid",
+  alignItems: "start",
+  gap: "0.5rem",
+
+  "& [data-image-preview]": {
+    width: "100%",
+    maxWidth: "16rem",
+    aspectRatio: "4 / 3",
+    borderRadius: "0.375rem",
+    border: "1px solid var(--color-border)",
+    backgroundPosition: "center",
+    backgroundSize: "cover",
+    objectFit: "cover",
+  },
+});
+
 const checkboxBase = {
   display: "flex",
   height: "2.75rem",

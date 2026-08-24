@@ -12,7 +12,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
@@ -74,6 +74,7 @@ import {
   ProductCategoryFilterLabel,
   ProductCount,
   ProductForm,
+  ProductImagePreview,
   ProductList,
   ProductMeta,
   ProductSearchLabel,
@@ -98,7 +99,6 @@ const productSchema = z.object({
   categoryId: z.string().min(1, "Selecione uma categoria."),
   name: z.string().min(2, "Informe o nome."),
   description: z.string().optional(),
-  imageUrl: z.string().optional(),
   priceReais: z.number().min(0),
   sortOrder: z.number(),
   active: z.boolean(),
@@ -112,6 +112,9 @@ type ProductForm = z.infer<typeof productSchema>;
 type ProductFlagField = "adultOnly" | "glutenFree" | "lactoseFree" | "vegetarian";
 type ProductFlagStyle = "flagAdult" | "flagGluten" | "flagLactose" | "flagVegetarian";
 type ProductFlagTone = "adult" | "gluten" | "lactose" | "vegetarian";
+
+const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const PRODUCT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const PRODUCT_FLAGS: {
   field: ProductFlagField;
@@ -156,7 +159,6 @@ const defaultProductForm = (categoryId = ""): ProductForm => ({
   categoryId,
   name: "",
   description: "",
-  imageUrl: "",
   priceReais: 0,
   sortOrder: 0,
   active: true,
@@ -171,7 +173,6 @@ function productToForm(product: Product): ProductForm {
     categoryId: product.categoryId,
     name: product.name,
     description: product.description ?? "",
-    imageUrl: product.imageUrl ?? "",
     priceReais: centsToReais(product.priceCents),
     sortOrder: product.sortOrder,
     active: product.active,
@@ -340,12 +341,24 @@ export function ProductManager({
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
   const [savedGroupsOpen, setSavedGroupsOpen] = useState(false);
   const [productFormOpen, setProductFormOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState("");
+  const [removeImage, setRemoveImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
     defaultValues: defaultProductForm(initialCategories[0]?.id ?? ""),
   });
+
+  useEffect(() => {
+    return () => {
+      if (selectedImagePreview) {
+        URL.revokeObjectURL(selectedImagePreview);
+      }
+    };
+  }, [selectedImagePreview]);
 
   function updateOptionGroups(nextGroups: ProductOptionGroup[]) {
     setOptionGroups(nextGroups);
@@ -381,6 +394,10 @@ export function ProductManager({
     form.reset(defaultProductForm(categoryId));
     setEditingProduct(null);
     setOptionGroups([]);
+    setSelectedImage(null);
+    setSelectedImagePreview("");
+    setRemoveImage(false);
+    setImageError("");
     setError("");
   }
 
@@ -393,9 +410,44 @@ export function ProductManager({
     setEditingProduct(product);
     form.reset(productToForm(product));
     setOptionGroups(cloneOptionGroups(product.optionGroups ?? []));
+    setSelectedImage(null);
+    setSelectedImagePreview("");
+    setRemoveImage(false);
+    setImageError("");
     setError("");
     setProductFormOpen(true);
     window.requestAnimationFrame(() => form.setFocus("name"));
+  }
+
+  function selectProductImage(file: File | undefined) {
+    setImageError("");
+    if (!file) {
+      setSelectedImage(null);
+      setSelectedImagePreview("");
+      return;
+    }
+    if (file.size > MAX_PRODUCT_IMAGE_BYTES) {
+      setSelectedImage(null);
+      setSelectedImagePreview("");
+      setImageError("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+    if (!PRODUCT_IMAGE_TYPES.has(file.type)) {
+      setSelectedImage(null);
+      setSelectedImagePreview("");
+      setImageError("Use uma imagem JPEG, PNG ou WebP.");
+      return;
+    }
+    setSelectedImage(file);
+    setSelectedImagePreview(URL.createObjectURL(file));
+    setRemoveImage(false);
+  }
+
+  function removeProductImage() {
+    setSelectedImage(null);
+    setSelectedImagePreview("");
+    setRemoveImage(Boolean(editingProduct?.imageUrl));
+    setImageError("");
   }
 
   function addOptionGroupFromTemplate(template: ProductOptionGroupTemplate) {
@@ -597,12 +649,16 @@ export function ProductManager({
   async function submit(values: ProductForm) {
     setError("");
 
+    if (selectedImage && selectedImage.size > MAX_PRODUCT_IMAGE_BYTES) {
+      setImageError("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+
     try {
       const productPayload = {
         categoryId: values.categoryId,
         name: values.name,
         description: values.description,
-        imageUrl: values.imageUrl,
         priceCents: reaisToCents(values.priceReais),
         sortOrder: values.sortOrder,
         active: values.active,
@@ -615,11 +671,20 @@ export function ProductManager({
       const path = editingProduct
         ? `admin/products/${editingProduct.id}`
         : "admin/products";
+      const body = new FormData();
+      body.append(
+        "product",
+        new Blob([JSON.stringify(productPayload)], { type: "application/json" }),
+      );
+      if (selectedImage) {
+        body.append("image", selectedImage);
+      }
+      if (editingProduct) {
+        body.append("removeImage", String(removeImage));
+      }
       const product = await clientApi<Product>(path, {
         method: editingProduct ? "PUT" : "POST",
-        body: JSON.stringify({
-          ...productPayload,
-        }),
+        body,
       });
       setProducts((items) =>
         editingProduct
@@ -809,8 +874,13 @@ export function ProductManager({
             <Field label="Ordem">
               <Input type="number" {...form.register("sortOrder", { valueAsNumber: true })} />
             </Field>
-            <Field label="Imagem URL">
-              <Input {...form.register("imageUrl")} />
+            <Field label="Imagem do produto" error={imageError}>
+              <Input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => selectProductImage(event.target.files?.[0])}
+              />
+              <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
             </Field>
             <Field label="Descrição">
               <Input {...form.register("description")} />
@@ -820,6 +890,25 @@ export function ProductManager({
               Produto ativo
             </CheckboxBackground>
           </GridTwo>
+
+          {!removeImage && (selectedImagePreview || editingProduct?.imageUrl) ? (
+            <ProductImagePreview>
+              <div
+                data-image-preview
+                role="img"
+                aria-label="Prévia da imagem do produto"
+                style={{
+                  backgroundImage: `url(${selectedImagePreview || editingProduct?.imageUrl})`,
+                }}
+              />
+              <div>
+                <Button type="button" variant="dangerText" onClick={removeProductImage}>
+                  <Trash2 size={16} />
+                  Remover imagem
+                </Button>
+              </div>
+            </ProductImagePreview>
+          ) : null}
 
           <FlagFieldset>
             <FlagLegend>Flags do produto</FlagLegend>
