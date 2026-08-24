@@ -452,6 +452,11 @@ export function ProductManager({
     setImageError("");
   }
 
+  function undoProductImageRemoval() {
+    setRemoveImage(false);
+    setImageError("");
+  }
+
   function addOptionGroupFromTemplate(template: ProductOptionGroupTemplate) {
     updateOptionGroups([...optionGroups, templateToProductOptionGroup(template, true)]);
     setTemplateError("");
@@ -892,12 +897,12 @@ export function ProductManager({
             <div>
               <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()}>
                 <ImagePlus size={16} />
-                {!removeImage && (selectedImagePreview || editingProduct?.imageUrl)
+                {selectedImagePreview || editingProduct?.imageUrl
                   ? "Trocar a foto"
                   : "Escolher a foto"}
               </Button>
             </div>
-            {!removeImage && (selectedImagePreview || editingProduct?.imageUrl) ? (
+            {selectedImagePreview || editingProduct?.imageUrl ? (
               <ProductImagePreview>
                 <div
                   data-image-preview
@@ -908,10 +913,19 @@ export function ProductManager({
                   }}
                 />
                 <div>
-                  <Button type="button" variant="dangerText" onClick={removeProductImage}>
-                    <Trash2 size={16} />
-                    Remover imagem
-                  </Button>
+                  {removeImage ? (
+                    <>
+                      <Muted>A foto será removida somente ao salvar.</Muted>
+                      <Button type="button" variant="outline" onClick={undoProductImageRemoval}>
+                        Desfazer remoção
+                      </Button>
+                    </>
+                  ) : (
+                    <Button type="button" variant="dangerText" onClick={removeProductImage}>
+                      <Trash2 size={16} />
+                      Remover imagem
+                    </Button>
+                  )}
                 </div>
               </ProductImagePreview>
             ) : null}
