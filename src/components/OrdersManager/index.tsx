@@ -349,31 +349,6 @@ export function OrdersManager({
   useEffect(() => {
     let active = true;
     let refreshing = false;
-    let pendingSoundCount = 0;
-    let isPlayingSound = false;
-    const newOrderAudio = new Audio("/sounds/new-order.mp3");
-    newOrderAudio.preload = "auto";
-
-    function playNextSound() {
-      if (!active || isPlayingSound || pendingSoundCount === 0) {
-        return;
-      }
-
-      pendingSoundCount -= 1;
-      isPlayingSound = true;
-      newOrderAudio.currentTime = 0;
-
-      function finishSound() {
-        newOrderAudio.removeEventListener("ended", finishSound);
-        newOrderAudio.removeEventListener("error", finishSound);
-        isPlayingSound = false;
-        playNextSound();
-      }
-
-      newOrderAudio.addEventListener("ended", finishSound);
-      newOrderAudio.addEventListener("error", finishSound);
-      void newOrderAudio.play().catch(finishSound);
-    }
 
     async function refreshOrders() {
       if (refreshing) {
@@ -395,11 +370,6 @@ export function OrdersManager({
           ? refreshedOrders.filter((order) => kitchenStatuses.includes(order.status))
           : refreshedOrders);
 
-        if (newOrders.length > 0) {
-          pendingSoundCount += newOrders.length;
-          playNextSound();
-        }
-
         if (automaticOrderConfirmation) {
           newOrders
             .filter((order) => order.status === "CONFIRMED")
@@ -420,7 +390,6 @@ export function OrdersManager({
     return () => {
       active = false;
       window.clearInterval(interval);
-      newOrderAudio.pause();
     };
   }, [automaticOrderConfirmation, compact, showToast]);
 

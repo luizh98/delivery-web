@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-08-06
-**Current Work:** Checkout Address Page - concluída
+**Last Updated:** 2026-08-24
+**Current Work:** Alerta global de novo pedido no admin - concluído
 
 ---
 
@@ -24,7 +24,12 @@ Nenhum.
 
 ## Lessons Learned
 
-Nenhuma.
+### L-001: Autoplay precisa de gesto após carregar o admin
+
+**Context:** Alerta de novo pedido era iniciado por polling depois do login.
+**Problem:** Chrome retornava `NotAllowedError` porque o clique no login aconteceu no documento anterior à navegação.
+**Solution:** Expor `Ativar som` dentro do admin para reproduzir o áudio sob gesto explícito e manter o notifier no layout protegido.
+**Prevents:** Alertas silenciosamente bloqueados por política de autoplay após login ou recarga.
 
 ---
 
@@ -41,6 +46,7 @@ Nenhuma.
 | 013 | Adicionar scroll interno ao modal de endereço | 2026-08-06 | `fix(cart): add inner scroll to address modal` | ✅ Done |
 | 015 | Padronizar cor dos botões primários com a categoria da home | 2026-08-06 | `style(button): match home category color` | ✅ Done |
 | 001 | Localizar enums e imprimir pedido no admin | 2026-08-06 | `901cebd` | ✅ Done |
+| 016 | Tornar alerta de novo pedido global e ativável no admin | 2026-08-24 | `fix(admin): play new order sound across admin` | ✅ Done |
 
 ---
 
