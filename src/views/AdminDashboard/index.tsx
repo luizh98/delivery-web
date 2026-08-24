@@ -1,4 +1,4 @@
-import { ClipboardList, CookingPot, Settings, Tags, Users } from "lucide-react";
+import { ClipboardList, CookingPot, Printer, Settings, Tags, Users } from "lucide-react";
 import Link from "next/link";
 import { getAdminOrders } from "@/services/api/server";
 import { statusLabel } from "@/utils/format";
@@ -26,6 +26,7 @@ export async function AdminDashboardView() {
     { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
     { href: "/admin/customers", label: "Clientes", icon: Users },
     { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
+    { href: "/admin/printer", label: "Impressora", icon: Printer },
     { href: "/admin/settings", label: "Configuração", icon: Settings },
   ];
 

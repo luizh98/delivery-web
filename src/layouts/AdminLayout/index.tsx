@@ -2,6 +2,7 @@ import {
   ClipboardList,
   CookingPot,
   LayoutDashboard,
+  Printer,
   Settings,
   Sparkles,
   Tags,
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/admin/customers", label: "Clientes", icon: Users },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
   { href: "/admin/catalog/upsell", label: "Campanhas", icon: Sparkles },
+  { href: "/admin/printer", label: "Impressora", icon: Printer },
   { href: "/admin/settings", label: "Config", icon: Settings },
 ];
 

@@ -33,6 +33,7 @@ import { Button } from "@/components/Button";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
+import { getSelectedPrinter, printTextWithQz } from "@/services/printing/qz";
 import { money, statusLabel } from "@/utils/format";
 import type {
   DeliveryType,
@@ -164,6 +165,12 @@ async function printOrderDirectly(order: OrderResponse, automatic = false) {
 
   try {
     const content = await getPrintContent(order);
+    const selectedPrinter = getSelectedPrinter();
+    if (selectedPrinter) {
+      await printTextWithQz(content, selectedPrinter);
+      return;
+    }
+
     printFrame = document.createElement("iframe");
     printFrame.setAttribute("aria-hidden", "true");
     printFrame.style.position = "fixed";
@@ -502,6 +509,18 @@ export function OrdersManager({
   }
 
   async function printOrder(order: OrderResponse) {
+    const selectedPrinter = getSelectedPrinter();
+    if (selectedPrinter) {
+      try {
+        const content = await getPrintContent(order);
+        await printTextWithQz(content, selectedPrinter);
+        showToast("Pedido enviado para a impressora");
+      } catch {
+        showToast("Não foi possível imprimir via QZ Tray.", "error");
+      }
+      return;
+    }
+
     const printWindow = window.open("", "_blank", "popup,width=480,height=640");
 
     if (!printWindow) {
