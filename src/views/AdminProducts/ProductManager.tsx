@@ -6,18 +6,19 @@ import {
   ArrowUp,
   ChevronDown,
   CopyPlus,
+  ImagePlus,
   Pencil,
   Save,
   Search,
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
-import { Field, Input, Select } from "@/components/Field";
+import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
@@ -345,6 +346,7 @@ export function ProductManager({
   const [selectedImagePreview, setSelectedImagePreview] = useState("");
   const [removeImage, setRemoveImage] = useState(false);
   const [imageError, setImageError] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
   const form = useForm<ProductForm>({
@@ -874,41 +876,51 @@ export function ProductManager({
             <Field label="Ordem">
               <Input type="number" {...form.register("sortOrder", { valueAsNumber: true })} />
             </Field>
-            <Field label="Imagem do produto" error={imageError}>
-              <Input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(event) => selectProductImage(event.target.files?.[0])}
-              />
-              <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
-            </Field>
-            <Field label="Descrição">
-              <Input {...form.register("description")} />
-            </Field>
-            <CheckboxBackground>
-              <input type="checkbox" {...form.register("active")} />
-              Produto ativo
-            </CheckboxBackground>
           </GridTwo>
 
-          {!removeImage && (selectedImagePreview || editingProduct?.imageUrl) ? (
-            <ProductImagePreview>
-              <div
-                data-image-preview
-                role="img"
-                aria-label="Prévia da imagem do produto"
-                style={{
-                  backgroundImage: `url(${selectedImagePreview || editingProduct?.imageUrl})`,
-                }}
-              />
-              <div>
-                <Button type="button" variant="dangerText" onClick={removeProductImage}>
-                  <Trash2 size={16} />
-                  Remover imagem
-                </Button>
-              </div>
-            </ProductImagePreview>
-          ) : null}
+          <Field label="Imagem do produto" error={imageError}>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              onChange={(event) => {
+                selectProductImage(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <div>
+              <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()}>
+                <ImagePlus size={16} />
+                {!removeImage && (selectedImagePreview || editingProduct?.imageUrl)
+                  ? "Trocar a foto"
+                  : "Escolher a foto"}
+              </Button>
+            </div>
+            {!removeImage && (selectedImagePreview || editingProduct?.imageUrl) ? (
+              <ProductImagePreview>
+                <div
+                  data-image-preview
+                  role="img"
+                  aria-label="Prévia da imagem do produto"
+                  style={{
+                    backgroundImage: `url(${selectedImagePreview || editingProduct?.imageUrl})`,
+                  }}
+                />
+                <div>
+                  <Button type="button" variant="dangerText" onClick={removeProductImage}>
+                    <Trash2 size={16} />
+                    Remover imagem
+                  </Button>
+                </div>
+              </ProductImagePreview>
+            ) : null}
+            <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
+          </Field>
+
+          <Field label="Descrição">
+            <Textarea rows={4} {...form.register("description")} />
+          </Field>
 
           <FlagFieldset>
             <FlagLegend>Flags do produto</FlagLegend>
@@ -1044,6 +1056,11 @@ export function ProductManager({
               ))}
             </SelectedGroups>
           </OptionsSection>
+
+          <CheckboxBackground>
+            <input type="checkbox" {...form.register("active")} />
+            Produto ativo
+          </CheckboxBackground>
 
           {error ? <ErrorTextLarge>{error}</ErrorTextLarge> : null}
           <Button type="submit" disabled={categories.length === 0}>
