@@ -53,6 +53,17 @@ export const Nav = styled("nav", {
   },
 });
 
+export const Brand = styled("a", {
+  display: "inline-flex",
+  minWidth: "max-content",
+  alignItems: "center",
+  marginRight: "0.5rem",
+  paddingRight: "0.75rem",
+  borderRight: "1px solid var(--color-border)",
+  fontSize: "1.125rem",
+  fontWeight: 800,
+});
+
 export const NavLink = styled("a", {
   display: "inline-flex",
   height: "2.5rem",

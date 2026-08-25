@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const logoUrl = restaurantConfig?.logoUrl?.trim();
 
   return {
-    title: "Delivery Web",
+    title: "FlyFoods",
     description: "Cardápio e painel admin para delivery.",
     icons: logoUrl
       ? {

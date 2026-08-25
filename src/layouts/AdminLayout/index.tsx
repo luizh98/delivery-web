@@ -16,6 +16,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { LogoutButton } from "./LogoutButton";
 import type { AdminLayoutProps } from "./types";
 import {
+  Brand,
   Email,
   Header,
   HeaderInner,
@@ -56,6 +57,9 @@ export function AdminLayout({
                 <LogoutButton />
               </HeaderInner>
               <Nav>
+                <Brand as={Link} href="/admin">
+                  FlyFoods
+                </Brand>
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
