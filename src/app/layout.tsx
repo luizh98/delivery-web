@@ -20,10 +20,11 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   const restaurantConfig = await getRestaurantConfig();
+  const restaurantName = restaurantConfig?.name?.trim();
   const logoUrl = restaurantConfig?.logoUrl?.trim();
 
   return {
-    title: "FlyFoods",
+    title: restaurantName || "FlyFoods",
     description: "Cardápio e painel admin para delivery.",
     icons: logoUrl
       ? {
