@@ -398,7 +398,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             </CategorySection>
           ))}
         </ProductList>
-        <SystemCredit>FlyFoods</SystemCredit>
+        <SystemCredit>FlyFoods • 2026</SystemCredit>
       </ContentGrid>
 
       <MobileCart>
