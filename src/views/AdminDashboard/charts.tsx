@@ -15,6 +15,8 @@ import {
   Empty,
   HeatmapCell,
   HeatmapDay,
+  HeatmapLabel,
+  HeatmapGrid,
   HeatmapRow,
   HeatmapRows,
   HeatmapViewport,
@@ -184,7 +186,7 @@ export function PerformanceTable({ values }: { values: AdminDashboardPerformance
   );
 }
 
-export function OrderHeatmap({
+function LegacyOrderHeatmap({
   cells,
   schedules,
 }: {
@@ -241,6 +243,58 @@ export function OrderHeatmap({
 
 function formatScheduleTime(value: string) {
   return value.slice(0, 5);
+}
+
+export function OrderHeatmap({
+  cells,
+  schedules,
+}: {
+  cells: AdminDashboardResponse["orderHeatmap"];
+  schedules: AdminDashboardResponse["heatmapSchedules"];
+}) {
+  if (schedules.length === 0) {
+    return <LegacyOrderHeatmap cells={cells} schedules={schedules} />;
+  }
+  const byKey = new Map(cells.map((cell) => [`${cell.dayOfWeek}:${cell.hour}`, cell]));
+  const hours = Array.from(new Set(cells.map((cell) => cell.hour))).sort((first, second) => first - second);
+  const days = [
+    [7, "Domingo"], [1, "Segunda"], [2, "Terça"], [3, "Quarta"],
+    [4, "Quinta"], [5, "Sexta"], [6, "Sábado"],
+  ] as const;
+  if (cells.length === 0 || schedules.length === 0 || hours.length === 0) {
+    return <Empty>Configure os horários de funcionamento para visualizar este relatório.</Empty>;
+  }
+  return (
+    <>
+      <Legend>
+        <LegendItem><LegendColor level="low" />Poucos pedidos (1–3)</LegendItem>
+        <LegendItem><LegendColor level="medium" />Volume moderado (4–6)</LegendItem>
+        <LegendItem><LegendColor level="high" />Muitos pedidos (7+)</LegendItem>
+      </Legend>
+      <HeatmapViewport>
+        <HeatmapGrid role="table" aria-label="Pedidos por dia da semana e hora">
+          <HeatmapDay role="columnheader">Hora</HeatmapDay>
+          {days.map(([day, label]) => <HeatmapLabel key={day} role="columnheader">{label}</HeatmapLabel>)}
+          {hours.flatMap((hour) => [
+            <HeatmapDay key={`${hour}-label`} role="rowheader">{String(hour).padStart(2, "0")}:00</HeatmapDay>,
+            ...days.map(([day, label]) => {
+              const total = byKey.get(`${day}:${hour}`)?.orders ?? 0;
+              return (
+                <HeatmapCell
+                  key={`${day}-${hour}`}
+                  role="cell"
+                  level={heatLevel(total)}
+                  title={`${label}, ${hour}h: ${total} pedido(s)`}
+                >
+                  {total}
+                </HeatmapCell>
+              );
+            }),
+          ])}
+        </HeatmapGrid>
+      </HeatmapViewport>
+    </>
+  );
 }
 
 export function PaymentMethodChart({

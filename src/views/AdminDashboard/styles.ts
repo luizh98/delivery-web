@@ -146,6 +146,10 @@ export const ParticipationFill = styled("span", {
 });
 
 export const HeatmapViewport = styled("div", { overflowX: "auto" });
+export const HeatmapGrid = styled("div", {
+  minWidth: "39rem", display: "grid", gridTemplateColumns: "5rem repeat(7, minmax(3rem, 1fr))",
+  gap: "0.2rem", alignItems: "center",
+});
 export const HeatmapRows = styled("div", { minWidth: "38rem", display: "grid", gap: "0.35rem" });
 export const HeatmapRow = styled("div", { display: "grid", gap: "0.2rem", alignItems: "center" });
 export const HeatmapLabel = styled("span", {
@@ -157,9 +161,9 @@ export const HeatmapCell = styled("span", {
   fontSize: "0.625rem", fontWeight: 700,
   variants: { level: {
     none: { background: "var(--color-background)", color: "var(--color-muted)" },
-    low: { background: "#dcfce7", color: "#166534" },
-    medium: { background: "#fef3c7", color: "#92400e" },
-    high: { background: "#fee2e2", color: "#991b1b" },
+    low: { background: "color-mix(in srgb, var(--color-primary) 18%, white)", color: "var(--color-text)" },
+    medium: { background: "color-mix(in srgb, var(--color-primary) 48%, white)", color: "var(--color-text)" },
+    high: { background: "color-mix(in srgb, var(--color-primary) 82%, white)", color: "var(--color-text)" },
   } },
 });
 export const Legend = styled("div", { display: "flex", flexWrap: "wrap", gap: "0.75rem", fontSize: "0.6875rem", color: "var(--color-muted)" });
@@ -167,7 +171,9 @@ export const LegendItem = styled("span", { display: "inline-flex", alignItems: "
 export const LegendColor = styled("span", {
   width: "0.75rem", height: "0.75rem", borderRadius: "0.2rem",
   variants: { level: {
-    low: { background: "#dcfce7" }, medium: { background: "#fef3c7" }, high: { background: "#fee2e2" },
+    low: { background: "color-mix(in srgb, var(--color-primary) 18%, white)" },
+    medium: { background: "color-mix(in srgb, var(--color-primary) 48%, white)" },
+    high: { background: "color-mix(in srgb, var(--color-primary) 82%, white)" },
   } },
 });
 
