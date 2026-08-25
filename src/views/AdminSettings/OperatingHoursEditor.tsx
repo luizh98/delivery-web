@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Field, Input } from "@/components/Field";
 import type { BusinessHour, HolidayHour } from "@/types/api";
@@ -10,6 +10,11 @@ import {
   WEEK_DAYS,
 } from "./operatingHours";
 import {
+  Accordion,
+  AccordionBody,
+  AccordionIcon,
+  AccordionSummary,
+  AccordionSummaryText,
   DayName,
   EmptyText,
   ErrorText,
@@ -20,10 +25,7 @@ import {
   HoursList,
   HoursRow,
   RowError,
-  Section,
-  SectionDescription,
   SectionHeader,
-  SectionTitle,
   StatusOptions,
   StatusToggle,
   TimeFields,
@@ -50,25 +52,9 @@ function WorkStatusOptions({ closed, label, onChange }: WorkStatusOptionsProps) 
         <input
           type="checkbox"
           checked={!closed}
-          onChange={(event) => {
-            if (event.target.checked) {
-              onChange(false);
-            }
-          }}
+          onChange={(event) => onChange(!event.target.checked)}
         />
-        <span>Trabalha</span>
-      </StatusToggle>
-      <StatusToggle>
-        <input
-          type="checkbox"
-          checked={closed}
-          onChange={(event) => {
-            if (event.target.checked) {
-              onChange(true);
-            }
-          }}
-        />
-        <span>Não trabalha</span>
+        <span>Trabalha nesta data</span>
       </StatusToggle>
     </StatusOptions>
   );
@@ -97,17 +83,18 @@ export function OperatingHoursEditor({
 
   return (
     <>
-      <Section>
-        <SectionHeader>
-          <div>
-            <SectionTitle>Horário semanal</SectionTitle>
-            <SectionDescription>
-              Marque os dias abertos e informe o período de atendimento.
-            </SectionDescription>
-          </div>
-        </SectionHeader>
-
-        <HoursList>
+      <Accordion>
+        <AccordionSummary>
+          <AccordionSummaryText>
+            <strong>Horário semanal</strong>
+            <span>Dias abertos e períodos de atendimento.</span>
+          </AccordionSummaryText>
+          <AccordionIcon data-accordion-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </AccordionIcon>
+        </AccordionSummary>
+        <AccordionBody>
+          <HoursList>
           {WEEK_DAYS.map((day, index) => {
             const hour = businessHours[index];
             const error = errors.businessHours[day.value];
@@ -146,26 +133,32 @@ export function OperatingHoursEditor({
               </HoursRow>
             );
           })}
-        </HoursList>
-      </Section>
+          </HoursList>
+        </AccordionBody>
+      </Accordion>
 
-      <Section>
-        <SectionHeader>
-          <div>
-            <SectionTitle>Feriados e datas especiais</SectionTitle>
-            <SectionDescription>
-              Cadastre cada data e escolha se o restaurante fecha ou trabalha em horário especial.
-            </SectionDescription>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onHolidayHoursChange([...holidayHours, createHolidayHour()])}
-          >
-            <Plus size={16} />
-            Adicionar feriado
-          </Button>
-        </SectionHeader>
+      <Accordion>
+        <AccordionSummary>
+          <AccordionSummaryText>
+            <strong>Feriados e datas especiais</strong>
+            <span>Fechamentos e horários especiais.</span>
+          </AccordionSummaryText>
+          <AccordionIcon data-accordion-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </AccordionIcon>
+        </AccordionSummary>
+        <AccordionBody>
+          <SectionHeader>
+            <span />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onHolidayHoursChange([...holidayHours, createHolidayHour()])}
+            >
+              <Plus size={16} />
+              Adicionar feriado
+            </Button>
+          </SectionHeader>
 
         {holidayHours.length === 0 ? (
           <EmptyText>Nenhum feriado cadastrado.</EmptyText>
@@ -243,7 +236,8 @@ export function OperatingHoursEditor({
             </HolidayRow>
           );
         })}
-      </Section>
+        </AccordionBody>
+      </Accordion>
     </>
   );
 }
