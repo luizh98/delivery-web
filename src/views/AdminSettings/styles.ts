@@ -171,18 +171,22 @@ export const StatusToggle = styled("label", {
       background: "#ffffff",
       boxShadow: "0 1px 3px rgb(0 0 0 / 0.25)",
       content: "",
+      transform: "translateX(2.6875rem)",
       transition: "transform 150ms ease",
     },
 
     "&::after": {
       position: "absolute",
       top: "50%",
-      right: "0.5rem",
-      color: "var(--color-muted)",
+      left: "0.4rem",
+      border: "1px solid #000000",
+      borderRadius: "9999px",
+      color: "#000000",
       content: '"NÃO"',
       fontSize: "0.625rem",
       fontWeight: 800,
       lineHeight: 1,
+      padding: "0.125rem 0.25rem",
       transform: "translateY(-50%)",
     },
 
@@ -192,12 +196,13 @@ export const StatusToggle = styled("label", {
     },
 
     "&:checked::before": {
-      transform: "translateX(2.6875rem)",
+      transform: "translateX(0)",
     },
 
     "&:checked::after": {
-      right: "auto",
-      left: "0.55rem",
+      right: "0.4rem",
+      left: "auto",
+      borderColor: "#ffffff",
       color: "#ffffff",
       content: '"SIM"',
     },
