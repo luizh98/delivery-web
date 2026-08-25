@@ -356,3 +356,60 @@ export type UpsellOfferValidationResponse = {
   maximumQuantity: number;
   requiresOptions: boolean;
 };
+
+export type AdminDashboardSummary = {
+  revenueCents: number;
+  orders: number;
+  averageTicketCents: number;
+  discountsCents: number;
+  deliveryFeesCents: number;
+};
+
+export type AdminDashboardMetricPoint = AdminDashboardSummary & {
+  key: string;
+  label: string;
+};
+
+export type AdminDashboardPerformance = {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalSoldCents: number;
+  salesSharePercent: number;
+};
+
+export type AdminDashboardResponse = {
+  summary: AdminDashboardSummary;
+  seriesGranularity: "HOUR" | "DAY";
+  metricSeries: AdminDashboardMetricPoint[];
+  averageStatusTimes: {
+    status: OrderStatus;
+    averageSeconds: number;
+    samples: number;
+  }[];
+  items: AdminDashboardPerformance[];
+  options: AdminDashboardPerformance[];
+  orderHeatmap: {
+    dayOfWeek: number;
+    dayLabel: string;
+    hour: number;
+    orders: number;
+  }[];
+  paymentMethods: {
+    paymentMethod: PaymentMethod;
+    orders: number;
+    totalSoldCents: number;
+    revenueSharePercent: number;
+  }[];
+  monthlySales: {
+    year: number;
+    month: number;
+    days: {
+      date: string;
+      totalSoldCents: number;
+      orders: number;
+    }[];
+  };
+};
