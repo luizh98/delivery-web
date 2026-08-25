@@ -179,7 +179,7 @@ export const StatusToggle = styled("label", {
       top: "50%",
       right: "0.5rem",
       color: "var(--color-muted)",
-      content: "NÃO",
+      content: '"NÃO"',
       fontSize: "0.625rem",
       fontWeight: 800,
       lineHeight: 1,
@@ -199,7 +199,7 @@ export const StatusToggle = styled("label", {
       right: "auto",
       left: "0.55rem",
       color: "#ffffff",
-      content: "SIM",
+      content: '"SIM"',
     },
 
     "&:focus-visible": {
