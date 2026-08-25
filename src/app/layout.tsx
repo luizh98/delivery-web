@@ -18,10 +18,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Delivery Web",
-  description: "Cardápio e painel admin para delivery.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const restaurantConfig = await getRestaurantConfig();
+  const logoUrl = restaurantConfig?.logoUrl?.trim();
+
+  return {
+    title: "Delivery Web",
+    description: "Cardápio e painel admin para delivery.",
+    icons: logoUrl
+      ? {
+          icon: logoUrl,
+          shortcut: logoUrl,
+        }
+      : undefined,
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
