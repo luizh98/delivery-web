@@ -80,27 +80,21 @@ export const SectionHeader = styled("header", {
 export const SectionTitle = styled("h2", { fontSize: "1rem", fontWeight: 700 });
 export const SectionSubtitle = styled("p", { marginTop: "0.15rem", fontSize: "0.75rem", color: "var(--color-muted)" });
 
-export const BarViewport = styled("div", { overflowX: "auto", paddingBottom: "0.25rem" });
-export const BarChart = styled("div", {
-  minHeight: "15rem", display: "grid", alignItems: "end", gap: "0.45rem",
-  borderBottom: "1px solid var(--color-border)", padding: "2rem 0.25rem 0",
+export const LineViewport = styled("div", { overflowX: "auto", paddingBottom: "0.25rem" });
+export const LineChart = styled("svg", { display: "block", width: "100%", height: "15rem" });
+export const LineBaseline = styled("line", { stroke: "var(--color-border)", strokeWidth: 1 });
+export const LinePath = styled("polyline", {
+  fill: "none", stroke: "var(--color-primary)", strokeWidth: 3,
+  strokeLinecap: "round", strokeLinejoin: "round",
 });
-export const BarColumn = styled("div", {
-  height: "12rem", minWidth: "2.25rem", display: "grid", gridTemplateRows: "1fr auto", alignItems: "end", gap: "0.45rem",
+export const LinePoint = styled("circle", {
+  fill: "var(--color-surface)", stroke: "var(--color-primary)", strokeWidth: 3,
 });
-export const BarArea = styled("div", { height: "100%", display: "flex", alignItems: "end", position: "relative" });
-export const Bar = styled("div", {
-  width: "100%", minHeight: "0.2rem", borderRadius: "0.35rem 0.35rem 0 0",
-  background: "var(--color-primary)", transition: "height 180ms ease",
+export const LineValue = styled("text", {
+  fill: "var(--color-text)", fontSize: "0.625rem", fontWeight: 700, textAnchor: "middle",
 });
-export const BarValue = styled("span", {
-  position: "absolute", left: "50%", bottom: "calc(var(--bar-height, 0%) + 0.25rem)",
-  transform: "translateX(-50%)", maxWidth: "5rem", whiteSpace: "nowrap",
-  fontSize: "0.625rem", fontWeight: 700, color: "var(--color-text)",
-});
-export const BarLabel = styled("span", {
-  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "center",
-  fontSize: "0.625rem", color: "var(--color-muted)",
+export const LineLabel = styled("text", {
+  fill: "var(--color-muted)", fontSize: "0.625rem", textAnchor: "middle",
 });
 export const Empty = styled("div", {
   minHeight: "10rem", display: "grid", placeItems: "center", textAlign: "center",

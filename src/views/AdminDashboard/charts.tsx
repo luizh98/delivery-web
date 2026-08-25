@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type {
   AdminDashboardMetricPoint,
   AdminDashboardPerformance,
@@ -6,13 +5,6 @@ import type {
 } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import {
-  Bar,
-  BarArea,
-  BarChart,
-  BarColumn,
-  BarLabel,
-  BarValue,
-  BarViewport,
   CalendarDate,
   CalendarDay,
   CalendarGrid,
@@ -29,6 +21,13 @@ import {
   Legend,
   LegendColor,
   LegendItem,
+  LineBaseline,
+  LineChart,
+  LineLabel,
+  LinePath,
+  LinePoint,
+  LineValue,
+  LineViewport,
   Participation,
   ParticipationFill,
   ParticipationTrack,
@@ -72,35 +71,51 @@ export function MetricChart({
   metric: DashboardMetricKey;
 }) {
   const maximum = Math.max(...points.map((point) => point[metric]), 0);
+  const chartWidth = Math.max((points.length - 1) * 88 + 64, 544);
+  const chartHeight = 240;
+  const horizontalPadding = 32;
+  const topPadding = 32;
+  const bottomPadding = 44;
+  const plotHeight = chartHeight - topPadding - bottomPadding;
+  const plotWidth = chartWidth - horizontalPadding * 2;
+  const coordinates = points.map((point, index) => ({
+    point,
+    x: points.length === 1
+      ? chartWidth / 2
+      : horizontalPadding + (index / Math.max(points.length - 1, 1)) * plotWidth,
+    y: topPadding + (1 - (maximum === 0 ? 0 : point[metric] / maximum)) * plotHeight,
+  }));
 
   return (
-    <BarViewport>
-      <BarChart
+    <LineViewport>
+      <LineChart
+        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
         role="img"
         aria-label="Evolução do indicador selecionado"
-        style={{
-          gridTemplateColumns: `repeat(${points.length}, minmax(2.25rem, 1fr))`,
-          minWidth: `${Math.max(points.length * 2.8, 34)}rem`,
-        }}
+        style={{ minWidth: `${chartWidth}px` }}
       >
-        {points.map((point) => {
-          const value = point[metric];
-          const height = maximum === 0 ? 0 : Math.max((value / maximum) * 100, 2);
-          const formatted = formatMetric(metric, value);
+        <LineBaseline
+          x1={horizontalPadding}
+          y1={chartHeight - bottomPadding}
+          x2={chartWidth - horizontalPadding}
+          y2={chartHeight - bottomPadding}
+        />
+        {coordinates.length > 1 && (
+          <LinePath points={coordinates.map(({ x, y }) => `${x},${y}`).join(" ")} />
+        )}
+        {coordinates.map(({ point, x, y }) => {
+          const formatted = formatMetric(metric, point[metric]);
           return (
-            <BarColumn key={point.key} title={`${point.label}: ${formatted}`}>
-              <BarArea>
-                <BarValue style={{ "--bar-height": `${height}%` } as CSSProperties}>
-                  {formatted}
-                </BarValue>
-                <Bar style={{ height: `${height}%` }} />
-              </BarArea>
-              <BarLabel>{point.label}</BarLabel>
-            </BarColumn>
+            <g key={point.key}>
+              <title>{`${point.label}: ${formatted}`}</title>
+              <LineValue x={x} y={Math.max(y - 12, 12)}>{formatted}</LineValue>
+              <LinePoint cx={x} cy={y} r={5} />
+              <LineLabel x={x} y={chartHeight - 14}>{point.label}</LineLabel>
+            </g>
           );
         })}
-      </BarChart>
-    </BarViewport>
+      </LineChart>
+    </LineViewport>
   );
 }
 

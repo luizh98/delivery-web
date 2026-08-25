@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-08-25
-**Current Work:** Total de desconto no carrinho e finalização - concluída
+**Current Work:** Gráfico em linhas na dashboard de faturamento - concluída
 
 ---
 
@@ -70,6 +70,7 @@ Nenhum.
 | 017 | Repetir alerta enquanto houver pedido recebido | 2026-08-24 | `fix(admin): repeat sound for received orders` | ✅ Done |
 | 018 | Corrigir ativação do som no navegador | 2026-08-24 | — | ✅ Done |
 | 019 | Exibir total de desconto no carrinho e na finalização | 2026-08-25 | `feat(cart): show total discount in checkout` | ✅ Done |
+| 020 | Alterar gráfico da dashboard de faturamento para linhas | 2026-08-25 | `feat(admin): change dashboard chart to line` | ✅ Done |
 
 ---
 
