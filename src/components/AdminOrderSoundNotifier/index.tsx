@@ -10,26 +10,70 @@ type OrderSummary = {
   status: string;
 };
 
+type WindowWithWebkitAudio = Window & {
+  webkitAudioContext?: typeof AudioContext;
+  __lastAdminOrderChimeAt?: number;
+};
+
+function playChime(audioContext: AudioContext) {
+  const audioWindow = window as WindowWithWebkitAudio;
+  const playedAt = Date.now();
+  if (playedAt - (audioWindow.__lastAdminOrderChimeAt ?? 0) < 1_000) {
+    return;
+  }
+  audioWindow.__lastAdminOrderChimeAt = playedAt;
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const startAt = audioContext.currentTime;
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(880, startAt);
+  oscillator.frequency.setValueAtTime(1_174, startAt + 0.18);
+
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(0.35, startAt + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.65);
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + 0.65);
+  oscillator.addEventListener("ended", () => {
+    oscillator.disconnect();
+    gain.disconnect();
+  }, { once: true });
+}
+
+function getAudioErrorName(error: unknown) {
+  if (error instanceof DOMException) {
+    return error.name;
+  }
+
+  return error instanceof Error ? error.message : "erro desconhecido";
+}
+
 export function AdminOrderSoundNotifier() {
   const { showToast } = useToast();
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const soundEnabledRef = useRef(false);
-  const isPlayingSoundRef = useRef(false);
 
   const playAlertSound = useCallback(() => {
-    const audio = audioRef.current;
+    const audioContext = audioContextRef.current;
 
-    if (!soundEnabledRef.current || !audio || isPlayingSoundRef.current) {
+    if (!soundEnabledRef.current || !audioContext) {
       return;
     }
 
-    isPlayingSoundRef.current = true;
-    audio.currentTime = 0;
-
-    void audio.play()
+    void audioContext.resume()
+      .then(() => {
+        if (audioContext.state !== "running") {
+          throw new DOMException("AudioContext suspenso", "NotAllowedError");
+        }
+        playChime(audioContext);
+      })
       .catch(() => {
-        isPlayingSoundRef.current = false;
         soundEnabledRef.current = false;
         setSoundEnabled(false);
         showToast(
@@ -39,47 +83,49 @@ export function AdminOrderSoundNotifier() {
       });
   }, [showToast]);
 
-  function activateSound() {
-    const audio = audioRef.current;
-    if (!audio) {
-      return;
+  async function activateSound() {
+    try {
+      const audioWindow = window as WindowWithWebkitAudio;
+      const AudioContextConstructor = window.AudioContext
+        ?? audioWindow.webkitAudioContext;
+
+      if (!AudioContextConstructor) {
+        throw new Error("recurso de áudio indisponível");
+      }
+
+      const currentContext = audioContextRef.current;
+      const audioContext = currentContext && currentContext.state !== "closed"
+        ? currentContext
+        : new AudioContextConstructor();
+
+      audioContextRef.current = audioContext;
+      await audioContext.resume();
+
+      if (audioContext.state !== "running") {
+        throw new DOMException("AudioContext suspenso", "NotAllowedError");
+      }
+
+      soundEnabledRef.current = true;
+      setSoundEnabled(true);
+      playChime(audioContext);
+      showToast("Som do admin ativado.");
+    } catch (error) {
+      soundEnabledRef.current = false;
+      setSoundEnabled(false);
+      showToast(
+        `Não foi possível ativar o som (${getAudioErrorName(error)}).`,
+        "error",
+      );
     }
-
-    audio.pause();
-    audio.currentTime = 0;
-    isPlayingSoundRef.current = true;
-
-    void audio.play()
-      .then(() => {
-        soundEnabledRef.current = true;
-        setSoundEnabled(true);
-        showToast("Som do admin ativado.");
-      })
-      .catch(() => {
-        isPlayingSoundRef.current = false;
-        soundEnabledRef.current = false;
-        showToast("Não foi possível ativar o som neste navegador.", "error");
-      });
   }
 
   useEffect(() => {
-    const audio = new Audio("/sounds/new-order.mp3");
-    audio.preload = "auto";
-    audio.volume = 1;
-    audioRef.current = audio;
-
-    function finishSound() {
-      isPlayingSoundRef.current = false;
-    }
-
-    audio.addEventListener("ended", finishSound);
-    audio.addEventListener("error", finishSound);
-
     return () => {
-      audio.removeEventListener("ended", finishSound);
-      audio.removeEventListener("error", finishSound);
-      audio.pause();
-      audioRef.current = null;
+      const audioContext = audioContextRef.current;
+      audioContextRef.current = null;
+      if (audioContext && audioContext.state !== "closed") {
+        void audioContext.close();
+      }
     };
   }, []);
 

@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-08-24
-**Current Work:** Alerta recorrente para pedidos recebidos - concluído
+**Current Work:** Ativação robusta do som no admin - concluída
 
 ---
 
@@ -33,6 +33,15 @@ Nenhum.
 
 ---
 
+### L-002: Ativação não deve depender do elemento MP3
+
+**Context:** Alguns navegadores recusaram o `play()` mesmo após o clique explícito.
+**Problem:** O elemento de áudio era criado antes do gesto e a exceção era descartada.
+**Solution:** Criar e liberar um `AudioContext` no próprio clique, gerar o sinal localmente e exibir o nome da exceção quando houver falha.
+**Prevents:** Falhas por download, codec, elemento de mídia obsoleto e diagnóstico genérico.
+
+---
+
 ## Quick Tasks Completed
 
 | # | Description | Date | Commit | Status |
@@ -48,6 +57,7 @@ Nenhum.
 | 001 | Localizar enums e imprimir pedido no admin | 2026-08-06 | `901cebd` | ✅ Done |
 | 016 | Tornar alerta de novo pedido global e ativável no admin | 2026-08-24 | `fix(admin): play new order sound across admin` | ✅ Done |
 | 017 | Repetir alerta enquanto houver pedido recebido | 2026-08-24 | `fix(admin): repeat sound for received orders` | ✅ Done |
+| 018 | Corrigir ativação do som no navegador | 2026-08-24 | — | ✅ Done |
 
 ---
 
