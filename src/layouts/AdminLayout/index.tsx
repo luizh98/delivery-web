@@ -1,6 +1,7 @@
 import {
   ClipboardList,
   CookingPot,
+  LineChart,
   LayoutDashboard,
   Printer,
   Settings,
@@ -28,6 +29,7 @@ import {
 
 const navItems = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Análises", icon: LineChart },
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
   { href: "/admin/customers", label: "Clientes", icon: Users },

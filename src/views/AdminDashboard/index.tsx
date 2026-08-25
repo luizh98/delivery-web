@@ -7,19 +7,13 @@ import {
   Banknote,
   CalendarDays,
   ClipboardList,
-  CookingPot,
   DollarSign,
   Percent,
-  Printer,
   ReceiptText,
   RefreshCw,
-  Settings,
-  Tags,
   Truck,
-  Users,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/Button";
 import { Field, Select } from "@/components/Field";
 import { clientApi } from "@/services/api/client";
@@ -45,9 +39,6 @@ import {
   Feedback,
   FullSection,
   Header,
-  LinkCard,
-  LinkIcon,
-  LinksGrid,
   MetricButton,
   MetricHint,
   MetricIcon,
@@ -91,15 +82,6 @@ const metrics: {
   { key: "averageTicketCents", label: "Ticket médio", icon: ReceiptText, currency: true },
   { key: "discountsCents", label: "Descontos", icon: Percent, currency: true },
   { key: "deliveryFeesCents", label: "Taxa de entrega", icon: Truck, currency: true },
-];
-
-const links = [
-  { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
-  { href: "/admin/printer", label: "Impressora", icon: Printer },
-  { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
-  { href: "/admin/customers", label: "Clientes", icon: Users },
-  { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
-  { href: "/admin/settings", label: "Configuração", icon: Settings },
 ];
 
 export function AdminDashboardView() {
@@ -181,7 +163,7 @@ export function AdminDashboardView() {
     <Root>
       <Header>
         <div>
-          <Title>Painel</Title>
+          <Title>Análises</Title>
           <Subtitle>
             Desempenho do restaurante{loading && data ? " · Atualizando…" : ""}
           </Subtitle>
@@ -355,21 +337,6 @@ export function AdminDashboardView() {
         </ReportGrid>
       )}
 
-      <div>
-        <SectionTitle>Acessos rápidos</SectionTitle>
-        <SectionSubtitle>Operação e configuração</SectionSubtitle>
-      </div>
-      <LinksGrid>
-        {links.map((item) => {
-          const Icon = item.icon;
-          return (
-            <LinkCard key={item.href} as={Link} href={item.href}>
-              <LinkIcon><Icon size={20} /></LinkIcon>
-              {item.label}
-            </LinkCard>
-          );
-        })}
-      </LinksGrid>
     </Root>
   );
 }
