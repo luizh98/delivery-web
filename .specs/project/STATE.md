@@ -16,6 +16,17 @@
 
 ---
 
+### AD-002: Alerta sonoro configurado por navegador (2026-08-25)
+
+**Decision:** Manter o notifier no layout protegido e mover seu controle para um
+checkbox nas configurações, persistido em `localStorage`.
+**Reason:** Autoplay exige gesto no navegador e a preferência pertence ao dispositivo,
+enquanto pedidos auto-confirmados precisam ser detectados por ID, não por status.
+**Impact:** Cada ID novo entra na fila de áudio; `RECEIVED` continua gerando lembrete
+a cada polling de cinco segundos.
+
+---
+
 ## Active Blockers
 
 Nenhum.

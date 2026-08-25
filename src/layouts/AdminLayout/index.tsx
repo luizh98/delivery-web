@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { AdminOrderSoundNotifier } from "@/components/AdminOrderSoundNotifier";
+import { AdminOrderSoundProvider } from "@/components/AdminOrderSoundNotifier";
 import { ConfirmationProvider } from "@/components/ConfirmationProvider";
 import { PageShell } from "@/components/PageShell";
 import { ToastProvider } from "@/components/ToastProvider";
@@ -42,38 +42,39 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   return (
     <ToastProvider>
-      <ConfirmationProvider>
-        <Root>
-          <Header>
-            <HeaderInner>
-              <div>
-                <Tenant>
-                  {admin.tenantSlug}
-                </Tenant>
-                <Email>{admin.email}</Email>
-              </div>
-              <LogoutButton />
-            </HeaderInner>
-            <Nav>
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <NavLink
-                    key={item.href}
-                    as={Link}
-                    href={item.href}
-                  >
-                    <Icon size={16} />
-                    {item.label}
-                  </NavLink>
-                );
-              })}
-              <AdminOrderSoundNotifier />
-            </Nav>
-          </Header>
-          <PageShell>{children}</PageShell>
-        </Root>
-      </ConfirmationProvider>
+      <AdminOrderSoundProvider>
+        <ConfirmationProvider>
+          <Root>
+            <Header>
+              <HeaderInner>
+                <div>
+                  <Tenant>
+                    {admin.tenantSlug}
+                  </Tenant>
+                  <Email>{admin.email}</Email>
+                </div>
+                <LogoutButton />
+              </HeaderInner>
+              <Nav>
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.href}
+                      as={Link}
+                      href={item.href}
+                    >
+                      <Icon size={16} />
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+              </Nav>
+            </Header>
+            <PageShell>{children}</PageShell>
+          </Root>
+        </ConfirmationProvider>
+      </AdminOrderSoundProvider>
     </ToastProvider>
   );
 }

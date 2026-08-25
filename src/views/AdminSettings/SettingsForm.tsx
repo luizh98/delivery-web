@@ -5,6 +5,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { useAdminOrderSound } from "@/components/AdminOrderSoundNotifier";
 import { Button } from "@/components/Button";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
@@ -172,6 +173,7 @@ export function SettingsForm({
     holidayHours: {},
   });
   const { showToast } = useToast();
+  const { soundEnabled, setSoundEnabled } = useAdminOrderSound();
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -359,6 +361,16 @@ export function SettingsForm({
         <StatusToggle>
           <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
           Confirmar pedidos automaticamente e enviar para impressão
+        </StatusToggle>
+        <StatusToggle>
+          <input
+            type="checkbox"
+            checked={soundEnabled}
+            onChange={(event) => {
+              void setSoundEnabled(event.target.checked);
+            }}
+          />
+          Ativar alerta sonoro de novos pedidos neste navegador
         </StatusToggle>
       </Section>
 
