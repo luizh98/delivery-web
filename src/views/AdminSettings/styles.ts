@@ -179,6 +179,7 @@ export const StatusToggle = styled("label", {
       position: "absolute",
       top: "50%",
       left: "0.4rem",
+      background: "#6b7280",
       border: "1px solid #000000",
       borderRadius: "9999px",
       color: "#000000",
