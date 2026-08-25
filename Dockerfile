@@ -30,6 +30,7 @@ ENV NODE_ENV=production \
     PORT=3000
 
 COPY --chown=node:node package.json package-lock.json ./
+COPY --chown=node:node public ./public
 COPY --chown=node:node --from=production-dependencies /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/.next ./.next
 
