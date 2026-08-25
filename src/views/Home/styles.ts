@@ -218,6 +218,15 @@ export const ProductList = styled("div", {
   gap: "0.75rem",
 });
 
+export const SystemCredit = styled("p", {
+  marginTop: "0.75rem",
+  borderTop: "1px solid var(--color-border)",
+  paddingTop: "0.75rem",
+  textAlign: "center",
+  fontSize: "0.6875rem",
+  color: "var(--color-muted)",
+});
+
 export const CategorySection = styled("section", {
   scrollMarginTop: "6rem",
   outline: "none",

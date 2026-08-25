@@ -62,6 +62,7 @@ import {
   ProductList,
   ProductName,
   ProductPrice,
+  SystemCredit,
   TrackingActions,
   TrackingShortcut,
   WhatsAppShortcut,
@@ -397,7 +398,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             </CategorySection>
           ))}
         </ProductList>
-
+        <SystemCredit>FlyFoods</SystemCredit>
       </ContentGrid>
 
       <MobileCart>
