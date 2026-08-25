@@ -213,6 +213,11 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   });
   const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
   const belowMinimumOrder = minimumOrderCents > 0 && subtotalCents < minimumOrderCents;
+  const discountCents = items.reduce(
+    (sum, item) => sum + (item.discountAmountCents ?? 0),
+    0,
+  );
+  const originalSubtotalCents = subtotalCents + discountCents;
   const restaurantOpen = restaurantConfig?.open !== false;
   const closedStoreMessage = restaurantOpen
     ? ""
@@ -550,8 +555,13 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
 
               <TotalsBox>
                 <TotalGrand>
-                  Subtotal <TotalStrong>{money(subtotalCents)}</TotalStrong>
+                  Subtotal <TotalStrong>{money(originalSubtotalCents)}</TotalStrong>
                 </TotalGrand>
+                {discountCents > 0 ? (
+                  <TotalRow>
+                    Desconto <strong>- {money(discountCents)}</strong>
+                  </TotalRow>
+                ) : null}
                 {belowMinimumOrder ? (
                   <CheckoutError role="status">
                     Pedido mínimo: {money(minimumOrderCents)}.
@@ -773,8 +783,13 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
 
               <TotalsBox>
                 <TotalRow>
-                  Subtotal <strong>{money(subtotalCents)}</strong>
+                  Subtotal <strong>{money(originalSubtotalCents)}</strong>
                 </TotalRow>
+                {discountCents > 0 ? (
+                  <TotalRow>
+                    Desconto <strong>- {money(discountCents)}</strong>
+                  </TotalRow>
+                ) : null}
                 <TotalRow>
                   Frete{" "}
                   <strong>
