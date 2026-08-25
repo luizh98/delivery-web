@@ -171,17 +171,21 @@ export function PerformanceTable({ values }: { values: AdminDashboardPerformance
 
 export function OrderHeatmap({ cells }: { cells: AdminDashboardResponse["orderHeatmap"] }) {
   const byKey = new Map(cells.map((cell) => [`${cell.dayOfWeek}:${cell.hour}`, cell]));
+  const hours = Array.from(new Set(cells.map((cell) => cell.hour))).sort((first, second) => first - second);
   const days = Array.from(new Map(cells.map((cell) => [cell.dayOfWeek, cell.dayLabel])).entries())
     .sort(([first], [second]) => first - second);
+  if (hours.length === 0 || days.length === 0) {
+    return <Empty>Configure os horários de funcionamento para visualizar este relatório.</Empty>;
+  }
   return (
     <>
       <HeatmapViewport>
         <HeatmapGrid role="table" aria-label="Pedidos por dia da semana e hora">
           <HeatmapLabel />
-          {Array.from({ length: 24 }, (_, hour) => <HeatmapLabel key={hour}>{hour}h</HeatmapLabel>)}
+          {hours.map((hour) => <HeatmapLabel key={hour}>{hour}h</HeatmapLabel>)}
           {days.flatMap(([day, label]) => [
             <HeatmapDay key={`${day}-label`}>{label}</HeatmapDay>,
-            ...Array.from({ length: 24 }, (_, hour) => {
+            ...hours.map((hour) => {
               const total = byKey.get(`${day}:${hour}`)?.orders ?? 0;
               return (
                 <HeatmapCell
