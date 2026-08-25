@@ -10,41 +10,6 @@ type OrderSummary = {
   status: string;
 };
 
-type WindowWithWebkitAudio = Window & {
-  webkitAudioContext?: typeof AudioContext;
-  __lastAdminOrderChimeAt?: number;
-};
-
-function playChime(audioContext: AudioContext) {
-  const audioWindow = window as WindowWithWebkitAudio;
-  const playedAt = Date.now();
-  if (playedAt - (audioWindow.__lastAdminOrderChimeAt ?? 0) < 1_000) {
-    return;
-  }
-  audioWindow.__lastAdminOrderChimeAt = playedAt;
-
-  const oscillator = audioContext.createOscillator();
-  const gain = audioContext.createGain();
-  const startAt = audioContext.currentTime;
-
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(880, startAt);
-  oscillator.frequency.setValueAtTime(1_174, startAt + 0.18);
-
-  gain.gain.setValueAtTime(0.0001, startAt);
-  gain.gain.exponentialRampToValueAtTime(0.35, startAt + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.65);
-
-  oscillator.connect(gain);
-  gain.connect(audioContext.destination);
-  oscillator.start(startAt);
-  oscillator.stop(startAt + 0.65);
-  oscillator.addEventListener("ended", () => {
-    oscillator.disconnect();
-    gain.disconnect();
-  }, { once: true });
-}
-
 function getAudioErrorName(error: unknown) {
   if (error instanceof DOMException) {
     return error.name;
@@ -56,23 +21,17 @@ function getAudioErrorName(error: unknown) {
 export function AdminOrderSoundNotifier() {
   const { showToast } = useToast();
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const soundEnabledRef = useRef(false);
 
   const playAlertSound = useCallback(() => {
-    const audioContext = audioContextRef.current;
+    const audio = audioRef.current;
 
-    if (!soundEnabledRef.current || !audioContext) {
+    if (!soundEnabledRef.current || !audio) {
       return;
     }
 
-    void audioContext.resume()
-      .then(() => {
-        if (audioContext.state !== "running") {
-          throw new DOMException("AudioContext suspenso", "NotAllowedError");
-        }
-        playChime(audioContext);
-      })
+    void audio.play()
       .catch(() => {
         soundEnabledRef.current = false;
         setSoundEnabled(false);
@@ -85,29 +44,12 @@ export function AdminOrderSoundNotifier() {
 
   async function activateSound() {
     try {
-      const audioWindow = window as WindowWithWebkitAudio;
-      const AudioContextConstructor = window.AudioContext
-        ?? audioWindow.webkitAudioContext;
-
-      if (!AudioContextConstructor) {
-        throw new Error("recurso de áudio indisponível");
-      }
-
-      const currentContext = audioContextRef.current;
-      const audioContext = currentContext && currentContext.state !== "closed"
-        ? currentContext
-        : new AudioContextConstructor();
-
-      audioContextRef.current = audioContext;
-      await audioContext.resume();
-
-      if (audioContext.state !== "running") {
-        throw new DOMException("AudioContext suspenso", "NotAllowedError");
-      }
+      const audio = audioRef.current ?? new Audio("/sounds/new-order.mp3");
+      audioRef.current = audio;
+      await audio.play();
 
       soundEnabledRef.current = true;
       setSoundEnabled(true);
-      playChime(audioContext);
       showToast("Som do admin ativado.");
     } catch (error) {
       soundEnabledRef.current = false;
@@ -121,11 +63,8 @@ export function AdminOrderSoundNotifier() {
 
   useEffect(() => {
     return () => {
-      const audioContext = audioContextRef.current;
-      audioContextRef.current = null;
-      if (audioContext && audioContext.state !== "closed") {
-        void audioContext.close();
-      }
+      audioRef.current?.pause();
+      audioRef.current = null;
     };
   }, []);
 
