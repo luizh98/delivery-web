@@ -130,7 +130,7 @@ export const HoursRow = styled("div", {
   borderBottom: "1px solid var(--color-border)",
 
   "@sm": {
-    gridTemplateColumns: "9rem 7rem minmax(0, 1fr)",
+    gridTemplateColumns: "9rem 12rem minmax(0, 1fr)",
     alignItems: "center",
   },
 });
@@ -150,8 +150,8 @@ export const StatusToggle = styled("label", {
 
   "& input": {
     position: "relative",
-    width: "2.5rem",
-    height: "1.5rem",
+    width: "4.5rem",
+    height: "1.75rem",
     flexShrink: 0,
     appearance: "none",
     border: "1px solid var(--color-border)",
@@ -164,13 +164,26 @@ export const StatusToggle = styled("label", {
       position: "absolute",
       top: "0.1875rem",
       left: "0.1875rem",
-      width: "1rem",
-      height: "1rem",
+      zIndex: 1,
+      width: "1.25rem",
+      height: "1.25rem",
       borderRadius: "9999px",
       background: "#ffffff",
       boxShadow: "0 1px 3px rgb(0 0 0 / 0.25)",
       content: "",
       transition: "transform 150ms ease",
+    },
+
+    "&::after": {
+      position: "absolute",
+      top: "50%",
+      right: "0.5rem",
+      color: "var(--color-muted)",
+      content: "NÃO",
+      fontSize: "0.625rem",
+      fontWeight: 800,
+      lineHeight: 1,
+      transform: "translateY(-50%)",
     },
 
     "&:checked": {
@@ -179,7 +192,14 @@ export const StatusToggle = styled("label", {
     },
 
     "&:checked::before": {
-      transform: "translateX(1rem)",
+      transform: "translateX(2.6875rem)",
+    },
+
+    "&:checked::after": {
+      right: "auto",
+      left: "0.55rem",
+      color: "#ffffff",
+      content: "SIM",
     },
 
     "&:focus-visible": {
@@ -242,9 +262,37 @@ export const ColorFields = styled("div", {
   },
 });
 
+export const AppearanceLayout = styled("div", {
+  display: "grid",
+  gap: "1rem",
+
+  "@md": {
+    gridTemplateColumns: "minmax(0, 1fr) 1px minmax(0, 1fr)",
+    alignItems: "stretch",
+    gap: "1.5rem",
+  },
+});
+
+export const AppearanceControls = styled("div", {
+  display: "grid",
+  alignContent: "start",
+});
+
+export const AppearanceDivider = styled("div", {
+  width: "100%",
+  height: "1px",
+  background: "var(--color-border)",
+
+  "@md": {
+    width: "1px",
+    height: "100%",
+    minHeight: "24rem",
+  },
+});
+
 export const ThemePreview = styled("div", {
   width: "100%",
-  maxWidth: "25rem",
+  maxWidth: "none",
   overflow: "hidden",
   justifySelf: "center",
   border: "1px solid var(--color-border)",

@@ -35,6 +35,9 @@ import {
   AccordionIcon,
   AccordionSummary,
   AccordionSummaryText,
+  AppearanceControls,
+  AppearanceDivider,
+  AppearanceLayout,
   ColorFields,
   ErrorText,
   Form,
@@ -522,45 +525,50 @@ export function SettingsForm({
           </AccordionIcon>
         </AccordionSummary>
         <AccordionBody>
-          <ColorFields>
-            <Field label="Cor primária">
-              <Input type="color" {...form.register("primaryColor")} />
-            </Field>
-            <Field label="Cor secundária">
-              <Input type="color" {...form.register("secondaryColor")} />
-            </Field>
-          </ColorFields>
-          <ThemePreview
-            style={{
-              "--preview-primary": primaryColor,
-              "--preview-secondary": secondaryColor,
-            } as CSSProperties}
-          >
-            <ThemePreviewBanner
+          <AppearanceLayout>
+            <AppearanceControls>
+              <ColorFields>
+                <Field label="Cor primária">
+                  <Input type="color" {...form.register("primaryColor")} />
+                </Field>
+                <Field label="Cor secundária">
+                  <Input type="color" {...form.register("secondaryColor")} />
+                </Field>
+              </ColorFields>
+            </AppearanceControls>
+            <AppearanceDivider aria-hidden="true" />
+            <ThemePreview
               style={{
-                backgroundImage: bannerPreview || savedBannerUrl
-                  ? `url(${bannerPreview || savedBannerUrl})`
-                  : "linear-gradient(135deg, var(--preview-primary), var(--preview-secondary))",
-              }}
-            />
-            <ThemePreviewBody>
-              <strong>{restaurantName || "Seu restaurante"}</strong>
-              <span>{menuDescription || "Escolha seus itens, revise o pedido e envie."}</span>
-              <div>
-                <ThemePreviewCategory>Mais pedidos</ThemePreviewCategory>
-                <ThemePreviewCategory>Combos</ThemePreviewCategory>
-              </div>
-              <ThemePreviewProduct>
+                "--preview-primary": primaryColor,
+                "--preview-secondary": secondaryColor,
+              } as CSSProperties}
+            >
+              <ThemePreviewBanner
+                style={{
+                  backgroundImage: bannerPreview || savedBannerUrl
+                    ? `url(${bannerPreview || savedBannerUrl})`
+                    : "linear-gradient(135deg, var(--preview-primary), var(--preview-secondary))",
+                }}
+              />
+              <ThemePreviewBody>
+                <strong>{restaurantName || "Seu restaurante"}</strong>
+                <span>{menuDescription || "Escolha seus itens, revise o pedido e envie."}</span>
                 <div>
-                  <strong>Produto em destaque</strong>
-                  <span>Descrição do produto na home.</span>
-                  <b>R$ 24,90</b>
+                  <ThemePreviewCategory>Mais pedidos</ThemePreviewCategory>
+                  <ThemePreviewCategory>Combos</ThemePreviewCategory>
                 </div>
-                <ThemePreviewProductImage />
-              </ThemePreviewProduct>
-              <ThemePreviewCart>Ver pedido · R$ 24,90</ThemePreviewCart>
-            </ThemePreviewBody>
-          </ThemePreview>
+                <ThemePreviewProduct>
+                  <div>
+                    <strong>Produto em destaque</strong>
+                    <span>Descrição do produto na home.</span>
+                    <b>R$ 24,90</b>
+                  </div>
+                  <ThemePreviewProductImage />
+                </ThemePreviewProduct>
+                <ThemePreviewCart>Ver pedido · R$ 24,90</ThemePreviewCart>
+              </ThemePreviewBody>
+            </ThemePreview>
+          </AppearanceLayout>
         </AccordionBody>
       </Accordion>
 
