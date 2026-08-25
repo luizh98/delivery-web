@@ -397,6 +397,12 @@ export type AdminDashboardResponse = {
     hour: number;
     orders: number;
   }[];
+  heatmapSchedules: {
+    dayOfWeek: number;
+    dayLabel: string;
+    openTime: string;
+    closeTime: string;
+  }[];
   paymentMethods: {
     paymentMethod: PaymentMethod;
     orders: number;

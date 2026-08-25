@@ -322,7 +322,7 @@ export function AdminDashboardView() {
                 <SectionSubtitle>Dias da semana × hora cheia</SectionSubtitle>
               </div>
             </SectionHeader>
-            <OrderHeatmap cells={data.orderHeatmap} />
+            <OrderHeatmap cells={data.orderHeatmap} schedules={data.heatmapSchedules} />
           </FullSection>
 
           <FullSection>

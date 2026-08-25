@@ -152,16 +152,14 @@ export const ParticipationFill = styled("span", {
 });
 
 export const HeatmapViewport = styled("div", { overflowX: "auto" });
-export const HeatmapGrid = styled("div", {
-  minWidth: "54rem", display: "grid", gridTemplateColumns: "4rem repeat(24, minmax(1.8rem, 1fr))",
-  gap: "0.2rem", alignItems: "center",
-});
+export const HeatmapRows = styled("div", { minWidth: "38rem", display: "grid", gap: "0.35rem" });
+export const HeatmapRow = styled("div", { display: "grid", gap: "0.2rem", alignItems: "center" });
 export const HeatmapLabel = styled("span", {
   padding: "0.25rem", textAlign: "center", fontSize: "0.625rem", color: "var(--color-muted)",
 });
 export const HeatmapDay = styled(HeatmapLabel, { textAlign: "left", fontWeight: 700, color: "var(--color-text)" });
 export const HeatmapCell = styled("span", {
-  minHeight: "1.8rem", display: "grid", placeItems: "center", borderRadius: "0.25rem",
+  minHeight: "2.25rem", display: "grid", placeItems: "center", borderRadius: "0.25rem",
   fontSize: "0.625rem", fontWeight: 700,
   variants: { level: {
     none: { background: "var(--color-background)", color: "var(--color-muted)" },
