@@ -72,6 +72,7 @@ import {
   TotalsBox,
 } from "@/views/Home/styles";
 import { UpsellBlock } from "./UpsellBlock";
+import { getCheckoutValidationMessage } from "./checkoutValidation";
 import {
   AddressSelectAction,
   AddressSummaryCard,
@@ -449,6 +450,13 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     }
   }
 
+  function handleInvalidSubmit() {
+    const validationMessage = getCheckoutValidationMessage(form.getValues());
+    if (validationMessage) {
+      setCheckoutError(validationMessage);
+    }
+  }
+
   return (
     <PageShell>
       <CartPageContent>
@@ -581,7 +589,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
             </>
           ) : (
             <CheckoutForm
-              onSubmit={form.handleSubmit(submitOrder)}
+              onSubmit={form.handleSubmit(submitOrder, handleInvalidSubmit)}
               onChange={persistRegisteredField}
             >
               <Button type="button" variant="outline" onClick={() => setStep(1)}>
