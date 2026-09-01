@@ -1026,7 +1026,7 @@ function isOrderOverdue(
   enabled = false,
   minutes = 30,
 ) {
-  if (!enabled || !["RECEIVED", "PREPARING"].includes(order.status)) {
+  if (!enabled || !["RECEIVED", "CONFIRMED", "PREPARING"].includes(order.status)) {
     return false;
   }
 

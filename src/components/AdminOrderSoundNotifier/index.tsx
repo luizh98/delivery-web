@@ -238,7 +238,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
         );
 
         const overdueMinutes = config.overdueOrderAlertMinutes ?? 30;
-        const overdueStatuses = new Set(["RECEIVED", "PREPARING"]);
+        const overdueStatuses = new Set(["RECEIVED", "CONFIRMED", "PREPARING"]);
         const now = Date.now();
         const overdueOrders = config.overdueOrderAlertEnabled
           ? orders.filter((order) => {
