@@ -229,6 +229,17 @@ export type CurrentUserResponse = {
   roles: string[];
 };
 
+export type AdminRole = "ADMIN" | "STANDARD";
+
+export type AdminUserResponse = {
+  id: string;
+  email: string;
+  role: AdminRole;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type AdminCustomerSummary = {
   id: string;
   name: string;

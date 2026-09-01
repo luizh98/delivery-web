@@ -3,6 +3,7 @@ import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/constants/api";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
 import type {
   AdminCustomerPage,
+  AdminUserResponse,
   CurrentUserResponse,
   MenuResponse,
   OrderResponse,
@@ -85,6 +86,10 @@ export async function getAdminCustomers() {
     (await backendFetch<AdminCustomerPage>("admin/customers?page=0&size=20")) ??
     emptyAdminCustomerPage
   );
+}
+
+export async function getAdminUsers() {
+  return (await backendFetch<AdminUserResponse[]>("admin/users")) ?? [];
 }
 
 export async function getAdminCategories() {
