@@ -165,19 +165,15 @@ export const Card = styled("article", {
     overdue: {
       true: {
         position: "relative",
-        border: "2px solid #dc2626",
-        outlineColor: "#ef4444",
-        boxShadow: "0 0 0 2px #ef4444, 0 0 10px rgb(239 68 68 / 0.75)",
 
         "&::after": {
           position: "absolute",
           zIndex: 1,
-          top: "-3px",
-          right: "-3px",
-          bottom: "-3px",
-          left: "-3px",
-          border: "2px solid #ff3131",
-          borderRadius: "0.5rem",
+          top: "-4px",
+          right: "-4px",
+          bottom: "-4px",
+          left: "-4px",
+          borderRadius: "0.625rem",
           content: "",
           pointerEvents: "none",
           animation: "overdue-neon-pulse 1.8s ease-in-out infinite",
