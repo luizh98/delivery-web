@@ -1,11 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Save, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Pencil, Save, ShieldCheck, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
+import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
@@ -68,7 +69,9 @@ export function UserManager({
 }: UserManagerProps) {
   const [users, setUsers] = useState(initialUsers);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
   const form = useForm<UserForm>({
     resolver: zodResolver(userSchema),
@@ -135,6 +138,35 @@ export function UserManager({
       const message = "Não foi possível salvar o usuário.";
       setError(message);
       showToast(message, "error");
+    }
+  }
+
+  async function deleteUser(user: AdminUserResponse) {
+    const confirmed = await requestConfirmation({
+      message: `Deseja excluir o usuário ${user.email}?`,
+      confirmLabel: "Excluir",
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setDeletingUserId(user.id);
+    try {
+      await clientApi<void>(`admin/users/${user.id}`, { method: "DELETE" });
+      setUsers((currentUsers) =>
+        currentUsers.filter((currentUser) => currentUser.id !== user.id),
+      );
+      if (editingUserId === user.id) {
+        resetForm();
+      }
+      showToast("Usuário excluído com sucesso");
+    } catch {
+      const message = "Não foi possível excluir o usuário.";
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      setDeletingUserId(null);
     }
   }
 
@@ -242,6 +274,22 @@ export function UserManager({
                     >
                       <Pencil size={16} />
                       {editingUserId === user.id ? "Editando" : "Editar"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => void deleteUser(user)}
+                      disabled={
+                        user.id === currentAdminId || deletingUserId === user.id
+                      }
+                      title={
+                        user.id === currentAdminId
+                          ? "Sua própria conta não pode ser excluída"
+                          : undefined
+                      }
+                    >
+                      <Trash2 size={16} />
+                      {deletingUserId === user.id ? "Excluindo..." : "Excluir"}
                     </Button>
                   </CardActions>
                 </Card>
