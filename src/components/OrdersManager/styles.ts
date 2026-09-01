@@ -164,9 +164,10 @@ export const Card = styled("article", {
   variants: {
     overdue: {
       true: {
-        borderColor: "#fca5a5",
-        outlineColor: "#fca5a5",
-        animation: "overdue-card-pulse 1.2s ease-in-out infinite",
+        border: "2px solid #dc2626",
+        outlineColor: "#ef4444",
+        boxShadow: "0 0 0 3px rgb(239 68 68 / 0.28)",
+        animation: "overdue-card-pulse 900ms ease-in-out infinite",
       },
     },
   },
