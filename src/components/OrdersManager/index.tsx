@@ -684,13 +684,20 @@ export function OrdersManager({
       <List>
         {filteredOrders.map((order) => {
           const customerOrderNumber = customerOrderNumbers.get(order.id) ?? 1;
+          const overdueMinutes = getOverdueMinutes(
+            order,
+            now,
+            overdueOrderAlertEnabled,
+            overdueOrderAlertMinutes,
+          );
+          const isOverdue = overdueMinutes !== null;
 
           return (
             <Card
               key={order.id}
-              overdue={isOrderOverdue(order, now, overdueOrderAlertEnabled, overdueOrderAlertMinutes)}
-              data-overdue={isOrderOverdue(order, now, overdueOrderAlertEnabled, overdueOrderAlertMinutes)}
-              aria-label={isOrderOverdue(order, now, overdueOrderAlertEnabled, overdueOrderAlertMinutes)
+              overdue={isOverdue}
+              data-overdue={isOverdue}
+              aria-label={isOverdue
                 ? `Pedido ${order.id.slice(-6).toUpperCase()} em atraso`
                 : undefined}
             >
@@ -743,9 +750,9 @@ export function OrdersManager({
                   </DetailRow>
                 ) : null}
                 <CardFooter>
-                  <ReceivedTime>
+                  <ReceivedTime overdue={isOverdue}>
                     <Clock3 size={14} aria-hidden="true" />
-                    {formatReceivedAgo(order, now)}
+                    {formatReceivedAgo(order, now, overdueMinutes)}
                   </ReceivedTime>
                   <CardTotal>{money(order.totals.totalCents)}</CardTotal>
                 </CardFooter>
@@ -1020,21 +1027,27 @@ function getReceivedAt(order: OrderResponse) {
     ?? order.createdAt;
 }
 
-function isOrderOverdue(
+function getOverdueMinutes(
   order: OrderResponse,
   now: number,
   enabled = false,
   minutes = 30,
-) {
+) : number | null {
   if (!enabled || !["RECEIVED", "CONFIRMED", "PREPARING"].includes(order.status)) {
-    return false;
+    return null;
   }
 
   const enteredAt = [...order.statusHistory]
     .reverse()
     .find((history) => history.status === order.status)?.changedAt;
   const timestamp = enteredAt ? new Date(enteredAt).getTime() : Number.NaN;
-  return Number.isFinite(timestamp) && now - timestamp > minutes * 60_000;
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  const elapsedMinutes = Math.floor((now - timestamp) / 60_000);
+  const overdueMinutes = elapsedMinutes - minutes;
+  return overdueMinutes > 0 ? overdueMinutes : null;
 }
 
 function localDateKey(value: string) {
@@ -1097,7 +1110,11 @@ function getNextOrderStatus(order: OrderResponse): OrderStatus | null {
   return null;
 }
 
-function formatReceivedAgo(order: OrderResponse, now: number) {
+function formatReceivedAgo(order: OrderResponse, now: number, overdueMinutes: number | null = null) {
+  if (overdueMinutes !== null) {
+    return `⚠ Atrasado há ${overdueMinutes} min`;
+  }
+
   const receivedAt = getReceivedAt(order);
 
   if (!receivedAt) {

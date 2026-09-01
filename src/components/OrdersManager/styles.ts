@@ -252,6 +252,15 @@ export const ReceivedTime = styled("p", {
   fontSize: "0.8rem",
   fontWeight: 600,
   color: "var(--color-primary)",
+
+  variants: {
+    overdue: {
+      true: {
+        color: "#dc2626",
+        fontWeight: 700,
+      },
+    },
+  },
 });
 
 export const CardFooter = styled("div", {
