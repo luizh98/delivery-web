@@ -164,10 +164,24 @@ export const Card = styled("article", {
   variants: {
     overdue: {
       true: {
+        position: "relative",
         border: "2px solid #dc2626",
         outlineColor: "#ef4444",
-        boxShadow: "0 0 0 3px rgb(239 68 68 / 0.28)",
-        animation: "overdue-card-pulse 900ms ease-in-out infinite",
+        boxShadow: "0 0 0 2px #ef4444, 0 0 10px rgb(239 68 68 / 0.75)",
+
+        "&::after": {
+          position: "absolute",
+          zIndex: 1,
+          top: "-3px",
+          right: "-3px",
+          bottom: "-3px",
+          left: "-3px",
+          border: "2px solid #ff3131",
+          borderRadius: "0.5rem",
+          content: "",
+          pointerEvents: "none",
+          animation: "overdue-neon-pulse 1.8s ease-in-out infinite",
+        },
       },
     },
   },

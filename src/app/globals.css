@@ -55,22 +55,31 @@ button:disabled {
   cursor: not-allowed;
 }
 
-@keyframes overdue-card-pulse {
+@keyframes overdue-neon-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgb(239 68 68 / 0.45);
+    opacity: 0.65;
+    box-shadow: 0 0 4px #ff3131, 0 0 10px rgb(239 68 68 / 0.8);
   }
 
-  70% {
-    box-shadow: 0 0 0 7px rgb(239 68 68 / 0);
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 7px #ff3131, 0 0 18px #ef4444, 0 0 32px rgb(239 68 68 / 0.8);
   }
 
   100% {
-    box-shadow: 0 0 0 0 rgb(239 68 68 / 0);
+    opacity: 0.65;
+    box-shadow: 0 0 4px #ff3131, 0 0 10px rgb(239 68 68 / 0.8);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-overdue="true"] {
+    box-shadow: 0 0 0 2px #ef4444, 0 0 10px rgb(239 68 68 / 0.75);
+  }
+
+  [data-overdue="true"]::after {
     animation: none;
+    opacity: 1;
+    box-shadow: 0 0 7px #ff3131, 0 0 18px #ef4444;
   }
 }
