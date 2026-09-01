@@ -268,6 +268,8 @@ export function OrdersManager({
   title,
   compact,
   automaticOrderConfirmation,
+  overdueOrderAlertEnabled,
+  overdueOrderAlertMinutes = 30,
 }: OrdersManagerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
@@ -684,7 +686,14 @@ export function OrdersManager({
           const customerOrderNumber = customerOrderNumbers.get(order.id) ?? 1;
 
           return (
-            <Card key={order.id}>
+            <Card
+              key={order.id}
+              overdue={isOrderOverdue(order, now, overdueOrderAlertEnabled, overdueOrderAlertMinutes)}
+              data-overdue={isOrderOverdue(order, now, overdueOrderAlertEnabled, overdueOrderAlertMinutes)}
+              aria-label={isOrderOverdue(order, now, overdueOrderAlertEnabled, overdueOrderAlertMinutes)
+                ? `Pedido ${order.id.slice(-6).toUpperCase()} em atraso`
+                : undefined}
+            >
               <CardGrid>
                 <OrderInfo
                   role="button"
@@ -1009,6 +1018,23 @@ function normalizeSearch(value: string) {
 function getReceivedAt(order: OrderResponse) {
   return order.statusHistory.find((history) => history.status === "RECEIVED")?.changedAt
     ?? order.createdAt;
+}
+
+function isOrderOverdue(
+  order: OrderResponse,
+  now: number,
+  enabled = false,
+  minutes = 30,
+) {
+  if (!enabled || !["RECEIVED", "PREPARING"].includes(order.status)) {
+    return false;
+  }
+
+  const enteredAt = [...order.statusHistory]
+    .reverse()
+    .find((history) => history.status === order.status)?.changedAt;
+  const timestamp = enteredAt ? new Date(enteredAt).getTime() : Number.NaN;
+  return Number.isFinite(timestamp) && now - timestamp > minutes * 60_000;
 }
 
 function localDateKey(value: string) {

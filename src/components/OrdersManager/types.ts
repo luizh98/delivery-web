@@ -6,4 +6,6 @@ export type OrdersManagerProps = {
   title: string;
   compact?: boolean;
   automaticOrderConfirmation?: boolean;
+  overdueOrderAlertEnabled?: boolean;
+  overdueOrderAlertMinutes?: number;
 };

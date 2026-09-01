@@ -161,6 +161,16 @@ export const Card = styled("article", {
   padding: "1rem",
   transition: "outline-color 150ms ease",
 
+  variants: {
+    overdue: {
+      true: {
+        borderColor: "#fca5a5",
+        outlineColor: "#fca5a5",
+        animation: "overdue-card-pulse 1.2s ease-in-out infinite",
+      },
+    },
+  },
+
   "&:hover, &:focus-within": {
     outlineColor: "var(--color-primary)",
   },

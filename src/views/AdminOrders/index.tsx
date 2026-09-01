@@ -12,6 +12,8 @@ export async function AdminOrdersView() {
       initialOrders={orders}
       title="Pedidos"
       automaticOrderConfirmation={config?.automaticOrderConfirmation}
+      overdueOrderAlertEnabled={config?.overdueOrderAlertEnabled}
+      overdueOrderAlertMinutes={config?.overdueOrderAlertMinutes}
     />
   );
 }

@@ -54,3 +54,20 @@ button {
 button:disabled {
   cursor: not-allowed;
 }
+
+@keyframes overdue-card-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgb(248 113 113 / 0.35);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgb(248 113 113 / 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-overdue="true"] {
+    animation: none;
+  }
+}

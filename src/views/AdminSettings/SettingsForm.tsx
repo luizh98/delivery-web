@@ -71,6 +71,8 @@ const settingsSchema = z.object({
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   automaticOrderConfirmation: z.boolean(),
+  overdueOrderAlertEnabled: z.boolean(),
+  overdueOrderAlertMinutes: z.number().int().min(1, "Informe pelo menos 1 minuto."),
   deliveryEnabled: z.boolean(),
   pricingMode: z.enum(["PER_KM", "RANGE"]),
   maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
@@ -214,6 +216,8 @@ export function SettingsForm({
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
+      overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
+      overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
       pricingMode: initialConfig?.deliverySettings?.pricingMode ?? "PER_KM",
       maxDistanceKm: initialConfig?.deliverySettings?.maxDistanceKm ?? 0,
@@ -317,6 +321,8 @@ export function SettingsForm({
         menuDescription: values.menuDescription,
         minimumOrderCents: reaisToCents(values.minimumOrderReais),
         automaticOrderConfirmation: values.automaticOrderConfirmation,
+        overdueOrderAlertEnabled: values.overdueOrderAlertEnabled,
+        overdueOrderAlertMinutes: values.overdueOrderAlertMinutes,
         deliverySettings: {
           enabled: values.deliveryEnabled,
           pricingMode: values.pricingMode,
@@ -597,6 +603,21 @@ export function SettingsForm({
             />
             <span>Ativar alerta sonoro de novos pedidos neste navegador</span>
           </StatusToggle>
+          <StatusToggle>
+            <input type="checkbox" {...form.register("overdueOrderAlertEnabled")} />
+            <span>Alertar pedidos atrasados na cozinha</span>
+          </StatusToggle>
+          <Field
+            label="Atraso para alertar (minutos)"
+            error={form.formState.errors.overdueOrderAlertMinutes?.message}
+          >
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              {...form.register("overdueOrderAlertMinutes", { valueAsNumber: true })}
+            />
+          </Field>
         </AccordionBody>
       </Accordion>
 

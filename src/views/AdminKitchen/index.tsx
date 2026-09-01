@@ -17,6 +17,8 @@ export async function AdminKitchenView() {
       title="Cozinha"
       compact
       automaticOrderConfirmation={config?.automaticOrderConfirmation}
+      overdueOrderAlertEnabled={config?.overdueOrderAlertEnabled}
+      overdueOrderAlertMinutes={config?.overdueOrderAlertMinutes}
     />
   );
 }

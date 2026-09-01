@@ -19,6 +19,13 @@ type OrderSummary = {
   id: string;
   status: string;
   createdAt?: string;
+  updatedAt?: string;
+  statusHistory?: { status: string; changedAt: string }[];
+};
+
+type RestaurantAlertConfig = {
+  overdueOrderAlertEnabled?: boolean;
+  overdueOrderAlertMinutes?: number;
 };
 
 type AdminOrderSoundContextValue = {
@@ -42,10 +49,14 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const overdueAudioRef = useRef<HTMLAudioElement | null>(null);
   const soundEnabledRef = useRef(false);
   const knownOrderIdsRef = useRef<Set<string> | null>(null);
   const pendingSoundCountRef = useRef(0);
   const isPlayingSoundRef = useRef(false);
+  const overduePendingSoundCountRef = useRef(0);
+  const isPlayingOverdueSoundRef = useRef(false);
+  const overdueEpisodesRef = useRef(new Map<string, string>());
 
   const disableSound = useCallback(() => {
     soundEnabledRef.current = false;
@@ -91,6 +102,25 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
     playNextSound();
   }, [playNextSound]);
 
+  const playNextOverdueSound = useCallback(() => {
+    const audio = overdueAudioRef.current;
+    if (!soundEnabledRef.current || !audio || isPlayingOverdueSoundRef.current
+      || overduePendingSoundCountRef.current === 0) {
+      return;
+    }
+    overduePendingSoundCountRef.current -= 1;
+    isPlayingOverdueSoundRef.current = true;
+    void audio.play().catch(handlePlaybackFailure);
+  }, [handlePlaybackFailure]);
+
+  const queueOverdueAlert = useCallback(() => {
+    if (!soundEnabledRef.current) {
+      return;
+    }
+    overduePendingSoundCountRef.current += 2;
+    playNextOverdueSound();
+  }, [playNextOverdueSound]);
+
   const setSoundEnabled = useCallback(async (enabled: boolean) => {
     const audio = audioRef.current;
 
@@ -124,8 +154,11 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const audio = new Audio("/sounds/new-order.mp3");
+    const overdueAudio = new Audio("/sounds/overdue-order.mp3");
     audio.preload = "auto";
+    overdueAudio.preload = "auto";
     audioRef.current = audio;
+    overdueAudioRef.current = overdueAudio;
 
     const storedSoundEnabled = window.localStorage.getItem(soundPreferenceKey)
       === "true";
@@ -146,19 +179,39 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
       );
     }
 
+    function finishOverdueSound() {
+      isPlayingOverdueSoundRef.current = false;
+      playNextOverdueSound();
+    }
+
+    function failOverdueSound() {
+      isPlayingOverdueSoundRef.current = false;
+      handlePlaybackFailure(
+        new DOMException("Falha ao reproduzir áudio de atraso", "NotSupportedError"),
+      );
+    }
+
     audio.addEventListener("ended", finishSound);
     audio.addEventListener("error", failSound);
+    overdueAudio.addEventListener("ended", finishOverdueSound);
+    overdueAudio.addEventListener("error", failOverdueSound);
 
     return () => {
       window.clearTimeout(preferenceTimeout);
       audio.removeEventListener("ended", finishSound);
       audio.removeEventListener("error", failSound);
+      overdueAudio.removeEventListener("ended", finishOverdueSound);
+      overdueAudio.removeEventListener("error", failOverdueSound);
       audio.pause();
+      overdueAudio.pause();
       audioRef.current = null;
+      overdueAudioRef.current = null;
       pendingSoundCountRef.current = 0;
+      overduePendingSoundCountRef.current = 0;
       isPlayingSoundRef.current = false;
+      isPlayingOverdueSoundRef.current = false;
     };
-  }, [handlePlaybackFailure, playNextSound]);
+  }, [handlePlaybackFailure, playNextOverdueSound, playNextSound]);
 
   useEffect(() => {
     let active = true;
@@ -172,7 +225,10 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
       refreshing = true;
 
       try {
-        const orders = await clientApi<OrderSummary[]>("admin/orders");
+        const [orders, config] = await Promise.all([
+          clientApi<OrderSummary[]>("admin/orders"),
+          clientApi<RestaurantAlertConfig>("admin/restaurant/config"),
+        ]);
         if (!active) {
           return;
         }
@@ -180,6 +236,33 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
         const hasReceivedOrder = orders.some(
           (order) => order.status === "RECEIVED",
         );
+
+        const overdueMinutes = config.overdueOrderAlertMinutes ?? 30;
+        const overdueStatuses = new Set(["RECEIVED", "PREPARING"]);
+        const now = Date.now();
+        const overdueOrders = config.overdueOrderAlertEnabled
+          ? orders.filter((order) => {
+            if (!overdueStatuses.has(order.status)) return false;
+            const enteredAt = order.statusHistory?.findLast(
+              (history) => history.status === order.status,
+            )?.changedAt;
+            const timestamp = enteredAt ? Date.parse(enteredAt) : Number.NaN;
+            return Number.isFinite(timestamp)
+              && now - timestamp > overdueMinutes * 60_000;
+          })
+          : [];
+        const currentOverdue = new Map(overdueOrders.map((order) => [order.id, order.status]));
+        for (const [orderId, status] of overdueEpisodesRef.current) {
+          if (currentOverdue.get(orderId) !== status) {
+            overdueEpisodesRef.current.delete(orderId);
+          }
+        }
+        overdueOrders.forEach((order) => {
+          if (overdueEpisodesRef.current.get(order.id) !== order.status) {
+            overdueEpisodesRef.current.set(order.id, order.status);
+            queueOverdueAlert();
+          }
+        });
 
         if (!knownOrderIdsRef.current) {
           knownOrderIdsRef.current = new Set(orders.map((order) => order.id));
@@ -219,7 +302,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
       active = false;
       window.clearInterval(interval);
     };
-  }, [queueAlertSounds]);
+  }, [queueAlertSounds, queueOverdueAlert]);
 
   const contextValue = useMemo(() => ({
     soundEnabled,

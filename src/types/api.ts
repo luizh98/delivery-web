@@ -58,6 +58,8 @@ export type RestaurantConfigResponse = {
   holidayHours?: HolidayHour[];
   deliverySettings?: DeliverySettings;
   automaticOrderConfirmation?: boolean;
+  overdueOrderAlertEnabled?: boolean;
+  overdueOrderAlertMinutes?: number;
   open?: boolean;
   nextOpeningAt?: string;
 };
