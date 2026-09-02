@@ -334,6 +334,14 @@ export function OrdersManager({
   const detailsOrder = detailsOrderId
     ? orders.find((order) => order.id === detailsOrderId) ?? null
     : null;
+  const detailsOverdueMinutes = detailsOrder
+    ? getOverdueMinutes(
+      detailsOrder,
+      now,
+      overdueOrderAlertEnabled,
+      overdueOrderAlertMinutes,
+    )
+    : null;
   const detailsNextStatus = detailsOrder ? getNextOrderStatus(detailsOrder) : null;
   const detailsAddress = detailsOrder
     ? formatAddress(detailsOrder.deliveryAddress)
@@ -793,6 +801,12 @@ export function OrdersManager({
                   Pedido #{detailsOrder.id.slice(-6).toUpperCase()}
                 </Title>
                 <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
+                {detailsOverdueMinutes !== null ? (
+                  <ReceivedTime overdue>
+                    <Clock3 size={14} aria-hidden="true" />
+                    {formatReceivedAgo(detailsOrder, now, detailsOverdueMinutes)}
+                  </ReceivedTime>
+                ) : null}
               </div>
               <Button
                 type="button"
