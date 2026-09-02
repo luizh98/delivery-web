@@ -1037,10 +1037,8 @@ function getOverdueMinutes(
     return null;
   }
 
-  const enteredAt = [...order.statusHistory]
-    .reverse()
-    .find((history) => history.status === order.status)?.changedAt;
-  const timestamp = enteredAt ? new Date(enteredAt).getTime() : Number.NaN;
+  const receivedAt = getReceivedAt(order);
+  const timestamp = receivedAt ? new Date(receivedAt).getTime() : Number.NaN;
   if (!Number.isFinite(timestamp)) {
     return null;
   }
@@ -1112,7 +1110,7 @@ function getNextOrderStatus(order: OrderResponse): OrderStatus | null {
 
 function formatReceivedAgo(order: OrderResponse, now: number, overdueMinutes: number | null = null) {
   if (overdueMinutes !== null) {
-    return `⚠ Atrasado há ${overdueMinutes} min`;
+    return `⚠ Atrasado há ${formatOverdueDuration(overdueMinutes)}`;
   }
 
   const receivedAt = getReceivedAt(order);
@@ -1145,6 +1143,16 @@ function formatReceivedAgo(order: OrderResponse, now: number, overdueMinutes: nu
 
   const days = Math.floor(hours / 24);
   return `Recebido há ${days} ${days === 1 ? "dia" : "dias"}`;
+}
+
+function formatOverdueDuration(minutes: number) {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h${String(remainingMinutes).padStart(2, "0")} min`;
 }
 
 function buildCustomerOrderNumbers(orders: OrderResponse[]) {
