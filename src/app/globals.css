@@ -9,6 +9,10 @@
   --muted: #64707d;
   --tenant-primary: #0f766e;
   --tenant-secondary: #f59e0b;
+  --overdue-glow-warm: #fbbf24;
+  --overdue-glow-hot: #f97316;
+  --overdue-glow-critical: #ef4444;
+  --overdue-glow-pulse: #f43f5e;
 }
 
 @theme inline {
@@ -55,33 +59,26 @@ button:disabled {
   cursor: not-allowed;
 }
 
-@keyframes overdue-neon-pulse {
+@keyframes overdue-aura-flow {
   0% {
-    opacity: 0.3;
-    box-shadow: 0 0 5px 1px rgb(239 68 68 / 0.25);
-  }
-
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 12px 3px rgb(239 68 68 / 0.55), 0 0 24px 6px rgb(239 68 68 / 0.25);
+    background-position: 0% 50%;
   }
 
   100% {
-    opacity: 0.3;
-    box-shadow: 0 0 5px 1px rgb(239 68 68 / 0.25);
+    background-position: 220% 50%;
   }
 }
 
-@keyframes overdue-card-gradient {
+@keyframes overdue-aura-breathe {
   0%,
   100% {
-    background-position: 0% 50%;
-    box-shadow: 0 0 0 rgb(239 68 68 / 0.1);
+    opacity: 0.5;
+    transform: scale(0.98);
   }
 
   50% {
-    background-position: 100% 50%;
-    box-shadow: 0 0 18px rgb(239 68 68 / 0.25);
+    opacity: 0.95;
+    transform: scale(1.025);
   }
 }
 
@@ -102,15 +99,9 @@ button:disabled {
     animation: none;
   }
 
-  [data-overdue="true"] {
-    animation: none;
-    background-position: 50% 50%;
-    box-shadow: none;
-  }
-
+  [data-overdue="true"]::before,
   [data-overdue="true"]::after {
     animation: none;
-    opacity: 1;
-    box-shadow: 0 0 10px 2px rgb(239 68 68 / 0.45);
+    background-position: 50% 50%;
   }
 }
