@@ -7,6 +7,7 @@ import type {
   CurrentUserResponse,
   MenuResponse,
   OrderResponse,
+  OrderStatus,
   Product,
   ProductCategory,
   ProductOptionGroupTemplate,
@@ -77,8 +78,10 @@ export async function getAdminUser() {
   return backendFetch<CurrentUserResponse>("auth/me");
 }
 
-export async function getAdminOrders() {
-  return (await backendFetch<OrderResponse[]>("admin/orders")) ?? [];
+export async function getAdminOrders(statuses: OrderStatus[]) {
+  const query = new URLSearchParams();
+  statuses.forEach((status) => query.append("status", status));
+  return (await backendFetch<OrderResponse[]>(`admin/orders?${query}`)) ?? [];
 }
 
 export async function getAdminCustomers() {

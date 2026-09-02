@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/Button";
+import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
@@ -264,7 +265,7 @@ const datePresetLabels: Record<DatePreset, string> = {
 
 export function OrdersManager({
   initialOrders,
-  allOrders,
+  visibleStatuses,
   title,
   compact,
   automaticOrderConfirmation,
@@ -273,9 +274,8 @@ export function OrdersManager({
 }: OrdersManagerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
-  const knownOrderIdsRef = useRef(
-    new Set((allOrders ?? initialOrders).map((order) => order.id)),
-  );
+  const knownOrderIdsRef = useRef(new Set(initialOrders.map((order) => order.id)));
+  const subscribeToOrderEvents = useAdminOrderEvents();
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
@@ -328,8 +328,8 @@ export function OrdersManager({
     [matchingOrders, statusFilter],
   );
   const customerOrderNumbers = useMemo(
-    () => buildCustomerOrderNumbers(allOrders ?? orders),
-    [allOrders, orders],
+    () => buildCustomerOrderNumbers(orders),
+    [orders],
   );
   const detailsOrder = detailsOrderId
     ? orders.find((order) => order.id === detailsOrderId) ?? null
@@ -348,52 +348,20 @@ export function OrdersManager({
     return () => window.clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    let refreshing = false;
+  useEffect(() => subscribeToOrderEvents((order) => {
+    const isNewOrder = !knownOrderIdsRef.current.has(order.id);
+    knownOrderIdsRef.current.add(order.id);
+    const isVisible = !visibleStatuses || visibleStatuses.includes(order.status);
+    setOrders((items) => isVisible
+      ? [order, ...items.filter((item) => item.id !== order.id)]
+      : items.filter((item) => item.id !== order.id));
 
-    async function refreshOrders() {
-      if (refreshing) {
-        return;
-      }
-      refreshing = true;
-
-      try {
-        const refreshedOrders = await clientApi<OrderResponse[]>("admin/orders");
-        if (!active) {
-          return;
-        }
-
-        const newOrders = refreshedOrders.filter(
-          (order) => !knownOrderIdsRef.current.has(order.id),
-        );
-        refreshedOrders.forEach((order) => knownOrderIdsRef.current.add(order.id));
-        setOrders(compact
-          ? refreshedOrders.filter((order) => kitchenStatuses.includes(order.status))
-          : refreshedOrders);
-
-        if (automaticOrderConfirmation) {
-          newOrders
-            .filter((order) => order.status === "CONFIRMED")
-            .forEach((order) => {
-              void printOrderDirectly(order, true).catch(() => {
-                showToast("Não foi possível imprimir pedido automaticamente.", "error");
-              });
-            });
-        }
-      } catch {
-        // Próximo ciclo tenta novamente sem interromper operação da tela.
-      } finally {
-        refreshing = false;
-      }
+    if (automaticOrderConfirmation && isNewOrder && order.status === "CONFIRMED") {
+      void printOrderDirectly(order, true).catch(() => {
+        showToast("Não foi possível imprimir pedido automaticamente.", "error");
+      });
     }
-
-    const interval = window.setInterval(refreshOrders, 5_000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [automaticOrderConfirmation, compact, showToast]);
+  }), [automaticOrderConfirmation, showToast, subscribeToOrderEvents, visibleStatuses]);
 
   useEffect(() => {
     if (!detailsOrderId && !isDatePopoverOpen) {

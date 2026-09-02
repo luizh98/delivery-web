@@ -53,6 +53,10 @@ async function forward(request: NextRequest, context: RouteParams) {
   if (responseType) {
     responseHeaders.set("Content-Type", responseType);
   }
+  if (responseType?.startsWith("text/event-stream")) {
+    responseHeaders.set("Cache-Control", "no-cache, no-transform");
+    responseHeaders.set("X-Accel-Buffering", "no");
+  }
 
   return new NextResponse(response.body, {
     status: response.status,

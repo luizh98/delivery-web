@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { AdminOrderEventsProvider } from "@/components/AdminOrderEvents";
 import { AdminOrderSoundProvider } from "@/components/AdminOrderSoundNotifier";
 import { ConfirmationProvider } from "@/components/ConfirmationProvider";
 import { PageShell } from "@/components/PageShell";
@@ -47,8 +48,9 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   return (
     <ToastProvider>
-      <AdminOrderSoundProvider>
-        <ConfirmationProvider>
+      <AdminOrderEventsProvider>
+        <AdminOrderSoundProvider>
+          <ConfirmationProvider>
           <Root>
             <Header>
               <HeaderInner>
@@ -85,8 +87,9 @@ export function AdminLayout({
             </Header>
             <PageShell>{children}</PageShell>
           </Root>
-        </ConfirmationProvider>
-      </AdminOrderSoundProvider>
+          </ConfirmationProvider>
+        </AdminOrderSoundProvider>
+      </AdminOrderEventsProvider>
     </ToastProvider>
   );
 }

@@ -10,23 +10,10 @@ import {
   useRef,
   useState,
 } from "react";
+import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
 import { useToast } from "@/components/ToastProvider";
-import { clientApi } from "@/services/api/client";
 
 const soundPreferenceKey = "delivery.admin.orderSoundEnabled";
-
-type OrderSummary = {
-  id: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-  statusHistory?: { status: string; changedAt: string }[];
-};
-
-type RestaurantAlertConfig = {
-  overdueOrderAlertEnabled?: boolean;
-  overdueOrderAlertMinutes?: number;
-};
 
 type AdminOrderSoundContextValue = {
   soundEnabled: boolean;
@@ -36,11 +23,6 @@ type AdminOrderSoundContextValue = {
 const AdminOrderSoundContext = createContext<AdminOrderSoundContextValue | null>(
   null,
 );
-
-function getReceivedAt(order: OrderSummary) {
-  return order.statusHistory?.find((history) => history.status === "RECEIVED")?.changedAt
-    ?? order.createdAt;
-}
 
 function getAudioErrorName(error: unknown) {
   if (error instanceof DOMException) {
@@ -56,12 +38,13 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const overdueAudioRef = useRef<HTMLAudioElement | null>(null);
   const soundEnabledRef = useRef(false);
-  const knownOrderIdsRef = useRef<Set<string> | null>(null);
+  const knownOrderIdsRef = useRef(new Set<string>());
   const pendingSoundCountRef = useRef(0);
   const isPlayingSoundRef = useRef(false);
   const overduePendingSoundCountRef = useRef(0);
   const isPlayingOverdueSoundRef = useRef(false);
   const alertedOverdueOrderIdsRef = useRef(new Set<string>());
+  const subscribeToOrderEvents = useAdminOrderEvents();
 
   const disableSound = useCallback(() => {
     soundEnabledRef.current = false;
@@ -218,88 +201,13 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
     };
   }, [handlePlaybackFailure, playNextOverdueSound, playNextSound]);
 
-  useEffect(() => {
-    let active = true;
-    let refreshing = false;
-    const monitoringStartedAt = Date.now();
-
-    async function refreshOrders() {
-      if (refreshing) {
-        return;
-      }
-      refreshing = true;
-
-      try {
-        const [orders, config] = await Promise.all([
-          clientApi<OrderSummary[]>("admin/orders"),
-          clientApi<RestaurantAlertConfig>("admin/restaurant/config"),
-        ]);
-        if (!active) {
-          return;
-        }
-
-        const hasReceivedOrder = orders.some(
-          (order) => order.status === "RECEIVED",
-        );
-
-        const overdueMinutes = config.overdueOrderAlertMinutes ?? 30;
-        const overdueStatuses = new Set(["RECEIVED", "CONFIRMED", "PREPARING"]);
-        const now = Date.now();
-        const overdueOrders = config.overdueOrderAlertEnabled
-          ? orders.filter((order) => {
-            if (!overdueStatuses.has(order.status)) return false;
-            const receivedAt = getReceivedAt(order);
-            const timestamp = receivedAt ? Date.parse(receivedAt) : Number.NaN;
-            return Number.isFinite(timestamp)
-              && now - timestamp > overdueMinutes * 60_000;
-          })
-          : [];
-        overdueOrders.forEach((order) => {
-          if (!alertedOverdueOrderIdsRef.current.has(order.id)) {
-            alertedOverdueOrderIdsRef.current.add(order.id);
-            queueOverdueAlert();
-          }
-        });
-
-        if (!knownOrderIdsRef.current) {
-          knownOrderIdsRef.current = new Set(orders.map((order) => order.id));
-          const newOrdersSinceMonitoringStarted = orders.filter((order) => {
-            const createdAt = order.createdAt ? Date.parse(order.createdAt) : Number.NaN;
-            return Number.isFinite(createdAt) && createdAt >= monitoringStartedAt;
-          });
-          if (newOrdersSinceMonitoringStarted.length > 0) {
-            queueAlertSounds(newOrdersSinceMonitoringStarted.length);
-          } else if (hasReceivedOrder) {
-            queueAlertSounds(1);
-          }
-          return;
-        }
-
-        const newOrders = orders.filter(
-          (order) => !knownOrderIdsRef.current?.has(order.id),
-        );
-        orders.forEach((order) => knownOrderIdsRef.current?.add(order.id));
-
-        if (newOrders.length > 0) {
-          queueAlertSounds(newOrders.length);
-        } else if (hasReceivedOrder) {
-          queueAlertSounds(1);
-        }
-      } catch {
-        // Próximo ciclo tenta novamente sem interromper operação do admin.
-      } finally {
-        refreshing = false;
-      }
+  useEffect(() => subscribeToOrderEvents((order) => {
+    if (order.status !== "RECEIVED" || knownOrderIdsRef.current.has(order.id)) {
+      return;
     }
-
-    void refreshOrders();
-    const interval = window.setInterval(refreshOrders, 5_000);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [queueAlertSounds, queueOverdueAlert]);
+    knownOrderIdsRef.current.add(order.id);
+    queueAlertSounds(1);
+  }), [queueAlertSounds, subscribeToOrderEvents]);
 
   const contextValue = useMemo(() => ({
     soundEnabled,
