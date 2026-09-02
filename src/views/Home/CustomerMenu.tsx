@@ -240,15 +240,19 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
 
       let nextCategoryId = visibleCategories[0].id;
 
-      for (let index = visibleCategories.length - 1; index >= 0; index -= 1) {
-        const category = visibleCategories[index];
-        const sectionTop =
-          sectionRefs.current[category.id]?.getBoundingClientRect().top;
+      for (let index = 0; index < visibleCategories.length - 1; index += 1) {
+        const categoryProducts =
+          productsByCategory.get(visibleCategories[index].id) ?? [];
+        const lastProduct = categoryProducts[categoryProducts.length - 1];
+        const lastProductTop = lastProduct
+          ? productRefs.current[lastProduct.id]?.getBoundingClientRect().top
+          : undefined;
 
-        if (sectionTop !== undefined && sectionTop <= categoryAnchor) {
-          nextCategoryId = category.id;
+        if (lastProductTop === undefined || lastProductTop > categoryAnchor) {
           break;
         }
+
+        nextCategoryId = visibleCategories[index + 1].id;
       }
 
       setActiveCategoryId((currentCategoryId) =>
@@ -288,7 +292,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       window.removeEventListener("wheel", cancelPendingCategory);
       window.removeEventListener("touchstart", cancelPendingCategory);
     };
-  }, [visibleCategories]);
+  }, [productsByCategory, visibleCategories]);
 
   useEffect(() => {
     const categoryBar = categoryBarRef.current;
