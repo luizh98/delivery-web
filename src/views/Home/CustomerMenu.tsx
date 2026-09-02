@@ -254,10 +254,26 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   }, [visibleCategories]);
 
   useEffect(() => {
-    categoryButtonRefs.current[activeCategoryId]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
+    const categoryBar = categoryBarRef.current;
+    const categoryButton = categoryButtonRefs.current[activeCategoryId];
+
+    if (!categoryBar || !categoryButton) {
+      return;
+    }
+
+    const categoryBarBounds = categoryBar.getBoundingClientRect();
+    const categoryButtonBounds = categoryButton.getBoundingClientRect();
+    const targetScrollLeft =
+      categoryBar.scrollLeft +
+      categoryButtonBounds.left -
+      categoryBarBounds.left -
+      (categoryBar.clientWidth - categoryButtonBounds.width) / 2;
+
+    categoryBar.scrollTo({
+      left: targetScrollLeft,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
     });
   }, [activeCategoryId]);
 
