@@ -4,7 +4,11 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 
-export function LogoutButton() {
+type LogoutButtonProps = {
+  iconOnly?: boolean;
+};
+
+export function LogoutButton({ iconOnly = false }: LogoutButtonProps) {
   const router = useRouter();
 
   async function logout() {
@@ -14,9 +18,15 @@ export function LogoutButton() {
   }
 
   return (
-    <Button type="button" variant="outline" onClick={logout}>
-      <LogOut size={16} />
-      Sair
+    <Button
+      type="button"
+      variant="outline"
+      aria-label={iconOnly ? "Sair" : undefined}
+      title={iconOnly ? "Sair" : undefined}
+      onClick={logout}
+    >
+      <LogOut aria-hidden="true" size={iconOnly ? 18 : 16} />
+      {iconOnly ? null : "Sair"}
     </Button>
   );
 }

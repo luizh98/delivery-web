@@ -7,7 +7,7 @@ export const Root = styled("div", {
 
   "@lg": {
     display: "grid",
-    gridTemplateColumns: "17.5rem minmax(0, 1fr)",
+    gridTemplateColumns: "5rem minmax(0, 1fr)",
   },
 });
 
@@ -30,7 +30,9 @@ export const Sidebar = styled("aside", {
 });
 
 export const SidebarHeader = styled("div", {
-  padding: "1.25rem 1rem 1rem",
+  display: "flex",
+  justifyContent: "center",
+  padding: "1rem 0",
 });
 
 export const MobileHeader = styled("header", {
@@ -71,6 +73,12 @@ export const Nav = styled("nav", {
   gap: "0.25rem",
   overflowY: "auto",
   padding: "0.5rem 0.75rem 1rem",
+
+  "@lg": {
+    overflow: "visible",
+    paddingLeft: "0.625rem",
+    paddingRight: "0.625rem",
+  },
 });
 
 export const Brand = styled("a", {
@@ -82,8 +90,28 @@ export const Brand = styled("a", {
   letterSpacing: "-0.025em",
 });
 
+export const CompactBrand = styled(Brand, {
+  width: "2.75rem",
+  height: "2.75rem",
+  justifyContent: "center",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.625rem",
+  background: "var(--color-surface)",
+  transition: "background-color 160ms ease, border-color 160ms ease",
+
+  "&:hover": {
+    background: "var(--color-surface-muted)",
+  },
+
+  "&:focus-visible": {
+    outline: "3px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
+});
+
 export const NavLink = styled("a", {
   display: "inline-flex",
+  width: "100%",
   minHeight: "2.75rem",
   alignItems: "center",
   gap: "0.5rem",
@@ -109,6 +137,44 @@ export const NavLink = styled("a", {
     color: "var(--color-primary)",
     fontWeight: 700,
   },
+
+  "@lg": {
+    position: "relative",
+    justifyContent: "center",
+    gap: 0,
+    padding: 0,
+
+    "& > span": {
+      display: "none",
+    },
+
+    "&::after": {
+      position: "absolute",
+      zIndex: 50,
+      top: "50%",
+      left: "calc(100% + 0.625rem)",
+      transform: "translate(-0.25rem, -50%)",
+      opacity: 0,
+      pointerEvents: "none",
+      border: "1px solid var(--color-border)",
+      borderRadius: "0.5rem",
+      background: "var(--color-surface)",
+      boxShadow: "0 8px 20px rgb(15 23 42 / 0.16)",
+      padding: "0.5rem 0.625rem",
+      color: "var(--color-foreground)",
+      content: "attr(data-label)",
+      fontSize: "0.8125rem",
+      fontWeight: 600,
+      lineHeight: 1.2,
+      whiteSpace: "nowrap",
+      transition: "transform 160ms ease, opacity 160ms ease",
+    },
+
+    "&:hover::after, &:focus-visible::after": {
+      transform: "translate(0, -50%)",
+      opacity: 1,
+    },
+  },
 });
 
 export const SidebarFooter = styled("div", {
@@ -117,6 +183,12 @@ export const SidebarFooter = styled("div", {
   marginTop: "auto",
   borderTop: "1px solid var(--color-border)",
   padding: "1rem",
+});
+
+export const CompactSidebarFooter = styled(SidebarFooter, {
+  display: "flex",
+  justifyContent: "center",
+  padding: "1rem 0.625rem",
 });
 
 export const MenuButton = styled("button", {

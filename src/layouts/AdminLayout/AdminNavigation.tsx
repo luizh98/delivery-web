@@ -10,6 +10,7 @@ import {
   Settings,
   Sparkles,
   Tags,
+  UtensilsCrossed,
   UserCog,
   Users,
   X,
@@ -23,6 +24,8 @@ import { LogoutButton } from "./LogoutButton";
 import {
   Brand,
   CloseButton,
+  CompactBrand,
+  CompactSidebarFooter,
   DrawerHeader,
   Email,
   MenuButton,
@@ -77,7 +80,11 @@ function NavigationItems({ isAdmin, onNavigate }: NavigationItemsProps) {
               key={item.href}
               as={Link}
               href={item.href}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
               data-active={isActive}
+              data-label={item.label}
+              title={item.label}
               onClick={onNavigate}
             >
               <Icon aria-hidden="true" size={18} strokeWidth={1.9} />
@@ -165,17 +172,16 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
     <>
       <Sidebar>
         <SidebarHeader>
-          <Brand as={Link} href="/admin">
-            FlyFoods
-          </Brand>
+          <CompactBrand as={Link} href="/admin" aria-label="FlyFoods" title="FlyFoods">
+            <UtensilsCrossed aria-hidden="true" size={20} />
+          </CompactBrand>
         </SidebarHeader>
         <Nav aria-label="Navegação principal">
           <NavigationItems isAdmin={isAdmin} />
         </Nav>
-        <SidebarFooter>
-          <AccountSummary admin={admin} />
-          <LogoutButton />
-        </SidebarFooter>
+        <CompactSidebarFooter>
+          <LogoutButton iconOnly />
+        </CompactSidebarFooter>
       </Sidebar>
 
       <MobileHeader>
