@@ -7,8 +7,8 @@
 
 | Requirement | Result | Evidence |
 | --- | --- | --- |
-| OVERDUE-AURA-01 | PASS | Variante `overdue` não altera mais `background` do card e renderiza camadas fora de seus limites. |
-| OVERDUE-AURA-02 | PASS | Pseudo-elementos usam gradiente semântico de quatro cores, com fluxo e pulsação por `transform`/`opacity`. |
+| OVERDUE-AURA-01 | PASS | Variante `overdue` não altera `background` do card; máscara remove o centro das camadas neon. |
+| OVERDUE-AURA-02 | PASS | Aura externa usa vermelho dominante, com halo pulsante e trilha de gradiente em fluxo. |
 | OVERDUE-AURA-03 | PASS | `prefers-reduced-motion` interrompe animações e preserva a posição visual da aura. |
 
 ## Automated Checks
@@ -25,5 +25,5 @@ componente compartilhado por Pedidos e Cozinha.
 
 ## Code Quality
 
-- Mudança restrita a tokens, animações e variante visual de `OrdersManager`.
+- Mudança restrita a tokens e variante visual de `OrdersManager`.
 - Não altera cálculo de atraso, som, polling, conteúdo ou ações dos pedidos.

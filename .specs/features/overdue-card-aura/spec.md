@@ -9,7 +9,7 @@ visual desejada nos fluxos de Pedidos e Cozinha.
 ## Goals
 
 - [x] Destacar pedido atrasado somente pela área externa do card.
-- [x] Usar aura neon animada com transição âmbar, coral, vermelho e rosa.
+- [x] Manter vermelho dominante na aura neon animada, com reflexos coral e rosa.
 - [x] Manter texto, ações, regra de atraso e alerta sonoro atuais.
 
 ## Out of Scope
@@ -29,8 +29,8 @@ visual moderno para priorizá-los sem perder legibilidade do card.
 
 1. WHEN pedido estiver atrasado THEN sistema SHALL manter superfície interna normal
    e exibir aura externa animada.
-2. WHEN aura for exibida THEN sistema SHALL usar gradiente contínuo entre âmbar,
-   coral, vermelho e rosa, sem borda estática.
+2. WHEN aura for exibida THEN sistema SHALL usar gradiente vermelho dominante,
+   com reflexos coral e rosa, sem borda estática.
 3. WHEN card aparecer em Pedidos ou Cozinha THEN sistema SHALL apresentar mesmo
    efeito, pois ambos reutilizam `OrdersManager`.
 4. WHEN preferência de movimento reduzido estiver ativa THEN sistema SHALL manter
@@ -46,7 +46,7 @@ visual moderno para priorizá-los sem perder legibilidade do card.
 | Requirement ID | Requirement | Status |
 | --- | --- | --- |
 | OVERDUE-AURA-01 | Superfície interna permanece neutra | Verified |
-| OVERDUE-AURA-02 | Aura externa possui gradiente em movimento | Verified |
+| OVERDUE-AURA-02 | Aura externa vermelha possui gradiente em movimento | Verified |
 | OVERDUE-AURA-03 | Fallback para movimento reduzido | Verified |
 
 ## Success Criteria

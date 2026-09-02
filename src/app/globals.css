@@ -9,10 +9,10 @@
   --muted: #64707d;
   --tenant-primary: #0f766e;
   --tenant-secondary: #f59e0b;
-  --overdue-glow-warm: #fbbf24;
-  --overdue-glow-hot: #f97316;
+  --overdue-glow-warm: #fb7185;
+  --overdue-glow-hot: #ff4d4f;
   --overdue-glow-critical: #ef4444;
-  --overdue-glow-pulse: #f43f5e;
+  --overdue-glow-pulse: #ff2d55;
 }
 
 @theme inline {
