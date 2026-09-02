@@ -30,7 +30,7 @@ import {
   DrawerHeader,
   Email,
   MenuButton,
-  NavigationDrawer,
+  MobileDrawer,
   MobileHeader,
   Nav,
   NavLink,
@@ -60,10 +60,15 @@ type AdminNavigationProps = {
 
 type NavigationItemsProps = {
   isAdmin: boolean;
+  isDesktopSidebarExpanded?: boolean;
   onNavigate?: () => void;
 };
 
-function NavigationItems({ isAdmin, onNavigate }: NavigationItemsProps) {
+function NavigationItems({
+  isAdmin,
+  isDesktopSidebarExpanded,
+  onNavigate,
+}: NavigationItemsProps) {
   const pathname = usePathname();
 
   return (
@@ -85,7 +90,8 @@ function NavigationItems({ isAdmin, onNavigate }: NavigationItemsProps) {
               aria-current={isActive ? "page" : undefined}
               data-active={isActive}
               data-label={item.label}
-              title={item.label}
+              data-sidebar-expanded={isDesktopSidebarExpanded}
+              title={isDesktopSidebarExpanded ? undefined : item.label}
               onClick={onNavigate}
             >
               <Icon aria-hidden="true" size={18} strokeWidth={1.9} />
@@ -107,13 +113,14 @@ function AccountSummary({ admin }: AdminNavigationProps) {
 }
 
 export function AdminNavigation({ admin }: AdminNavigationProps) {
+  const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const isAdmin = admin.roles.includes("ADMIN");
 
-  function openMenu(event: ReactMouseEvent<HTMLButtonElement>) {
+  function openMobileMenu(event: ReactMouseEvent<HTMLButtonElement>) {
     menuButtonRef.current = event.currentTarget;
     setIsMenuOpen(true);
   }
@@ -176,24 +183,43 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
 
   return (
     <>
-      <Sidebar>
-        <SidebarHeader>
+      <Sidebar data-expanded={isDesktopSidebarExpanded}>
+        <SidebarHeader data-expanded={isDesktopSidebarExpanded}>
           <MenuButton
             type="button"
-            aria-label="Abrir menu de administração"
-            aria-controls="admin-navigation"
-            aria-expanded={isMenuOpen}
-            aria-haspopup="dialog"
-            onClick={openMenu}
+            aria-label={isDesktopSidebarExpanded ? "Recolher menu" : "Expandir menu"}
+            aria-controls="admin-desktop-navigation"
+            aria-expanded={isDesktopSidebarExpanded}
+            data-expanded={isDesktopSidebarExpanded}
+            onClick={() => setIsDesktopSidebarExpanded((isExpanded) => !isExpanded)}
           >
             <Menu aria-hidden="true" size={22} />
+            <span>{isDesktopSidebarExpanded ? "Recolher menu" : "Expandir menu"}</span>
           </MenuButton>
-          <CompactBrand as={Link} href="/admin" aria-label="FlyFoods" title="FlyFoods">
+          <CompactBrand
+            as={Link}
+            href="/admin"
+            aria-label="FlyFoods"
+            data-expanded={isDesktopSidebarExpanded}
+            title={isDesktopSidebarExpanded ? undefined : "FlyFoods"}
+          >
             <UtensilsCrossed aria-hidden="true" size={20} />
+            <span>FlyFoods</span>
           </CompactBrand>
         </SidebarHeader>
-        <CompactSidebarFooter>
-          <LogoutButton iconOnly />
+        <Nav
+          id="admin-desktop-navigation"
+          aria-label="Navegação principal"
+          data-expanded={isDesktopSidebarExpanded}
+        >
+          <NavigationItems
+            isAdmin={isAdmin}
+            isDesktopSidebarExpanded={isDesktopSidebarExpanded}
+          />
+        </Nav>
+        <CompactSidebarFooter data-expanded={isDesktopSidebarExpanded}>
+          {isDesktopSidebarExpanded ? <AccountSummary admin={admin} /> : null}
+          <LogoutButton iconOnly={!isDesktopSidebarExpanded} />
         </CompactSidebarFooter>
       </Sidebar>
 
@@ -207,7 +233,7 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
           aria-controls="admin-navigation"
           aria-expanded={isMenuOpen}
           aria-haspopup="dialog"
-          onClick={openMenu}
+          onClick={openMobileMenu}
         >
           <Menu aria-hidden="true" size={22} />
         </MenuButton>
@@ -220,7 +246,7 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
             aria-label="Fechar menu de administração"
             onClick={() => closeMenu()}
           />
-          <NavigationDrawer
+          <MobileDrawer
             ref={drawerRef}
             id="admin-navigation"
             role="dialog"
@@ -251,7 +277,7 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
               <AccountSummary admin={admin} />
               <LogoutButton />
             </SidebarFooter>
-          </NavigationDrawer>
+          </MobileDrawer>
         </>
       ) : null}
     </>

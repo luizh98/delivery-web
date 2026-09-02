@@ -7,6 +7,11 @@ export const Root = styled("div", {
   "@lg": {
     display: "grid",
     gridTemplateColumns: "5rem minmax(0, 1fr)",
+    transition: "grid-template-columns 180ms ease",
+
+    "&:has(> aside[data-expanded='true'])": {
+      gridTemplateColumns: "17rem minmax(0, 1fr)",
+    },
   },
 });
 
@@ -23,6 +28,7 @@ export const Sidebar = styled("aside", {
     display: "flex",
     height: "100dvh",
     flexDirection: "column",
+    overflow: "hidden",
     borderRight: "1px solid var(--color-border)",
     background: "var(--color-surface)",
   },
@@ -30,11 +36,15 @@ export const Sidebar = styled("aside", {
 
 export const SidebarHeader = styled("div", {
   display: "flex",
-  flexDirection: "column",
   alignItems: "center",
-  gap: "0.75rem",
   justifyContent: "center",
   padding: "1rem 0",
+
+  "&[data-expanded='true']": {
+    alignItems: "stretch",
+    gap: "0.75rem",
+    padding: "1rem",
+  },
 });
 
 export const MobileHeader = styled("header", {
@@ -80,6 +90,11 @@ export const Nav = styled("nav", {
     overflow: "visible",
     paddingLeft: "0.625rem",
     paddingRight: "0.625rem",
+
+    "&[data-expanded='true']": {
+      paddingLeft: "0.75rem",
+      paddingRight: "0.75rem",
+    },
   },
 });
 
@@ -100,6 +115,21 @@ export const CompactBrand = styled(Brand, {
   borderRadius: "0.625rem",
   background: "var(--color-surface)",
   transition: "background-color 160ms ease, border-color 160ms ease",
+
+  "& > span": {
+    display: "none",
+  },
+
+  "&[data-expanded='true']": {
+    width: "100%",
+    justifyContent: "flex-start",
+    gap: "0.75rem",
+    padding: "0 0.75rem",
+  },
+
+  "&[data-expanded='true'] > span": {
+    display: "inline",
+  },
 
   "&:hover": {
     background: "var(--color-surface-muted)",
@@ -150,6 +180,20 @@ export const NavLink = styled("a", {
       display: "none",
     },
 
+    "&[data-sidebar-expanded='true']": {
+      justifyContent: "flex-start",
+      gap: "0.5rem",
+      padding: "0 0.75rem",
+    },
+
+    "&[data-sidebar-expanded='true'] > span": {
+      display: "inline",
+    },
+
+    "&[data-sidebar-expanded='true']::after": {
+      display: "none",
+    },
+
     "&::after": {
       position: "absolute",
       zIndex: 50,
@@ -191,6 +235,11 @@ export const CompactSidebarFooter = styled(SidebarFooter, {
   display: "flex",
   justifyContent: "center",
   padding: "1rem 0.625rem",
+
+  "&[data-expanded='true']": {
+    display: "grid",
+    padding: "1rem",
+  },
 });
 
 export const MenuButton = styled("button", {
@@ -213,6 +262,23 @@ export const MenuButton = styled("button", {
     outline: "3px solid var(--color-primary)",
     outlineOffset: "2px",
   },
+
+  "@lg": {
+    "& > span": {
+      display: "none",
+    },
+
+    "&[data-expanded='true']": {
+      width: "100%",
+      justifyContent: "flex-start",
+      gap: "0.75rem",
+      padding: "0 0.75rem",
+    },
+
+    "&[data-expanded='true'] > span": {
+      display: "inline",
+    },
+  },
 });
 
 export const Overlay = styled("button", {
@@ -223,7 +289,7 @@ export const Overlay = styled("button", {
   background: "rgb(15 23 42 / 0.48)",
 });
 
-export const NavigationDrawer = styled("aside", {
+export const MobileDrawer = styled("aside", {
   position: "fixed",
   zIndex: 40,
   top: 0,
