@@ -153,6 +153,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     menu.products.some((product) => product.categoryId === category.id),
     )?.id ?? "";
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
+  const categoryBarRef = useRef<HTMLDivElement | null>(null);
+  const categoryButtonRefs = useRef<
+    Record<string, HTMLButtonElement | null>
+  >({});
   const currentDay = useSyncExternalStore<string | null>(
     subscribeToCurrentDay,
     getCurrentDay,
@@ -196,6 +200,66 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       ),
     [menu.categories, productsByCategory],
   );
+
+  useEffect(() => {
+    if (visibleCategories.length === 0) {
+      return;
+    }
+
+    let animationFrame = 0;
+
+    function updateActiveCategory() {
+      const categoryBarBottom =
+        categoryBarRef.current?.getBoundingClientRect().bottom ?? 0;
+      let nextCategoryId = visibleCategories[0].id;
+
+      for (let index = visibleCategories.length - 1; index >= 0; index -= 1) {
+        const category = visibleCategories[index];
+        const sectionTop =
+          sectionRefs.current[category.id]?.getBoundingClientRect().top;
+
+        if (sectionTop !== undefined && sectionTop <= categoryBarBottom) {
+          nextCategoryId = category.id;
+          break;
+        }
+      }
+
+      setActiveCategoryId((currentCategoryId) =>
+        currentCategoryId === nextCategoryId
+          ? currentCategoryId
+          : nextCategoryId,
+      );
+    }
+
+    function scheduleCategoryUpdate() {
+      if (animationFrame) {
+        return;
+      }
+
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = 0;
+        updateActiveCategory();
+      });
+    }
+
+    scheduleCategoryUpdate();
+    window.addEventListener("scroll", scheduleCategoryUpdate, { passive: true });
+    window.addEventListener("resize", scheduleCategoryUpdate);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("scroll", scheduleCategoryUpdate);
+      window.removeEventListener("resize", scheduleCategoryUpdate);
+    };
+  }, [visibleCategories]);
+
+  useEffect(() => {
+    categoryButtonRefs.current[activeCategoryId]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeCategoryId]);
 
   useEffect(() => {
     const productId = sessionStorage.getItem(PRODUCT_FOCUS_STORAGE_KEY);
@@ -312,11 +376,14 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
 
       <PageShell bottomPad flushTop>
       {visibleCategories.length > 0 ? (
-        <CategoryBar>
+        <CategoryBar ref={categoryBarRef}>
           <CategoryList>
             {visibleCategories.map((category) => (
               <CategoryButton
                 key={category.id}
+                ref={(element: HTMLButtonElement | null) => {
+                  categoryButtonRefs.current[category.id] = element;
+                }}
                 active={activeCategoryId === category.id}
                 onClick={() => handleCategoryClick(category.id)}
               >
