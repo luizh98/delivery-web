@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminLayout } from "@/layouts/AdminLayout";
-import { getAdminUser } from "@/services/api/server";
+import { getAdminUser, getRestaurantConfig } from "@/services/api/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +15,12 @@ export default async function ProtectedAdminLayout({
     redirect("/admin/login");
   }
 
-  return <AdminLayout admin={admin}>{children}</AdminLayout>;
+  const restaurantConfig = await getRestaurantConfig();
+  const restaurantName = restaurantConfig?.name?.trim() || admin.tenantSlug;
+
+  return (
+    <AdminLayout admin={admin} restaurantName={restaurantName}>
+      {children}
+    </AdminLayout>
+  );
 }

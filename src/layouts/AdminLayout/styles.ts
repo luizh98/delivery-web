@@ -6,6 +6,7 @@ export const Root = styled("div", {
 
   "@lg": {
     display: "grid",
+    paddingTop: "4rem",
     gridTemplateColumns: "5rem minmax(0, 1fr)",
     transition: "grid-template-columns 180ms ease",
 
@@ -24,9 +25,9 @@ export const Sidebar = styled("aside", {
 
   "@lg": {
     position: "sticky",
-    top: 0,
+    top: "4rem",
     display: "flex",
-    height: "100dvh",
+    height: "calc(100dvh - 4rem)",
     flexDirection: "column",
     overflow: "hidden",
     borderRight: "1px solid var(--color-border)",
@@ -34,19 +35,45 @@ export const Sidebar = styled("aside", {
   },
 });
 
-export const SidebarHeader = styled("div", {
-  display: "flex",
-  minHeight: "4rem",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0",
+export const DesktopNavbar = styled("header", {
+  display: "none",
 
-  "&[data-expanded='true']": {
+  "@lg": {
+    position: "fixed",
+    zIndex: 20,
+    top: 0,
+    right: 0,
+    left: 0,
+    display: "flex",
+    height: "4rem",
     alignItems: "center",
-    gap: "0.75rem",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
+    borderBottom: "1px solid var(--color-border)",
+    background: "var(--color-surface)",
     padding: "0 1rem",
   },
+});
+
+export const DesktopNavbarBrand = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.75rem",
+});
+
+export const DesktopNavbarActions = styled("div", {
+  display: "flex",
+  minWidth: 0,
+  alignItems: "center",
+  gap: "0.75rem",
+});
+
+export const DesktopNavbarUser = styled("div", {
+  display: "grid",
+  minWidth: 0,
+  maxWidth: "min(20rem, 38vw)",
+  paddingRight: "0.75rem",
+  borderRight: "1px solid var(--color-border)",
+  textAlign: "right",
 });
 
 export const MobileHeader = styled("header", {
@@ -197,17 +224,6 @@ export const SidebarFooter = styled("div", {
   marginTop: "auto",
   borderTop: "1px solid var(--color-border)",
   padding: "1rem",
-});
-
-export const CompactSidebarFooter = styled(SidebarFooter, {
-  display: "flex",
-  justifyContent: "center",
-  padding: "1rem 0.625rem",
-
-  "&[data-expanded='true']": {
-    display: "grid",
-    padding: "1rem",
-  },
 });
 
 export const MenuButton = styled("button", {

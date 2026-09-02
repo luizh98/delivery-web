@@ -26,7 +26,10 @@ import { LogoutButton } from "./LogoutButton";
 import {
   Brand,
   CloseButton,
-  CompactSidebarFooter,
+  DesktopNavbar,
+  DesktopNavbarActions,
+  DesktopNavbarBrand,
+  DesktopNavbarUser,
   DrawerHeader,
   Email,
   MenuButton,
@@ -37,7 +40,6 @@ import {
   Overlay,
   Sidebar,
   SidebarFooter,
-  SidebarHeader,
   Tenant,
 } from "./styles";
 
@@ -56,6 +58,11 @@ const navItems = [
 
 type AdminNavigationProps = {
   admin: Pick<CurrentUserResponse, "email" | "roles" | "tenantSlug">;
+  restaurantName: string;
+};
+
+type AccountSummaryProps = {
+  admin: Pick<CurrentUserResponse, "email" | "tenantSlug">;
 };
 
 type NavigationItemsProps = {
@@ -103,7 +110,7 @@ function NavigationItems({
   );
 }
 
-function AccountSummary({ admin }: AdminNavigationProps) {
+function AccountSummary({ admin }: AccountSummaryProps) {
   return (
     <>
       <Tenant>{admin.tenantSlug}</Tenant>
@@ -112,7 +119,7 @@ function AccountSummary({ admin }: AdminNavigationProps) {
   );
 }
 
-export function AdminNavigation({ admin }: AdminNavigationProps) {
+export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps) {
   const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -183,8 +190,11 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
 
   return (
     <>
-      <Sidebar data-expanded={isDesktopSidebarExpanded}>
-        <SidebarHeader data-expanded={isDesktopSidebarExpanded}>
+      <DesktopNavbar>
+        <DesktopNavbarBrand>
+          <Brand as={Link} href="/admin">
+            FlyFoods
+          </Brand>
           <MenuButton
             type="button"
             aria-label={isDesktopSidebarExpanded ? "Recolher menu" : "Expandir menu"}
@@ -199,12 +209,17 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
               <ChevronRight aria-hidden="true" size={22} />
             )}
           </MenuButton>
-          {isDesktopSidebarExpanded ? (
-            <Brand as={Link} href="/admin">
-              FlyFoods
-            </Brand>
-          ) : null}
-        </SidebarHeader>
+        </DesktopNavbarBrand>
+        <DesktopNavbarActions>
+          <DesktopNavbarUser>
+            <Tenant>{restaurantName}</Tenant>
+            <Email>{admin.email}</Email>
+          </DesktopNavbarUser>
+          <LogoutButton iconOnly />
+        </DesktopNavbarActions>
+      </DesktopNavbar>
+
+      <Sidebar data-expanded={isDesktopSidebarExpanded}>
         <Nav
           id="admin-desktop-navigation"
           aria-label="Navegação principal"
@@ -215,10 +230,6 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
             isDesktopSidebarExpanded={isDesktopSidebarExpanded}
           />
         </Nav>
-        <CompactSidebarFooter data-expanded={isDesktopSidebarExpanded}>
-          {isDesktopSidebarExpanded ? <AccountSummary admin={admin} /> : null}
-          <LogoutButton iconOnly={!isDesktopSidebarExpanded} />
-        </CompactSidebarFooter>
       </Sidebar>
 
       <MobileHeader>

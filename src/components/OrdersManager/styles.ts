@@ -164,46 +164,7 @@ export const Card = styled("article", {
   variants: {
     overdue: {
       true: {
-        position: "relative",
-        isolation: "isolate",
-
-        "&::before": {
-          position: "absolute",
-          zIndex: 0,
-          inset: "-0.9rem",
-          borderRadius: "0.95rem",
-          padding: "0.65rem",
-          background: "linear-gradient(110deg, var(--overdue-glow-critical) 0%, var(--overdue-glow-hot) 24%, var(--overdue-glow-warm) 43%, var(--overdue-glow-hot) 61%, var(--overdue-glow-critical) 82%, var(--overdue-glow-pulse) 100%)",
-          backgroundSize: "240% 100%",
-          boxShadow: "0 0 1rem 0.2rem rgb(239 68 68 / 0.72), 0 0 2.1rem 0.45rem rgb(220 38 38 / 0.34)",
-          content: "",
-          filter: "blur(0.7rem) saturate(1.35)",
-          opacity: 0.92,
-          pointerEvents: "none",
-          WebkitMask: "linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          animation: "overdue-aura-flow 2.8s linear infinite, overdue-aura-breathe 2.35s ease-in-out infinite",
-        },
-
-        "&::after": {
-          position: "absolute",
-          zIndex: 1,
-          inset: "-0.3rem",
-          borderRadius: "0.65rem",
-          boxSizing: "border-box",
-          padding: "2px",
-          background: "linear-gradient(110deg, var(--overdue-glow-critical) 0%, var(--overdue-glow-hot) 24%, var(--overdue-glow-warm) 43%, var(--overdue-glow-hot) 61%, var(--overdue-glow-critical) 82%, var(--overdue-glow-pulse) 100%)",
-          backgroundSize: "240% 100%",
-          content: "",
-          filter: "blur(0.1rem) saturate(1.35)",
-          opacity: 0.96,
-          pointerEvents: "none",
-          WebkitMask: "linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          animation: "overdue-aura-flow 2.8s linear infinite",
-        },
+        animation: "overdue-card-neon 1.45s ease-in-out infinite",
       },
     },
   },
@@ -214,8 +175,6 @@ export const Card = styled("article", {
 });
 
 export const CardGrid = styled("div", {
-  position: "relative",
-  zIndex: 2,
   display: "grid",
   height: "100%",
   gridTemplateRows: "1fr auto",

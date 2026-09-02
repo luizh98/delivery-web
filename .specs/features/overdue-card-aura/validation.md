@@ -7,14 +7,16 @@
 
 | Requirement | Result | Evidence |
 | --- | --- | --- |
-| OVERDUE-AURA-01 | PASS | Variante `overdue` não altera `background` do card; máscara remove o centro das camadas neon. |
-| OVERDUE-AURA-02 | PASS | Aura externa usa vermelho dominante, com halo pulsante e trilha de gradiente em fluxo. |
+| OVERDUE-AURA-01 | PASS | Variante `overdue` não altera `background` do card. |
+| OVERDUE-AURA-02 | PASS | Pulso usa sombras externas em vermelho, sem pseudo-elementos ou máscara. |
 | OVERDUE-AURA-03 | PASS | `prefers-reduced-motion` interrompe animações e preserva a posição visual da aura. |
+| OVERDUE-AURA-04 | PASS | `Card overdue` aplica `overdue-card-neon` ao redor de todo card. |
 
 ## Automated Checks
 
 - `npm run lint`: PASS, sem erros; há 2 avisos pré-existentes em `AdminOrderSoundNotifier`.
-- `npm run build`: PASS.
+- `npm run build`: BLOCKED por `AdminNavigation.tsx:282`; `restaurantName` está
+  ausente em `AccountSummary`. CSS desta tarefa compilou antes do type-check.
 - `git diff --check`: PASS.
 
 ## Manual UI Check

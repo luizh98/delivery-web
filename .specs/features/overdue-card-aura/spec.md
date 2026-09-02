@@ -29,8 +29,8 @@ visual moderno para priorizá-los sem perder legibilidade do card.
 
 1. WHEN pedido estiver atrasado THEN sistema SHALL manter superfície interna normal
    e exibir aura externa animada.
-2. WHEN aura for exibida THEN sistema SHALL usar gradiente vermelho dominante,
-   com reflexos coral e rosa, sem borda estática.
+2. WHEN pedido estiver atrasado THEN sistema SHALL pulsar neon vermelho visível
+   em todo o perímetro externo do card, sem preencher seu interior.
 3. WHEN card aparecer em Pedidos ou Cozinha THEN sistema SHALL apresentar mesmo
    efeito, pois ambos reutilizam `OrdersManager`.
 4. WHEN preferência de movimento reduzido estiver ativa THEN sistema SHALL manter
@@ -48,8 +48,10 @@ visual moderno para priorizá-los sem perder legibilidade do card.
 | OVERDUE-AURA-01 | Superfície interna permanece neutra | Verified |
 | OVERDUE-AURA-02 | Aura externa vermelha possui gradiente em movimento | Verified |
 | OVERDUE-AURA-03 | Fallback para movimento reduzido | Verified |
+| OVERDUE-AURA-04 | Pulso vermelho externo fica visível no card atrasado | Verified |
 
 ## Success Criteria
 
-- [x] Cards atrasados em Pedidos e Cozinha têm aura externa, sem fundo de alerta.
-- [x] `npm run lint`, `npm run build` e `git diff --check` passam.
+- [x] Cards atrasados em Pedidos e Cozinha pulsam vermelho externamente, sem fundo de alerta.
+- [ ] `npm run build` passa — bloqueado por `AdminNavigation.tsx`, fora deste escopo.
+- [x] `npm run lint` e `git diff --check` passam.
