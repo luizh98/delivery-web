@@ -1,11 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Geist,
-  Geist_Mono,
-  Karla,
-  Playfair_Display_SC,
-  Plus_Jakarta_Sans,
-} from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartProvider";
 import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
@@ -14,30 +8,9 @@ import { cx } from "@/utils/classNames";
 import "@daypicker/react/style.css";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const adminSans = Plus_Jakarta_Sans({
-  variable: "--font-admin-sans",
-  subsets: ["latin"],
-});
-
-const customerSans = Karla({
-  variable: "--font-customer-sans",
-  subsets: ["latin"],
-});
-
-const customerDisplay = Playfair_Display_SC({
-  variable: "--font-customer-display",
-  subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -73,13 +46,7 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={cx(
-        geistSans.variable,
-        geistMono.variable,
-        adminSans.variable,
-        customerSans.variable,
-        customerDisplay.variable,
-      )}
+      className={cx(plusJakartaSans.variable)}
     >
       <body>
         <ThemeProvider theme={restaurantConfig?.theme}>

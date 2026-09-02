@@ -165,9 +165,8 @@ export const ProductHeader = styled("header", {
 export const ProductTitle = styled("h1", {
   minWidth: 0,
   overflowWrap: "anywhere",
-  fontFamily: "var(--font-customer-display), Georgia, serif",
   fontSize: "clamp(1.75rem, 5vw, 2.5rem)",
-  fontWeight: 700,
+  fontWeight: 800,
   lineHeight: 1.1,
   letterSpacing: "-0.025em",
 });
@@ -233,7 +232,6 @@ export const OptionGroup = styled("section", {
 });
 
 export const OptionGroupTitle = styled("h2", {
-  fontFamily: "var(--font-customer-display), Georgia, serif",
   fontSize: "1.25rem",
   fontWeight: 600,
   lineHeight: 1.2,

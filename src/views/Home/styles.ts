@@ -45,9 +45,8 @@ export const ClosedStoreNotice = styled("p", {
 
 export const HeroTitle = styled("h1", {
   overflowWrap: "anywhere",
-  fontFamily: "var(--font-customer-display), Georgia, serif",
   fontSize: "clamp(1.75rem, 5vw, 2.5rem)",
-  fontWeight: 700,
+  fontWeight: 800,
   lineHeight: 1.1,
   letterSpacing: "-0.025em",
 });
@@ -246,7 +245,6 @@ export const CategorySection = styled("section", {
 
 export const CategoryTitle = styled("h2", {
   marginBottom: "0.5rem",
-  fontFamily: "var(--font-customer-display), Georgia, serif",
   fontSize: "1.5rem",
   fontWeight: 700,
   lineHeight: 1.15,
@@ -291,7 +289,7 @@ export const ProductInfo = styled("span", {
 
 export const ProductName = styled("span", {
   fontSize: "1rem",
-  fontWeight: 700,
+  fontWeight: 600,
   lineHeight: 1.25,
 });
 

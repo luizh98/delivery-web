@@ -3,7 +3,6 @@ import { styled } from "styles";
 export const Root = styled("div", {
   minHeight: "100dvh",
   background: "var(--color-background)",
-  fontFamily: "var(--font-admin-sans), var(--font-geist-sans), sans-serif",
 
   "@lg": {
     display: "grid",
