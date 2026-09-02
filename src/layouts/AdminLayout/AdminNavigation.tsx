@@ -19,6 +19,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import type { CurrentUserResponse } from "@/types/api";
 import { LogoutButton } from "./LogoutButton";
 import {
@@ -29,7 +30,7 @@ import {
   DrawerHeader,
   Email,
   MenuButton,
-  MobileDrawer,
+  NavigationDrawer,
   MobileHeader,
   Nav,
   NavLink,
@@ -112,6 +113,11 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const isAdmin = admin.roles.includes("ADMIN");
 
+  function openMenu(event: ReactMouseEvent<HTMLButtonElement>) {
+    menuButtonRef.current = event.currentTarget;
+    setIsMenuOpen(true);
+  }
+
   function closeMenu(returnFocus = true) {
     setIsMenuOpen(false);
 
@@ -172,13 +178,20 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
     <>
       <Sidebar>
         <SidebarHeader>
+          <MenuButton
+            type="button"
+            aria-label="Abrir menu de administração"
+            aria-controls="admin-navigation"
+            aria-expanded={isMenuOpen}
+            aria-haspopup="dialog"
+            onClick={openMenu}
+          >
+            <Menu aria-hidden="true" size={22} />
+          </MenuButton>
           <CompactBrand as={Link} href="/admin" aria-label="FlyFoods" title="FlyFoods">
             <UtensilsCrossed aria-hidden="true" size={20} />
           </CompactBrand>
         </SidebarHeader>
-        <Nav aria-label="Navegação principal">
-          <NavigationItems isAdmin={isAdmin} />
-        </Nav>
         <CompactSidebarFooter>
           <LogoutButton iconOnly />
         </CompactSidebarFooter>
@@ -189,12 +202,12 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
           FlyFoods
         </Brand>
         <MenuButton
-          ref={menuButtonRef}
           type="button"
           aria-label="Abrir menu de administração"
-          aria-controls="admin-mobile-navigation"
+          aria-controls="admin-navigation"
           aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen(true)}
+          aria-haspopup="dialog"
+          onClick={openMenu}
         >
           <Menu aria-hidden="true" size={22} />
         </MenuButton>
@@ -207,9 +220,9 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
             aria-label="Fechar menu de administração"
             onClick={() => closeMenu()}
           />
-          <MobileDrawer
+          <NavigationDrawer
             ref={drawerRef}
-            id="admin-mobile-navigation"
+            id="admin-navigation"
             role="dialog"
             aria-modal="true"
             aria-label="Menu de administração"
@@ -238,7 +251,7 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
               <AccountSummary admin={admin} />
               <LogoutButton />
             </SidebarFooter>
-          </MobileDrawer>
+          </NavigationDrawer>
         </>
       ) : null}
     </>

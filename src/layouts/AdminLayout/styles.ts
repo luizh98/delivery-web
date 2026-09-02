@@ -30,6 +30,9 @@ export const Sidebar = styled("aside", {
 
 export const SidebarHeader = styled("div", {
   display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "0.75rem",
   justifyContent: "center",
   padding: "1rem 0",
 });
@@ -220,7 +223,7 @@ export const Overlay = styled("button", {
   background: "rgb(15 23 42 / 0.48)",
 });
 
-export const MobileDrawer = styled("aside", {
+export const NavigationDrawer = styled("aside", {
   position: "fixed",
   zIndex: 40,
   top: 0,
