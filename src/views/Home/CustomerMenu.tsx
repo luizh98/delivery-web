@@ -157,6 +157,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const categoryButtonRefs = useRef<
     Record<string, HTMLButtonElement | null>
   >({});
+  const pendingCategoryIdRef = useRef<string | null>(null);
   const currentDay = useSyncExternalStore<string | null>(
     subscribeToCurrentDay,
     getCurrentDay,
@@ -211,6 +212,32 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
     function updateActiveCategory() {
       const categoryBarBottom =
         categoryBarRef.current?.getBoundingClientRect().bottom ?? 0;
+      const firstCategorySection =
+        sectionRefs.current[visibleCategories[0].id];
+      const categoryAnchor = Math.max(
+        categoryBarBottom,
+        firstCategorySection
+          ? Number.parseFloat(
+              window.getComputedStyle(firstCategorySection).scrollMarginTop,
+            )
+          : 0,
+      );
+      const pendingCategoryId = pendingCategoryIdRef.current;
+
+      if (pendingCategoryId) {
+        const pendingSectionTop =
+          sectionRefs.current[pendingCategoryId]?.getBoundingClientRect().top;
+
+        if (
+          pendingSectionTop !== undefined &&
+          pendingSectionTop > categoryAnchor
+        ) {
+          return;
+        }
+
+        pendingCategoryIdRef.current = null;
+      }
+
       let nextCategoryId = visibleCategories[0].id;
 
       for (let index = visibleCategories.length - 1; index >= 0; index -= 1) {
@@ -218,7 +245,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         const sectionTop =
           sectionRefs.current[category.id]?.getBoundingClientRect().top;
 
-        if (sectionTop !== undefined && sectionTop <= categoryBarBottom) {
+        if (sectionTop !== undefined && sectionTop <= categoryAnchor) {
           nextCategoryId = category.id;
           break;
         }
@@ -242,14 +269,24 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       });
     }
 
+    function cancelPendingCategory() {
+      pendingCategoryIdRef.current = null;
+    }
+
     scheduleCategoryUpdate();
     window.addEventListener("scroll", scheduleCategoryUpdate, { passive: true });
     window.addEventListener("resize", scheduleCategoryUpdate);
+    window.addEventListener("wheel", cancelPendingCategory, { passive: true });
+    window.addEventListener("touchstart", cancelPendingCategory, {
+      passive: true,
+    });
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("scroll", scheduleCategoryUpdate);
       window.removeEventListener("resize", scheduleCategoryUpdate);
+      window.removeEventListener("wheel", cancelPendingCategory);
+      window.removeEventListener("touchstart", cancelPendingCategory);
     };
   }, [visibleCategories]);
 
@@ -307,6 +344,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   }, [showCartFeedback]);
 
   function handleCategoryClick(categoryId: string) {
+    pendingCategoryIdRef.current = categoryId;
     setActiveCategoryId(categoryId);
     const section = sectionRefs.current[categoryId];
 
