@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartProvider";
 import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
@@ -15,6 +15,11 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const adminSans = Plus_Jakarta_Sans({
+  variable: "--font-admin-sans",
   subsets: ["latin"],
 });
 
@@ -38,8 +43,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default async function RootLayout({
@@ -53,7 +56,7 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={cx(geistSans.variable, geistMono.variable)}
+      className={cx(geistSans.variable, geistMono.variable, adminSans.variable)}
     >
       <body>
         <ThemeProvider theme={restaurantConfig?.theme}>
