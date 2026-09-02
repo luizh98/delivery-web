@@ -41,12 +41,30 @@ async function forward(request: NextRequest, context: RouteParams) {
   }
 
   const hasBody = !["GET", "HEAD"].includes(request.method);
-  const response = await fetch(targetUrl, {
-    method: request.method,
-    headers,
-    body: hasBody ? await request.arrayBuffer() : undefined,
-    cache: "no-store",
-  });
+  const body = hasBody ? await request.arrayBuffer() : undefined;
+  let response: Response;
+  try {
+    response = await fetch(targetUrl, {
+      method: request.method,
+      headers,
+      body,
+      cache: "no-store",
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        error: "BACKEND_UNAVAILABLE",
+        message: "Backend temporarily unavailable. Try again shortly.",
+      },
+      {
+        status: 503,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": "3",
+        },
+      },
+    );
+  }
 
   const responseHeaders = new Headers();
   const responseType = response.headers.get("content-type");
