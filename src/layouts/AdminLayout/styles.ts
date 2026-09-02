@@ -36,14 +36,16 @@ export const Sidebar = styled("aside", {
 
 export const SidebarHeader = styled("div", {
   display: "flex",
+  minHeight: "4rem",
   alignItems: "center",
   justifyContent: "center",
-  padding: "1rem 0",
+  padding: "0",
 
   "&[data-expanded='true']": {
-    alignItems: "stretch",
+    alignItems: "center",
     gap: "0.75rem",
-    padding: "1rem",
+    justifyContent: "flex-start",
+    padding: "0 1rem",
   },
 });
 
@@ -105,40 +107,6 @@ export const Brand = styled("a", {
   fontSize: "1.25rem",
   fontWeight: 800,
   letterSpacing: "-0.025em",
-});
-
-export const CompactBrand = styled(Brand, {
-  width: "2.75rem",
-  height: "2.75rem",
-  justifyContent: "center",
-  border: "1px solid var(--color-border)",
-  borderRadius: "0.625rem",
-  background: "var(--color-surface)",
-  transition: "background-color 160ms ease, border-color 160ms ease",
-
-  "& > span": {
-    display: "none",
-  },
-
-  "&[data-expanded='true']": {
-    width: "100%",
-    justifyContent: "flex-start",
-    gap: "0.75rem",
-    padding: "0 0.75rem",
-  },
-
-  "&[data-expanded='true'] > span": {
-    display: "inline",
-  },
-
-  "&:hover": {
-    background: "var(--color-surface-muted)",
-  },
-
-  "&:focus-visible": {
-    outline: "3px solid var(--color-primary)",
-    outlineOffset: "2px",
-  },
 });
 
 export const NavLink = styled("a", {
@@ -263,22 +231,6 @@ export const MenuButton = styled("button", {
     outlineOffset: "2px",
   },
 
-  "@lg": {
-    "& > span": {
-      display: "none",
-    },
-
-    "&[data-expanded='true']": {
-      width: "100%",
-      justifyContent: "flex-start",
-      gap: "0.75rem",
-      padding: "0 0.75rem",
-    },
-
-    "&[data-expanded='true'] > span": {
-      display: "inline",
-    },
-  },
 });
 
 export const Overlay = styled("button", {

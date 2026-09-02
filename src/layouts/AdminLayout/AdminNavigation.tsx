@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   CookingPot,
   LineChart,
@@ -10,7 +12,6 @@ import {
   Settings,
   Sparkles,
   Tags,
-  UtensilsCrossed,
   UserCog,
   Users,
   X,
@@ -25,7 +26,6 @@ import { LogoutButton } from "./LogoutButton";
 import {
   Brand,
   CloseButton,
-  CompactBrand,
   CompactSidebarFooter,
   DrawerHeader,
   Email,
@@ -190,22 +190,20 @@ export function AdminNavigation({ admin }: AdminNavigationProps) {
             aria-label={isDesktopSidebarExpanded ? "Recolher menu" : "Expandir menu"}
             aria-controls="admin-desktop-navigation"
             aria-expanded={isDesktopSidebarExpanded}
-            data-expanded={isDesktopSidebarExpanded}
+            title={isDesktopSidebarExpanded ? "Recolher menu" : "Expandir menu"}
             onClick={() => setIsDesktopSidebarExpanded((isExpanded) => !isExpanded)}
           >
-            <Menu aria-hidden="true" size={22} />
-            <span>{isDesktopSidebarExpanded ? "Recolher menu" : "Expandir menu"}</span>
+            {isDesktopSidebarExpanded ? (
+              <ChevronLeft aria-hidden="true" size={22} />
+            ) : (
+              <ChevronRight aria-hidden="true" size={22} />
+            )}
           </MenuButton>
-          <CompactBrand
-            as={Link}
-            href="/admin"
-            aria-label="FlyFoods"
-            data-expanded={isDesktopSidebarExpanded}
-            title={isDesktopSidebarExpanded ? undefined : "FlyFoods"}
-          >
-            <UtensilsCrossed aria-hidden="true" size={20} />
-            <span>FlyFoods</span>
-          </CompactBrand>
+          {isDesktopSidebarExpanded ? (
+            <Brand as={Link} href="/admin">
+              FlyFoods
+            </Brand>
+          ) : null}
         </SidebarHeader>
         <Nav
           id="admin-desktop-navigation"
