@@ -44,8 +44,12 @@ export const ClosedStoreNotice = styled("p", {
 });
 
 export const HeroTitle = styled("h1", {
-  fontSize: "1.5rem",
+  overflowWrap: "anywhere",
+  fontFamily: "var(--font-customer-display), Georgia, serif",
+  fontSize: "clamp(1.75rem, 5vw, 2.5rem)",
   fontWeight: 700,
+  lineHeight: 1.1,
+  letterSpacing: "-0.025em",
 });
 
 export const HeroTitleRow = styled("div", {
@@ -55,7 +59,9 @@ export const HeroTitleRow = styled("div", {
 });
 
 export const HeroText = styled("p", {
-  fontSize: "0.875rem",
+  maxWidth: "42rem",
+  fontSize: "1rem",
+  lineHeight: 1.5,
   color: "var(--color-muted)",
 });
 
@@ -240,8 +246,11 @@ export const CategorySection = styled("section", {
 
 export const CategoryTitle = styled("h2", {
   marginBottom: "0.5rem",
-  fontSize: "1.125rem",
+  fontFamily: "var(--font-customer-display), Georgia, serif",
+  fontSize: "1.5rem",
   fontWeight: 700,
+  lineHeight: 1.15,
+  letterSpacing: "-0.02em",
 });
 
 export const CategoryProducts = styled("div", {
@@ -281,7 +290,9 @@ export const ProductInfo = styled("span", {
 });
 
 export const ProductName = styled("span", {
-  fontWeight: 600,
+  fontSize: "1rem",
+  fontWeight: 700,
+  lineHeight: 1.25,
 });
 
 export const ProductDescription = styled("span", {
@@ -289,13 +300,14 @@ export const ProductDescription = styled("span", {
   overflow: "hidden",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: 2,
-  fontSize: "0.875rem",
+  fontSize: "0.9375rem",
+  lineHeight: 1.45,
   color: "var(--color-muted)",
 });
 
 export const ProductPrice = styled("span", {
   paddingTop: "0.25rem",
-  fontSize: "0.875rem",
+  fontSize: "1rem",
   fontWeight: 700,
   color: "var(--color-primary)",
 });

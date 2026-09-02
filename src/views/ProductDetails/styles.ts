@@ -164,17 +164,22 @@ export const ProductHeader = styled("header", {
 
 export const ProductTitle = styled("h1", {
   minWidth: 0,
-  fontSize: "1.5rem",
+  overflowWrap: "anywhere",
+  fontFamily: "var(--font-customer-display), Georgia, serif",
+  fontSize: "clamp(1.75rem, 5vw, 2.5rem)",
   fontWeight: 700,
+  lineHeight: 1.1,
+  letterSpacing: "-0.025em",
 });
 
 export const ProductDescription = styled("p", {
-  fontSize: "0.875rem",
+  fontSize: "1rem",
+  lineHeight: 1.5,
   color: "var(--color-muted)",
 });
 
 export const ProductPrice = styled("p", {
-  fontSize: "1rem",
+  fontSize: "1.125rem",
   fontWeight: 700,
   color: "var(--color-primary)",
 });
@@ -228,7 +233,10 @@ export const OptionGroup = styled("section", {
 });
 
 export const OptionGroupTitle = styled("h2", {
+  fontFamily: "var(--font-customer-display), Georgia, serif",
+  fontSize: "1.25rem",
   fontWeight: 600,
+  lineHeight: 1.2,
 });
 
 export const Muted = styled("p", {

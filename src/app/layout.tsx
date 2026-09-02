@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Karla,
+  Playfair_Display_SC,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartProvider";
 import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
@@ -21,6 +27,17 @@ const geistMono = Geist_Mono({
 const adminSans = Plus_Jakarta_Sans({
   variable: "--font-admin-sans",
   subsets: ["latin"],
+});
+
+const customerSans = Karla({
+  variable: "--font-customer-sans",
+  subsets: ["latin"],
+});
+
+const customerDisplay = Playfair_Display_SC({
+  variable: "--font-customer-display",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -56,7 +73,13 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={cx(geistSans.variable, geistMono.variable, adminSans.variable)}
+      className={cx(
+        geistSans.variable,
+        geistMono.variable,
+        adminSans.variable,
+        customerSans.variable,
+        customerDisplay.variable,
+      )}
     >
       <body>
         <ThemeProvider theme={restaurantConfig?.theme}>
