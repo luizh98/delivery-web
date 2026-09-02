@@ -165,6 +165,9 @@ export const Card = styled("article", {
     overdue: {
       true: {
         position: "relative",
+        background: "linear-gradient(115deg, #fff1f2 0%, #ffffff 42%, #fee2e2 72%, #fecaca 100%)",
+        backgroundSize: "200% 200%",
+        animation: "overdue-card-gradient 1.8s ease-in-out infinite",
 
         "&::after": {
           position: "absolute",

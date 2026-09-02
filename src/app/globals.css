@@ -72,8 +72,23 @@ button:disabled {
   }
 }
 
+@keyframes overdue-card-gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 0 rgb(239 68 68 / 0.1);
+  }
+
+  50% {
+    background-position: 100% 50%;
+    box-shadow: 0 0 18px rgb(239 68 68 / 0.25);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-overdue="true"] {
+    animation: none;
+    background-position: 50% 50%;
     box-shadow: none;
   }
 
