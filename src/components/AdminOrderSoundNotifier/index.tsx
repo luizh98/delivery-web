@@ -37,6 +37,11 @@ const AdminOrderSoundContext = createContext<AdminOrderSoundContextValue | null>
   null,
 );
 
+function getReceivedAt(order: OrderSummary) {
+  return order.statusHistory?.find((history) => history.status === "RECEIVED")?.changedAt
+    ?? order.createdAt;
+}
+
 function getAudioErrorName(error: unknown) {
   if (error instanceof DOMException) {
     return error.name;
@@ -56,7 +61,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const isPlayingSoundRef = useRef(false);
   const overduePendingSoundCountRef = useRef(0);
   const isPlayingOverdueSoundRef = useRef(false);
-  const overdueEpisodesRef = useRef(new Map<string, string>());
+  const alertedOverdueOrderIdsRef = useRef(new Set<string>());
 
   const disableSound = useCallback(() => {
     soundEnabledRef.current = false;
@@ -117,7 +122,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
     if (!soundEnabledRef.current) {
       return;
     }
-    overduePendingSoundCountRef.current += 2;
+    overduePendingSoundCountRef.current += 1;
     playNextOverdueSound();
   }, [playNextOverdueSound]);
 
@@ -243,23 +248,15 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
         const overdueOrders = config.overdueOrderAlertEnabled
           ? orders.filter((order) => {
             if (!overdueStatuses.has(order.status)) return false;
-            const enteredAt = order.statusHistory?.findLast(
-              (history) => history.status === order.status,
-            )?.changedAt;
-            const timestamp = enteredAt ? Date.parse(enteredAt) : Number.NaN;
+            const receivedAt = getReceivedAt(order);
+            const timestamp = receivedAt ? Date.parse(receivedAt) : Number.NaN;
             return Number.isFinite(timestamp)
               && now - timestamp > overdueMinutes * 60_000;
           })
           : [];
-        const currentOverdue = new Map(overdueOrders.map((order) => [order.id, order.status]));
-        for (const [orderId, status] of overdueEpisodesRef.current) {
-          if (currentOverdue.get(orderId) !== status) {
-            overdueEpisodesRef.current.delete(orderId);
-          }
-        }
         overdueOrders.forEach((order) => {
-          if (overdueEpisodesRef.current.get(order.id) !== order.status) {
-            overdueEpisodesRef.current.set(order.id, order.status);
+          if (!alertedOverdueOrderIdsRef.current.has(order.id)) {
+            alertedOverdueOrderIdsRef.current.add(order.id);
             queueOverdueAlert();
           }
         });
