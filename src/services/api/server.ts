@@ -11,6 +11,8 @@ import type {
   Product,
   ProductCategory,
   ProductOptionGroupTemplate,
+  PromotionCombo,
+  PromotionComboPublicResponse,
   PublicOrderTrackingResponse,
   RestaurantConfigResponse,
   UpsellCampaign,
@@ -114,4 +116,14 @@ export async function getAdminProductOptionGroups() {
 
 export async function getAdminUpsellCampaigns() {
   return (await backendFetch<UpsellCampaign[]>("admin/upsell-campaigns")) ?? [];
+}
+
+export async function getAdminPromotionCombos() {
+  return (await backendFetch<PromotionCombo[]>("admin/promotion-combos")) ?? [];
+}
+
+export async function getPublicPromotionCombo(code: string) {
+  return backendFetch<PromotionComboPublicResponse>(
+    `public/promotion-combos/${encodeURIComponent(code)}`,
+  );
 }

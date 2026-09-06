@@ -380,6 +380,30 @@ export type UpsellOfferValidationResponse = {
   requiresOptions: boolean;
 };
 
+export type PromotionComboItem = {
+  productId: string;
+  quantity: number;
+  displayOrder: number;
+};
+
+export type PromotionCombo = {
+  id: string;
+  code: string;
+  name: string;
+  active: boolean;
+  items: PromotionComboItem[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type PromotionComboPublicResponse = {
+  code: string;
+  name: string;
+  items: (PromotionComboItem & {
+    product: Product;
+  })[];
+};
+
 export type AdminDashboardSummary = {
   revenueCents: number;
   orders: number;
