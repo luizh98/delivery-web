@@ -59,6 +59,11 @@ export async function getRestaurantConfig() {
   return backendFetch<RestaurantConfigResponse>("public/restaurant/config");
 }
 
+export async function getCurrentTenantSlug() {
+  const headerStore = await headers();
+  return resolveTenantFromHeaders(headerStore);
+}
+
 export async function getPublicOrderTracking(trackingCode: string) {
   return backendFetch<PublicOrderTrackingResponse>(
     `public/orders/tracking/${encodeURIComponent(trackingCode)}`,

@@ -3,6 +3,15 @@ export type Theme = {
   secondaryColor?: string;
 };
 
+export type MetaPixelIntegration = {
+  pixelId?: string | null;
+  enabled?: boolean;
+};
+
+export type RestaurantIntegrations = {
+  metaPixel?: MetaPixelIntegration | null;
+};
+
 export type BusinessHour = {
   dayOfWeek?: string;
   openTime?: string;
@@ -57,6 +66,7 @@ export type RestaurantConfigResponse = {
   businessHours?: BusinessHour[];
   holidayHours?: HolidayHour[];
   deliverySettings?: DeliverySettings;
+  integrations?: RestaurantIntegrations;
   automaticOrderConfirmation?: boolean;
   overdueOrderAlertEnabled?: boolean;
   overdueOrderAlertMinutes?: number;

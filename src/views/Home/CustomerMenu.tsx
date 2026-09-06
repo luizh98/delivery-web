@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
+import { useTracking } from "@/components/TrackingProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import {
   isValidBrazilianMobile,
@@ -148,6 +149,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const router = useRouter();
   const { items: cart, subtotalCents } = useCart();
   const { customer } = useCustomerAuth();
+  const tracking = useTracking();
   const initialCategoryId =
     menu.categories.find((category) =>
     menu.products.some((product) => product.categoryId === category.id),
@@ -201,6 +203,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       ),
     [menu.categories, productsByCategory],
   );
+
+  useEffect(() => {
+    tracking.pageView();
+  }, [tracking]);
 
   useEffect(() => {
     if (visibleCategories.length === 0) {

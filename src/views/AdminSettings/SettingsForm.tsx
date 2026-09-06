@@ -98,6 +98,11 @@ const settingsSchema = z.object({
   ])),
   primaryColor: z.string().min(4),
   secondaryColor: z.string().min(4),
+  metaPixelId: z.string().refine(
+    (value) => !value.trim() || /^[0-9]{5,20}$/.test(value.trim()),
+    "Informe um ID de Pixel válido com 5 a 20 dígitos.",
+  ),
+  metaPixelEnabled: z.boolean(),
   street: z.string().optional(),
   number: z.string().optional(),
   neighborhood: z.string().optional(),
@@ -105,6 +110,13 @@ const settingsSchema = z.object({
   state: z.string().optional(),
 }).superRefine((values, context) => {
   if (!values.deliveryEnabled) {
+    if (values.metaPixelEnabled && !values.metaPixelId.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["metaPixelId"],
+        message: "Informe o ID do Pixel para ativar a integração.",
+      });
+    }
     return;
   }
 
@@ -164,6 +176,14 @@ const settingsSchema = z.object({
               : `A faixa deve começar em ${expectedStart} km.`,
         });
       }
+    });
+  }
+
+  if (values.metaPixelEnabled && !values.metaPixelId.trim()) {
+    context.addIssue({
+      code: "custom",
+      path: ["metaPixelId"],
+      message: "Informe o ID do Pixel para ativar a integração.",
     });
   }
 });
@@ -238,6 +258,8 @@ export function SettingsForm({
       freeDeliveryDays: initialConfig?.deliverySettings?.freeDeliveryDays ?? [],
       primaryColor: initialConfig?.theme?.primaryColor ?? "#0f766e",
       secondaryColor: initialConfig?.theme?.secondaryColor ?? "#f59e0b",
+      metaPixelId: initialConfig?.integrations?.metaPixel?.pixelId ?? "",
+      metaPixelEnabled: initialConfig?.integrations?.metaPixel?.enabled ?? false,
       street: initialConfig?.address?.street ?? "",
       number: initialConfig?.address?.number ?? "",
       neighborhood: initialConfig?.address?.neighborhood ?? "",
@@ -341,6 +363,12 @@ export function SettingsForm({
         theme: {
           primaryColor: values.primaryColor,
           secondaryColor: values.secondaryColor,
+        },
+        integrations: {
+          metaPixel: {
+            pixelId: values.metaPixelId.trim() || null,
+            enabled: values.metaPixelEnabled,
+          },
         },
         address: {
           street: values.street,
@@ -517,6 +545,41 @@ export function SettingsForm({
               <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
             </Field>
           </MediaUploadGrid>
+        </AccordionBody>
+      </Accordion>
+
+      <Accordion>
+        <AccordionSummary>
+          <AccordionSummaryText>
+            <strong>Integrações / Marketing</strong>
+            <span>Conecte o cardápio a ferramentas de marketing.</span>
+          </AccordionSummaryText>
+          <AccordionIcon data-accordion-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </AccordionIcon>
+        </AccordionSummary>
+        <AccordionBody>
+          <div>
+            <strong>Meta Pixel</strong>
+            <Muted>Informe somente o ID. Scripts personalizados não são aceitos.</Muted>
+          </div>
+          <GridTwo>
+            <Field
+              label="ID do Pixel"
+              error={form.formState.errors.metaPixelId?.message}
+            >
+              <Input
+                inputMode="numeric"
+                maxLength={20}
+                autoComplete="off"
+                {...form.register("metaPixelId")}
+              />
+            </Field>
+          </GridTwo>
+          <StatusToggle>
+            <input type="checkbox" {...form.register("metaPixelEnabled")} />
+            <span>Ativar Meta Pixel</span>
+          </StatusToggle>
         </AccordionBody>
       </Accordion>
 

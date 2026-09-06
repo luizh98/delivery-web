@@ -3,7 +3,10 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartProvider";
 import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
-import { getRestaurantConfig } from "@/services/api/server";
+import { MarketingConsentBanner } from "@/components/MarketingConsentBanner";
+import { MarketingConsentProvider } from "@/components/MarketingConsentProvider";
+import { TrackingProvider } from "@/components/TrackingProvider";
+import { getCurrentTenantSlug, getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "@daypicker/react/style.css";
 import "./globals.css";
@@ -40,7 +43,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const restaurantConfig = await getRestaurantConfig();
+  const [restaurantConfig, tenantSlug] = await Promise.all([
+    getRestaurantConfig(),
+    getCurrentTenantSlug(),
+  ]);
 
   return (
     <html
@@ -49,11 +55,22 @@ export default async function RootLayout({
       className={cx(plusJakartaSans.variable)}
     >
       <body>
-        <ThemeProvider theme={restaurantConfig?.theme}>
-          <CustomerAuthProvider>
-            <CartProvider>{children}</CartProvider>
-          </CustomerAuthProvider>
-        </ThemeProvider>
+         <ThemeProvider theme={restaurantConfig?.theme}>
+           <CustomerAuthProvider>
+             <MarketingConsentProvider>
+               <TrackingProvider
+                 key={tenantSlug}
+                 tenantSlug={tenantSlug}
+                 config={restaurantConfig}
+               >
+                 <CartProvider>
+                   {children}
+                   <MarketingConsentBanner />
+                 </CartProvider>
+               </TrackingProvider>
+             </MarketingConsentProvider>
+           </CustomerAuthProvider>
+         </ThemeProvider>
       </body>
     </html>
   );

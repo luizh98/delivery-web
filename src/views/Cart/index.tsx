@@ -28,6 +28,7 @@ import {
 } from "@/components/CartProvider";
 import { Field, Input } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
+import { useTracking } from "@/components/TrackingProvider";
 import { clientApi } from "@/services/api/client";
 import type {
   Address,
@@ -173,7 +174,9 @@ function formatAddressLines(address?: Address | null) {
 export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   const router = useRouter();
   const { customer, loading: customerLoading } = useCustomerAuth();
+  const tracking = useTracking();
   const appliedCustomerId = useRef<string | null>(null);
+  const trackedCheckoutKey = useRef<string | null>(null);
   const {
     items,
     checkout,
@@ -264,6 +267,26 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     deliveryQuoteKey === currentDeliveryQuoteKey && deliveryQuoteLoading;
   const estimatedDeliveryFeeCents = currentDeliveryQuote?.deliveryFeeCents ?? 0;
   const totalCents = subtotalCents + estimatedDeliveryFeeCents;
+
+  useEffect(() => {
+    if (step !== 2 || items.length === 0) {
+      if (step !== 2) {
+        trackedCheckoutKey.current = null;
+      }
+      return;
+    }
+
+    const checkoutKey = `${items.map((item) => `${item.lineId}:${item.quantity}`).join(",")}:${subtotalCents}`;
+    if (trackedCheckoutKey.current === checkoutKey) {
+      return;
+    }
+
+    trackedCheckoutKey.current = checkoutKey;
+    tracking.initiateCheckout({
+      valueCents: subtotalCents,
+      itemCount: items.reduce((count, item) => count + item.quantity, 0),
+    });
+  }, [items, step, subtotalCents, tracking]);
 
   useEffect(() => {
     if (customerLoading || !customer || appliedCustomerId.current === customer.id) {
@@ -442,6 +465,11 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
       }
 
       completeOrder(order);
+      tracking.purchase({
+        id: order.id,
+        valueCents: order.totals.totalCents,
+        itemIds: order.items.map((item) => item.productId),
+      });
       router.replace(`/orders/${encodeURIComponent(order.trackingCode)}`);
     } catch {
       setCheckoutError("Não foi possível enviar o pedido.");

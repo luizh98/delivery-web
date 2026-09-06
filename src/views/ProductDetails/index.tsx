@@ -8,7 +8,7 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/components/CartProvider";
 import { Field, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
+import { useTracking } from "@/components/TrackingProvider";
 import { clientApi } from "@/services/api/client";
 import type {
   ProductOptionGroup,
@@ -67,6 +68,8 @@ const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
 export function ProductDetails({ product }: ProductDetailsProps) {
   const router = useRouter();
   const { addItem, items } = useCart();
+  const tracking = useTracking();
+  const viewedProductId = useRef<string | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, ProductOptionItem[]>
   >({});
@@ -95,6 +98,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const [upsellError, setUpsellError] = useState("");
   const [adding, setAdding] = useState(false);
   const flags = activeProductFlags(product);
+
+  useEffect(() => {
+    if (viewedProductId.current === product.id) {
+      return;
+    }
+
+    viewedProductId.current = product.id;
+    tracking.viewContent(product);
+  }, [product, tracking]);
 
   useEffect(() => {
     if (!imageExpanded) {
@@ -239,6 +251,12 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         observations,
         options,
         totalCents: (offerPriceCents + optionsTotalCents) * quantity,
+      });
+      tracking.addToCart({
+        id: product.id,
+        name: product.name,
+        quantity,
+        valueCents: (offerPriceCents + optionsTotalCents) * quantity,
       });
       if (pendingUpsell) {
         sessionStorage.removeItem(PENDING_UPSELL_STORAGE_KEY);
