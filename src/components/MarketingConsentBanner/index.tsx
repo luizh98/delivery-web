@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/Button";
 import { useMarketingConsent } from "@/components/MarketingConsentProvider";
@@ -9,29 +9,21 @@ import {
   BannerRoot,
   BannerText,
   BannerTitle,
-  PreferencesButton,
 } from "./styles";
 
 export function MarketingConsentBanner() {
   const pathname = usePathname();
   const {
     hasDecision,
-    preferencesOpen,
     setMarketingConsent,
-    openPreferences,
   } = useMarketingConsent();
 
   if (pathname?.startsWith("/admin")) {
     return null;
   }
 
-  if (hasDecision && !preferencesOpen) {
-    return (
-      <PreferencesButton type="button" onClick={openPreferences}>
-        <Settings2 size={16} aria-hidden="true" />
-        Preferências de privacidade
-      </PreferencesButton>
-    );
+  if (hasDecision) {
+    return null;
   }
 
   return (
@@ -45,8 +37,9 @@ export function MarketingConsentBanner() {
         {hasDecision ? "Preferências de privacidade" : "Sua privacidade importa"}
       </BannerTitle>
       <BannerText id="marketing-consent-description">
-        Usamos cookies de marketing para entender o uso do cardápio e melhorar sua
-        experiência. O Meta Pixel só será ativado com sua permissão.
+        Utilizamos cookies para melhorar sua experiência de navegação, entender como
+        o cardápio é utilizado e aprimorar nossos serviços. Escolha se deseja aceitar
+        ou recusar cookies opcionais.
       </BannerText>
       <BannerActions>
         <Button
@@ -54,13 +47,13 @@ export function MarketingConsentBanner() {
           variant="outline"
           onClick={() => setMarketingConsent("denied")}
         >
-          Recusar marketing
+          Recusar
         </Button>
         <Button
           type="button"
           onClick={() => setMarketingConsent("granted")}
         >
-          Permitir marketing
+          Aceitar cookies
         </Button>
       </BannerActions>
     </BannerRoot>

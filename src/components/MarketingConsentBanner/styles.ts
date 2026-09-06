@@ -42,29 +42,3 @@ export const BannerActions = styled("div", {
     flexDirection: "column-reverse",
   },
 });
-
-export const PreferencesButton = styled("button", {
-  position: "fixed",
-  right: "1rem",
-  bottom: "1rem",
-  zIndex: 99,
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  minHeight: "2.5rem",
-  padding: "0.625rem 0.875rem",
-  border: "1px solid var(--color-border)",
-  borderRadius: "999px",
-  background: "var(--color-surface)",
-  color: "var(--color-foreground)",
-  boxShadow: "0 0.5rem 1.5rem rgb(15 23 42 / 0.14)",
-  fontSize: "0.8125rem",
-  fontWeight: 600,
-  "&:hover": {
-    background: "var(--color-surface-muted)",
-  },
-  "@bp2": {
-    right: "0.75rem",
-    bottom: "4.5rem",
-  },
-});
