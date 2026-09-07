@@ -57,6 +57,8 @@ export type CheckoutDraft = {
   city: string;
   state: string;
   zipCode: string;
+  latitude?: number;
+  longitude?: number;
   paymentMethod: "" | "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "CASH";
   changeForReais: number;
 };
@@ -72,6 +74,8 @@ const EMPTY_CHECKOUT: CheckoutDraft = {
   city: "",
   state: "",
   zipCode: "",
+  latitude: undefined,
+  longitude: undefined,
   paymentMethod: "",
   changeForReais: 0,
 };
@@ -390,7 +394,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           neighborhood: checkout.neighborhood,
           city: checkout.city,
           state: checkout.state,
-          zipCode: checkout.zipCode,
+           zipCode: checkout.zipCode,
+           latitude: checkout.latitude,
+           longitude: checkout.longitude,
         },
         lastOrder,
         recentOrderTrackingCodes: trackingCode

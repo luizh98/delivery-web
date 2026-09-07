@@ -14,6 +14,10 @@ type GoogleAddressComponent = {
 type GooglePlaceDetails = {
   formattedAddress?: string;
   addressComponents?: GoogleAddressComponent[];
+  location?: {
+    latitude?: number;
+    longitude?: number;
+  };
 };
 
 const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,36}$/;
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
       {
         headers: {
           "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "formattedAddress,addressComponents",
+          "X-Goog-FieldMask": "formattedAddress,addressComponents,location",
         },
         cache: "no-store",
       },
@@ -126,6 +130,8 @@ export async function POST(request: Request) {
       city,
       state,
       zipCode: component(components, ["postal_code"]),
+      latitude: data.location?.latitude,
+      longitude: data.location?.longitude,
     });
   } catch {
     return Response.json(

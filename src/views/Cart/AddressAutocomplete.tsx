@@ -20,6 +20,8 @@ export type AddressSelection = {
   city: string;
   state: string;
   zipCode: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 type Suggestion = {

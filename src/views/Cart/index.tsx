@@ -120,6 +120,8 @@ const checkoutSchema = z
     city: z.string(),
     state: z.string(),
     zipCode: z.string(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
     paymentMethod: z
       .enum(["", "PIX", "CREDIT_CARD", "DEBIT_CARD", "CASH"])
       .refine((value) => value !== "", "Selecione a forma de pagamento."),
@@ -241,7 +243,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
         neighborhood: checkout.neighborhood,
         city: checkout.city,
         state: checkout.state,
-        zipCode: checkout.zipCode,
+      zipCode: checkout.zipCode,
+      latitude: checkout.latitude,
+      longitude: checkout.longitude,
       }
     : null;
   const pickupAddressLines = formatAddressLines(restaurantConfig?.address);
@@ -338,8 +342,10 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                 complement: checkout.complement,
                 neighborhood: checkout.neighborhood,
                 city: checkout.city,
-                state: checkout.state,
-                zipCode: checkout.zipCode,
+                 state: checkout.state,
+                 zipCode: checkout.zipCode,
+                 latitude: checkout.latitude,
+                 longitude: checkout.longitude,
               },
             }),
           },
@@ -366,6 +372,8 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     checkout.city,
     checkout.complement,
     checkout.neighborhood,
+    checkout.latitude,
+    checkout.longitude,
     checkout.number,
     checkout.state,
     checkout.street,
@@ -438,8 +446,10 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   complement: values.complement,
                   neighborhood: values.neighborhood,
                   city: values.city,
-                  state: values.state,
-                  zipCode: values.zipCode,
+                   state: values.state,
+                   zipCode: values.zipCode,
+                   latitude: values.latitude,
+                   longitude: values.longitude,
                 }
               : undefined,
           paymentMethod: values.paymentMethod,

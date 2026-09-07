@@ -53,7 +53,9 @@ function savedAddress(checkout: CheckoutDraft): DeliveryAddress | null {
     neighborhood: checkout.neighborhood,
     city: checkout.city,
     state: checkout.state,
-    zipCode: checkout.zipCode,
+      zipCode: checkout.zipCode,
+      latitude: checkout.latitude,
+      longitude: checkout.longitude,
   };
 }
 
@@ -115,6 +117,8 @@ export function DeliveryAddressPage() {
       city: nextAddress.city,
       state: nextAddress.state,
       zipCode: nextAddress.zipCode,
+      latitude: nextAddress.latitude,
+      longitude: nextAddress.longitude,
     });
     returnToCheckout();
   }

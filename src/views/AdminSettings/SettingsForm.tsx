@@ -74,6 +74,13 @@ const settingsSchema = z.object({
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int().min(1, "Informe pelo menos 1 minuto."),
   deliveryEnabled: z.boolean(),
+  deliveryOrganizationStrategy: z.enum(["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]),
+  deliveryMaxOrdersPerRoute: z.number().int().min(2).max(4),
+  deliveryWaitToleranceMinutes: z.number().int().min(0).max(30),
+  deliveryMaxDistanceKm: z.number().int().refine(
+    (value) => [1, 2, 3, 5].includes(value),
+    "Escolha uma distância válida.",
+  ),
   pricingMode: z.enum(["PER_KM", "RANGE"]),
   maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
   pricePerKmReais: z.number().min(0, "Valor por km não pode ser negativo."),
@@ -109,6 +116,21 @@ const settingsSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
 }).superRefine((values, context) => {
+  if (values.deliveryWaitToleranceMinutes < 0 || values.deliveryWaitToleranceMinutes > 30) {
+    context.addIssue({
+      code: "custom",
+      path: ["deliveryWaitToleranceMinutes"],
+      message: "Informe um tempo entre 0 e 30 minutos.",
+    });
+  }
+  if (values.deliveryOrganizationStrategy !== "INDIVIDUAL"
+    && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 4)) {
+    context.addIssue({
+      code: "custom",
+      path: ["deliveryMaxOrdersPerRoute"],
+      message: "Escolha entre 2 e 4 pedidos.",
+    });
+  }
   if (!values.deliveryEnabled) {
     if (values.metaPixelEnabled && !values.metaPixelId.trim()) {
       context.addIssue({
@@ -239,6 +261,10 @@ export function SettingsForm({
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
+      deliveryOrganizationStrategy: initialConfig?.deliveryOrganization?.strategy ?? "INDIVIDUAL",
+      deliveryMaxOrdersPerRoute: initialConfig?.deliveryOrganization?.maxOrdersPerRoute ?? 2,
+      deliveryWaitToleranceMinutes: initialConfig?.deliveryOrganization?.waitToleranceMinutes ?? 5,
+      deliveryMaxDistanceKm: initialConfig?.deliveryOrganization?.maxDistanceKm ?? 2,
       pricingMode: initialConfig?.deliverySettings?.pricingMode ?? "PER_KM",
       maxDistanceKm: initialConfig?.deliverySettings?.maxDistanceKm ?? 0,
       pricePerKmReais: centsToReais(
@@ -274,6 +300,10 @@ export function SettingsForm({
   const pricingMode = useWatch({
     control: form.control,
     name: "pricingMode",
+  });
+  const deliveryOrganizationStrategy = useWatch({
+    control: form.control,
+    name: "deliveryOrganizationStrategy",
   });
   const rangeValues = useWatch({
     control: form.control,
@@ -359,6 +389,12 @@ export function SettingsForm({
             values.freeDeliveryMinimumOrderReais,
           ),
           freeDeliveryDays: values.freeDeliveryDays,
+        },
+        deliveryOrganization: {
+          strategy: values.deliveryOrganizationStrategy,
+          maxOrdersPerRoute: values.deliveryMaxOrdersPerRoute,
+          waitToleranceMinutes: values.deliveryWaitToleranceMinutes,
+          maxDistanceKm: values.deliveryMaxDistanceKm,
         },
         theme: {
           primaryColor: values.primaryColor,
@@ -545,6 +581,74 @@ export function SettingsForm({
               <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
             </Field>
           </MediaUploadGrid>
+        </AccordionBody>
+      </Accordion>
+
+      <Accordion>
+        <AccordionSummary>
+          <AccordionSummaryText>
+            <strong>Organização das entregas</strong>
+            <span>Escolha como os pedidos podem seguir juntos.</span>
+          </AccordionSummaryText>
+          <AccordionIcon data-accordion-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </AccordionIcon>
+        </AccordionSummary>
+        <AccordionBody>
+          <Field label="Como você quer organizar suas entregas?">
+            <Select {...form.register("deliveryOrganizationStrategy")}>
+              <option value="INDIVIDUAL">Uma entrega por vez</option>
+              <option value="NEIGHBORHOOD">Agrupar por bairro</option>
+              <option value="PROXIMITY">Agrupar por proximidade</option>
+            </Select>
+          </Field>
+          <Muted>
+            {deliveryOrganizationStrategy === "INDIVIDUAL"
+              ? "Cada pedido é enviado individualmente para um motoboy."
+              : deliveryOrganizationStrategy === "NEIGHBORHOOD"
+                ? "Pedidos do mesmo bairro podem ser enviados juntos."
+                : "Pedidos com endereços próximos podem ser enviados juntos."}
+          </Muted>
+          {deliveryOrganizationStrategy !== "INDIVIDUAL" ? (
+            <GridTwo>
+              <Field
+                label="Quantos pedidos o motoboy pode levar por viagem?"
+                error={form.formState.errors.deliveryMaxOrdersPerRoute?.message}
+              >
+                <Select {...form.register("deliveryMaxOrdersPerRoute", { valueAsNumber: true })}>
+                  <option value={2}>2 pedidos</option>
+                  <option value={3}>3 pedidos</option>
+                  <option value={4}>4 pedidos</option>
+                </Select>
+              </Field>
+              <Field
+                label="Tempo de espera para agrupar pedidos (minutos)"
+                error={form.formState.errors.deliveryWaitToleranceMinutes?.message}
+              >
+                <Input
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="1"
+                  {...form.register("deliveryWaitToleranceMinutes", { valueAsNumber: true })}
+                />
+              </Field>
+              {deliveryOrganizationStrategy === "PROXIMITY" ? (
+                <Field
+                  label="Distância máxima entre entregas"
+                  error={form.formState.errors.deliveryMaxDistanceKm?.message}
+                >
+                  <Select {...form.register("deliveryMaxDistanceKm", { valueAsNumber: true })}>
+                    <option value={1}>1 km</option>
+                    <option value={2}>2 km</option>
+                    <option value={3}>3 km</option>
+                    <option value={5}>5 km</option>
+                  </Select>
+                </Field>
+              ) : null}
+            </GridTwo>
+          ) : null}
+          <Muted>O tempo é um limite máximo: se surgir uma combinação adequada antes, ela segue imediatamente.</Muted>
         </AccordionBody>
       </Accordion>
 

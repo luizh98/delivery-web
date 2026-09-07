@@ -5,12 +5,14 @@ import type {
   AdminCustomerPage,
   AdminUserResponse,
   CurrentUserResponse,
+  DeliveryRouteResponse,
   MenuResponse,
   OrderResponse,
   OrderStatus,
   Product,
   ProductCategory,
   ProductOptionGroupTemplate,
+  MotoboyResponse,
   PromotionCombo,
   PromotionComboPublicResponse,
   PublicOrderTrackingResponse,
@@ -89,6 +91,14 @@ export async function getAdminOrders(statuses: OrderStatus[]) {
   const query = new URLSearchParams();
   statuses.forEach((status) => query.append("status", status));
   return (await backendFetch<OrderResponse[]>(`admin/orders?${query}`)) ?? [];
+}
+
+export async function getAdminDeliveryRoutes() {
+  return (await backendFetch<DeliveryRouteResponse[]>("admin/delivery-routes")) ?? [];
+}
+
+export async function getAdminMotoboys() {
+  return (await backendFetch<MotoboyResponse[]>("admin/motoboys")) ?? [];
 }
 
 export async function getAdminCustomers() {

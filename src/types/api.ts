@@ -35,6 +35,8 @@ export type Address = {
   city?: string;
   state?: string;
   zipCode?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type DeliverySettings = {
@@ -45,6 +47,15 @@ export type DeliverySettings = {
   deliveryFeeRanges?: DeliveryFeeRange[];
   freeDeliveryMinimumOrderCents?: number;
   freeDeliveryDays?: DayOfWeek[];
+};
+
+export type DeliveryOrganizationStrategy = "INDIVIDUAL" | "NEIGHBORHOOD" | "PROXIMITY";
+
+export type DeliveryOrganizationSettings = {
+  strategy?: DeliveryOrganizationStrategy;
+  maxOrdersPerRoute?: number;
+  waitToleranceMinutes?: number;
+  maxDistanceKm?: number;
 };
 
 export type DeliveryFeeRange = {
@@ -66,6 +77,7 @@ export type RestaurantConfigResponse = {
   businessHours?: BusinessHour[];
   holidayHours?: HolidayHour[];
   deliverySettings?: DeliverySettings;
+  deliveryOrganization?: DeliveryOrganizationSettings;
   integrations?: RestaurantIntegrations;
   automaticOrderConfirmation?: boolean;
   overdueOrderAlertEnabled?: boolean;
@@ -207,6 +219,29 @@ export type OrderResponse = {
   whatsappMessage?: string;
   createdAt?: string;
   updatedAt?: string;
+  deliveryRouteId?: string;
+  motoboyId?: string;
+};
+
+export type MotoboyResponse = {
+  id: string;
+  name: string;
+  phone?: string;
+  active: boolean;
+};
+
+export type DeliveryRouteStatus = "WAITING" | "READY" | "OUT_FOR_DELIVERY" | "COMPLETED";
+
+export type DeliveryRouteResponse = {
+  id: string;
+  status: DeliveryRouteStatus;
+  motoboyId?: string;
+  motoboy?: MotoboyResponse | null;
+  orders: OrderResponse[];
+  toleranceExpiresAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt?: string;
 };
 
 export type PublicOrderTrackingResponse = {
