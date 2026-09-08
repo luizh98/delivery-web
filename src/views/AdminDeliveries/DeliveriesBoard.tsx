@@ -2,7 +2,7 @@
 
 import { DayPicker, type DateRange } from "@daypicker/react";
 import { ptBR } from "@daypicker/react/locale";
-import { Bike, CalendarDays, Check, CircleCheck, Clock3, Plus, RefreshCw, UserRound, X } from "lucide-react";
+import { Bike, CalendarDays, Check, CircleCheck, Clock3, GripVertical, Plus, RefreshCw, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
@@ -15,11 +15,14 @@ import {
   CourierColumn,
   CourierHeader,
   CourierName,
+  DragHandle,
+  DragHint,
   Empty,
   ErrorText,
   Header,
   MotoboyForm,
   OrderList,
+  OrderDetails,
   OrderMeta,
   OrderRow,
   OrderTitle,
@@ -76,6 +79,8 @@ const statusIcons = {
 } satisfies Record<DeliveryRouteStatus, typeof Clock3>;
 
 type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
+type DraggedOrder = { orderId: string; routeId: string };
+type DropTarget = { routeId: string; orderId?: string };
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 
@@ -100,6 +105,8 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
   const [{ startDate, endDate }, setDateRange] = useState(() => getPresetDateRange("today"));
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [draftDateRange, setDraftDateRange] = useState<DateRange>();
+  const [draggedOrder, setDraggedOrder] = useState<DraggedOrder | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
@@ -233,6 +240,59 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
     }
   }
 
+  function canReorder(route: DeliveryRouteResponse) {
+    return route.status === "WAITING" || route.status === "READY";
+  }
+
+  function startDragging(event: React.DragEvent, route: DeliveryRouteResponse, orderId: string) {
+    if (!canReorder(route)) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", orderId);
+    setDraggedOrder({ orderId, routeId: route.id });
+    setDropTarget({ routeId: route.id });
+  }
+
+  function allowDrop(event: React.DragEvent, route: DeliveryRouteResponse, orderId?: string) {
+    if (!draggedOrder || !canReorder(route)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDropTarget({ routeId: route.id, orderId });
+  }
+
+  async function dropOrder(event: React.DragEvent, targetRoute: DeliveryRouteResponse, targetOrderId?: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!draggedOrder || !canReorder(targetRoute)) return;
+
+    const sourceRoute = routes.find((route) => route.id === draggedOrder.routeId);
+    if (!sourceRoute) return;
+    const targetIndex = targetOrderId
+      ? targetRoute.orders.findIndex((order) => order.id === targetOrderId)
+      : targetRoute.orders.length;
+    if (targetIndex < 0) return;
+    const sourceIndex = sourceRoute.orders.findIndex((order) => order.id === draggedOrder.orderId);
+    const position = sourceRoute.id === targetRoute.id && sourceIndex >= 0 && sourceIndex < targetIndex
+      ? targetIndex - 1
+      : targetIndex;
+
+    const orderId = draggedOrder.orderId;
+    setDraggedOrder(null);
+    setDropTarget(null);
+    try {
+      await clientApi<DeliveryRouteResponse>(`admin/delivery-routes/${targetRoute.id}/orders`, {
+        method: "PATCH",
+        body: JSON.stringify({ orderId, position }),
+      });
+      await reload();
+      showToast("Ordem das entregas atualizada");
+    } catch {
+      showToast("Não foi possível reorganizar as entregas.", "error");
+    }
+  }
+
   async function addMotoboy(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!newMotoboyName.trim()) return;
@@ -343,6 +403,7 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
           <Button type="submit"><Plus size={16} /> Cadastrar</Button>
         </MotoboyForm>
         {error ? <ErrorText>{error}</ErrorText> : null}
+        <DragHint><GripVertical size={15} aria-hidden="true" /> Arraste pelo ícone para reordenar ou mover pedidos entre rotas.</DragHint>
       </Toolbar>
       {groups.length === 0 ? <Empty>Nenhuma entrega encontrada.</Empty> : null}
       <Board>
@@ -353,16 +414,35 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
               <span>{group.routes.length} rota(s)</span>
             </CourierHeader>
             {group.routes.map((route) => (
-              <RouteCard key={route.id}>
+              <RouteCard
+                key={route.id}
+                dropTarget={dropTarget?.routeId === route.id}
+                onDragOver={(event) => allowDrop(event, route)}
+                onDrop={(event) => void dropOrder(event, route)}
+              >
                 <RouteHeader>
                   <RouteTitle>Rota #{route.id.slice(-6).toUpperCase()}</RouteTitle>
                   <RouteStatus>{statusLabels[route.status]}</RouteStatus>
                 </RouteHeader>
                 <OrderList>
                   {route.orders.map((order) => (
-                    <OrderRow key={order.id}>
-                      <OrderTitle><UserRound size={14} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
-                      <OrderMeta>{order.deliveryAddress?.neighborhood || "Bairro não informado"} · {shortAddress(order)}</OrderMeta>
+                    <OrderRow
+                      key={order.id}
+                      draggable={canReorder(route)}
+                      reorderable={canReorder(route)}
+                      dragActive={draggedOrder?.orderId === order.id}
+                      dropTarget={dropTarget?.routeId === route.id && dropTarget.orderId === order.id}
+                      aria-label={canReorder(route) ? `Arraste o pedido ${order.id.slice(-6)} para reorganizar` : undefined}
+                      onDragStart={(event) => startDragging(event, route, order.id)}
+                      onDragEnd={() => { setDraggedOrder(null); setDropTarget(null); }}
+                      onDragOver={(event) => { event.stopPropagation(); allowDrop(event, route, order.id); }}
+                      onDrop={(event) => void dropOrder(event, route, order.id)}
+                    >
+                      <DragHandle aria-hidden="true">{canReorder(route) ? <GripVertical size={16} /> : null}</DragHandle>
+                      <OrderDetails>
+                        <OrderTitle><UserRound size={14} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
+                        <OrderMeta>{order.deliveryAddress?.neighborhood || "Bairro não informado"} · {shortAddress(order)}</OrderMeta>
+                      </OrderDetails>
                     </OrderRow>
                   ))}
                 </OrderList>
