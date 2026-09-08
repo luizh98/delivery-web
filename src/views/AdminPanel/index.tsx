@@ -22,9 +22,9 @@ import {
 
 const shortcuts = [
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
-  { href: "/admin/deliveries", label: "Entregas", icon: Bike },
   { href: "/admin/printer", label: "Impressora", icon: Printer },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
+  { href: "/admin/deliveries", label: "Entregas", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
   { href: "/admin/settings", label: "Configuração", icon: Settings },
