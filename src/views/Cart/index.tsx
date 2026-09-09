@@ -298,7 +298,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     }
 
     const current = form.getValues();
-    const address = customer.savedAddress;
+    // Address picked in checkout is current order choice. Only hydrate profile
+    // address when checkout does not already have a complete selection.
+    const address = hasSavedDeliveryAddress ? current : customer.savedAddress;
     const populated: CheckoutDraft = {
       ...current,
       customerName: customer.name,
@@ -314,7 +316,13 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     appliedCustomerId.current = customer.id;
     form.reset(populated);
     updateCheckout(populated);
-  }, [customer, customerLoading, form, updateCheckout]);
+  }, [
+    customer,
+    customerLoading,
+    form,
+    hasSavedDeliveryAddress,
+    updateCheckout,
+  ]);
 
   useEffect(() => {
     if (step !== 2 || deliveryType !== "DELIVERY" || !hasSavedDeliveryAddress) {

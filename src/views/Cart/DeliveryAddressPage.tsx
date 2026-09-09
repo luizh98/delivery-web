@@ -8,8 +8,10 @@ import {
   type CheckoutDraft,
   useCart,
 } from "@/components/CartProvider";
+import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { Field, Input } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
+import { clientApi } from "@/services/api/client";
 import { CartCard } from "@/views/Home/styles";
 import {
   AddressAutocomplete,
@@ -62,9 +64,12 @@ function savedAddress(checkout: CheckoutDraft): DeliveryAddress | null {
 export function DeliveryAddressPage() {
   const router = useRouter();
   const { checkout, updateCheckout } = useCart();
+  const { customer, loading: customerLoading, refresh } = useCustomerAuth();
   const persistedAddress = savedAddress(checkout);
   const [draft, setDraft] = useState<DeliveryAddress | null>(null);
   const [errors, setErrors] = useState<AddressErrors>({});
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
   const address = draft ?? persistedAddress;
 
   function returnToCheckout() {
@@ -79,7 +84,7 @@ export function DeliveryAddressPage() {
     setErrors({});
   }
 
-  function saveAddress() {
+  async function saveAddress() {
     if (!address) {
       return;
     }
@@ -108,7 +113,12 @@ export function DeliveryAddressPage() {
       return;
     }
 
-    updateCheckout({
+    if (customerLoading) {
+      setSaveError("Aguarde o carregamento da sua conta antes de salvar.");
+      return;
+    }
+
+    const nextCheckout = {
       ...checkout,
       street: nextAddress.street,
       number: nextAddress.number,
@@ -119,8 +129,38 @@ export function DeliveryAddressPage() {
       zipCode: nextAddress.zipCode,
       latitude: nextAddress.latitude,
       longitude: nextAddress.longitude,
-    });
-    returnToCheckout();
+    };
+
+    setSaveError("");
+    setSaving(true);
+    try {
+      if (customer) {
+        await clientApi("customer/me/address", {
+          method: "PUT",
+          body: JSON.stringify({
+            address: {
+              street: nextAddress.street,
+              number: nextAddress.number,
+              complement: nextAddress.complement,
+              neighborhood: nextAddress.neighborhood,
+              city: nextAddress.city,
+              state: nextAddress.state,
+              zipCode: nextAddress.zipCode,
+              latitude: nextAddress.latitude,
+              longitude: nextAddress.longitude,
+            },
+          }),
+        });
+        await refresh();
+      }
+
+      updateCheckout(nextCheckout);
+      returnToCheckout();
+    } catch {
+      setSaveError("N\u00e3o foi poss\u00edvel salvar seu endere\u00e7o. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -206,10 +246,11 @@ export function DeliveryAddressPage() {
               <Button type="button" variant="outline" onClick={returnToCheckout}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={!address}>
+              <Button type="submit" disabled={!address || saving}>
                 Salvar endereço
               </Button>
             </AddressFormActions>
+            {saveError ? <CartPageText role="alert">{saveError}</CartPageText> : null}
           </AddressPageForm>
         </CartCard>
       </CartPageContent>
