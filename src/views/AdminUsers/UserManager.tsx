@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, Save, ShieldCheck, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
@@ -37,6 +37,8 @@ import {
 } from "./styles";
 
 const userSchema = z.object({
+  name: z.string().trim().max(120, "O nome deve ter no máximo 120 caracteres."),
+  phone: z.string().trim().max(30, "O celular deve ter no máximo 30 caracteres."),
   email: z.email("Informe um e-mail válido."),
   password: z
     .string()
@@ -45,9 +47,12 @@ const userSchema = z.object({
       (password) => password.length === 0 || password.length >= 8,
       "A senha deve ter pelo menos 8 caracteres.",
     ),
-  role: z.enum(["ADMIN", "STANDARD"]),
+  role: z.enum(["ADMIN", "STANDARD", "MOTOBOY"]),
   active: z.boolean(),
-});
+}).refine(
+  (values) => values.role !== "MOTOBOY" || values.name.length > 0,
+  { message: "Informe o nome do motoboy.", path: ["name"] },
+);
 
 type UserForm = z.infer<typeof userSchema>;
 
@@ -57,6 +62,8 @@ type UserManagerProps = {
 };
 
 const defaultUserForm = (): UserForm => ({
+  name: "",
+  phone: "",
   email: "",
   password: "",
   role: "STANDARD",
@@ -78,6 +85,7 @@ export function UserManager({
     defaultValues: defaultUserForm(),
   });
   const isEditing = Boolean(editingUserId);
+  const selectedRole = useWatch({ control: form.control, name: "role" });
 
   function resetForm() {
     setEditingUserId(null);
@@ -89,6 +97,8 @@ export function UserManager({
     setEditingUserId(user.id);
     setError("");
     form.reset({
+      name: user.name ?? "",
+      phone: user.phone ?? "",
       email: user.email,
       password: "",
       role: user.role,
@@ -110,12 +120,16 @@ export function UserManager({
       : "admin/users";
     const body = editingUserId
       ? {
+          name: values.name || null,
+          phone: values.phone || null,
           email: values.email,
           role: values.role,
           active: values.active,
           ...(values.password ? { password: values.password } : {}),
         }
       : {
+          name: values.name || null,
+          phone: values.phone || null,
           email: values.email,
           password: values.password,
           role: values.role,
@@ -218,8 +232,19 @@ export function UserManager({
                 <Select {...form.register("role")}>
                   <option value="STANDARD">Padrão</option>
                   <option value="ADMIN">Administrador</option>
+                  <option value="MOTOBOY">Motoboy</option>
                 </Select>
               </Field>
+              {selectedRole === "MOTOBOY" ? (
+                <>
+                  <Field label="Nome do motoboy" error={form.formState.errors.name?.message}>
+                    <Input autoComplete="name" {...form.register("name")} />
+                  </Field>
+                  <Field label="Celular" error={form.formState.errors.phone?.message}>
+                    <Input type="tel" autoComplete="tel" {...form.register("phone")} />
+                  </Field>
+                </>
+              ) : null}
               {isEditing ? (
                 <CheckboxLabel>
                   <input type="checkbox" {...form.register("active")} />
@@ -250,16 +275,16 @@ export function UserManager({
                 <Card key={user.id}>
                   <CardHeader>
                     <div>
-                      <CardTitle>{user.email}</CardTitle>
+                      <CardTitle>{user.role === "MOTOBOY" ? user.name || user.email : user.email}</CardTitle>
                       <Muted>
-                        {user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
+                        {user.role === "MOTOBOY" ? `${user.email}${user.phone ? ` · ${user.phone}` : ""}` : user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
                       </Muted>
                     </div>
                     <ShieldCheck size={18} />
                   </CardHeader>
                   <div>
-                    <RoleBadge data-admin={user.role === "ADMIN"}>
-                      {user.role === "ADMIN" ? "Administrador" : "Padrão"}
+                    <RoleBadge data-admin={user.role === "ADMIN"} data-motoboy={user.role === "MOTOBOY"}>
+                      {user.role === "ADMIN" ? "Administrador" : user.role === "MOTOBOY" ? "Motoboy" : "Padrão"}
                     </RoleBadge>
                     <StatusBadge data-active={user.active}>
                       {user.active ? "Ativo" : "Inativo"}

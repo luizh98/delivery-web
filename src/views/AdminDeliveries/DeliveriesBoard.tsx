@@ -2,7 +2,7 @@
 
 import { DayPicker, type DateRange } from "@daypicker/react";
 import { ptBR } from "@daypicker/react/locale";
-import { Bike, CalendarDays, Check, CircleCheck, Clock3, GripVertical, Plus, RefreshCw, UserRound, X } from "lucide-react";
+import { Bike, CalendarDays, Check, CircleCheck, Clock3, GripVertical, RefreshCw, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
@@ -18,9 +18,7 @@ import {
   DragHandle,
   DragHint,
   Empty,
-  ErrorText,
   Header,
-  MotoboyForm,
   OrderList,
   OrderDetails,
   OrderMeta,
@@ -94,10 +92,7 @@ const datePresetLabels: Record<DatePreset, string> = {
 
 export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
   const [routes, setRoutes] = useState(initialRoutes);
-  const [motoboys, setMotoboys] = useState(initialMotoboys);
-  const [newMotoboyName, setNewMotoboyName] = useState("");
-  const [newMotoboyPhone, setNewMotoboyPhone] = useState("");
-  const [error, setError] = useState("");
+  const [motoboys] = useState(initialMotoboys);
   const [now, setNow] = useState(() => Date.now());
   const [statusFilter, setStatusFilter] = useState<DeliveryRouteStatus | null>(null);
   const [search, setSearch] = useState("");
@@ -293,24 +288,6 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
     }
   }
 
-  async function addMotoboy(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!newMotoboyName.trim()) return;
-    setError("");
-    try {
-      const motoboy = await clientApi<MotoboyResponse>("admin/motoboys", {
-        method: "POST",
-        body: JSON.stringify({ name: newMotoboyName, phone: newMotoboyPhone }),
-      });
-      setMotoboys((current) => [...current, motoboy].sort((left, right) => left.name.localeCompare(right.name)));
-      setNewMotoboyName("");
-      setNewMotoboyPhone("");
-      showToast("Motoboy cadastrado");
-    } catch {
-      setError("Não foi possível cadastrar o motoboy.");
-    }
-  }
-
   return (
     <Root>
       <Header>
@@ -397,13 +374,7 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
         </DateFilterWrap>
       </SearchFilter>
       <Toolbar>
-        <MotoboyForm onSubmit={addMotoboy}>
-          <Field label="Novo motoboy"><Input value={newMotoboyName} onChange={(event) => setNewMotoboyName(event.target.value)} placeholder="Nome" /></Field>
-          <Field label="Celular"><Input value={newMotoboyPhone} onChange={(event) => setNewMotoboyPhone(event.target.value)} placeholder="Opcional" /></Field>
-          <Button type="submit"><Plus size={16} /> Cadastrar</Button>
-        </MotoboyForm>
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <DragHint><GripVertical size={15} aria-hidden="true" /> Arraste pelo ícone para reordenar ou mover pedidos entre rotas.</DragHint>
+        <DragHint><GripVertical size={15} aria-hidden="true" /> Cadastre motoboys em Usuários. Arraste pelo ícone para reorganizar ou mover pedidos entre rotas.</DragHint>
       </Toolbar>
       {groups.length === 0 ? <Empty>Nenhuma entrega encontrada.</Empty> : null}
       <Board>

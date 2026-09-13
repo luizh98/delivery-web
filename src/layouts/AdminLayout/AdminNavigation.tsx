@@ -50,7 +50,7 @@ const navItems = [
   { href: "/admin/analytics", label: "Análises", icon: LineChart, adminOnly: true },
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
-  { href: "/admin/deliveries", label: "Entregas", icon: Bike },
+  { href: "/admin/deliveries", label: "Entregas", motoboyLabel: "Pedidos", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },
   { href: "/admin/users", label: "Usuários", icon: UserCog, adminOnly: true },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
@@ -71,12 +71,14 @@ type AccountSummaryProps = {
 
 type NavigationItemsProps = {
   isAdmin: boolean;
+  isMotoboy: boolean;
   isDesktopSidebarExpanded?: boolean;
   onNavigate?: () => void;
 };
 
 function NavigationItems({
   isAdmin,
+  isMotoboy,
   isDesktopSidebarExpanded,
   onNavigate,
 }: NavigationItemsProps) {
@@ -85,9 +87,10 @@ function NavigationItems({
   return (
     <>
       {navItems
-        .filter((item) => !item.adminOnly || isAdmin)
+        .filter((item) => isMotoboy ? item.href === "/admin/deliveries" : !item.adminOnly || isAdmin)
         .map((item) => {
           const Icon = item.icon;
+          const label = isMotoboy ? item.motoboyLabel ?? item.label : item.label;
           const isActive = item.href === "/admin"
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -97,16 +100,16 @@ function NavigationItems({
               key={item.href}
               as={Link}
               href={item.href}
-              aria-label={item.label}
+              aria-label={label}
               aria-current={isActive ? "page" : undefined}
               data-active={isActive}
-              data-label={item.label}
+              data-label={label}
               data-sidebar-expanded={isDesktopSidebarExpanded}
-              title={isDesktopSidebarExpanded ? undefined : item.label}
+              title={isDesktopSidebarExpanded ? undefined : label}
               onClick={onNavigate}
             >
               <Icon aria-hidden="true" size={18} strokeWidth={1.9} />
-              <span>{item.label}</span>
+              <span>{label}</span>
             </NavLink>
           );
         })}
@@ -130,6 +133,7 @@ export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps)
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const isAdmin = admin.roles.includes("ADMIN");
+  const isMotoboy = admin.roles.includes("MOTOBOY");
 
   function openMobileMenu(event: ReactMouseEvent<HTMLButtonElement>) {
     menuButtonRef.current = event.currentTarget;
@@ -231,6 +235,7 @@ export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps)
         >
           <NavigationItems
             isAdmin={isAdmin}
+            isMotoboy={isMotoboy}
             isDesktopSidebarExpanded={isDesktopSidebarExpanded}
           />
         </Nav>
@@ -283,6 +288,7 @@ export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps)
             <Nav aria-label="Navegação principal">
               <NavigationItems
                 isAdmin={isAdmin}
+                isMotoboy={isMotoboy}
                 onNavigate={() => closeMenu(false)}
               />
             </Nav>

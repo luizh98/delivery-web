@@ -13,7 +13,6 @@ export const Toolbar = styled("div", {
 export const DragHint = styled("p", {
   display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--color-muted)", fontSize: "0.75rem",
 });
-export const MotoboyForm = styled("form", { display: "flex", alignItems: "end", gap: "0.5rem", flexWrap: "wrap" });
 export const Board = styled("div", {
   display: "grid", gap: "1rem", "@md": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
 });
@@ -61,4 +60,3 @@ export const RouteFooter = styled("div", { display: "flex", justifyContent: "spa
 export const Actions = styled("div", { display: "flex", alignItems: "end", gap: "0.5rem", flexWrap: "wrap" });
 export const Waiting = styled("div", { display: "grid", gap: "0.2rem", color: "#b45309", fontSize: "0.75rem", fontWeight: 600 });
 export const Empty = styled("div", { minHeight: "12rem", display: "grid", placeItems: "center", color: "var(--color-muted)", fontSize: "0.875rem" });
-export const ErrorText = styled("p", { color: "#dc2626", fontSize: "0.8125rem" });

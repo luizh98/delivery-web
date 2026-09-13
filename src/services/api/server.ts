@@ -97,6 +97,10 @@ export async function getAdminDeliveryRoutes() {
   return (await backendFetch<DeliveryRouteResponse[]>("admin/delivery-routes")) ?? [];
 }
 
+export async function getMotoboyDeliveryRoutes() {
+  return (await backendFetch<DeliveryRouteResponse[]>("admin/motoboy/delivery-routes")) ?? [];
+}
+
 export async function getAdminMotoboys() {
   return (await backendFetch<MotoboyResponse[]>("admin/motoboys")) ?? [];
 }

@@ -276,10 +276,12 @@ export type CurrentUserResponse = {
   roles: string[];
 };
 
-export type AdminRole = "ADMIN" | "STANDARD";
+export type AdminRole = "ADMIN" | "STANDARD" | "MOTOBOY";
 
 export type AdminUserResponse = {
   id: string;
+  name?: string | null;
+  phone?: string | null;
   email: string;
   role: AdminRole;
   active: boolean;
@@ -462,6 +464,14 @@ export type AdminDashboardPerformance = {
   salesSharePercent: number;
 };
 
+export type AdminDashboardPerformancePage = {
+  items: AdminDashboardPerformance[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
 export type AdminDashboardResponse = {
   summary: AdminDashboardSummary;
   seriesGranularity: "HOUR" | "DAY";
@@ -471,8 +481,6 @@ export type AdminDashboardResponse = {
     averageSeconds: number;
     samples: number;
   }[];
-  items: AdminDashboardPerformance[];
-  options: AdminDashboardPerformance[];
   orderHeatmap: {
     dayOfWeek: number;
     dayLabel: string;

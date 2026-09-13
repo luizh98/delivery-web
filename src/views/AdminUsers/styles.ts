@@ -156,8 +156,13 @@ export const RoleBadge = styled("span", {
   color: "#334155",
 
   "&[data-admin='true']": {
-    background: "#dbeafe",
-    color: "#1d4ed8",
+	background: "#dbeafe",
+	color: "#1d4ed8",
+  },
+
+  "&[data-motoboy='true']": {
+	background: "#dcfce7",
+	color: "#166534",
   },
 });
 
