@@ -402,7 +402,7 @@ export function SettingsForm({
         },
         integrations: {
           metaPixel: {
-            pixelId: values.metaPixelId.trim() || null,
+            pixelId: values.metaPixelId.trim(),
             enabled: values.metaPixelEnabled,
           },
         },
@@ -417,10 +417,7 @@ export function SettingsForm({
         holidayHours: normalizeHolidayHours(holidayHours),
       };
       const body = new FormData();
-      body.append(
-        "config",
-        new Blob([JSON.stringify(configPayload)], { type: "application/json" }),
-      );
+      body.append("config", JSON.stringify(configPayload));
       if (logoFile) {
         body.append("logo", logoFile);
       }
