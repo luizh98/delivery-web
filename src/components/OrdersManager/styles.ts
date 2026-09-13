@@ -341,6 +341,10 @@ export const Modal = styled("div", {
   border: "1px solid var(--color-border)",
   background: "var(--color-surface)",
   boxShadow: "0 24px 48px rgb(0 0 0 / 0.2)",
+
+  "@bp2": {
+    maxHeight: "calc(100dvh - 3rem)",
+  },
 });
 
 export const DatePopover = styled("div", {
