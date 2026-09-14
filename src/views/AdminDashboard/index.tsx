@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DayPicker, type DateRange } from "@daypicker/react";
 import { ptBR } from "@daypicker/react/locale";
 import {
@@ -17,7 +17,11 @@ import {
 import { Button } from "@/components/Button";
 import { Field, Select } from "@/components/Field";
 import { clientApi } from "@/services/api/client";
-import type { AdminDashboardResponse } from "@/types/api";
+import type {
+  AdminDashboardPerformance,
+  AdminDashboardPerformancePage,
+  AdminDashboardResponse,
+} from "@/types/api";
 import { money } from "@/utils/format";
 import {
   MetricChart,
@@ -61,6 +65,8 @@ import {
 type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
 type PerformanceMode = "items" | "options";
 
+const PERFORMANCE_PAGE_SIZE = 20;
+
 const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
 const datePresetLabels: Record<DatePreset, string> = {
@@ -86,6 +92,8 @@ const metrics: {
 
 export function AdminDashboardView() {
   const datePopoverRef = useRef<HTMLDivElement>(null);
+  const performanceSentinelRef = useRef<HTMLDivElement>(null);
+  const performanceRequestRef = useRef<AbortController | null>(null);
   const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [{ startDate, endDate }, setDateRange] = useState(() => getPresetDateRange("today"));
   const [draftDateRange, setDraftDateRange] = useState<DateRange>();
@@ -96,9 +104,16 @@ export function AdminDashboardView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [performance, setPerformance] = useState<AdminDashboardPerformance[]>([]);
+  const [performancePage, setPerformancePage] = useState<AdminDashboardPerformancePage | null>(null);
+  const [performanceLoading, setPerformanceLoading] = useState(true);
+  const [performanceError, setPerformanceError] = useState(false);
+  const [performanceRetry, setPerformanceRetry] = useState(0);
 
   useEffect(() => {
+    performanceRequestRef.current?.abort();
     const controller = new AbortController();
+    performanceRequestRef.current = controller;
     async function loadDashboard() {
       setLoading(true);
       setError(false);
@@ -120,6 +135,87 @@ export function AdminDashboardView() {
     void loadDashboard();
     return () => controller.abort();
   }, [endDate, retry, startDate]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadPerformance() {
+      setPerformance([]);
+      setPerformancePage(null);
+      setPerformanceLoading(true);
+      setPerformanceError(false);
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
+      const params = new URLSearchParams({
+        startDate,
+        endDate,
+        timezone,
+        type: performanceMode,
+        page: "0",
+        size: String(PERFORMANCE_PAGE_SIZE),
+      });
+      try {
+        const response = await clientApi<AdminDashboardPerformancePage>(`admin/dashboard/performance?${params}`, {
+          signal: controller.signal,
+        });
+        setPerformance(response.items);
+        setPerformancePage(response);
+      } catch (requestError) {
+        if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {
+          setPerformanceError(true);
+        }
+      } finally {
+        if (performanceRequestRef.current === controller) setPerformanceLoading(false);
+      }
+    }
+    void loadPerformance();
+    return () => controller.abort();
+  }, [endDate, performanceMode, performanceRetry, startDate]);
+
+  const loadMorePerformance = useCallback(async () => {
+    if (performanceLoading || !performancePage || performancePage.page + 1 >= performancePage.totalPages) return;
+
+    const controller = new AbortController();
+    performanceRequestRef.current?.abort();
+    performanceRequestRef.current = controller;
+    setPerformanceLoading(true);
+    setPerformanceError(false);
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+      timezone,
+      type: performanceMode,
+      page: String(performancePage.page + 1),
+      size: String(PERFORMANCE_PAGE_SIZE),
+    });
+    try {
+      const response = await clientApi<AdminDashboardPerformancePage>(`admin/dashboard/performance?${params}`, {
+        signal: controller.signal,
+      });
+      if (performanceRequestRef.current !== controller) return;
+      setPerformance((current) => [...current, ...response.items]);
+      setPerformancePage(response);
+    } catch (requestError) {
+      if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {
+        setPerformanceError(true);
+      }
+    } finally {
+      if (performanceRequestRef.current === controller) setPerformanceLoading(false);
+    }
+  }, [endDate, performanceLoading, performanceMode, performancePage, startDate]);
+
+  const hasMorePerformance = performancePage !== null
+    && performancePage.page + 1 < performancePage.totalPages;
+
+  useEffect(() => {
+    const sentinel = performanceSentinelRef.current;
+    if (!sentinel || !hasMorePerformance || performanceLoading) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) void loadMorePerformance();
+    }, { rootMargin: "160px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMorePerformance, loadMorePerformance, performanceLoading]);
 
   useEffect(() => {
     if (!isDatePopoverOpen) return;
@@ -154,7 +250,6 @@ export function AdminDashboardView() {
     setIsDatePopoverOpen(false);
   }
 
-  const selectedPerformance = performanceMode === "items" ? data?.items ?? [] : data?.options ?? [];
   const monthLabel = data
     ? monthFormatter.format(new Date(data.monthlySales.year, data.monthlySales.month - 1, 1))
     : "mês selecionado";
@@ -291,7 +386,7 @@ export function AdminDashboardView() {
             <SectionHeader>
               <div>
                 <SectionTitle>Desempenho de itens e opcionais</SectionTitle>
-                <SectionSubtitle>Top 10 por valor vendido</SectionSubtitle>
+                  <SectionSubtitle>Carregamento gradual por valor vendido</SectionSubtitle>
               </div>
               <ToggleGroup aria-label="Tipo de desempenho">
                 <ToggleButton
@@ -312,7 +407,20 @@ export function AdminDashboardView() {
                 </ToggleButton>
               </ToggleGroup>
             </SectionHeader>
-            <PerformanceTable values={selectedPerformance} />
+            <PerformanceTable values={performance} loading={performanceLoading} />
+            {performanceError ? (
+              <Feedback>
+                <span>Não foi possível carregar o ranking.</span>
+                <Button type="button" variant="outline" onClick={() => setPerformanceRetry((current) => current + 1)}>
+                  Tentar novamente
+                </Button>
+              </Feedback>
+            ) : null}
+            {hasMorePerformance ? (
+              <div ref={performanceSentinelRef} aria-live="polite">
+                {performanceLoading ? "Carregando mais itens…" : "Role para carregar mais itens."}
+              </div>
+            ) : null}
           </FullSection>
 
           <FullSection>

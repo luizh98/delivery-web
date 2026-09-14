@@ -145,9 +145,15 @@ export function StatusTimeChart({
   );
 }
 
-export function PerformanceTable({ values }: { values: AdminDashboardPerformance[] }) {
+export function PerformanceTable({
+  values,
+  loading = false,
+}: {
+  values: AdminDashboardPerformance[];
+  loading?: boolean;
+}) {
   if (values.length === 0) {
-    return <Empty>Sem vendas para montar o ranking.</Empty>;
+    return <Empty>{loading ? "Carregando ranking…" : "Sem vendas para montar o ranking."}</Empty>;
   }
   return (
     <TableViewport>
