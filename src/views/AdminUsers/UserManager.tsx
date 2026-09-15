@@ -232,7 +232,7 @@ export function UserManager({
                 <Select {...form.register("role")}>
                   <option value="STANDARD">Padrão</option>
                   <option value="ADMIN">Administrador</option>
-                  <option value="MOTOBOY">Motoboy</option>
+                  <option value="MOTOBOY">Entregador</option>
                 </Select>
               </Field>
               {selectedRole === "MOTOBOY" ? (
@@ -284,7 +284,7 @@ export function UserManager({
                   </CardHeader>
                   <div>
                     <RoleBadge data-admin={user.role === "ADMIN"} data-motoboy={user.role === "MOTOBOY"}>
-                      {user.role === "ADMIN" ? "Administrador" : user.role === "MOTOBOY" ? "Motoboy" : "Padrão"}
+                      {user.role === "ADMIN" ? "Administrador" : user.role === "MOTOBOY" ? "Entregador" : "Padrão"}
                     </RoleBadge>
                     <StatusBadge data-active={user.active}>
                       {user.active ? "Ativo" : "Inativo"}
