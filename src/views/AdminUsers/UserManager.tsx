@@ -47,10 +47,10 @@ const userSchema = z.object({
       (password) => password.length === 0 || password.length >= 8,
       "A senha deve ter pelo menos 8 caracteres.",
     ),
-  role: z.enum(["ADMIN", "STANDARD", "MOTOBOY"]),
+  role: z.enum(["ADMIN", "STANDARD", "ENTREGADOR"]),
   active: z.boolean(),
 }).refine(
-  (values) => values.role !== "MOTOBOY" || values.name.length > 0,
+  (values) => values.role !== "ENTREGADOR" || values.name.length > 0,
   { message: "Informe o nome do motoboy.", path: ["name"] },
 );
 
@@ -232,10 +232,10 @@ export function UserManager({
                 <Select {...form.register("role")}>
                   <option value="STANDARD">Padrão</option>
                   <option value="ADMIN">Administrador</option>
-                  <option value="MOTOBOY">Entregador</option>
+                  <option value="ENTREGADOR">Entregador</option>
                 </Select>
               </Field>
-              {selectedRole === "MOTOBOY" ? (
+              {selectedRole === "ENTREGADOR" ? (
                 <>
                   <Field label="Nome do motoboy" error={form.formState.errors.name?.message}>
                     <Input autoComplete="name" {...form.register("name")} />
@@ -275,16 +275,16 @@ export function UserManager({
                 <Card key={user.id}>
                   <CardHeader>
                     <div>
-                      <CardTitle>{user.role === "MOTOBOY" ? user.name || user.email : user.email}</CardTitle>
+                      <CardTitle>{user.role === "ENTREGADOR" ? user.name || user.email : user.email}</CardTitle>
                       <Muted>
-                        {user.role === "MOTOBOY" ? `${user.email}${user.phone ? ` · ${user.phone}` : ""}` : user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
+                        {user.role === "ENTREGADOR" ? `${user.email}${user.phone ? ` · ${user.phone}` : ""}` : user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
                       </Muted>
                     </div>
                     <ShieldCheck size={18} />
                   </CardHeader>
                   <div>
-                    <RoleBadge data-admin={user.role === "ADMIN"} data-motoboy={user.role === "MOTOBOY"}>
-                      {user.role === "ADMIN" ? "Administrador" : user.role === "MOTOBOY" ? "Entregador" : "Padrão"}
+                    <RoleBadge data-admin={user.role === "ADMIN"} data-motoboy={user.role === "ENTREGADOR"}>
+                      {user.role === "ADMIN" ? "Administrador" : user.role === "ENTREGADOR" ? "Entregador" : "Padrão"}
                     </RoleBadge>
                     <StatusBadge data-active={user.active}>
                       {user.active ? "Ativo" : "Inativo"}

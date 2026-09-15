@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDeliveriesPage() {
   const user = await getAdminUser();
-  return user?.roles.includes("MOTOBOY") ? <MotoboyOrdersView /> : <AdminDeliveriesView />;
+  return user?.roles.includes("ENTREGADOR") ? <MotoboyOrdersView /> : <AdminDeliveriesView />;
 }

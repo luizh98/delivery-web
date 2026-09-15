@@ -133,7 +133,7 @@ export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps)
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const isAdmin = admin.roles.includes("ADMIN");
-  const isMotoboy = admin.roles.includes("MOTOBOY");
+  const isMotoboy = admin.roles.includes("ENTREGADOR");
 
   function openMobileMenu(event: ReactMouseEvent<HTMLButtonElement>) {
     menuButtonRef.current = event.currentTarget;

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   const user = await getAdminUser();
-  if (user?.roles.includes("MOTOBOY")) {
+  if (user?.roles.includes("ENTREGADOR")) {
     redirect("/admin/deliveries");
   }
   return <AdminPanelView />;

@@ -276,7 +276,7 @@ export type CurrentUserResponse = {
   roles: string[];
 };
 
-export type AdminRole = "ADMIN" | "STANDARD" | "MOTOBOY";
+export type AdminRole = "ADMIN" | "STANDARD" | "ENTREGADOR";
 
 export type AdminUserResponse = {
   id: string;
