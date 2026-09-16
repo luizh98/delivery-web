@@ -674,10 +674,7 @@ export function ProductManager({
         ? `admin/products/${editingProduct.id}`
         : "admin/products";
       const body = new FormData();
-      body.append(
-        "product",
-        new Blob([JSON.stringify(productPayload)], { type: "application/json" }),
-      );
+      body.append("product", JSON.stringify(productPayload));
       if (selectedImage) {
         body.append("image", selectedImage);
       }
