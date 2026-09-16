@@ -2,7 +2,7 @@
 
 import { DayPicker, type DateRange } from "@daypicker/react";
 import { ptBR } from "@daypicker/react/locale";
-import { Bike, CalendarDays, Check, CircleCheck, Clock3, GripVertical, RefreshCw, UserRound, X } from "lucide-react";
+import { Bike, CalendarDays, Check, CircleCheck, Clock3, ExternalLink, GripVertical, RefreshCw, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
@@ -222,19 +222,6 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
     }
   }
 
-  async function updateStatus(route: DeliveryRouteResponse, status: DeliveryRouteStatus) {
-    try {
-      const updated = await clientApi<DeliveryRouteResponse>(`admin/delivery-routes/${route.id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
-      setRoutes((current) => current.map((item) => item.id === updated.id ? updated : item));
-      showToast("Rota atualizada");
-    } catch {
-      showToast("Não foi possível atualizar a rota.", "error");
-    }
-  }
-
   function canReorder(route: DeliveryRouteResponse) {
     return route.status === "WAITING" || route.status === "READY";
   }
@@ -396,8 +383,11 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
                   <RouteStatus>{statusLabels[route.status]}</RouteStatus>
                 </RouteHeader>
                 <OrderList>
-                  {route.orders.map((order) => (
-                    <OrderRow
+                  {route.orders.map((order) => {
+                    const mapsUrl = googleMapsUrl(order);
+
+                    return (
+                      <OrderRow
                       key={order.id}
                       draggable={canReorder(route)}
                       reorderable={canReorder(route)}
@@ -410,12 +400,14 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
                       onDrop={(event) => void dropOrder(event, route, order.id)}
                     >
                       <DragHandle aria-hidden="true">{canReorder(route) ? <GripVertical size={16} /> : null}</DragHandle>
-                      <OrderDetails>
-                        <OrderTitle><UserRound size={14} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
-                        <OrderMeta>{order.deliveryAddress?.neighborhood || "Bairro não informado"} · {shortAddress(order)}</OrderMeta>
-                      </OrderDetails>
-                    </OrderRow>
-                  ))}
+                        <OrderDetails>
+                          <OrderTitle><UserRound size={14} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
+                          <OrderMeta>{order.deliveryAddress?.neighborhood || "Bairro não informado"} · {shortAddress(order)}</OrderMeta>
+                          {mapsUrl ? <Button type="button" variant="outline" onClick={() => window.open(mapsUrl, "_blank", "noopener,noreferrer")}><ExternalLink size={14} aria-hidden="true" /> Ver no Google Maps</Button> : null}
+                        </OrderDetails>
+                      </OrderRow>
+                    );
+                  })}
                 </OrderList>
                 {route.status === "WAITING" ? <Waiting><span><Clock3 size={14} /> {remaining(route.toleranceExpiresAt, now)}</span><span>Aguardando outro pedido compatível</span></Waiting> : null}
                 <RouteFooter>
@@ -424,8 +416,6 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
                     {!route.motoboyId && route.status !== "OUT_FOR_DELIVERY" && route.status !== "COMPLETED" ? (
                       <Field label="Motoboy"><Select value="" onChange={(event) => void assign(route, event.target.value)}><option value="">Atribuir</option>{motoboys.map((motoboy) => <option key={motoboy.id} value={motoboy.id}>{motoboy.name}</option>)}</Select></Field>
                     ) : null}
-                    {route.status === "READY" && route.motoboyId ? <Button onClick={() => void updateStatus(route, "OUT_FOR_DELIVERY")}><Bike size={16} /> Iniciar rota</Button> : null}
-                    {route.status === "OUT_FOR_DELIVERY" ? <Button onClick={() => void updateStatus(route, "COMPLETED")}><Check size={16} /> Concluir</Button> : null}
                   </Actions>
                 </RouteFooter>
               </RouteCard>
@@ -445,6 +435,17 @@ function remaining(expiresAt: string | undefined, now: number) {
 
 function shortAddress(order: DeliveryRouteResponse["orders"][number]) {
   return [order.deliveryAddress?.street, order.deliveryAddress?.number].filter(Boolean).join(", ") || "Endereço não informado";
+}
+
+function googleMapsUrl(order: DeliveryRouteResponse["orders"][number]) {
+  const address = order.deliveryAddress;
+  const street = [address?.street?.trim(), address?.number?.trim()].filter(Boolean).join(", ");
+  const cityState = [address?.city?.trim(), address?.state?.trim()].filter(Boolean).join(" - ");
+  const value = [street, address?.complement?.trim(), address?.neighborhood?.trim(), cityState, address?.zipCode?.trim()]
+    .filter(Boolean)
+    .join(", ");
+
+  return value ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}` : null;
 }
 
 function normalizeSearch(value: string) {
