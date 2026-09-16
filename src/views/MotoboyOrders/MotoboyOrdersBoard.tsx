@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Bike, CheckCircle2, MapPin, PackageCheck, RefreshCw, UserRound } from "lucide-react";
+import { ArrowDown, ArrowUp, Bike, CheckCircle2, ExternalLink, MapPin, PackageCheck, RefreshCw, UserRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { useToast } from "@/components/ToastProvider";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
 import type { DeliveryRouteResponse } from "@/types/api";
 import {
@@ -30,6 +31,24 @@ function address(order: DeliveryRouteResponse["orders"][number]) {
     .filter(Boolean)
     .join(", ");
   return value || "Endereço não informado";
+}
+
+function googleMapsUrl(order: DeliveryRouteResponse["orders"][number]) {
+  const address = order.deliveryAddress;
+  const street = [address?.street?.trim(), address?.number?.trim()].filter(Boolean).join(", ");
+  const cityState = [address?.city?.trim(), address?.state?.trim()].filter(Boolean).join(" - ");
+  const value = [street, address?.complement?.trim(), address?.neighborhood?.trim(), cityState, address?.zipCode?.trim()]
+    .filter(Boolean)
+    .join(", ");
+
+  return value ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}` : null;
+}
+
+function whatsAppUrl(phone: string) {
+  const normalized = phone.replace(/\D/g, "");
+  if (!normalized) return null;
+  const number = normalized.startsWith("55") && normalized.length > 11 ? normalized : `55${normalized}`;
+  return `https://wa.me/${number}`;
 }
 
 export function MotoboyOrdersBoard({ initialRoutes }: Props) {
@@ -103,20 +122,27 @@ export function MotoboyOrdersBoard({ initialRoutes }: Props) {
             <RouteTitle><Bike size={18} aria-hidden="true" /> Rota #{route.id.slice(-6).toUpperCase()}</RouteTitle>
             <span>{route.orders.length} parada(s)</span>
           </RouteHeader>
-          {route.orders.map((order, index) => (
-            <OrderCard key={order.id}>
+          {route.orders.map((order, index) => {
+            const mapsUrl = googleMapsUrl(order);
+            const whatsappUrl = whatsAppUrl(order.customer.phone);
+
+            return (
+              <OrderCard key={order.id}>
               <div>
                 <OrderTitle><UserRound size={16} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
                 <Address><MapPin size={15} aria-hidden="true" /> {address(order)}</Address>
                 <OrderMeta>{order.customer.phone || "Telefone não informado"}</OrderMeta>
               </div>
               <OrderActions>
+                {mapsUrl ? <Button type="button" variant="outline" onClick={() => window.open(mapsUrl, "_blank", "noopener,noreferrer")}><ExternalLink size={16} aria-hidden="true" /> Ver no Google Maps</Button> : null}
+                {whatsappUrl ? <Button type="button" variant="outline" onClick={() => window.open(whatsappUrl, "_blank", "noopener,noreferrer")}><WhatsAppIcon size={16} /> WhatsApp</Button> : null}
                 <Button type="button" variant="outline" aria-label={`Mover pedido ${index + 1} para cima`} disabled={index === 0 || loadingId === order.id} onClick={() => void moveOrder(route, order.id, index - 1)}><ArrowUp size={16} aria-hidden="true" /> Subir</Button>
                 <Button type="button" variant="outline" aria-label={`Mover pedido ${index + 1} para baixo`} disabled={index === route.orders.length - 1 || loadingId === order.id} onClick={() => void moveOrder(route, order.id, index + 1)}><ArrowDown size={16} aria-hidden="true" /> Descer</Button>
                 <Button type="button" disabled={loadingId === order.id} onClick={() => void completeOrder(order.id)}><CheckCircle2 size={16} aria-hidden="true" /> {loadingId === order.id ? "Salvando..." : "Baixar"}</Button>
               </OrderActions>
-            </OrderCard>
-          ))}
+              </OrderCard>
+            );
+          })}
         </RouteCard>
       ))}
     </Root>
