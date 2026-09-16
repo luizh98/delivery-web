@@ -20,7 +20,7 @@ import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
-import { clientApi } from "@/services/api/client";
+import { ApiError, clientApi } from "@/services/api/client";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
 import type {
   Product,
@@ -116,6 +116,20 @@ type ProductFlagTone = "adult" | "gluten" | "lactose" | "vegetarian";
 
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 const PRODUCT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function productSaveErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof ApiError)) {
+    return fallback;
+  }
+
+  try {
+    const response = JSON.parse(error.message) as { message?: unknown };
+
+    return typeof response.message === "string" ? response.message : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const PRODUCT_FLAGS: {
   field: ProductFlagField;
@@ -696,10 +710,11 @@ export function ProductManager({
       if (productsRefreshed) {
         showToast("Produto salvo com sucesso");
       }
-    } catch {
-      const message = editingProduct
+    } catch (error) {
+      const fallback = editingProduct
         ? "Não foi possível salvar produto."
         : "Não foi possível criar produto.";
+      const message = productSaveErrorMessage(error, fallback);
 
       setError(message);
       showToast(message, "error");
