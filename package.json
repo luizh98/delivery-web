@@ -12,13 +12,6 @@
   "dependencies": {
     "@daypicker/react": "^10.0.1",
     "@hookform/resolvers": "^5.4.0",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.57.2",
-    "@opentelemetry/instrumentation": "^0.57.2",
-    "@opentelemetry/instrumentation-fetch": "^0.57.2",
-    "@opentelemetry/resources": "^1.30.0",
-    "@opentelemetry/sdk-trace-web": "^1.30.1",
-    "@opentelemetry/semantic-conventions": "^1.30.0",
     "lucide-react": "^1.21.0",
     "next": "16.2.9",
     "qz-tray": "^2.2.6",

@@ -6,7 +6,6 @@ import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
 import { MarketingConsentBanner } from "@/components/MarketingConsentBanner";
 import { MarketingConsentProvider } from "@/components/MarketingConsentProvider";
 import { TrackingProvider } from "@/components/TrackingProvider";
-import { OpenTelemetryProvider } from "@/components/OpenTelemetryProvider";
 import { getCurrentTenantSlug, getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "@daypicker/react/style.css";
@@ -56,7 +55,6 @@ export default async function RootLayout({
       className={cx(plusJakartaSans.variable)}
     >
       <body>
-        <OpenTelemetryProvider>
          <ThemeProvider theme={restaurantConfig?.theme}>
            <CustomerAuthProvider>
              <MarketingConsentProvider>
@@ -73,7 +71,6 @@ export default async function RootLayout({
              </MarketingConsentProvider>
            </CustomerAuthProvider>
          </ThemeProvider>
-        </OpenTelemetryProvider>
       </body>
     </html>
   );
