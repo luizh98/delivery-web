@@ -11,9 +11,10 @@ export default async function ProductDetailsPage({
 }) {
   const { id } = await params;
   const menu = await getMenu();
-  const product = menu.products.find((item) => item.id === id);
+  const product = menu.products.find((item) => item.id === id && item.active);
+  const category = menu.categories.find((item) => item.id === product?.categoryId);
 
-  if (!product) {
+  if (!product || !category?.active) {
     notFound();
   }
 

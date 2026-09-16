@@ -152,7 +152,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const tracking = useTracking();
   const initialCategoryId =
     menu.categories.find((category) =>
-    menu.products.some((product) => product.categoryId === category.id),
+      category.active &&
+      menu.products.some(
+        (product) => product.active && product.categoryId === category.id,
+      ),
     )?.id ?? "";
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
   const categoryBarRef = useRef<HTMLDivElement | null>(null);
@@ -188,9 +191,13 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const productsByCategory = useMemo(() => {
     const groups = new Map<string, Product[]>();
 
-    menu.categories.forEach((category) => groups.set(category.id, []));
+    menu.categories
+      .filter((category) => category.active)
+      .forEach((category) => groups.set(category.id, []));
     menu.products.forEach((product) => {
-      groups.get(product.categoryId)?.push(product);
+      if (product.active) {
+        groups.get(product.categoryId)?.push(product);
+      }
     });
 
     return groups;
@@ -199,7 +206,9 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
   const visibleCategories = useMemo(
     () =>
       menu.categories.filter(
-        (category) => (productsByCategory.get(category.id)?.length ?? 0) > 0,
+        (category) =>
+          category.active &&
+          (productsByCategory.get(category.id)?.length ?? 0) > 0,
       ),
     [menu.categories, productsByCategory],
   );
