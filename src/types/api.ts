@@ -268,6 +268,14 @@ export type CustomerOrderHistoryResponse = PublicOrderTrackingResponse & {
   items: OrderItem[];
 };
 
+export type OrderHistoryPageResponse = {
+  items: Array<PublicOrderTrackingResponse | CustomerOrderHistoryResponse>;
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
 export type CurrentUserResponse = {
   id: string;
   tenantId: string;
