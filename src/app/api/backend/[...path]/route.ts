@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import {
   ADMIN_TOKEN_COOKIE,
   CUSTOMER_SESSION_COOKIE,
@@ -7,6 +8,7 @@ import {
   backendBaseUrl,
 } from "@/constants/api";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
+import { restaurantConfigCacheTag } from "@/services/api/cache";
 
 type RouteParams = {
   params: Promise<{
@@ -35,7 +37,8 @@ async function forward(request: NextRequest, context: RouteParams) {
     ? request.cookies.get(CUSTOMER_SESSION_COOKIE)?.value
     : undefined;
 
-  headers.set("X-Tenant-Slug", resolveTenantFromHeaders(request.headers));
+  const tenantSlug = resolveTenantFromHeaders(request.headers);
+  headers.set("X-Tenant-Slug", tenantSlug);
   if (contentType) {
     headers.set("Content-Type", contentType);
   }
@@ -117,6 +120,16 @@ async function forward(request: NextRequest, context: RouteParams) {
         },
       },
     );
+  }
+
+  if (
+    response.ok &&
+    !["GET", "HEAD"].includes(request.method) &&
+    path[0] === "admin" &&
+    path[1] === "restaurant" &&
+    path[2] === "config"
+  ) {
+    revalidateTag(restaurantConfigCacheTag(tenantSlug), "max");
   }
 
   const responseHeaders = new Headers();

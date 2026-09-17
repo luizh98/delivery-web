@@ -1,5 +1,7 @@
 import { cookies, headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/constants/api";
+import { restaurantConfigCacheTag } from "@/services/api/cache";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
 import type {
   AdminCustomerPage,
@@ -27,6 +29,8 @@ const emptyAdminCustomerPage: AdminCustomerPage = {
   totalElements: 0,
   totalPages: 0,
 };
+
+const restaurantConfigCacheRevalidateSeconds = 60;
 
 async function backendFetch<T>(path: string, init?: RequestInit) {
   const headerStore = await headers();
@@ -59,8 +63,42 @@ async function backendFetch<T>(path: string, init?: RequestInit) {
   }
 }
 
+async function fetchRestaurantConfig(tenantSlug: string) {
+  const response = await fetch(`${backendBaseUrl()}/api/public/restaurant/config`, {
+    headers: {
+      Accept: "application/json",
+      "X-Tenant-Slug": tenantSlug,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not fetch restaurant config");
+  }
+
+  return response.json() as Promise<RestaurantConfigResponse>;
+}
+
+function getCachedRestaurantConfig(tenantSlug: string) {
+  return unstable_cache(
+    () => fetchRestaurantConfig(tenantSlug),
+    ["restaurant-config", tenantSlug],
+    {
+      revalidate: restaurantConfigCacheRevalidateSeconds,
+      tags: [restaurantConfigCacheTag(tenantSlug)],
+    },
+  )();
+}
+
 export async function getRestaurantConfig() {
-  return backendFetch<RestaurantConfigResponse>("public/restaurant/config");
+  const headerStore = await headers();
+  const tenantSlug = resolveTenantFromHeaders(headerStore);
+
+  try {
+    return await getCachedRestaurantConfig(tenantSlug);
+  } catch {
+    return null;
+  }
 }
 
 export async function getCurrentTenantSlug() {
