@@ -18,6 +18,7 @@ const soundPreferenceKey = "delivery.admin.orderSoundEnabled";
 type AdminOrderSoundContextValue = {
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => Promise<void>;
+  playOverdueAlert: () => void;
 };
 
 const AdminOrderSoundContext = createContext<AdminOrderSoundContextValue | null>(
@@ -43,13 +44,16 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const isPlayingSoundRef = useRef(false);
   const overduePendingSoundCountRef = useRef(0);
   const isPlayingOverdueSoundRef = useRef(false);
-  const alertedOverdueOrderIdsRef = useRef(new Set<string>());
   const subscribeToOrderEvents = useAdminOrderEvents();
 
   const disableSound = useCallback(() => {
+    audioRef.current?.pause();
+    overdueAudioRef.current?.pause();
     soundEnabledRef.current = false;
     pendingSoundCountRef.current = 0;
+    overduePendingSoundCountRef.current = 0;
     isPlayingSoundRef.current = false;
+    isPlayingOverdueSoundRef.current = false;
     setSoundEnabledState(false);
     window.localStorage.setItem(soundPreferenceKey, "false");
   }, []);
@@ -105,7 +109,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
     if (!soundEnabledRef.current) {
       return;
     }
-    overduePendingSoundCountRef.current += 1;
+    overduePendingSoundCountRef.current += 2;
     playNextOverdueSound();
   }, [playNextOverdueSound]);
 
@@ -202,7 +206,8 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   }, [handlePlaybackFailure, playNextOverdueSound, playNextSound]);
 
   useEffect(() => subscribeToOrderEvents((order) => {
-    if (order.status !== "RECEIVED" || knownOrderIdsRef.current.has(order.id)) {
+    if ((order.status !== "RECEIVED" && order.status !== "CONFIRMED")
+      || knownOrderIdsRef.current.has(order.id)) {
       return;
     }
     knownOrderIdsRef.current.add(order.id);
@@ -212,7 +217,8 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo(() => ({
     soundEnabled,
     setSoundEnabled,
-  }), [setSoundEnabled, soundEnabled]);
+    playOverdueAlert: queueOverdueAlert,
+  }), [queueOverdueAlert, setSoundEnabled, soundEnabled]);
 
   return (
     <AdminOrderSoundContext.Provider value={contextValue}>
