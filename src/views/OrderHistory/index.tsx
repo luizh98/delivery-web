@@ -14,9 +14,10 @@ import { Button } from "@/components/Button";
 import { useCart } from "@/components/CartProvider";
 import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
-import { ApiError, clientApi } from "@/services/api/client";
+import { clientApi } from "@/services/api/client";
 import type {
   CustomerOrderHistoryResponse,
+  OrderHistoryPageResponse,
   OrderStatus,
   PublicOrderTrackingResponse,
 } from "@/types/api";
@@ -37,7 +38,6 @@ import {
   HistoryHeader,
   HistoryList,
   HistoryTitle,
-  Notice,
   OrderDate,
   OrderIdentity,
   OrderNumber,
@@ -87,7 +87,6 @@ export function OrderHistoryView() {
   const { customer, loading: customerLoading } = useCustomerAuth();
   const [orders, setOrders] = useState<LoadedOrderHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [failedCount, setFailedCount] = useState(0);
   const [loadError, setLoadError] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
 
@@ -98,37 +97,8 @@ export function OrderHistoryView() {
       return;
     }
 
-    if (customer) {
-      const controller = new AbortController();
-      activeRequest.current = controller;
-      setLoading(true);
-      setFailedCount(0);
-      setLoadError(false);
-      try {
-        const accountOrders = await clientApi<CustomerOrderHistoryResponse[]>(
-          "customer/orders",
-          { signal: controller.signal, cache: "no-store" },
-        );
-        if (!controller.signal.aborted) {
-          setOrders(accountOrders.map((order) => ({ trackingCode: order.trackingCode, order })));
-        }
-      } catch {
-        if (!controller.signal.aborted) {
-          setOrders([]);
-          setLoadError(true);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-          activeRequest.current = null;
-        }
-      }
-      return;
-    }
-
-    if (recentOrderTrackingCodes.length === 0) {
+    if (!customer && recentOrderTrackingCodes.length === 0) {
       setOrders([]);
-      setFailedCount(0);
       setLoadError(false);
       setLoading(false);
       return;
@@ -137,57 +107,41 @@ export function OrderHistoryView() {
     const controller = new AbortController();
     activeRequest.current = controller;
     setLoading(true);
-    setFailedCount(0);
     setLoadError(false);
 
-    const results = await Promise.allSettled(
-      recentOrderTrackingCodes.map(async (trackingCode) => {
-        try {
-          const order = await clientApi<PublicOrderTrackingResponse>(
-            `public/orders/tracking/${encodeURIComponent(trackingCode)}`,
-            { signal: controller.signal, cache: "no-store" },
-          );
-
-          const savedOrder = recentOrders.find(
-            (recentOrder) => recentOrder.trackingCode === trackingCode,
-          );
-
-          return {
-            trackingCode,
-            order: savedOrder ? { ...order, items: savedOrder.items } : order,
-          };
-        } catch (error) {
-          if (error instanceof ApiError && error.status === 404) {
-            return null;
-          }
-
-          throw error;
-        }
-      }),
-    );
-
-    if (controller.signal.aborted) {
-      return;
-    }
-
-    const loadedOrders: LoadedOrderHistoryItem[] = [];
-    let failures = 0;
-
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        if (result.value) {
-          loadedOrders.push(result.value);
-        }
-      } else {
-        failures += 1;
+    try {
+      const search = new URLSearchParams({ page: "0", size: "10" });
+      recentOrderTrackingCodes.forEach((trackingCode) => {
+        search.append("trackingCode", trackingCode);
+      });
+      const history = await clientApi<OrderHistoryPageResponse>(
+        `customer/orders?${search.toString()}`,
+        { signal: controller.signal, cache: "no-store" },
+      );
+      if (!controller.signal.aborted) {
+        setOrders(
+          history.items.map((order) => {
+            const savedOrder = recentOrders.find(
+              (recentOrder) => recentOrder.trackingCode === order.trackingCode,
+            );
+            return {
+              trackingCode: order.trackingCode,
+              order: savedOrder ? { ...order, items: savedOrder.items } : order,
+            };
+          }),
+        );
       }
-    });
-
-    setOrders(loadedOrders);
-    setFailedCount(failures);
-    setLoadError(loadedOrders.length === 0 && failures > 0);
-    setLoading(false);
-    activeRequest.current = null;
+    } catch {
+      if (!controller.signal.aborted) {
+        setOrders([]);
+        setLoadError(true);
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        activeRequest.current = null;
+      }
+    }
   }, [customer, customerLoading, recentOrders, recentOrderTrackingCodes]);
 
   useEffect(() => {
@@ -305,16 +259,6 @@ export function OrderHistoryView() {
             </HistoryDescription>
           </HistoryHeading>
         </HistoryHeader>
-
-        {failedCount > 0 ? (
-          <Notice role="status">
-            <AlertTriangle size={18} />
-            <span>
-              Alguns pedidos não puderam ser atualizados. Tente novamente para completar a
-              lista.
-            </span>
-          </Notice>
-        ) : null}
 
         <HistoryList as="div" role="list">
           {orders.map(({ trackingCode, order }) => {
