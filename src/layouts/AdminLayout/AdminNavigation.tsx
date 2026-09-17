@@ -36,6 +36,7 @@ import {
   DesktopNavbar,
   DesktopNavbarActions,
   DesktopNavbarBrand,
+  DesktopNavbarIdentity,
   DesktopNavbarUser,
   DrawerHeader,
   Email,
@@ -281,10 +282,12 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
           </MenuButton>
         </DesktopNavbarBrand>
         <DesktopNavbarActions>
-          {isAdmin ? <StoreAvailabilityButton initialStoreOpen={storeOpen} /> : null}
           <DesktopNavbarUser>
-            <Tenant>{restaurantName}</Tenant>
-            <Email>{admin.email}</Email>
+            {isAdmin ? <StoreAvailabilityButton initialStoreOpen={storeOpen} /> : null}
+            <DesktopNavbarIdentity>
+              <Tenant>{restaurantName}</Tenant>
+              <Email>{admin.email}</Email>
+            </DesktopNavbarIdentity>
           </DesktopNavbarUser>
           <LogoutButton iconOnly />
         </DesktopNavbarActions>

@@ -68,11 +68,18 @@ export const DesktopNavbarActions = styled("div", {
 });
 
 export const DesktopNavbarUser = styled("div", {
+  display: "flex",
+  minWidth: 0,
+  alignItems: "center",
+  gap: "0.75rem",
+  paddingRight: "0.75rem",
+  borderRight: "1px solid var(--color-border)",
+});
+
+export const DesktopNavbarIdentity = styled("div", {
   display: "grid",
   minWidth: 0,
   maxWidth: "min(20rem, 38vw)",
-  paddingRight: "0.75rem",
-  borderRight: "1px solid var(--color-border)",
   textAlign: "right",
 });
 
