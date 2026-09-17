@@ -5,6 +5,7 @@ export type ButtonVariant =
   | "secondary"
   | "outline"
   | "ghost"
+  | "success"
   | "danger"
   | "dangerGhost"
   | "dangerText";

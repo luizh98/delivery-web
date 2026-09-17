@@ -10,18 +10,6 @@ export const Header = styled("header", {
 export const Title = styled("h1", { fontSize: "1.5rem", fontWeight: 700 });
 export const Subtitle = styled("p", { fontSize: "0.875rem", color: "var(--color-muted)" });
 
-export const StoreAvailability = styled("div", {
-  display: "grid",
-  justifyItems: "stretch",
-  gap: "0.25rem",
-});
-
-export const StoreAvailabilityHint = styled("p", {
-  fontSize: "0.75rem",
-  color: "var(--color-muted)",
-  textAlign: "right",
-});
-
 export const DateFilterWrap = styled("div", {
   position: "relative", width: "min(100%, 19rem)",
 });

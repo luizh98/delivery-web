@@ -13,6 +13,7 @@ import {
   Printer,
   Settings,
   Sparkles,
+  Store,
   Tags,
   UserCog,
   Users,
@@ -23,7 +24,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { CurrentUserResponse } from "@/types/api";
+import { Button } from "@/components/Button";
+import { useConfirmation } from "@/components/ConfirmationProvider";
+import { useToast } from "@/components/ToastProvider";
+import { clientApi } from "@/services/api/client";
+import type { CurrentUserResponse, RestaurantConfigResponse } from "@/types/api";
 import { LogoutButton } from "./LogoutButton";
 import {
   Brand,
@@ -63,6 +68,7 @@ const navItems = [
 type AdminNavigationProps = {
   admin: Pick<CurrentUserResponse, "email" | "roles" | "tenantSlug">;
   restaurantName: string;
+  storeOpen: boolean;
 };
 
 type AccountSummaryProps = {
@@ -126,7 +132,63 @@ function AccountSummary({ admin }: AccountSummaryProps) {
   );
 }
 
-export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps) {
+function StoreAvailabilityButton({ initialStoreOpen }: { initialStoreOpen: boolean }) {
+  const [storeOpen, setStoreOpen] = useState(initialStoreOpen);
+  const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const { requestConfirmation } = useConfirmation();
+  const { showToast } = useToast();
+
+  async function changeAvailability() {
+    const nextOpen = !storeOpen;
+    const confirmed = await requestConfirmation({
+      message: nextOpen
+        ? "Deseja abrir a loja até o fim de hoje?"
+        : "Deseja fechar a loja até o fim de hoje?",
+      confirmLabel: nextOpen ? "Abrir loja" : "Fechar loja",
+      variant: nextOpen ? "primary" : "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setUpdatingAvailability(true);
+    try {
+      const updatedConfig = await clientApi<RestaurantConfigResponse>(
+        "admin/restaurant/config/availability",
+        {
+          method: "PUT",
+          body: JSON.stringify({ open: nextOpen }),
+        },
+      );
+      setStoreOpen(updatedConfig.open !== false);
+      showToast(nextOpen ? "Loja aberta até o fim de hoje." : "Loja fechada até o fim de hoje.");
+    } catch {
+      showToast("Não foi possível atualizar o status da loja.", "error");
+    } finally {
+      setUpdatingAvailability(false);
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant={storeOpen ? "success" : "danger"}
+      disabled={updatingAvailability}
+      onClick={changeAvailability}
+      aria-label={storeOpen ? "Loja aberta. Fechar loja hoje" : "Loja fechada. Abrir loja hoje"}
+    >
+      <Store size={16} aria-hidden="true" />
+      {updatingAvailability
+        ? "Atualizando..."
+        : storeOpen
+          ? "Loja aberta"
+          : "Loja fechada"}
+    </Button>
+  );
+}
+
+export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavigationProps) {
   const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -219,6 +281,7 @@ export function AdminNavigation({ admin, restaurantName }: AdminNavigationProps)
           </MenuButton>
         </DesktopNavbarBrand>
         <DesktopNavbarActions>
+          {isAdmin ? <StoreAvailabilityButton initialStoreOpen={storeOpen} /> : null}
           <DesktopNavbarUser>
             <Tenant>{restaurantName}</Tenant>
             <Email>{admin.email}</Email>

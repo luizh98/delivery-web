@@ -19,7 +19,11 @@ export default async function ProtectedAdminLayout({
   const restaurantName = restaurantConfig?.name?.trim() || admin.tenantSlug;
 
   return (
-    <AdminLayout admin={admin} restaurantName={restaurantName}>
+    <AdminLayout
+      admin={admin}
+      restaurantName={restaurantName}
+      storeOpen={restaurantConfig?.open !== false}
+    >
       {children}
     </AdminLayout>
   );

@@ -7,14 +7,14 @@ import { AdminNavigation } from "./AdminNavigation";
 import { Content, Root } from "./styles";
 import type { AdminLayoutProps } from "./types";
 
-export function AdminLayout({ admin, restaurantName, children }: AdminLayoutProps) {
+export function AdminLayout({ admin, restaurantName, storeOpen, children }: AdminLayoutProps) {
   return (
     <ToastProvider>
       <AdminOrderEventsProvider>
         <AdminOrderSoundProvider>
           <ConfirmationProvider>
             <Root>
-              <AdminNavigation admin={admin} restaurantName={restaurantName} />
+              <AdminNavigation admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} />
               <Content>
                 <PageShell>{children}</PageShell>
               </Content>

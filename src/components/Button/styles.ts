@@ -66,6 +66,22 @@ export const ButtonRoot = styled("button", {
           background: "var(--color-surface-muted)",
         },
       },
+      success: {
+        border: "1px solid var(--color-success)",
+        background: "var(--color-success)",
+        color: "#ffffff",
+
+        "&:hover": {
+          borderColor: "var(--color-success-hover)",
+          background: "var(--color-success-hover)",
+        },
+
+        "&:disabled": {
+          borderColor: "transparent",
+          background: "var(--color-surface-muted)",
+          color: "var(--color-muted)",
+        },
+      },
       danger: {
         background: "#dc2626",
         color: "#ffffff",

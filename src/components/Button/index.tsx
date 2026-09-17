@@ -6,6 +6,7 @@ const variants: Record<ButtonVariant, ButtonVariant> = {
   secondary: "secondary",
   outline: "outline",
   ghost: "ghost",
+  success: "success",
   danger: "danger",
   dangerGhost: "dangerGhost",
   dangerText: "dangerText",
