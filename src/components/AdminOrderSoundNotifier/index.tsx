@@ -12,13 +12,15 @@ import {
 } from "react";
 import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
 import { useToast } from "@/components/ToastProvider";
+import { clientApi } from "@/services/api/client";
+import type { OrderResponse, RestaurantConfigResponse } from "@/types/api";
 
 const soundPreferenceKey = "delivery.admin.orderSoundEnabled";
+const overdueOrderStatuses = ["RECEIVED", "CONFIRMED", "PREPARING"];
 
 type AdminOrderSoundContextValue = {
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => Promise<void>;
-  playOverdueAlert: () => void;
 };
 
 const AdminOrderSoundContext = createContext<AdminOrderSoundContextValue | null>(
@@ -33,6 +35,21 @@ function getAudioErrorName(error: unknown) {
   return error instanceof Error ? error.message : "erro desconhecido";
 }
 
+function isOverdueOrder(
+  order: OrderResponse,
+  now: number,
+  minutes: number,
+) {
+  if (!overdueOrderStatuses.includes(order.status)) {
+    return false;
+  }
+
+  const receivedAt = order.statusHistory.find((history) => history.status === "RECEIVED")
+    ?.changedAt ?? order.createdAt;
+  const timestamp = receivedAt ? new Date(receivedAt).getTime() : Number.NaN;
+  return Number.isFinite(timestamp) && now - timestamp > minutes * 60_000;
+}
+
 export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const [soundEnabled, setSoundEnabledState] = useState(false);
@@ -44,6 +61,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const isPlayingSoundRef = useRef(false);
   const overduePendingSoundCountRef = useRef(0);
   const isPlayingOverdueSoundRef = useRef(false);
+  const alertedOverdueOrderIdsRef = useRef(new Set<string>());
   const subscribeToOrderEvents = useAdminOrderEvents();
 
   const disableSound = useCallback(() => {
@@ -107,11 +125,48 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
 
   const queueOverdueAlert = useCallback(() => {
     if (!soundEnabledRef.current) {
-      return;
+      return false;
     }
     overduePendingSoundCountRef.current += 2;
     playNextOverdueSound();
+    return true;
   }, [playNextOverdueSound]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function alertOverdueOrders() {
+      try {
+        const [config, orders] = await Promise.all([
+          clientApi<RestaurantConfigResponse>("admin/restaurant/config"),
+          clientApi<OrderResponse[]>(
+            "admin/orders?status=RECEIVED&status=CONFIRMED&status=PREPARING",
+          ),
+        ]);
+        if (!active || !config.overdueOrderAlertEnabled) {
+          return;
+        }
+
+        const minutes = config.overdueOrderAlertMinutes ?? 30;
+        orders.forEach((order) => {
+          if (isOverdueOrder(order, Date.now(), minutes)
+            && !alertedOverdueOrderIdsRef.current.has(order.id)
+            && queueOverdueAlert()) {
+            alertedOverdueOrderIdsRef.current.add(order.id);
+          }
+        });
+      } catch {
+        // Próxima consulta tenta novamente sem interromper alertas de novos pedidos.
+      }
+    }
+
+    void alertOverdueOrders();
+    const interval = window.setInterval(() => void alertOverdueOrders(), 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [queueOverdueAlert]);
 
   const setSoundEnabled = useCallback(async (enabled: boolean) => {
     const audio = audioRef.current;
@@ -217,8 +272,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo(() => ({
     soundEnabled,
     setSoundEnabled,
-    playOverdueAlert: queueOverdueAlert,
-  }), [queueOverdueAlert, setSoundEnabled, soundEnabled]);
+  }), [setSoundEnabled, soundEnabled]);
 
   return (
     <AdminOrderSoundContext.Provider value={contextValue}>

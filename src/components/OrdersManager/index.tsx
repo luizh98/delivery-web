@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
-import { useAdminOrderSound } from "@/components/AdminOrderSoundNotifier";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
@@ -276,9 +275,7 @@ export function OrdersManager({
   const rootRef = useRef<HTMLDivElement>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
   const knownOrderIdsRef = useRef(new Set(initialOrders.map((order) => order.id)));
-  const alertedOverdueOrderIdsRef = useRef(new Set<string>());
   const subscribeToOrderEvents = useAdminOrderEvents();
-  const { playOverdueAlert } = useAdminOrderSound();
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [search, setSearch] = useState("");
@@ -358,30 +355,6 @@ export function OrdersManager({
 
     return () => window.clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const overdueOrderIds = new Set(orders
-      .filter((order) => getOverdueMinutes(
-        order,
-        now,
-        overdueOrderAlertEnabled,
-        overdueOrderAlertMinutes,
-      ) !== null)
-      .map((order) => order.id));
-
-    overdueOrderIds.forEach((orderId) => {
-      if (!alertedOverdueOrderIdsRef.current.has(orderId)) {
-        alertedOverdueOrderIdsRef.current.add(orderId);
-        playOverdueAlert();
-      }
-    });
-
-    alertedOverdueOrderIdsRef.current.forEach((orderId) => {
-      if (!overdueOrderIds.has(orderId)) {
-        alertedOverdueOrderIdsRef.current.delete(orderId);
-      }
-    });
-  }, [now, orders, overdueOrderAlertEnabled, overdueOrderAlertMinutes, playOverdueAlert]);
 
   useEffect(() => subscribeToOrderEvents((order) => {
     const isNewOrder = !knownOrderIdsRef.current.has(order.id);
