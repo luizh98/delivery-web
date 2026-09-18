@@ -47,7 +47,17 @@ function isOverdueOrder(
   const receivedAt = order.statusHistory.find((history) => history.status === "RECEIVED")
     ?.changedAt ?? order.createdAt;
   const timestamp = receivedAt ? new Date(receivedAt).getTime() : Number.NaN;
-  return Number.isFinite(timestamp) && now - timestamp > minutes * 60_000;
+  if (!Number.isFinite(timestamp)) {
+    return false;
+  }
+
+  const orderDate = new Date(timestamp);
+  const today = new Date(now);
+  const isFromToday = orderDate.getFullYear() === today.getFullYear()
+    && orderDate.getMonth() === today.getMonth()
+    && orderDate.getDate() === today.getDate();
+
+  return isFromToday && now - timestamp > minutes * 60_000;
 }
 
 export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
