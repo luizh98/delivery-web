@@ -90,7 +90,7 @@ const metrics: {
   { key: "deliveryFeesCents", label: "Taxa de entrega", icon: Truck, currency: true },
 ];
 
-export function AdminDashboardView() {
+function LegacyAdminDashboardView() {
   const datePopoverRef = useRef<HTMLDivElement>(null);
   const performanceSentinelRef = useRef<HTMLDivElement>(null);
   const performanceRequestRef = useRef<AbortController | null>(null);
@@ -448,6 +448,8 @@ export function AdminDashboardView() {
     </Root>
   );
 }
+
+export { AdminDashboardView } from "./LazyAdminDashboard";
 
 function getPresetDateRange(preset: Exclude<DatePreset, "custom">) {
   const today = new Date();

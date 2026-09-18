@@ -1,5 +1,10 @@
 # State
 
+## Active Work
+
+- Lazy dashboard reports: cross-repository feature. Frontend: `C:\projetos-pessoais\delivery-app\delivery-web`; backend: `C:\projetos-pessoais\delivery-app\delivery-api`. Canonical plan: `.specs/features/lazy-dashboard-reports/`.
+- Status: specification, design and tasks drafted; implementation not started.
+
 **Last Updated:** 2026-08-25
 **Current Work:** Gráfico em linhas na dashboard de faturamento - concluída
 

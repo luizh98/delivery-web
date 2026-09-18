@@ -517,3 +517,9 @@ export type AdminDashboardResponse = {
     }[];
   };
 };
+
+export type AdminDashboardOverviewResponse = Pick<AdminDashboardResponse, "summary" | "seriesGranularity" | "metricSeries">;
+export type AdminDashboardStatusTimesResponse = Pick<AdminDashboardResponse, "averageStatusTimes">;
+export type AdminDashboardPaymentMethodsResponse = Pick<AdminDashboardResponse, "paymentMethods">;
+export type AdminDashboardOrderHeatmapResponse = Pick<AdminDashboardResponse, "orderHeatmap" | "heatmapSchedules">;
+export type AdminDashboardMonthlySalesResponse = Pick<AdminDashboardResponse, "monthlySales">;

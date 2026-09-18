@@ -55,3 +55,17 @@ npm run build
 - Usar ícones `lucide-react` em botões e controles.
 - Evitar cards dentro de cards.
 - Layout admin deve ser denso, operacional e escaneável.
+
+## Agent skills
+
+### Issue tracker
+
+Issues ficam em Markdown local, sob `.scratch/`. Ver `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Labels padrão de triage. Ver `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Layout single-context. Ver `docs/agents/domain.md`.
