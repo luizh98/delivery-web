@@ -1,5 +1,5 @@
 type CheckoutValidationInput = {
-  deliveryType?: "DELIVERY" | "PICKUP";
+  deliveryType?: "DELIVERY" | "PICKUP" | "TABLE";
   street?: string;
   number?: string;
   neighborhood?: string;

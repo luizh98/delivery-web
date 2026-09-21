@@ -18,6 +18,8 @@ import type {
   PromotionCombo,
   PromotionComboPublicResponse,
   PublicOrderTrackingResponse,
+
+  PublicTableResponse,
   RestaurantConfigResponse,
   UpsellCampaign,
 } from "@/types/api";
@@ -133,6 +135,12 @@ export async function getAdminOrders(statuses: OrderStatus[]) {
 
 export async function getAdminDeliveryRoutes() {
   return (await backendFetch<DeliveryRouteResponse[]>("admin/delivery-routes")) ?? [];
+}
+
+export async function getPublicTable(token: string) {
+  return backendFetch<PublicTableResponse>(
+    `public/tables/${encodeURIComponent(token)}`,
+  );
 }
 
 export async function getMotoboyDeliveryRoutes() {

@@ -112,7 +112,7 @@ const checkoutSchema = z
       isValidBrazilianMobile,
       "Informe um celular válido com DDD.",
     ),
-    deliveryType: z.enum(["DELIVERY", "PICKUP"]),
+    deliveryType: z.enum(["DELIVERY", "PICKUP", "TABLE"]),
     street: z.string(),
     number: z.string(),
     complement: z.string(),
@@ -123,13 +123,19 @@ const checkoutSchema = z
     latitude: z.number().optional(),
     longitude: z.number().optional(),
     paymentMethod: z
-      .enum(["", "PIX", "CREDIT_CARD", "DEBIT_CARD", "CASH"])
-      .refine((value) => value !== "", "Selecione a forma de pagamento."),
+      .enum(["", "PIX", "CREDIT_CARD", "DEBIT_CARD", "CASH"]),
     changeForReais: z
       .number({ message: "Informe um valor válido." })
       .min(0, "O valor do troco não pode ser negativo."),
   })
   .superRefine((values, context) => {
+    if (values.deliveryType !== "TABLE" && values.paymentMethod === "") {
+      context.addIssue({
+        code: "custom",
+        path: ["paymentMethod"],
+        message: "Selecione a forma de pagamento.",
+      });
+    }
     if (values.deliveryType !== "DELIVERY") {
       return;
     }
@@ -156,6 +162,7 @@ const checkoutSchema = z
 type CartViewProps = {
   restaurantConfig: RestaurantConfigResponse | null;
   initialStep?: 1 | 2;
+  table?: { number: string; token: string };
 };
 
 function formatAddressLines(address?: Address | null) {
@@ -173,7 +180,7 @@ function formatAddressLines(address?: Address | null) {
     .filter((line): line is string => Boolean(line));
 }
 
-export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
+export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewProps) {
   const router = useRouter();
   const { customer, loading: customerLoading } = useCustomerAuth();
   const tracking = useTracking();
@@ -197,15 +204,18 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
   const [deliveryQuoteKey, setDeliveryQuoteKey] = useState("");
   const [deliveryQuoteLoading, setDeliveryQuoteLoading] = useState(false);
   const [deliveryQuoteError, setDeliveryQuoteError] = useState("");
+  const isTableOrder = Boolean(table);
 
   const form = useForm<CheckoutDraft>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       ...checkout,
+      deliveryType: isTableOrder ? "TABLE" : checkout.deliveryType,
       customerPhone: formatBrazilianMobileInput(checkout.customerPhone),
     },
     values: {
       ...checkout,
+      deliveryType: isTableOrder ? "TABLE" : checkout.deliveryType,
       customerPhone: formatBrazilianMobileInput(checkout.customerPhone),
     },
   });
@@ -218,7 +228,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
     name: "paymentMethod",
   });
   const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
-  const belowMinimumOrder = minimumOrderCents > 0 && subtotalCents < minimumOrderCents;
+  const belowMinimumOrder = !isTableOrder && minimumOrderCents > 0 && subtotalCents < minimumOrderCents;
   const discountCents = items.reduce(
     (sum, item) => sum + (item.discountAmountCents ?? 0),
     0,
@@ -445,7 +455,8 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
         body: JSON.stringify({
           customerName: values.customerName,
           customerPhone: normalizeBrazilianMobile(values.customerPhone),
-          deliveryType: values.deliveryType,
+          deliveryType: isTableOrder ? "TABLE" : values.deliveryType,
+          tableToken: isTableOrder ? table?.token : undefined,
           deliveryAddress:
             values.deliveryType === "DELIVERY"
               ? {
@@ -460,9 +471,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                    longitude: values.longitude,
                 }
               : undefined,
-          paymentMethod: values.paymentMethod,
+          paymentMethod: isTableOrder ? undefined : values.paymentMethod,
           changeForCents:
-            values.paymentMethod === "CASH"
+            !isTableOrder && values.paymentMethod === "CASH"
               ? reaisToCents(values.changeForReais)
               : 0,
           items: items.map((item) => ({
@@ -517,7 +528,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
           <CartPageText>
             {step === 1
               ? "Revise os produtos antes de continuar."
-              : "Informe entrega, pagamento e confirme o pedido."}
+              : isTableOrder
+                ? `Confirme seu pedido para Mesa ${table?.number}.`
+                : "Informe entrega, pagamento e confirme o pedido."}
           </CartPageText>
         </CartPageHeader>
 
@@ -643,6 +656,12 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                 Voltar para produtos
               </Button>
 
+              {isTableOrder ? (
+                <CheckoutSection>
+                  <CheckoutSectionTitle>Mesa {table?.number}</CheckoutSectionTitle>
+                  <p>Seu pedido será entregue nesta mesa. Pagamento no caixa ou com garçom.</p>
+                </CheckoutSection>
+              ) : (
               <CheckoutSection>
                 <CheckoutSectionTitle>Como deseja receber?</CheckoutSectionTitle>
                 <DeliveryToggleGrid>
@@ -680,6 +699,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   </DeliveryButton>
                 </DeliveryToggleGrid>
               </CheckoutSection>
+              )}
 
               {deliveryType === "DELIVERY" ? (
                 <CheckoutSection>
@@ -749,7 +769,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                 </CheckoutSection>
               )}
 
-              <CheckoutSection>
+              {!isTableOrder ? (<CheckoutSection>
                 <CheckoutSectionTitle>Seus dados</CheckoutSectionTitle>
                 <Field
                   label="Nome"
@@ -773,7 +793,7 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                     }}
                   />
                 </Field>
-              </CheckoutSection>
+              </CheckoutSection>) : null}
 
               <CheckoutSection>
                 <CheckoutSectionTitle>Forma de pagamento</CheckoutSectionTitle>
@@ -836,9 +856,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
               </CheckoutSection>
 
               <TotalsBox>
-                <TotalRow>
+                {!isTableOrder ? <TotalRow>
                   Subtotal <strong>{money(originalSubtotalCents)}</strong>
-                </TotalRow>
+                </TotalRow> : null}
                 {discountCents > 0 ? (
                   <TotalRow>
                     Desconto <strong>- {money(discountCents)}</strong>
@@ -866,8 +886,9 @@ export function CartView({ restaurantConfig, initialStep = 1 }: CartViewProps) {
                   onChange={(event) => setConfirmed(event.target.checked)}
                 />
                 <CheckoutConfirmationText>
-                  Revisei produtos, dados de entrega e pagamento. Confirmo o
-                  envio deste pedido.
+                  {isTableOrder
+                    ? `Revisei produtos e dados. Confirmo pedido para Mesa ${table?.number}.`
+                    : "Revisei produtos, dados de entrega e pagamento. Confirmo o envio deste pedido."}
                 </CheckoutConfirmationText>
               </CheckoutConfirmation>
 

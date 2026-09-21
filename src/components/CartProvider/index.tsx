@@ -49,7 +49,7 @@ export type PendingUpsellOffer = {
 export type CheckoutDraft = {
   customerName: string;
   customerPhone: string;
-  deliveryType: "DELIVERY" | "PICKUP";
+  deliveryType: "DELIVERY" | "PICKUP" | "TABLE";
   street: string;
   number: string;
   complement: string;

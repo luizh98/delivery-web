@@ -147,7 +147,7 @@ export type MenuResponse = {
   products: Product[];
 };
 
-export type DeliveryType = "DELIVERY" | "PICKUP";
+export type DeliveryType = "DELIVERY" | "PICKUP" | "TABLE";
 export type PaymentMethod = "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "CASH";
 
 export type OrderStatus =
@@ -221,6 +221,9 @@ export type OrderResponse = {
   updatedAt?: string;
   deliveryRouteId?: string;
   motoboyId?: string;
+  tableId?: string;
+  tableNumber?: string;
+  tableSessionId?: string;
 };
 
 export type MotoboyResponse = {
@@ -262,6 +265,29 @@ export type PublicOrderTrackingResponse = {
   };
   createdAt?: string;
   updatedAt?: string;
+  tableNumber?: string;
+};
+
+export type TableResponse = {
+  id: string;
+  number: string;
+  active: boolean;
+  token?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type PublicTableResponse = { number: string };
+
+export type TableServiceRequestType = "SERVICE" | "PAYMENT";
+
+export type TableServiceRequestResponse = {
+  id: string;
+  tableSessionId: string;
+  type: TableServiceRequestType;
+  status: "PENDING" | "RESOLVED";
+  createdAt?: string;
+  resolvedAt?: string;
 };
 
 export type CustomerOrderHistoryResponse = PublicOrderTrackingResponse & {
