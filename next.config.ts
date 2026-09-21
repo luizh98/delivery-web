@@ -11,9 +11,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: appRoot,
   },
-  watchOptions: {
-    pollIntervalMs: 1000,
-  },
 };
 
 export default nextConfig;
