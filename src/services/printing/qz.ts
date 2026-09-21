@@ -2,6 +2,9 @@ import qz from "qz-tray";
 
 const selectedPrinterKey = "delivery:qz-default-printer";
 const browserPrintPreference = "__browser__";
+const receiptEndFeedLines = 6;
+const escPosFeedLines = `\x1B\x64${String.fromCharCode(receiptEndFeedLines)}`;
+const escPosFullCut = "\x1D\x56\x00";
 let securityConfigured = false;
 let connectionPromise: Promise<void> | null = null;
 
@@ -117,6 +120,8 @@ export async function printTextWithQz(content: string, printer = getSelectedPrin
   await qz.print(config, [{
     type: "raw",
     format: "plain",
-    data: `${content}\n\n\n`,
+    // Elgin i9 aceita ESC/POS. Avanço evita corte no fim do conteúdo;
+    // guilhotina separa cada pedido enviado diretamente pelo QZ Tray.
+    data: `${content}\n${escPosFeedLines}${escPosFullCut}`,
   }]);
 }
