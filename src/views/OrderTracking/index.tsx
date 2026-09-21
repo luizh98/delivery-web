@@ -105,6 +105,7 @@ export function OrderTrackingView({
   const [refreshing, setRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [refreshError, setRefreshError] = useState(false);
+  const [serviceRequestType, setServiceRequestType] = useState<"SERVICE" | "PAYMENT" | null>(null);
   const activeRequest = useRef<AbortController | null>(null);
   const initialRequestStarted = useRef(Boolean(initialOrder));
 
@@ -186,6 +187,20 @@ export function OrderTrackingView({
   useEffect(() => {
     return () => activeRequest.current?.abort();
   }, []);
+
+  async function requestService(type: "SERVICE" | "PAYMENT") {
+    setServiceRequestType(type);
+    try {
+      await clientApi(`public/orders/tracking/${encodeURIComponent(trackingCode)}/service-requests`, {
+        method: "POST",
+        body: JSON.stringify({ type }),
+      });
+    } catch {
+      setRefreshError(true);
+    } finally {
+      setServiceRequestType(null);
+    }
+  }
 
   if (loading && !order) {
     return (
@@ -354,16 +369,16 @@ export function OrderTrackingView({
           <SummaryList>
             <SummaryRow>
               <dt>Atendimento</dt>
-              <dd>{order.deliveryType === "DELIVERY" ? "Entrega" : "Retirada"}</dd>
+              <dd>{order.deliveryType === "TABLE" ? `Mesa ${order.tableNumber ?? ""}` : order.deliveryType === "DELIVERY" ? "Entrega" : "Retirada"}</dd>
             </SummaryRow>
-            <SummaryRow>
+            {order.deliveryType !== "TABLE" ? <SummaryRow>
               <dt>Pagamento</dt>
               <dd>
                 {order.paymentMethod
                   ? paymentLabels[order.paymentMethod]
                   : "Não informado"}
               </dd>
-            </SummaryRow>
+            </SummaryRow> : null}
             <SummaryRow>
               <dt>Total</dt>
               <dd>{money(order.totalCents)}</dd>
@@ -372,6 +387,16 @@ export function OrderTrackingView({
         </SummaryCard>
 
         <Actions>
+          {order.deliveryType === "TABLE" && !terminal ? (
+            <>
+              <Button type="button" variant="outline" disabled={serviceRequestType !== null} onClick={() => requestService("SERVICE")}>
+                {serviceRequestType === "SERVICE" ? "Chamando..." : "Chamar garçom"}
+              </Button>
+              <Button type="button" variant="outline" disabled={serviceRequestType !== null} onClick={() => requestService("PAYMENT")}>
+                {serviceRequestType === "PAYMENT" ? "Solicitando..." : "Solicitar pagamento"}
+              </Button>
+            </>
+          ) : null}
           <Button type="button" onClick={() => router.push("/")}>
             Voltar ao cardápio
           </Button>
