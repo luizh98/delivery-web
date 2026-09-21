@@ -20,10 +20,24 @@ export async function generateMetadata(): Promise<Metadata> {
   const restaurantConfig = await getRestaurantConfig();
   const restaurantName = restaurantConfig?.name?.trim();
   const logoUrl = restaurantConfig?.logoUrl?.trim();
+  const title = restaurantName ? `Peça agora no ${restaurantName}` : "FlyFoods";
+  const description = "Confira o cardápio e faça seu pedido!";
 
   return {
-    title: restaurantName || "FlyFoods",
-    description: "Cardápio e painel admin para delivery.",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: logoUrl ? [{ url: logoUrl }] : undefined,
+    },
+    twitter: {
+      card: logoUrl ? "summary" : "summary_large_image",
+      title,
+      description,
+      images: logoUrl ? [logoUrl] : undefined,
+    },
     icons: logoUrl
       ? {
           icon: logoUrl,
