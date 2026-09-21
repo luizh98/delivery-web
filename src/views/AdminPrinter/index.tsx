@@ -8,6 +8,7 @@ import { useToast } from "@/components/ToastProvider";
 import {
   getSelectedPrinter,
   getQzErrorMessage,
+  isBrowserPrintSelected,
   listLocalPrinters,
   printTextWithQz,
   setSelectedPrinter,
@@ -49,7 +50,9 @@ export function AdminPrinterView() {
     try {
       const result = await listLocalPrinters();
       const saved = getSelectedPrinter();
-      const nextSelected = saved && result.printers.includes(saved)
+      const nextSelected = isBrowserPrintSelected()
+        ? ""
+        : saved && result.printers.includes(saved)
         ? saved
         : result.defaultPrinter && result.printers.includes(result.defaultPrinter)
           ? result.defaultPrinter
@@ -74,7 +77,7 @@ export function AdminPrinterView() {
   function changePrinter(printer: string) {
     setSelected(printer);
     setSelectedPrinter(printer);
-    showToast("Impressora padrão salva neste computador");
+    showToast(printer ? "Impressora padrão salva neste computador" : "Diálogo do navegador salvo neste computador");
   }
 
   async function testPrint() {
@@ -93,7 +96,7 @@ export function AdminPrinterView() {
     <Root>
       <div>
         <Title>Impressora</Title>
-        <Subtitle>Escolha a impressora usada pelos pedidos neste computador.</Subtitle>
+        <Subtitle>Escolha se pedidos usam diálogo do navegador ou impressora direta neste computador.</Subtitle>
       </div>
 
       <Panel>
@@ -176,26 +179,26 @@ export function AdminPrinterView() {
 
       <Panel>
         <PanelHeader>
-          <PanelTitle>Impressora deste computador</PanelTitle>
+          <PanelTitle>Destino da impressão</PanelTitle>
           <PanelDescription>
-            A seleção fica salva apenas neste navegador e não altera outros caixas.
+            A seleção fica salva neste navegador e não altera outros caixas.
           </PanelDescription>
         </PanelHeader>
 
         <Status>
-          <StatusDot connected={!error && !loading} />
-          {loading ? "Conectando ao QZ Tray..." : error ? "QZ Tray desconectado" : "QZ Tray conectado"}
+          <StatusDot connected={isBrowserPrintSelected() || (!error && !loading)} />
+          {isBrowserPrintSelected() ? "Diálogo do navegador selecionado" : loading ? "Conectando ao QZ Tray..." : error ? "QZ Tray desconectado" : "QZ Tray conectado"}
         </Status>
 
-        {error ? <ErrorText>{error}</ErrorText> : null}
+        {error && !isBrowserPrintSelected() ? <ErrorText>{error}</ErrorText> : null}
 
-        <Field label="Impressora padrão">
+        <Field label="Destino">
           <Select
             value={selected}
-            disabled={loading || printers.length === 0}
+            disabled={loading}
             onChange={(event) => changePrinter(event.target.value)}
           >
-            {printers.length === 0 ? <option value="">Nenhuma impressora encontrada</option> : null}
+            <option value="">Usar diálogo do navegador (salvar como PDF)</option>
             {printers.map((printer) => (
               <option key={printer} value={printer}>{printer}</option>
             ))}
@@ -214,8 +217,8 @@ export function AdminPrinterView() {
         </Actions>
 
         <Help>
-          O QZ Tray precisa estar aberto neste computador. A impressora escolhida fica salva somente
-          neste navegador, evitando que a configuração de um caixa altere a de outro.
+          Use diálogo do navegador para testar ou salvar PDF. QZ Tray só é necessário para enviar
+          diretamente a uma impressora. A escolha fica salva somente neste navegador.
         </Help>
       </Panel>
     </Root>

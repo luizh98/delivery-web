@@ -1,6 +1,7 @@
 import qz from "qz-tray";
 
 const selectedPrinterKey = "delivery:qz-default-printer";
+const browserPrintPreference = "__browser__";
 let securityConfigured = false;
 let connectionPromise: Promise<void> | null = null;
 
@@ -84,14 +85,22 @@ export function getSelectedPrinter() {
   if (typeof window === "undefined") {
     return null;
   }
-  return window.localStorage.getItem(selectedPrinterKey) || null;
+  const preference = window.localStorage.getItem(selectedPrinterKey);
+  return preference === browserPrintPreference ? null : preference || null;
+}
+
+export function isBrowserPrintSelected() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return window.localStorage.getItem(selectedPrinterKey) === browserPrintPreference;
 }
 
 export function setSelectedPrinter(printer: string) {
   if (printer) {
     window.localStorage.setItem(selectedPrinterKey, printer);
   } else {
-    window.localStorage.removeItem(selectedPrinterKey);
+    window.localStorage.setItem(selectedPrinterKey, browserPrintPreference);
   }
 }
 
