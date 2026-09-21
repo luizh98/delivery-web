@@ -3,6 +3,7 @@ import qz from "qz-tray";
 const selectedPrinterKey = "delivery:qz-default-printer";
 const browserPrintPreference = "__browser__";
 const receiptEndFeedLines = 6;
+const escPosCodePageCp1252 = "\x1B\x74\x10";
 const escPosFeedLines = `\x1B\x64${String.fromCharCode(receiptEndFeedLines)}`;
 const escPosFullCut = "\x1D\x56\x00";
 let securityConfigured = false;
@@ -114,14 +115,14 @@ export async function printTextWithQz(content: string, printer = getSelectedPrin
 
   await connectQz();
   const config = qz.configs.create(printer, {
-    encoding: "UTF-8",
+    encoding: "Cp1252",
     copies: 1,
   });
   await qz.print(config, [{
     type: "raw",
     format: "plain",
-    // Elgin i9 aceita ESC/POS. Avanço evita corte no fim do conteúdo;
-    // guilhotina separa cada pedido enviado diretamente pelo QZ Tray.
-    data: `${content}\n${escPosFeedLines}${escPosFullCut}`,
+    // Elgin i9 usa ESC/POS Cp1252 para acentos portugueses. Avanço evita
+    // corte no fim; guilhotina separa cada pedido enviado pelo QZ Tray.
+    data: `${escPosCodePageCp1252}${content}\n${escPosFeedLines}${escPosFullCut}`,
   }]);
 }
