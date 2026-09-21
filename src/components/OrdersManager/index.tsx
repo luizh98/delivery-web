@@ -245,6 +245,7 @@ const paymentLabels: Record<PaymentMethod, string> = {
 const deliveryLabels: Record<DeliveryType, string> = {
   DELIVERY: "Entrega",
   PICKUP: "Retirada",
+  TABLE: "Mesa",
 };
 
 const nextStatusLabels: Partial<Record<OrderStatus, string>> = {
@@ -672,6 +673,7 @@ export function OrdersManager({
             <Card
               key={order.id}
               overdue={isOverdue}
+              orderType={order.deliveryType === "TABLE" ? "table" : order.deliveryType === "DELIVERY" ? "delivery" : undefined}
               data-overdue={isOverdue}
               aria-label={isOverdue
                 ? `Pedido ${order.id.slice(-6).toUpperCase()} em atraso`
@@ -709,7 +711,7 @@ export function OrdersManager({
                 </DetailRow>
                 <DetailRow>
                   <Truck size={16} aria-hidden="true" />
-                  <span>{deliveryLabels[order.deliveryType]}</span>
+                  <span>{order.deliveryType === "TABLE" ? `Mesa ${order.tableNumber ?? ""}` : deliveryLabels[order.deliveryType]}</span>
                 </DetailRow>
                 <DetailRow>
                   <CreditCard size={16} aria-hidden="true" />
@@ -876,7 +878,9 @@ export function OrdersManager({
                   Endereço de entrega
                 </ModalSectionTitle>
                 <p>
-                  {detailsOrder.deliveryType === "PICKUP"
+                  {detailsOrder.deliveryType === "TABLE"
+                    ? `Mesa ${detailsOrder.tableNumber ?? ""}`
+                    : detailsOrder.deliveryType === "PICKUP"
                     ? "Retirada no restaurante"
                     : detailsAddress || "Endereço não informado"}
                 </p>

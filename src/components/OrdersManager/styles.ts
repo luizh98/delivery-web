@@ -162,6 +162,10 @@ export const Card = styled("article", {
   transition: "outline-color 150ms ease",
 
   variants: {
+    orderType: {
+      delivery: { borderColor: "#2563eb", background: "#eff6ff" },
+      table: { borderColor: "#d97706", background: "#fffbeb" },
+    },
     overdue: {
       true: {
         animation: "overdue-card-neon 1.45s ease-in-out infinite",
