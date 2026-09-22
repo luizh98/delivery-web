@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Armchair,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -56,6 +57,7 @@ const navItems = [
   { href: "/admin/analytics", label: "Análises", icon: LineChart, adminOnly: true },
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/table-orders", label: "Pedidos mesa", icon: ClipboardList },
+  { href: "/admin/tables", label: "Mesas", icon: Armchair },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
   { href: "/admin/deliveries", label: "Entregas", motoboyLabel: "Pedidos", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },
