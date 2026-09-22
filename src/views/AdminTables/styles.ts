@@ -104,6 +104,22 @@ export const LinkInput = styled("input", {
   fontSize: "0.75rem",
 });
 
+export const QrCodePreview = styled("div", {
+  display: "grid",
+  justifyItems: "center",
+  borderRadius: "0.375rem",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-surface)",
+  padding: "0.75rem",
+});
+
+export const QrCodeImage = styled("img", {
+  display: "block",
+  width: "min(100%, 16rem)",
+  height: "auto",
+  imageRendering: "pixelated",
+});
+
 export const Empty = styled("div", {
   borderRadius: "0.375rem",
   border: "1px dashed var(--color-border)",

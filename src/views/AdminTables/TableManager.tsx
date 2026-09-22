@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Copy, Pencil, Plus, Power, RefreshCw, Save, X } from "lucide-react";
+import { CheckCircle2, Copy, Download, Pencil, Plus, Power, RefreshCw, Save, X } from "lucide-react";
+import QRCode from "qrcode";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -23,6 +24,8 @@ import {
   List,
   Meta,
   PaneGrid,
+  QrCodeImage,
+  QrCodePreview,
   Root,
   Section,
   SectionHeader,
@@ -50,6 +53,7 @@ type TableLink = {
   tableId: string;
   tableNumber: string;
   url: string;
+  qrCodeDataUrl: string;
 };
 
 const defaultTableForm = (): TableForm => ({ number: "", active: true });
@@ -64,6 +68,22 @@ function sortTables(tables: TableResponse[]) {
 
 function tableUrl(token: string) {
   return `/mesa/${token}`;
+}
+
+async function createTableLink(table: TableResponse): Promise<TableLink> {
+  if (!table.token) {
+    throw new Error("Token ausente na resposta.");
+  }
+
+  const url = new URL(tableUrl(table.token), window.location.origin).toString();
+  const qrCodeDataUrl = await QRCode.toDataURL(url, {
+    errorCorrectionLevel: "M",
+    margin: 2,
+    width: 512,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+
+  return { tableId: table.id, tableNumber: table.number, url, qrCodeDataUrl };
 }
 
 export function TableManager({ initialTables }: TableManagerProps) {
@@ -109,6 +129,16 @@ export function TableManager({ initialTables }: TableManagerProps) {
     }
   }
 
+  function downloadQrCode(link: TableLink) {
+    const download = document.createElement("a");
+    download.href = link.qrCodeDataUrl;
+    download.download = `mesa-${link.tableNumber}-qr.png`;
+    document.body.append(download);
+    download.click();
+    download.remove();
+    showToast(`QR Code da mesa ${link.tableNumber} baixado.`);
+  }
+
   async function submit(values: TableForm) {
     setError("");
 
@@ -125,21 +155,15 @@ export function TableManager({ initialTables }: TableManagerProps) {
         },
       );
       updateTable(table);
-      setTableLink((currentLink) => {
-        if (table.token) {
-          return {
-            tableId: table.id,
-            tableNumber: table.number,
-            url: new URL(tableUrl(table.token), window.location.origin).toString(),
-          };
-        }
-
-        return currentLink?.tableId === table.id
+      if (table.token) {
+        setTableLink(await createTableLink(table));
+      } else {
+        setTableLink((currentLink) => currentLink?.tableId === table.id
           ? { ...currentLink, tableNumber: table.number }
-          : currentLink;
-      });
+          : currentLink);
+      }
       resetForm();
-      showToast(editingTableId ? "Mesa atualizada." : "Mesa criada. Copie o link abaixo.");
+      showToast(editingTableId ? "Mesa atualizada." : "Mesa criada. Baixe ou copie o QR Code abaixo.");
     } catch {
       const message = editingTableId
         ? "Não foi possível atualizar a mesa. Tente novamente."
@@ -193,17 +217,9 @@ export function TableManager({ initialTables }: TableManagerProps) {
         }),
       });
 
-      if (!updatedTable.token) {
-        throw new Error("Token ausente na resposta.");
-      }
-
       updateTable(updatedTable);
-      setTableLink({
-        tableId: updatedTable.id,
-        tableNumber: updatedTable.number,
-        url: new URL(tableUrl(updatedTable.token), window.location.origin).toString(),
-      });
-      showToast("Novo link gerado. Copie-o abaixo.");
+      setTableLink(await createTableLink(updatedTable));
+      showToast("Novo link gerado. Baixe ou copie o QR Code abaixo.");
     } catch {
       const message = "Não foi possível regenerar o link da mesa. Tente novamente.";
       setError(message);
@@ -263,10 +279,16 @@ export function TableManager({ initialTables }: TableManagerProps) {
             <LinkResult aria-live="polite">
               <div>
                 <SectionTitle>Link da mesa {tableLink.tableNumber}</SectionTitle>
-                <SectionHelp>Guarde ou imprima agora: ele só é mostrado ao criar ou regenerar.</SectionHelp>
+                <SectionHelp>Guarde, imprima ou baixe agora: ele só é mostrado ao criar ou regenerar.</SectionHelp>
               </div>
+              <QrCodePreview>
+                <QrCodeImage alt={`QR Code da mesa ${tableLink.tableNumber}`} src={tableLink.qrCodeDataUrl} />
+              </QrCodePreview>
               <LinkInput aria-label={`Link da mesa ${tableLink.tableNumber}`} readOnly value={tableLink.url} />
               <Actions>
+                <Button type="button" onClick={() => downloadQrCode(tableLink)}>
+                  <Download size={16} aria-hidden="true" /> Baixar QR Code
+                </Button>
                 <Button type="button" variant="outline" onClick={() => copyLink(tableLink)}>
                   <Copy size={16} aria-hidden="true" /> Copiar link
                 </Button>
