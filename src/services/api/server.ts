@@ -18,9 +18,9 @@ import type {
   PromotionCombo,
   PromotionComboPublicResponse,
   PublicOrderTrackingResponse,
-
   PublicTableResponse,
   RestaurantConfigResponse,
+  TableResponse,
   UpsellCampaign,
 } from "@/types/api";
 
@@ -135,6 +135,10 @@ export async function getAdminOrders(statuses: OrderStatus[]) {
 
 export async function getAdminDeliveryRoutes() {
   return (await backendFetch<DeliveryRouteResponse[]>("admin/delivery-routes")) ?? [];
+}
+
+export async function getAdminTables() {
+  return (await backendFetch<TableResponse[]>("admin/tables")) ?? [];
 }
 
 export async function getPublicTable(token: string) {
