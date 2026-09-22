@@ -193,10 +193,12 @@ export function TableManager({ initialTables }: TableManagerProps) {
     }
   }
 
-  async function regenerateLink(table: TableResponse) {
+  async function regenerateLink(table: TableResponse, downloadAfterGeneration = false) {
     const confirmed = await requestConfirmation({
-      message: `Regenerar o link da mesa ${table.number}? O link anterior deixará de funcionar.`,
-      confirmLabel: "Regenerar link",
+      message: downloadAfterGeneration
+        ? `Gerar e baixar novo QR Code da mesa ${table.number}? O QR Code e link anteriores deixarão de funcionar.`
+        : `Regenerar o link da mesa ${table.number}? O link anterior deixará de funcionar.`,
+      confirmLabel: downloadAfterGeneration ? "Gerar e baixar" : "Regenerar link",
       variant: "danger",
     });
 
@@ -218,8 +220,14 @@ export function TableManager({ initialTables }: TableManagerProps) {
       });
 
       updateTable(updatedTable);
-      setTableLink(await createTableLink(updatedTable));
-      showToast("Novo link gerado. Baixe ou copie o QR Code abaixo.");
+      const nextTableLink = await createTableLink(updatedTable);
+      setTableLink(nextTableLink);
+
+      if (downloadAfterGeneration) {
+        downloadQrCode(nextTableLink);
+      } else {
+        showToast("Novo link gerado. Baixe ou copie o QR Code abaixo.");
+      }
     } catch {
       const message = "Não foi possível regenerar o link da mesa. Tente novamente.";
       setError(message);
@@ -319,7 +327,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
                         {table.active ? <CheckCircle2 size={14} aria-hidden="true" /> : <Power size={14} aria-hidden="true" />}
                         {table.active ? "Ativa" : "Inativa"}
                       </Status>
-                      <Meta>{hasCurrentLink ? "Novo link disponível nesta sessão." : "Regenerar link invalida o acesso anterior."}</Meta>
+                      <Meta>{hasCurrentLink ? "Novo link disponível nesta sessão." : "Gerar QR Code invalida o acesso anterior."}</Meta>
                     </div>
                     <CardActions>
                       {hasCurrentLink && tableLink ? (
@@ -333,8 +341,9 @@ export function TableManager({ initialTables }: TableManagerProps) {
                       <Button type="button" variant="ghost" onClick={() => toggleTable(table)} disabled={isPending}>
                         <Power size={16} aria-hidden="true" /> {table.active ? "Desativar" : "Ativar"}
                       </Button>
-                      <Button type="button" variant="dangerGhost" onClick={() => regenerateLink(table)} disabled={isPending}>
-                        <RefreshCw size={16} aria-hidden="true" /> {isPending ? "Gerando..." : "Regenerar link"}
+                      <Button type="button" variant="dangerGhost" onClick={() => regenerateLink(table, true)} disabled={isPending}>
+                        {isPending ? <RefreshCw size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
+                        {isPending ? "Gerando..." : "Gerar e baixar QR"}
                       </Button>
                     </CardActions>
                   </TableCard>

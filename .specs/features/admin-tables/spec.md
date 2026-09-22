@@ -28,6 +28,7 @@ Como administrador, quero cadastrar uma mesa pelo número para disponibilizar um
 2. QUANDO API retornar token de criação, ENTÃO sistema SHALL mostrar e permitir copiar link `/mesa/{token}`.
 3. QUANDO API retornar token de criação ou regeneração, ENTÃO sistema SHALL gerar QR Code PNG localmente e permitir baixá-lo.
 4. QUANDO número estiver vazio, ENTÃO sistema SHALL mostrar erro no campo e não enviar requisição.
+5. QUANDO selecionar “Gerar e baixar QR” em mesa já cadastrada, ENTÃO sistema SHALL avisar que acesso anterior será invalidado, gerar novo QR Code e baixar PNG.
 
 ### P1: Gerenciar mesa cadastrada
 

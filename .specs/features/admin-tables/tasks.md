@@ -53,7 +53,7 @@
 
 **Onde:** `src/views/AdminTables/TableManager.tsx`, `src/views/AdminTables/styles.ts`
 **Requisito:** TABLE-05
-**Pronto quando:** criação ou regeneração mostra QR Code PNG e botão de download sem enviar o token a serviço externo.
+**Pronto quando:** criação ou regeneração mostra QR Code PNG e botão de download sem enviar o token a serviço externo; toda mesa cadastrada permite gerar e baixar novo QR após confirmação.
 
 ## Resultado da validação
 
