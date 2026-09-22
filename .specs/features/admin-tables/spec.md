@@ -9,13 +9,13 @@ O backend já permite criar, editar, ativar e regenerar o acesso de mesas, mas o
 - [x] Permitir cadastro e edição do número e estado de uma mesa no Admin.
 - [x] Permitir copiar o link seguro da mesa ao criar ou regenerar seu acesso.
 - [x] Expor a tela na navegação administrativa.
+- [x] Permitir baixar o QR Code do link seguro da mesa.
 
 ## Fora de escopo
 
 | Item | Motivo |
 | --- | --- |
 | Excluir mesas | API não oferece exclusão; desativação preserva histórico. |
-| Renderizar QR code | API fornece token/link; impressão ou geração visual não foi solicitada. |
 | Gerenciar sessões de mesa | Fluxo separado já coberto pelos endpoints de sessões. |
 
 ## Histórias
@@ -26,7 +26,8 @@ Como administrador, quero cadastrar uma mesa pelo número para disponibilizar um
 
 1. QUANDO informar número válido e salvar, ENTÃO sistema SHALL criar mesa ativa e atualizar lista.
 2. QUANDO API retornar token de criação, ENTÃO sistema SHALL mostrar e permitir copiar link `/mesa/{token}`.
-3. QUANDO número estiver vazio, ENTÃO sistema SHALL mostrar erro no campo e não enviar requisição.
+3. QUANDO API retornar token de criação ou regeneração, ENTÃO sistema SHALL gerar QR Code PNG localmente e permitir baixá-lo.
+4. QUANDO número estiver vazio, ENTÃO sistema SHALL mostrar erro no campo e não enviar requisição.
 
 ### P1: Gerenciar mesa cadastrada
 
@@ -58,3 +59,4 @@ Como administrador, quero acessar Mesas pela navegação para encontrá-la duran
 | TABLE-02 | Editar número e estado | Implemented |
 | TABLE-03 | Regenerar e copiar link | Implemented |
 | TABLE-04 | Rota e navegação Admin | Implemented |
+| TABLE-05 | Gerar e baixar QR Code | Implemented |

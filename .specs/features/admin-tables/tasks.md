@@ -49,9 +49,16 @@
 - `npm run build`
 - Revisão manual: criar, editar, desativar, regenerar e copiar link.
 
+### T7: Gerar e baixar QR Code
+
+**Onde:** `src/views/AdminTables/TableManager.tsx`, `src/views/AdminTables/styles.ts`
+**Requisito:** TABLE-05
+**Pronto quando:** criação ou regeneração mostra QR Code PNG e botão de download sem enviar o token a serviço externo.
+
 ## Resultado da validação
 
 - `npx tsc --noEmit`: passou.
 - `npm run test`: 14 testes passaram.
 - Lint dos arquivos alterados: passou; lint global possui erros preexistentes em `AdminDashboard`.
 - Build chegou à etapa de fontes e parou ao buscar `Plus Jakarta Sans` no Google Fonts por indisponibilidade de rede.
+- QR Code: gerado localmente pelo pacote `qrcode` e validado por TypeScript.
