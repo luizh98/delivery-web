@@ -277,6 +277,8 @@ export type TableResponse = {
   updatedAt?: string;
 };
 
+export type TableAccessResponse = { token: string };
+
 export type PublicTableResponse = { number: string };
 
 export type TableServiceRequestType = "SERVICE" | "PAYMENT";

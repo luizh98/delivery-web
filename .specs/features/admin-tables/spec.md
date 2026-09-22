@@ -29,6 +29,8 @@ Como administrador, quero cadastrar uma mesa pelo número para disponibilizar um
 3. QUANDO API retornar token de criação ou regeneração, ENTÃO sistema SHALL gerar QR Code PNG localmente e permitir baixá-lo.
 4. QUANDO número estiver vazio, ENTÃO sistema SHALL mostrar erro no campo e não enviar requisição.
 5. QUANDO selecionar “Gerar e baixar QR” em mesa já cadastrada, ENTÃO sistema SHALL avisar que acesso anterior será invalidado, gerar novo QR Code e baixar PNG.
+6. QUANDO selecionar “Ver QR Code” em mesa com acesso cifrado, ENTÃO sistema SHALL carregar o mesmo QR Code sem invalidar link.
+7. QUANDO selecionar “Ver QR Code” em mesa criada antes do armazenamento cifrado, ENTÃO sistema SHALL orientar regenerar uma vez para habilitar visualizações futuras.
 
 ### P1: Gerenciar mesa cadastrada
 
@@ -61,3 +63,4 @@ Como administrador, quero acessar Mesas pela navegação para encontrá-la duran
 | TABLE-03 | Regenerar e copiar link | Implemented |
 | TABLE-04 | Rota e navegação Admin | Implemented |
 | TABLE-05 | Gerar e baixar QR Code | Implemented |
+| TABLE-06 | Recuperar QR Code existente sem regenerar | Implemented |

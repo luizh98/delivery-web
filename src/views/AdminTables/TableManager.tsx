@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Copy, Download, Pencil, Plus, Power, RefreshCw, Save, X } from "lucide-react";
+import { CheckCircle2, Copy, Download, Pencil, Plus, Power, QrCode, RefreshCw, Save, X } from "lucide-react";
 import QRCode from "qrcode";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -11,7 +11,7 @@ import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
-import type { TableResponse } from "@/types/api";
+import type { TableAccessResponse, TableResponse } from "@/types/api";
 import {
   Actions,
   CardActions,
@@ -193,6 +193,23 @@ export function TableManager({ initialTables }: TableManagerProps) {
     }
   }
 
+  async function viewTableQrCode(table: TableResponse) {
+    setError("");
+    setPendingTableId(table.id);
+
+    try {
+      const access = await clientApi<TableAccessResponse>(`admin/tables/${table.id}/access`);
+      setTableLink(await createTableLink({ ...table, token: access.token }));
+      showToast(`QR Code da mesa ${table.number} carregado.`);
+    } catch {
+      const message = "Não foi possível recuperar o QR Code. Se esta mesa for antiga, gere um novo QR Code uma vez para habilitar a visualização futura.";
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      setPendingTableId(null);
+    }
+  }
+
   async function regenerateLink(table: TableResponse, downloadAfterGeneration = false) {
     const confirmed = await requestConfirmation({
       message: downloadAfterGeneration
@@ -327,7 +344,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
                         {table.active ? <CheckCircle2 size={14} aria-hidden="true" /> : <Power size={14} aria-hidden="true" />}
                         {table.active ? "Ativa" : "Inativa"}
                       </Status>
-                      <Meta>{hasCurrentLink ? "Novo link disponível nesta sessão." : "Gerar QR Code invalida o acesso anterior."}</Meta>
+                      <Meta>{hasCurrentLink ? "QR Code carregado nesta sessão." : "Mesas antigas precisam gerar novo QR uma vez para habilitar visualização futura."}</Meta>
                     </div>
                     <CardActions>
                       {hasCurrentLink && tableLink ? (
@@ -337,6 +354,9 @@ export function TableManager({ initialTables }: TableManagerProps) {
                       ) : null}
                       <Button type="button" variant="outline" onClick={() => startEditing(table)} disabled={isPending}>
                         <Pencil size={16} aria-hidden="true" /> Editar
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => viewTableQrCode(table)} disabled={isPending}>
+                        <QrCode size={16} aria-hidden="true" /> {isPending ? "Carregando..." : "Ver QR Code"}
                       </Button>
                       <Button type="button" variant="ghost" onClick={() => toggleTable(table)} disabled={isPending}>
                         <Power size={16} aria-hidden="true" /> {table.active ? "Desativar" : "Ativar"}

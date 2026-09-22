@@ -55,6 +55,12 @@
 **Requisito:** TABLE-05
 **Pronto quando:** criação ou regeneração mostra QR Code PNG e botão de download sem enviar o token a serviço externo; toda mesa cadastrada permite gerar e baixar novo QR após confirmação.
 
+### T8: Recuperar QR Code existente
+
+**Onde:** `delivery-api/internal/app/table_tokens.go`, `delivery-api/internal/app/tables.go`, `src/views/AdminTables/TableManager.tsx`
+**Requisito:** TABLE-06
+**Pronto quando:** token de mesa é cifrado em repouso, endpoint autenticado o recupera para gerar o mesmo QR Code, e mesas legadas exibem orientação de regeneração.
+
 ## Resultado da validação
 
 - `npx tsc --noEmit`: passou.
