@@ -6,9 +6,9 @@ O backend já permite criar, editar, ativar e regenerar o acesso de mesas, mas o
 
 ## Objetivos
 
-- [ ] Permitir cadastro e edição do número e estado de uma mesa no Admin.
-- [ ] Permitir copiar o link seguro da mesa ao criar ou regenerar seu acesso.
-- [ ] Expor a tela na navegação administrativa.
+- [x] Permitir cadastro e edição do número e estado de uma mesa no Admin.
+- [x] Permitir copiar o link seguro da mesa ao criar ou regenerar seu acesso.
+- [x] Expor a tela na navegação administrativa.
 
 ## Fora de escopo
 
@@ -54,7 +54,7 @@ Como administrador, quero acessar Mesas pela navegação para encontrá-la duran
 
 | ID | Requisito | Status |
 | --- | --- | --- |
-| TABLE-01 | Criar mesa com validação | Pending |
-| TABLE-02 | Editar número e estado | Pending |
-| TABLE-03 | Regenerar e copiar link | Pending |
-| TABLE-04 | Rota e navegação Admin | Pending |
+| TABLE-01 | Criar mesa com validação | Implemented |
+| TABLE-02 | Editar número e estado | Implemented |
+| TABLE-03 | Regenerar e copiar link | Implemented |
+| TABLE-04 | Rota e navegação Admin | Implemented |

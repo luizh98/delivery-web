@@ -1,7 +1,7 @@
 # Administração de Mesas — Tarefas
 
 **Spec:** `.specs/features/admin-tables/spec.md`
-**Status:** In Progress
+**Status:** Ready for manual validation
 
 ## Plano
 
@@ -48,3 +48,10 @@
 - `npm run lint`
 - `npm run build`
 - Revisão manual: criar, editar, desativar, regenerar e copiar link.
+
+## Resultado da validação
+
+- `npx tsc --noEmit`: passou.
+- `npm run test`: 14 testes passaram.
+- Lint dos arquivos alterados: passou; lint global possui erros preexistentes em `AdminDashboard`.
+- Build chegou à etapa de fontes e parou ao buscar `Plus Jakarta Sans` no Google Fonts por indisponibilidade de rede.
