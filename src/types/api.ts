@@ -67,6 +67,7 @@ export type DeliveryFeeRange = {
 export type RestaurantConfigResponse = {
   id?: string;
   name?: string;
+  cnpj?: string;
   logoUrl?: string;
   bannerUrl?: string;
   menuDescription?: string;
@@ -279,15 +280,20 @@ export type TableResponse = {
 
 export type TableAccessResponse = { token: string };
 
-export type PublicTableResponse = { number: string };
+export type PublicTableResponse = {
+  number: string;
+  session?: { id: string; participationId: string; status: "OPEN" | "CLOSING" } | null;
+};
 
-export type TableServiceRequestType = "SERVICE" | "PAYMENT";
+export type TableServiceRequestType = "SERVICE" | "CLOSURE" | "PAYMENT";
 
 export type TableServiceRequestResponse = {
   id: string;
-  tableSessionId: string;
+  tableId: string;
+  tableNumber: string;
+  tableSessionId?: string;
   type: TableServiceRequestType;
-  status: "PENDING" | "RESOLVED";
+  status: "PENDING" | "ASSIGNED" | "RESOLVED";
   createdAt?: string;
   resolvedAt?: string;
 };
@@ -312,7 +318,7 @@ export type CurrentUserResponse = {
   roles: string[];
 };
 
-export type AdminRole = "ADMIN" | "STANDARD" | "ENTREGADOR";
+export type AdminRole = "ADMIN" | "STANDARD" | "WAITER" | "ENTREGADOR";
 
 export type AdminUserResponse = {
   id: string;
