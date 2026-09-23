@@ -227,6 +227,10 @@ export const CustomerNameRow = styled("div", {
   gap: "0.35rem",
 });
 
+export const CustomerWhatsApp = styled("div", {
+  minWidth: 0,
+});
+
 export const WhatsAppLink = styled("a", {
   display: "inline-flex",
   width: "fit-content",
