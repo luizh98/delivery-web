@@ -47,7 +47,7 @@ const userSchema = z.object({
       (password) => password.length === 0 || password.length >= 8,
       "A senha deve ter pelo menos 8 caracteres.",
     ),
-  role: z.enum(["ADMIN", "STANDARD", "ENTREGADOR"]),
+  role: z.enum(["ADMIN", "STANDARD", "WAITER", "ENTREGADOR"]),
   active: z.boolean(),
 }).refine(
   (values) => values.role !== "ENTREGADOR" || values.name.length > 0,
@@ -232,6 +232,7 @@ export function UserManager({
                 <Select {...form.register("role")}>
                   <option value="STANDARD">Padrão</option>
                   <option value="ADMIN">Administrador</option>
+                  <option value="WAITER">Garçom</option>
                   <option value="ENTREGADOR">Entregador</option>
                 </Select>
               </Field>
@@ -284,7 +285,13 @@ export function UserManager({
                   </CardHeader>
                   <div>
                     <RoleBadge data-admin={user.role === "ADMIN"} data-motoboy={user.role === "ENTREGADOR"}>
-                      {user.role === "ADMIN" ? "Administrador" : user.role === "ENTREGADOR" ? "Entregador" : "Padrão"}
+                      {user.role === "ADMIN"
+                        ? "Administrador"
+                        : user.role === "WAITER"
+                          ? "Garçom"
+                          : user.role === "ENTREGADOR"
+                            ? "Entregador"
+                            : "Padrão"}
                     </RoleBadge>
                     <StatusBadge data-active={user.active}>
                       {user.active ? "Ativo" : "Inativo"}
