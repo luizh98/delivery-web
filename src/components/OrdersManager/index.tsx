@@ -20,7 +20,6 @@ import {
   MapPin,
   Maximize2,
   Minimize2,
-  Phone,
   Printer,
   ReceiptText,
   RefreshCw,
@@ -56,6 +55,7 @@ import {
   CustomerDetails,
   CustomerOrderBadge,
   CustomerName,
+  CustomerNameRow,
   DetailRow,
   DateFilterWrap,
   DateModalActions,
@@ -707,7 +707,15 @@ export function OrdersManager({
                 <DetailRow>
                   <UserRound size={16} aria-hidden="true" />
                   <CustomerDetails>
-                    <CustomerName>{order.customer.name}</CustomerName>
+                    <CustomerNameRow>
+                      <CustomerOrderBadge
+                        title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
+                        aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
+                      >
+                        {customerOrderNumber}º
+                      </CustomerOrderBadge>
+                      <CustomerName>{order.customer.name}</CustomerName>
+                    </CustomerNameRow>
                     {whatsappUrl ? (
                       <WhatsAppLink
                         href={whatsappUrl}
@@ -722,12 +730,6 @@ export function OrdersManager({
                       </WhatsAppLink>
                     ) : null}
                   </CustomerDetails>
-                  <CustomerOrderBadge
-                    title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
-                    aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
-                  >
-                    {customerOrderNumber}º
-                  </CustomerOrderBadge>
                 </DetailRow>
                 <DetailRow>
                   <Truck size={16} aria-hidden="true" />
@@ -857,7 +859,7 @@ export function OrdersManager({
                   </ModalInfo>
                   {detailsWhatsAppUrl ? (
                     <ModalInfo>
-                      <Phone size={16} aria-hidden="true" />
+                      <WhatsAppIcon size={16} aria-hidden="true" />
                       <div>
                         <ModalLabel>Celular</ModalLabel>
                         <WhatsAppLink

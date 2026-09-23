@@ -220,6 +220,13 @@ export const CustomerDetails = styled("div", {
   gap: "0.1rem",
 });
 
+export const CustomerNameRow = styled("div", {
+  display: "flex",
+  minWidth: 0,
+  alignItems: "center",
+  gap: "0.35rem",
+});
+
 export const WhatsAppLink = styled("a", {
   display: "inline-flex",
   width: "fit-content",
@@ -248,7 +255,7 @@ export const WhatsAppLink = styled("a", {
 export const DetailRow = styled("div", {
   display: "flex",
   minWidth: 0,
-  alignItems: "center",
+  alignItems: "flex-start",
   gap: "0.45rem",
   fontSize: "0.875rem",
 
