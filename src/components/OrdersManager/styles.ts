@@ -214,21 +214,11 @@ export const CustomerName = styled("h2", {
   whiteSpace: "nowrap",
 });
 
-export const CustomerDetails = styled("div", {
-  display: "grid",
-  minWidth: 0,
-  gap: "0.1rem",
-});
-
 export const CustomerNameRow = styled("div", {
   display: "flex",
   minWidth: 0,
   alignItems: "center",
   gap: "0.35rem",
-});
-
-export const CustomerWhatsApp = styled("div", {
-  minWidth: 0,
 });
 
 export const WhatsAppLink = styled("a", {

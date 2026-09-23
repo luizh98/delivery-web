@@ -52,11 +52,9 @@ import {
   CardFooter,
   CardGrid,
   CardTotal,
-  CustomerDetails,
   CustomerOrderBadge,
   CustomerName,
   CustomerNameRow,
-  CustomerWhatsApp,
   DetailRow,
   DateFilterWrap,
   DateModalActions,
@@ -707,33 +705,31 @@ export function OrdersManager({
                 </OrderHeader>
                 <DetailRow>
                   <UserRound size={16} aria-hidden="true" />
-                  <CustomerDetails>
-                    <CustomerNameRow>
-                      <CustomerName>{order.customer.name}</CustomerName>
-                      <CustomerOrderBadge
-                        title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
-                        aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
-                      >
-                        {customerOrderNumber}º
-                      </CustomerOrderBadge>
-                    </CustomerNameRow>
-                    {whatsappUrl ? (
-                      <CustomerWhatsApp>
-                        <WhatsAppLink
-                          href={whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Conversar com ${order.customer.name} no WhatsApp`}
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          <WhatsAppIcon size={15} />
-                          <span>{order.customer.phone}</span>
-                        </WhatsAppLink>
-                      </CustomerWhatsApp>
-                    ) : null}
-                  </CustomerDetails>
+                  <CustomerNameRow>
+                    <CustomerName>{order.customer.name}</CustomerName>
+                    <CustomerOrderBadge
+                      title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
+                      aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
+                    >
+                      {customerOrderNumber}º
+                    </CustomerOrderBadge>
+                  </CustomerNameRow>
                 </DetailRow>
+                {whatsappUrl ? (
+                  <DetailRow>
+                    <WhatsAppLink
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Conversar com ${order.customer.name} no WhatsApp`}
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      <WhatsAppIcon size={15} />
+                      <span>{order.customer.phone}</span>
+                    </WhatsAppLink>
+                  </DetailRow>
+                ) : null}
                 <DetailRow>
                   <Truck size={16} aria-hidden="true" />
                   <span>{order.deliveryType === "TABLE" ? `Mesa ${order.tableNumber ?? ""}` : deliveryLabels[order.deliveryType]}</span>
