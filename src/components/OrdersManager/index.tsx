@@ -33,6 +33,7 @@ import { Button } from "@/components/Button";
 import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
 import { getSelectedPrinter, printTextWithQz } from "@/services/printing/qz";
 import { money, statusLabel } from "@/utils/format";
@@ -52,6 +53,7 @@ import {
   CardFooter,
   CardGrid,
   CardTotal,
+  CustomerDetails,
   CustomerOrderBadge,
   CustomerName,
   DetailRow,
@@ -94,6 +96,7 @@ import {
   ToolbarActions,
   TotalRow,
   Totals,
+  WhatsAppLink,
 } from "./styles";
 
 type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
@@ -335,6 +338,7 @@ export function OrdersManager({
   const detailsOrder = detailsOrderId
     ? orders.find((order) => order.id === detailsOrderId) ?? null
     : null;
+  const detailsWhatsAppUrl = detailsOrder ? whatsAppUrl(detailsOrder.customer.phone) : null;
   const detailsOverdueMinutes = detailsOrder
     ? getOverdueMinutes(
       detailsOrder,
@@ -661,6 +665,7 @@ export function OrdersManager({
       <List>
         {filteredOrders.map((order) => {
           const customerOrderNumber = customerOrderNumbers.get(order.id) ?? 1;
+          const whatsappUrl = whatsAppUrl(order.customer.phone);
           const overdueMinutes = getOverdueMinutes(
             order,
             now,
@@ -701,7 +706,22 @@ export function OrdersManager({
                 </OrderHeader>
                 <DetailRow>
                   <UserRound size={16} aria-hidden="true" />
-                  <CustomerName>{order.customer.name}</CustomerName>
+                  <CustomerDetails>
+                    <CustomerName>{order.customer.name}</CustomerName>
+                    {whatsappUrl ? (
+                      <WhatsAppLink
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Conversar com ${order.customer.name} no WhatsApp`}
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <WhatsAppIcon size={15} />
+                        <span>{order.customer.phone}</span>
+                      </WhatsAppLink>
+                    ) : null}
+                  </CustomerDetails>
                   <CustomerOrderBadge
                     title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
                     aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
@@ -835,13 +855,23 @@ export function OrdersManager({
                       <strong>{detailsOrder.customer.name}</strong>
                     </div>
                   </ModalInfo>
-                  <ModalInfo>
-                    <Phone size={16} aria-hidden="true" />
-                    <div>
-                      <ModalLabel>Celular</ModalLabel>
-                      <strong>{detailsOrder.customer.phone}</strong>
-                    </div>
-                  </ModalInfo>
+                  {detailsWhatsAppUrl ? (
+                    <ModalInfo>
+                      <Phone size={16} aria-hidden="true" />
+                      <div>
+                        <ModalLabel>Celular</ModalLabel>
+                        <WhatsAppLink
+                          href={detailsWhatsAppUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Conversar com ${detailsOrder.customer.name} no WhatsApp`}
+                        >
+                          <WhatsAppIcon size={16} />
+                          <strong>{detailsOrder.customer.phone}</strong>
+                        </WhatsAppLink>
+                      </div>
+                    </ModalInfo>
+                  ) : null}
                   <ModalInfo>
                     <Truck size={16} aria-hidden="true" />
                     <div>
@@ -1011,6 +1041,17 @@ function normalizeSearch(value: string) {
 function getReceivedAt(order: OrderResponse) {
   return order.statusHistory.find((history) => history.status === "RECEIVED")?.changedAt
     ?? order.createdAt;
+}
+
+function whatsAppUrl(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  const phoneWithCountryCode = /^55\d{10,11}$/.test(digits)
+    ? digits
+    : /^\d{10,11}$/.test(digits)
+      ? `55${digits}`
+      : null;
+
+  return phoneWithCountryCode ? `https://wa.me/${phoneWithCountryCode}` : null;
 }
 
 function getOverdueMinutes(

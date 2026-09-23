@@ -214,6 +214,37 @@ export const CustomerName = styled("h2", {
   whiteSpace: "nowrap",
 });
 
+export const CustomerDetails = styled("div", {
+  display: "grid",
+  minWidth: 0,
+  gap: "0.1rem",
+});
+
+export const WhatsAppLink = styled("a", {
+  display: "inline-flex",
+  width: "fit-content",
+  minWidth: 0,
+  alignItems: "center",
+  gap: "0.3rem",
+  color: "#16a34a",
+  fontSize: "0.8rem",
+  fontWeight: 600,
+  textDecoration: "none",
+
+  "&:hover": {
+    textDecoration: "underline",
+  },
+
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
+
+  svg: {
+    color: "currentColor",
+  },
+});
+
 export const DetailRow = styled("div", {
   display: "flex",
   minWidth: 0,
