@@ -340,7 +340,6 @@ export function AdminPrinterView() {
           Use diálogo do navegador para testar ou salvar PDF. QZ Tray só é necessário para enviar
           diretamente a uma impressora. A escolha fica salva somente neste navegador.
         </Help>
-        {jobs.some((job) => job.lastErrorCode) ? <Muted role="status">Falha mais recente: {jobs.find((job) => job.lastErrorCode)?.lastErrorCode}</Muted> : null}
       </Panel>
     </Root>
   ); */
@@ -400,6 +399,7 @@ export function AdminPrinterView() {
       <Panel>
         <PanelHeader><PanelTitle>Trabalhos recentes</PanelTitle><PanelDescription>Resultado aceito pelo sistema operacional não confirma impressão física.</PanelDescription></PanelHeader>
         <Actions><Button type="button" variant="outline" onClick={() => void refresh()} disabled={loading}><RefreshCw size={16} />Atualizar</Button></Actions>
+        {jobs.some((job) => job.lastErrorCode) ? <Muted role="status">Falha mais recente: {jobs.find((job) => job.lastErrorCode)?.lastErrorCode}</Muted> : null}
         <DeviceList>{jobs.map((job) => <DeviceRow key={job.id}><RowDetails><strong>{job.destination} · {job.status}</strong><Muted>{job.orderId ? `Pedido ${job.orderId}` : "Teste de impressão"} · {formatDate(job.createdAt)}</Muted></RowDetails><Button type="button" variant="outline" onClick={() => void reprint(job.id)} disabled={busy === `reprint:${job.id}`}><Printer size={16} />Reimprimir</Button></DeviceRow>)}{!loading && !jobs.length ? <Muted>Nenhum trabalho de impressão.</Muted> : null}</DeviceList>
         <Help>Se uma impressora estiver offline, seus trabalhos permanecem pendentes no computador configurado; outro computador não os consome.</Help>
       </Panel>
