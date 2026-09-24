@@ -1,10 +1,11 @@
 "use client";
 
-import { Clipboard, Download, Printer, RefreshCw, Unlink } from "lucide-react";
+import { Clipboard, Download, ExternalLink, Printer, RefreshCw, Unlink } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
+import { backendBaseUrl } from "@/constants/api";
 import {
   createPrintPairingCode,
   createPrintTest,
@@ -24,6 +25,7 @@ import {
   DestinationCard,
   DestinationGrid,
   DownloadActions,
+  DownloadLink,
   DeviceList,
   DeviceRow,
   Help,
@@ -67,6 +69,16 @@ function formatDate(value?: string) {
 
 function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir esta operação.";
+}
+
+function pairingLink(code: string) {
+  const query = new URLSearchParams({
+    server: backendBaseUrl(),
+    code,
+    name: "Computador do restaurante",
+    panel: typeof window === "undefined" ? "" : window.location.origin,
+  });
+  return `deliveryprint://pair?${query.toString()}`;
 }
 
 export function AdminPrinterView() {
@@ -368,7 +380,7 @@ export function AdminPrinterView() {
           <Step><StepNumber>4</StepNumber><StepContent><StepTitle>Escolha os destinos e faça um teste</StepTitle><StepDescription>As impressoras aparecem automaticamente após o conector sincronizar.</StepDescription></StepContent></Step>
         </StepList>
         <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair"}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
-        {pairingCode ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button></div> : null}
+        {pairingCode ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code)}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink></div> : null}
       </Panel>
 
       <Panel>
