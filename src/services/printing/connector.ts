@@ -49,6 +49,8 @@ export type PrintOverview = {
   destinations: PrintDestinationConfig[];
 };
 
+let automaticConnectorEnabled: Promise<boolean> | null = null;
+
 type PairingCode = {
   code: string;
   expiresAt: string;
@@ -56,6 +58,17 @@ type PairingCode = {
 
 export function getPrintOverview() {
   return clientApi<PrintOverview>("/admin/printing/overview");
+}
+
+export function isAutomaticConnectorEnabled() {
+  automaticConnectorEnabled ??= getPrintOverview()
+    .then((overview) => overview.destinations.some((destination) => destination.automatic))
+    .catch(() => false);
+  return automaticConnectorEnabled;
+}
+
+export function invalidateAutomaticConnectorEnabled() {
+  automaticConnectorEnabled = null;
 }
 
 export function createPrintPairingCode() {
@@ -66,6 +79,9 @@ export function savePrintDestination(destination: PrintDestination, value: Omit<
   return clientApi<PrintDestinationConfig>(`/admin/printing/destinations/${destination}`, {
     method: "PUT",
     body: JSON.stringify(value),
+  }).then((result) => {
+    invalidateAutomaticConnectorEnabled();
+    return result;
   });
 }
 

@@ -34,6 +34,7 @@ import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
+import { isAutomaticConnectorEnabled } from "@/services/printing/connector";
 import { getSelectedPrinter, printTextWithQz } from "@/services/printing/qz";
 import { money, statusLabel } from "@/utils/format";
 import type {
@@ -369,7 +370,12 @@ export function OrdersManager({
       : items.filter((item) => item.id !== order.id));
 
     if (automaticOrderConfirmation && isNewOrder && order.status === "CONFIRMED") {
-      void printOrderDirectly(order, true).catch(() => {
+      void isAutomaticConnectorEnabled().then((enabled) => {
+        if (!enabled) {
+          return printOrderDirectly(order, true);
+        }
+        return undefined;
+      }).catch(() => {
         showToast("Não foi possível imprimir pedido automaticamente.", "error");
       });
     }
@@ -464,7 +470,12 @@ export function OrdersManager({
       setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
       showToast("Pedido atualizado com sucesso");
       if (status === "CONFIRMED") {
-        void printOrderDirectly(updated).catch(() => {
+        void isAutomaticConnectorEnabled().then((enabled) => {
+          if (!enabled) {
+            return printOrderDirectly(updated, true);
+          }
+          return undefined;
+        }).catch(() => {
           showToast("Pedido confirmado, mas não foi possível imprimir.", "error");
         });
       }
