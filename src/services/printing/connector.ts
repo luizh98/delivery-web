@@ -1,4 +1,5 @@
 import { clientApi } from "@/services/api/client";
+import { normalizePrintOverview } from "./normalizeOverview";
 
 export type PrintDestination = "RECEIPT" | "KITCHEN" | "EXPEDITION";
 
@@ -58,7 +59,9 @@ type PairingCode = {
 };
 
 export function getPrintOverview() {
-  return clientApi<PrintOverview>("/admin/printing/overview");
+  return clientApi<PrintOverview | null>("/admin/printing/overview").then((overview) =>
+    normalizePrintOverview<PrintDevice, PrintPrinter, PrintDestinationConfig>(overview),
+  );
 }
 
 export function isAutomaticConnectorEnabled() {
