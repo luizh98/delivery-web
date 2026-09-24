@@ -340,6 +340,7 @@ export function AdminPrinterView() {
           Use diálogo do navegador para testar ou salvar PDF. QZ Tray só é necessário para enviar
           diretamente a uma impressora. A escolha fica salva somente neste navegador.
         </Help>
+        {jobs.some((job) => job.lastErrorCode) ? <Muted role="status">Falha mais recente: {jobs.find((job) => job.lastErrorCode)?.lastErrorCode}</Muted> : null}
       </Panel>
     </Root>
   ); */

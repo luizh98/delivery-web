@@ -39,6 +39,7 @@ export type PrintJob = {
   copies: number;
   status: string;
   reprintOf?: string;
+  lastErrorCode?: string;
   createdAt?: string;
   updatedAt?: string;
 };
