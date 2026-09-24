@@ -24,7 +24,6 @@ import {
   DestinationCard,
   DestinationGrid,
   DownloadActions,
-  DownloadLink,
   DeviceList,
   DeviceRow,
   Help,
@@ -358,9 +357,9 @@ export function AdminPrinterView() {
           <PanelDescription>O conector fica em segundo plano e descobre as impressoras instaladas.</PanelDescription>
         </PanelHeader>
         <DownloadActions>
-          <DownloadLink primary href="/downloads/delivery-print-connector-windows.msi" download>
-            <Download size={16} /> Baixar conector para Windows
-          </DownloadLink>
+          <Button type="button" disabled>
+            <Download size={16} /> Instalador Windows em preparação
+          </Button>
         </DownloadActions>
         <StepList>
           <Step><StepNumber>1</StepNumber><StepContent><StepTitle>Instale o driver da impressora</StepTitle><StepDescription>Confirme que a impressora aparece no sistema operacional.</StepDescription></StepContent></Step>
