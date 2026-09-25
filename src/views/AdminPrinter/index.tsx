@@ -75,7 +75,6 @@ function pairingLink(code: string) {
   const query = new URLSearchParams({
     server: backendBaseUrl(),
     code,
-    name: "Computador do restaurante",
     panel: typeof window === "undefined" ? "" : window.location.origin,
   });
   return `deliveryprint://pair?${query.toString()}`;
