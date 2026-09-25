@@ -123,7 +123,7 @@ export const Nav = styled("nav", {
   padding: "0.5rem 0.75rem 1rem",
 
   "@lg": {
-    overflow: "visible",
+    overflowY: "auto",
     paddingLeft: "0.625rem",
     paddingRight: "0.625rem",
 
