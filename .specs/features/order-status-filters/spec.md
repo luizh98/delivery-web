@@ -119,6 +119,11 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 2. WHEN o painel estiver em tela cheia THEN o sistema SHALL oferecer botão para sair desse modo.
 3. WHEN o operador pressionar Esc THEN o sistema SHALL restaurar o layout administrativo.
 
+### P1: Ocultar cancelados por padrao
+
+1. WHEN nenhum status estiver selecionado THEN sistema SHALL ocultar pedidos cancelados da listagem, mantendo contador visivel.
+2. WHEN operador clicar no contador de cancelados THEN sistema SHALL listar somente cancelados que atendam busca e periodo ativos.
+
 ## Casos de borda
 
 - Busca vazia não restringe resultados.
@@ -133,6 +138,7 @@ Como operador, quero expandir o painel para usar toda a tela sem distrações do
 
 | ID | Requisito | Status |
 | --- | --- | --- |
+| ORD-FLT-28 | Cancelados ocultos por padrao e acessiveis pelo contador | Implementado |
 | ORD-FLT-01 | Contadores por status | Verificado |
 | ORD-FLT-02 | Clique filtra e desfaz filtro | Verificado |
 | ORD-FLT-03 | Busca por nome, ID e celular | Verificado |
