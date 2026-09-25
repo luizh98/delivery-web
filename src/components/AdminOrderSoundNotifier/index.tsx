@@ -17,6 +17,7 @@ import { getOrderOverdueMinutes } from "@/utils/orders/overdue";
 import type { OrderResponse, RestaurantConfigResponse } from "@/types/api";
 
 const soundPreferenceKey = "delivery.admin.orderSoundEnabled";
+const overdueOrderStatuses = ["RECEIVED", "CONFIRMED", "PREPARING"];
 const receivedOrderSoundIntervalMs = 3_000;
 
 type AdminOrderSoundContextValue = {
