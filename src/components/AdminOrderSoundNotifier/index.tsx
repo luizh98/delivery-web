@@ -17,6 +17,7 @@ import type { OrderResponse, RestaurantConfigResponse } from "@/types/api";
 
 const soundPreferenceKey = "delivery.admin.orderSoundEnabled";
 const overdueOrderStatuses = ["RECEIVED", "CONFIRMED", "PREPARING"];
+const receivedOrderSoundIntervalMs = 15_000;
 
 type AdminOrderSoundContextValue = {
   soundEnabled: boolean;
@@ -66,7 +67,11 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const overdueAudioRef = useRef<HTMLAudioElement | null>(null);
   const soundEnabledRef = useRef(false);
-  const knownOrderIdsRef = useRef(new Set<string>());
+  const knownOrderStatusesRef = useRef(
+    new Map<string, OrderResponse["status"]>(),
+  );
+  const receivedOrderIdsRef = useRef(new Set<string>());
+  const receivedOrderSoundIntervalRef = useRef<number | null>(null);
   const pendingSoundCountRef = useRef(0);
   const isPlayingSoundRef = useRef(false);
   const overduePendingSoundCountRef = useRef(0);
@@ -261,6 +266,10 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
       overdueAudio.removeEventListener("error", failOverdueSound);
       audio.pause();
       overdueAudio.pause();
+      if (receivedOrderSoundIntervalRef.current !== null) {
+        window.clearInterval(receivedOrderSoundIntervalRef.current);
+        receivedOrderSoundIntervalRef.current = null;
+      }
       audioRef.current = null;
       overdueAudioRef.current = null;
       pendingSoundCountRef.current = 0;
@@ -271,12 +280,38 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   }, [handlePlaybackFailure, playNextOverdueSound, playNextSound]);
 
   useEffect(() => subscribeToOrderEvents((order) => {
-    if ((order.status !== "RECEIVED" && order.status !== "CONFIRMED")
-      || knownOrderIdsRef.current.has(order.id)) {
+    const previousStatus = knownOrderStatusesRef.current.get(order.id);
+    if (previousStatus !== undefined
+      || order.status === "RECEIVED"
+      || order.status === "CONFIRMED") {
+      knownOrderStatusesRef.current.set(order.id, order.status);
+    }
+
+    if (order.status === "RECEIVED") {
+      receivedOrderIdsRef.current.add(order.id);
+      if (previousStatus !== "RECEIVED") {
+        queueAlertSounds(1);
+      }
+      if (receivedOrderSoundIntervalRef.current === null) {
+        receivedOrderSoundIntervalRef.current = window.setInterval(() => {
+          if (receivedOrderIdsRef.current.size > 0) {
+            queueAlertSounds(1);
+          }
+        }, receivedOrderSoundIntervalMs);
+      }
       return;
     }
-    knownOrderIdsRef.current.add(order.id);
-    queueAlertSounds(1);
+
+    receivedOrderIdsRef.current.delete(order.id);
+    if (receivedOrderIdsRef.current.size === 0
+      && receivedOrderSoundIntervalRef.current !== null) {
+      window.clearInterval(receivedOrderSoundIntervalRef.current);
+      receivedOrderSoundIntervalRef.current = null;
+    }
+
+    if (order.status === "CONFIRMED" && previousStatus === undefined) {
+      queueAlertSounds(1);
+    }
   }), [queueAlertSounds, subscribeToOrderEvents]);
 
   const contextValue = useMemo(() => ({

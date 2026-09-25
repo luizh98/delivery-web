@@ -27,8 +27,8 @@
 checkbox nas configurações, persistido em `localStorage`.
 **Reason:** Autoplay exige gesto no navegador e a preferência pertence ao dispositivo,
 enquanto pedidos auto-confirmados precisam ser detectados por ID, não por status.
-**Impact:** Cada ID novo entra na fila de áudio; `RECEIVED` continua gerando lembrete
-a cada polling de cinco segundos.
+**Impact:** Pedido novo em `CONFIRMED` toca uma vez. `RECEIVED` toca ao entrar e
+repete a cada 15 segundos enquanto houver pedido nesse status.
 
 ---
 
@@ -76,6 +76,7 @@ Nenhum.
 | 018 | Corrigir ativação do som no navegador | 2026-08-24 | — | ✅ Done |
 | 019 | Exibir total de desconto no carrinho e na finalização | 2026-08-25 | `feat(cart): show total discount in checkout` | ✅ Done |
 | 020 | Alterar gráfico da dashboard de faturamento para linhas | 2026-08-25 | `feat(admin): change dashboard chart to line` | ✅ Done |
+| 021 | Repetir alerta para pedidos recebidos a cada 15 segundos | 2026-09-25 | `fix(admin): repeat received order sound every 15 seconds` | ✅ Done |
 
 ---
 
