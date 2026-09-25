@@ -326,9 +326,9 @@ export function OrdersManager({
     });
   }, [endDate, orders, search, startDate]);
   const filteredOrders = useMemo(
-    () => statusFilter
-      ? matchingOrders.filter((order) => order.status === statusFilter)
-      : matchingOrders,
+    () => matchingOrders.filter((order) => statusFilter
+      ? order.status === statusFilter
+      : order.status !== "CANCELED"),
     [matchingOrders, statusFilter],
   );
   const customerOrderNumbers = useMemo(
