@@ -23,6 +23,7 @@ npm run dev
 
 ```text
 NEXT_PUBLIC_API_URL=http://localhost:8080
+PRINT_CONNECTOR_PUBLIC_API_URL=
 NEXT_PUBLIC_DEFAULT_TENANT_SLUG=demo
 GOOGLE_PLACES_API_KEY=
 ```
@@ -62,6 +63,19 @@ Toda chamada ao backend passa por Route Handlers do Next, que enviam:
 ```http
 X-Tenant-Slug: {tenantSlug}
 ```
+
+## Conector de impressao
+
+Em producao, configure `PRINT_CONNECTOR_PUBLIC_API_URL` no servico web com a
+origem HTTPS publica da API, acessivel ao computador do restaurante por HTTP e
+WebSocket. `NEXT_PUBLIC_API_URL` pode continuar apontando para a API na rede
+interna. Sem a origem publica valida, o painel nao gera codigo de vinculacao.
+
+O painel de cada restaurante resolve o tenant pelo subdominio e cria um codigo
+de uso unico nesse tenant. A API vincula o conector ao tenant do codigo e usa a
+credencial do dispositivo nas chamadas seguintes; nao depende do subdominio
+para autenticar o conector. Em desenvolvimento, sem essa variavel, o painel usa
+`NEXT_PUBLIC_API_URL` quando ela aponta para um servidor local HTTP.
 
 ## Admin Auth
 
