@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
-import { backendBaseUrl } from "@/constants/api";
 import {
   createPrintPairingCode,
   createPrintTest,
@@ -71,16 +70,16 @@ function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir esta operação.";
 }
 
-function pairingLink(code: string) {
+function pairingLink(code: string, serverUrl: string) {
   const query = new URLSearchParams({
-    server: backendBaseUrl(),
+    server: serverUrl,
     code,
     panel: typeof window === "undefined" ? "" : window.location.origin,
   });
   return `deliveryprint://pair?${query.toString()}`;
 }
 
-export function AdminPrinterView() {
+export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: string | null }) {
   const { showToast } = useToast();
   const [overview, setOverview] = useState<PrintOverview | null>(null);
   const [jobs, setJobs] = useState<PrintJob[]>([]);
@@ -378,8 +377,9 @@ export function AdminPrinterView() {
           <Step><StepNumber>3</StepNumber><StepContent><StepTitle>Vincule usando o código</StepTitle><StepDescription>Gere um código abaixo e informe-o no aplicativo.</StepDescription></StepContent></Step>
           <Step><StepNumber>4</StepNumber><StepContent><StepTitle>Escolha os destinos e faça um teste</StepTitle><StepDescription>As impressoras aparecem automaticamente após o conector sincronizar.</StepDescription></StepContent></Step>
         </StepList>
-        <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair"}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
-        {pairingCode ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code)}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink></div> : null}
+        <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair" || !connectorServerUrl}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
+        {!connectorServerUrl ? <Help>Vinculação indisponível. Contate o suporte.</Help> : null}
+        {pairingCode && connectorServerUrl ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code, connectorServerUrl)}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink></div> : null}
       </Panel>
 
       <Panel>
