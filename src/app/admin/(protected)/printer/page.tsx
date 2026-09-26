@@ -8,11 +8,11 @@ export default function AdminPrinterPage() {
 
   try {
     const parsed = new URL(serverUrl);
-    const localhost = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)
-      || parsed.hostname.endsWith(".localhost");
+    const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+    const localhost = loopback || parsed.hostname.endsWith(".localhost");
     const localDevelopment = process.env.NODE_ENV === "development"
       && parsed.protocol === "http:"
-      && localhost;
+      && loopback;
     if (((parsed.protocol === "https:" && !localhost) || localDevelopment)
       && !parsed.username && !parsed.password && !parsed.search && !parsed.hash
       && parsed.pathname === "/") {
