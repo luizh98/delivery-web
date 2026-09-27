@@ -393,7 +393,7 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
                       reorderable={canReorder(route)}
                       dragActive={draggedOrder?.orderId === order.id}
                       dropTarget={dropTarget?.routeId === route.id && dropTarget.orderId === order.id}
-                      aria-label={canReorder(route) ? `Arraste o pedido ${order.id.slice(-6)} para reorganizar` : undefined}
+                      aria-label={canReorder(route) ? `Arraste o pedido ${order.orderNumber ?? order.id.slice(-6).toUpperCase()} para reorganizar` : undefined}
                       onDragStart={(event) => startDragging(event, route, order.id)}
                       onDragEnd={() => { setDraggedOrder(null); setDropTarget(null); }}
                       onDragOver={(event) => { event.stopPropagation(); allowDrop(event, route, order.id); }}
@@ -401,7 +401,7 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
                     >
                       <DragHandle aria-hidden="true">{canReorder(route) ? <GripVertical size={16} /> : null}</DragHandle>
                         <OrderDetails>
-                          <OrderTitle><UserRound size={14} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
+                          <OrderTitle><UserRound size={14} aria-hidden="true" /> Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
                           <OrderMeta>{order.deliveryAddress?.neighborhood || "Bairro não informado"} · {shortAddress(order)}</OrderMeta>
                           {mapsUrl ? <Button type="button" variant="outline" onClick={() => window.open(mapsUrl, "_blank", "noopener,noreferrer")}><ExternalLink size={14} aria-hidden="true" /> Ver no Google Maps</Button> : null}
                         </OrderDetails>

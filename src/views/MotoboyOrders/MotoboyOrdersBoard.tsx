@@ -129,7 +129,7 @@ export function MotoboyOrdersBoard({ initialRoutes }: Props) {
             return (
               <OrderCard key={order.id}>
               <div>
-                <OrderTitle><UserRound size={16} aria-hidden="true" /> Pedido #{order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
+                <OrderTitle><UserRound size={16} aria-hidden="true" /> Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
                 <Address><MapPin size={15} aria-hidden="true" /> {address(order)}</Address>
                 <OrderMeta>{order.customer.phone || "Telefone não informado"}</OrderMeta>
               </div>
