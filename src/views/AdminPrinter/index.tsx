@@ -48,10 +48,11 @@ import {
   Title,
 } from "./styles";
 
-const destinations: Array<{ id: PrintDestination; label: string; description: string }> = [
+type ConfigurableDestination = Exclude<PrintDestination, "EXPEDITION">;
+
+const destinations: Array<{ id: ConfigurableDestination; label: string; description: string }> = [
   { id: "RECEIPT", label: "Recibo", description: "Pedido completo para o balcão." },
-  { id: "KITCHEN", label: "Cozinha", description: "Comanda com itens e observações." },
-  { id: "EXPEDITION", label: "Expedição", description: "Conferência antes da saída." },
+  { id: "KITCHEN", label: "Cozinha", description: "Pedido completo para a cozinha." },
 ];
 
 type DestinationDraft = Omit<PrintDestinationConfig, "destination">;
@@ -83,7 +84,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
   const { showToast } = useToast();
   const [overview, setOverview] = useState<PrintOverview | null>(null);
   const [jobs, setJobs] = useState<PrintJob[]>([]);
-  const [drafts, setDrafts] = useState<Record<PrintDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft, EXPEDITION: emptyDraft });
+  const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft });
   const [pairingCode, setPairingCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -138,7 +139,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     [overview],
   );
 
-  function changeDraft(destination: PrintDestination, patch: Partial<DestinationDraft>) {
+  function changeDraft(destination: ConfigurableDestination, patch: Partial<DestinationDraft>) {
     setDrafts((current) => ({ ...current, [destination]: { ...current[destination], ...patch } }));
   }
 
@@ -164,7 +165,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     }
   }
 
-  async function saveDestination(destination: PrintDestination) {
+  async function saveDestination(destination: ConfigurableDestination) {
     const draft = drafts[destination];
     if (!draft.deviceId || !draft.printerId) {
       showToast("Selecione computador e impressora.", "error");
@@ -182,7 +183,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     }
   }
 
-  async function testDestination(destination: PrintDestination) {
+  async function testDestination(destination: ConfigurableDestination) {
     setBusy(`test:${destination}`);
     try {
       await createPrintTest(destination);

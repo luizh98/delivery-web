@@ -66,7 +66,7 @@ export function getPrintOverview() {
 
 export function isAutomaticConnectorEnabled() {
   automaticConnectorEnabled ??= getPrintOverview()
-    .then((overview) => overview.destinations.some((destination) => destination.automatic))
+    .then((overview) => overview.destinations.some((destination) => destination.automatic && destination.destination !== "EXPEDITION"))
     .catch(() => false);
   return automaticConnectorEnabled;
 }
