@@ -195,6 +195,7 @@ export type DeliveryQuoteResponse = {
 
 export type OrderResponse = {
   id: string;
+  orderNumber?: string;
   trackingCode?: string;
   customer: {
     name: string;
