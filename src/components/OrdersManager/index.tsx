@@ -104,8 +104,8 @@ type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
 const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 const automaticPrintedOrdersKey = "delivery:auto-printed-orders";
 
-async function getPrintContent(order: OrderResponse) {
-  const response = await fetch(`/api/backend/admin/orders/${order.id}/print`);
+async function getPrintContent(order: OrderResponse, destination: "RECEIPT" | "KITCHEN") {
+  const response = await fetch(`/api/backend/admin/orders/${order.id}/print?destination=${destination}`);
 
   if (!response.ok) {
     throw new Error("Não foi possível carregar impressão do pedido.");
@@ -160,7 +160,7 @@ function releaseAutomaticPrint(orderId: string) {
   }
 }
 
-async function printOrderDirectly(order: OrderResponse, automatic = false) {
+async function printOrderDirectly(order: OrderResponse, destination: "RECEIPT" | "KITCHEN", automatic = false) {
   if (automatic && !claimAutomaticPrint(order.id)) {
     return;
   }
@@ -168,7 +168,7 @@ async function printOrderDirectly(order: OrderResponse, automatic = false) {
   let printFrame: HTMLIFrameElement | null = null;
 
   try {
-    const content = await getPrintContent(order);
+    const content = await getPrintContent(order, destination);
     const selectedPrinter = getSelectedPrinter();
     if (selectedPrinter) {
       await printTextWithQz(content, selectedPrinter);
@@ -271,6 +271,7 @@ export function OrdersManager({
   initialOrders,
   visibleStatuses,
   title,
+  printDestination,
   compact,
   automaticOrderConfirmation,
   overdueOrderAlertEnabled,
@@ -370,16 +371,16 @@ export function OrdersManager({
       : items.filter((item) => item.id !== order.id));
 
     if (automaticOrderConfirmation && isNewOrder && order.status === "CONFIRMED") {
-      void isAutomaticConnectorEnabled().then((enabled) => {
+      void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
         if (!enabled) {
-          return printOrderDirectly(order, true);
+          return printOrderDirectly(order, printDestination, true);
         }
         return undefined;
       }).catch(() => {
         showToast("Não foi possível imprimir pedido automaticamente.", "error");
       });
     }
-  }), [automaticOrderConfirmation, showToast, subscribeToOrderEvents, visibleStatuses]);
+  }), [automaticOrderConfirmation, printDestination, showToast, subscribeToOrderEvents, visibleStatuses]);
 
   useEffect(() => {
     if (!detailsOrderId && !isDatePopoverOpen) {
@@ -470,9 +471,9 @@ export function OrdersManager({
       setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
       showToast("Pedido atualizado com sucesso");
       if (status === "CONFIRMED") {
-        void isAutomaticConnectorEnabled().then((enabled) => {
+        void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
           if (!enabled) {
-            return printOrderDirectly(updated, true);
+            return printOrderDirectly(updated, printDestination, true);
           }
           return undefined;
         }).catch(() => {
@@ -503,10 +504,23 @@ export function OrdersManager({
   }
 
   async function printOrder(order: OrderResponse) {
+    try {
+      const queued = await clientApi<{ jobs: { id: string }[] } | undefined>(`admin/orders/${order.id}/print?destination=${printDestination}`, {
+        method: "POST",
+      });
+      if (queued?.jobs.length) {
+        showToast("Pedido enviado para a impressora");
+        return;
+      }
+    } catch {
+      showToast("Não foi possível enviar pedido para a impressora.", "error");
+      return;
+    }
+
     const selectedPrinter = getSelectedPrinter();
     if (selectedPrinter) {
       try {
-        const content = await getPrintContent(order);
+        const content = await getPrintContent(order, printDestination);
         await printTextWithQz(content, selectedPrinter);
         showToast("Pedido enviado para a impressora");
       } catch {
@@ -525,7 +539,7 @@ export function OrdersManager({
     printWindow.document.body.textContent = "Preparando impressão...";
 
     try {
-      const content = await getPrintContent(order);
+      const content = await getPrintContent(order, printDestination);
       renderPrintContent(printWindow, content);
       printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
       printWindow.focus();

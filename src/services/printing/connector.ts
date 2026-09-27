@@ -51,7 +51,7 @@ export type PrintOverview = {
   destinations: PrintDestinationConfig[];
 };
 
-let automaticConnectorEnabled: Promise<boolean> | null = null;
+let automaticDestinations: Promise<PrintDestination[]> | null = null;
 
 type PairingCode = {
   code: string;
@@ -64,15 +64,16 @@ export function getPrintOverview() {
   );
 }
 
-export function isAutomaticConnectorEnabled() {
-  automaticConnectorEnabled ??= getPrintOverview()
-    .then((overview) => overview.destinations.some((destination) => destination.automatic && destination.destination !== "EXPEDITION"))
+export function isAutomaticConnectorEnabled(destination: "RECEIPT" | "KITCHEN") {
+  automaticDestinations ??= clientApi<{ destinations: PrintDestination[] }>("/admin/printing/automatic-destinations")
+    .then((response) => response.destinations);
+  return automaticDestinations
+    .then((configured) => configured.includes(destination))
     .catch(() => false);
-  return automaticConnectorEnabled;
 }
 
 export function invalidateAutomaticConnectorEnabled() {
-  automaticConnectorEnabled = null;
+  automaticDestinations = null;
 }
 
 export function createPrintPairingCode() {
