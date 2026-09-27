@@ -705,14 +705,14 @@ export function OrdersManager({
               orderType={order.deliveryType === "TABLE" ? "table" : order.deliveryType === "DELIVERY" ? "delivery" : undefined}
               data-overdue={isOverdue}
               aria-label={isOverdue
-                ? `Pedido ${order.id.slice(-6).toUpperCase()} em atraso`
+                ? `Pedido ${order.orderNumber ?? order.id.slice(-6).toUpperCase()} em atraso`
                 : undefined}
             >
               <CardGrid>
                 <OrderInfo
                   role="button"
                   tabIndex={0}
-                  aria-label={`Ver detalhes do pedido ${order.id.slice(-6).toUpperCase()}`}
+                  aria-label={`Ver detalhes do pedido ${order.orderNumber ?? order.id.slice(-6).toUpperCase()}`}
                   onClick={() => setDetailsOrderId(order.id)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -724,7 +724,7 @@ export function OrdersManager({
                 <OrderHeader>
                   <DetailRow>
                     <Hash size={16} aria-hidden="true" />
-                    <strong>Pedido #{order.id.slice(-6).toUpperCase()}</strong>
+                    <strong>Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()}</strong>
                   </DetailRow>
                   <StatusBadge>{statusLabel(order.status)}</StatusBadge>
                 </OrderHeader>
@@ -846,7 +846,7 @@ export function OrdersManager({
             <ModalHeader>
               <div>
                 <Title id="order-details-title">
-                  Pedido #{detailsOrder.id.slice(-6).toUpperCase()}
+                  Pedido #{detailsOrder.orderNumber ?? detailsOrder.id.slice(-6).toUpperCase()}
                 </Title>
                 <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
                 {detailsOverdueMinutes !== null ? (
