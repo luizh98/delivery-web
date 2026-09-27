@@ -86,6 +86,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
   const [jobs, setJobs] = useState<PrintJob[]>([]);
   const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft });
   const [pairingCode, setPairingCode] = useState<{ code: string; expiresAt: string } | null>(null);
+  const [pairingAttempt, setPairingAttempt] = useState<{ startedAt: number; activeDeviceIds: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -113,6 +114,52 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
   }, [showToast]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  useEffect(() => {
+    if (!pairingAttempt || !pairingCode) return;
+    const remaining = Math.min(120_000, new Date(pairingCode.expiresAt).getTime() - Date.now());
+    if (remaining <= 0) return;
+
+    let active = true;
+    let inFlight = false;
+    const update = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const next = await getPrintOverview();
+        if (!active) return;
+        setOverview(next);
+        const pairedDevices = next.devices.filter((device) =>
+          !device.revokedAt && !pairingAttempt.activeDeviceIds.includes(device.id),
+        );
+        const inventoryReady = pairedDevices.some((device) => next.printers.some((printer) =>
+          printer.deviceId === device.id
+          && printer.available
+          && printer.lastSeenAt
+          && new Date(printer.lastSeenAt).getTime() >= pairingAttempt.startedAt - 60_000,
+        ));
+        if (inventoryReady) {
+          setPairingAttempt(null);
+          void refresh();
+        }
+      } catch {
+        // A proxima consulta tenta novamente enquanto o conector inicia.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const onFocus = () => { void update(); };
+    void update();
+    const interval = window.setInterval(() => { void update(); }, 3000);
+    const timeout = window.setTimeout(() => setPairingAttempt(null), remaining);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [pairingAttempt, pairingCode, refresh]);
 
   /* Legacy QZ local-browser helpers removed with the connector flow.
     setSelected(printer);
@@ -145,6 +192,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
 
   async function createPairingCode() {
     setBusy("pair");
+    setPairingAttempt(null);
     try {
       setPairingCode(await createPrintPairingCode());
       showToast("Código de vinculação criado. Ele expira em 10 minutos.");
@@ -380,7 +428,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
         </StepList>
         <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair" || !connectorServerUrl}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
         {!connectorServerUrl ? <Help>Vinculação indisponível. Contate o suporte.</Help> : null}
-        {pairingCode && connectorServerUrl ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code, connectorServerUrl)}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink></div> : null}
+        {pairingCode && connectorServerUrl ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code, connectorServerUrl)} onClick={() => setPairingAttempt({ startedAt: Date.now(), activeDeviceIds: overview?.devices.filter((device) => !device.revokedAt).map((device) => device.id) ?? [] })}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink>{pairingAttempt ? <Muted role="status">Atualizando impressoras após vinculação...</Muted> : null}</div> : null}
       </Panel>
 
       <Panel>
