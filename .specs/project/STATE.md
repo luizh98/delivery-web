@@ -5,8 +5,8 @@
 - Lazy dashboard reports: cross-repository feature. Frontend: `C:\projetos-pessoais\delivery-app\delivery-web`; backend: `C:\projetos-pessoais\delivery-app\delivery-api`. Canonical plan: `.specs/features/lazy-dashboard-reports/`.
 - Status: specification, design and tasks drafted; implementation not started.
 
-**Last Updated:** 2026-08-25
-**Current Work:** Gráfico em linhas na dashboard de faturamento - concluída
+**Last Updated:** 2026-09-28
+**Current Work:** Desmarcar adicional de escolha única - concluída
 
 ---
 
@@ -76,6 +76,7 @@ Nenhum.
 | 018 | Corrigir ativação do som no navegador | 2026-08-24 | — | ✅ Done |
 | 019 | Exibir total de desconto no carrinho e na finalização | 2026-08-25 | `feat(cart): show total discount in checkout` | ✅ Done |
 | 020 | Alterar gráfico da dashboard de faturamento para linhas | 2026-08-25 | `feat(admin): change dashboard chart to line` | ✅ Done |
+| 023 | Permitir desmarcar adicional de escolha única | 2026-09-28 | `fix(product): allow deselecting single-choice option` | ✅ Done |
 
 ---
 
