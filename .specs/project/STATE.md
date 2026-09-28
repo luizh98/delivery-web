@@ -5,8 +5,8 @@
 - Lazy dashboard reports: cross-repository feature. Frontend: `C:\projetos-pessoais\delivery-app\delivery-web`; backend: `C:\projetos-pessoais\delivery-app\delivery-api`. Canonical plan: `.specs/features/lazy-dashboard-reports/`.
 - Status: specification, design and tasks drafted; implementation not started.
 
-**Last Updated:** 2026-08-25
-**Current Work:** Gráfico em linhas na dashboard de faturamento - concluída
+**Last Updated:** 2026-09-28
+**Current Work:** Desmarcar adicional de escolha única - concluída
 
 ---
 
@@ -78,6 +78,7 @@ Nenhum.
 | 020 | Alterar gráfico da dashboard de faturamento para linhas | 2026-08-25 | `feat(admin): change dashboard chart to line` | ✅ Done |
 | 021 | Repetir alerta para pedidos recebidos a cada 15 segundos | 2026-09-25 | `fix(admin): repeat received order sound every 15 seconds` | ✅ Done |
 | 022 | Reduzir intervalo do alerta de pedido recebido para 3 segundos | 2026-09-25 | `fix(admin): repeat received order sound every 3 seconds` | ✅ Done |
+| 023 | Permitir desmarcar adicional de escolha única | 2026-09-28 | `fix(product): allow deselecting single-choice option` | ✅ Done |
 
 ---
 
