@@ -407,7 +407,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     <Root>
       <div>
         <Title>Impressão</Title>
-        <Subtitle>Gerencie conectores e impressoras pelo painel. QZ Tray não é necessário.</Subtitle>
+        <Subtitle>Gerencie conectores e impressoras pelo painel.</Subtitle>
       </div>
 
       <Panel>
