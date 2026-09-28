@@ -77,10 +77,7 @@ const settingsSchema = z.object({
   deliveryOrganizationStrategy: z.enum(["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]),
   deliveryMaxOrdersPerRoute: z.number().int().min(2).max(15),
   deliveryWaitToleranceMinutes: z.number().int().min(0).max(30),
-  deliveryMaxDistanceKm: z.number().int().refine(
-    (value) => [1, 2, 3, 5, 10].includes(value),
-    "Escolha uma distância válida.",
-  ),
+  deliveryMaxDistanceKm: z.number().int().min(1).max(10),
   pricingMode: z.enum(["PER_KM", "RANGE"]),
   maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
   pricePerKmReais: z.number().min(0, "Valor por km não pode ser negativo."),
@@ -636,11 +633,9 @@ export function SettingsForm({
                   error={form.formState.errors.deliveryMaxDistanceKm?.message}
                 >
                   <Select {...form.register("deliveryMaxDistanceKm", { valueAsNumber: true })}>
-                    <option value={1}>1 km</option>
-                    <option value={2}>2 km</option>
-                    <option value={3}>3 km</option>
-                    <option value={5}>5 km</option>
-                    <option value={10}>10 km</option>
+                    {Array.from({ length: 10 }, (_, index) => index + 1).map((distance) => (
+                      <option key={distance} value={distance}>{distance} km</option>
+                    ))}
                   </Select>
                 </Field>
               ) : null}
