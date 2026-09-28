@@ -416,9 +416,9 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
           <PanelDescription>O conector fica em segundo plano e descobre as impressoras instaladas.</PanelDescription>
         </PanelHeader>
         <DownloadActions>
-          <Button type="button" disabled>
-            <Download size={16} /> Instalador Windows em preparação
-          </Button>
+          <DownloadLink primary href="https://storage.googleapis.com/delivery-products/installers/Flyfoods-Impressao-Setup-0.1.13.exe">
+            <Download size={16} /> Instalador Windows
+          </DownloadLink>
         </DownloadActions>
         <StepList>
           <Step><StepNumber>1</StepNumber><StepContent><StepTitle>Instale o driver da impressora</StepTitle><StepDescription>Confirme que a impressora aparece no sistema operacional.</StepDescription></StepContent></Step>
