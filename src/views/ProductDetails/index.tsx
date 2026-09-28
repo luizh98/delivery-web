@@ -371,6 +371,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                               name={`option-group-${groupId}`}
                               checked={selected}
                               onChange={() => toggleOption(group, item)}
+                              onClick={() => {
+                                if (!allowsMultipleSelections && selected) {
+                                  toggleOption(group, item);
+                                }
+                              }}
                             />
                             {item.name}
                           </span>
