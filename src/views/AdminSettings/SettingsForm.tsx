@@ -75,10 +75,10 @@ const settingsSchema = z.object({
   overdueOrderAlertMinutes: z.number().int().min(1, "Informe pelo menos 1 minuto."),
   deliveryEnabled: z.boolean(),
   deliveryOrganizationStrategy: z.enum(["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]),
-  deliveryMaxOrdersPerRoute: z.number().int().min(2).max(4),
+  deliveryMaxOrdersPerRoute: z.number().int().min(2).max(15),
   deliveryWaitToleranceMinutes: z.number().int().min(0).max(30),
   deliveryMaxDistanceKm: z.number().int().refine(
-    (value) => [1, 2, 3, 5].includes(value),
+    (value) => [1, 2, 3, 5, 10].includes(value),
     "Escolha uma distância válida.",
   ),
   pricingMode: z.enum(["PER_KM", "RANGE"]),
@@ -124,11 +124,11 @@ const settingsSchema = z.object({
     });
   }
   if (values.deliveryOrganizationStrategy !== "INDIVIDUAL"
-    && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 4)) {
+    && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 15)) {
     context.addIssue({
       code: "custom",
       path: ["deliveryMaxOrdersPerRoute"],
-      message: "Escolha entre 2 e 4 pedidos.",
+      message: "Escolha entre 2 e 15 pedidos.",
     });
   }
   if (!values.deliveryEnabled) {
@@ -613,9 +613,9 @@ export function SettingsForm({
                 error={form.formState.errors.deliveryMaxOrdersPerRoute?.message}
               >
                 <Select {...form.register("deliveryMaxOrdersPerRoute", { valueAsNumber: true })}>
-                  <option value={2}>2 pedidos</option>
-                  <option value={3}>3 pedidos</option>
-                  <option value={4}>4 pedidos</option>
+                  {Array.from({ length: 14 }, (_, index) => index + 2).map((count) => (
+                    <option key={count} value={count}>{count} pedidos</option>
+                  ))}
                 </Select>
               </Field>
               <Field
@@ -640,6 +640,7 @@ export function SettingsForm({
                     <option value={2}>2 km</option>
                     <option value={3}>3 km</option>
                     <option value={5}>5 km</option>
+                    <option value={10}>10 km</option>
                   </Select>
                 </Field>
               ) : null}
