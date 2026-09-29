@@ -136,6 +136,7 @@ export type Product = {
   priceCents: number;
   sortOrder: number;
   active: boolean;
+  showInCarousel: boolean;
   adultOnly: boolean;
   glutenFree: boolean;
   lactoseFree: boolean;

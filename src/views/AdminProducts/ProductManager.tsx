@@ -103,6 +103,7 @@ const productSchema = z.object({
   priceReais: z.number().min(0),
   sortOrder: z.number(),
   active: z.boolean(),
+  showInCarousel: z.boolean(),
   adultOnly: z.boolean(),
   glutenFree: z.boolean(),
   lactoseFree: z.boolean(),
@@ -177,6 +178,7 @@ const defaultProductForm = (categoryId = ""): ProductForm => ({
   priceReais: 0,
   sortOrder: 0,
   active: true,
+  showInCarousel: false,
   adultOnly: false,
   glutenFree: false,
   lactoseFree: false,
@@ -191,6 +193,7 @@ function productToForm(product: Product): ProductForm {
     priceReais: centsToReais(product.priceCents),
     sortOrder: product.sortOrder,
     active: product.active,
+    showInCarousel: product.showInCarousel ?? false,
     adultOnly: product.adultOnly ?? false,
     glutenFree: product.glutenFree ?? false,
     lactoseFree: product.lactoseFree ?? false,
@@ -678,6 +681,7 @@ export function ProductManager({
         priceCents: reaisToCents(values.priceReais),
         sortOrder: values.sortOrder,
         active: values.active,
+        showInCarousel: values.showInCarousel,
         adultOnly: values.adultOnly,
         glutenFree: values.glutenFree,
         lactoseFree: values.lactoseFree,
@@ -934,6 +938,15 @@ export function ProductManager({
           <Field label="Descrição">
             <Textarea rows={4} {...form.register("description")} />
           </Field>
+
+          <FlagFieldset>
+            <FlagLegend>Destaque no cardápio</FlagLegend>
+            <CheckboxBackground>
+              <input type="checkbox" {...form.register("showInCarousel")} />
+              Exibir em Mais pedidos
+            </CheckboxBackground>
+            <Muted>Produtos ativos marcados aparecem no carrossel antes das categorias.</Muted>
+          </FlagFieldset>
 
           <FlagFieldset>
             <FlagLegend>Flags do produto</FlagLegend>
