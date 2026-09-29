@@ -11,6 +11,7 @@ export async function AdminTableOrdersView() {
   return <OrdersManager
     initialOrders={orders.filter((order) => order.deliveryType === "TABLE")}
     title="Pedidos mesa"
+    printDestination="RECEIPT"
     automaticOrderConfirmation={config?.automaticOrderConfirmation}
     overdueOrderAlertEnabled={config?.overdueOrderAlertEnabled}
     overdueOrderAlertMinutes={config?.overdueOrderAlertMinutes}

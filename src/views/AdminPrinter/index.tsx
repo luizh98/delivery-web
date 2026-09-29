@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
-import { backendBaseUrl } from "@/constants/api";
 import {
   createPrintPairingCode,
   createPrintTest,
@@ -49,10 +48,11 @@ import {
   Title,
 } from "./styles";
 
-const destinations: Array<{ id: PrintDestination; label: string; description: string }> = [
+type ConfigurableDestination = Exclude<PrintDestination, "EXPEDITION">;
+
+const destinations: Array<{ id: ConfigurableDestination; label: string; description: string }> = [
   { id: "RECEIPT", label: "Recibo", description: "Pedido completo para o balcão." },
-  { id: "KITCHEN", label: "Cozinha", description: "Comanda com itens e observações." },
-  { id: "EXPEDITION", label: "Expedição", description: "Conferência antes da saída." },
+  { id: "KITCHEN", label: "Cozinha", description: "Pedido completo para a cozinha." },
 ];
 
 type DestinationDraft = Omit<PrintDestinationConfig, "destination">;
@@ -71,21 +71,22 @@ function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir esta operação.";
 }
 
-function pairingLink(code: string) {
+function pairingLink(code: string, serverUrl: string) {
   const query = new URLSearchParams({
-    server: backendBaseUrl(),
+    server: serverUrl,
     code,
     panel: typeof window === "undefined" ? "" : window.location.origin,
   });
   return `deliveryprint://pair?${query.toString()}`;
 }
 
-export function AdminPrinterView() {
+export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: string | null }) {
   const { showToast } = useToast();
   const [overview, setOverview] = useState<PrintOverview | null>(null);
   const [jobs, setJobs] = useState<PrintJob[]>([]);
-  const [drafts, setDrafts] = useState<Record<PrintDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft, EXPEDITION: emptyDraft });
+  const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft });
   const [pairingCode, setPairingCode] = useState<{ code: string; expiresAt: string } | null>(null);
+  const [pairingAttempt, setPairingAttempt] = useState<{ startedAt: number; activeDeviceIds: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -114,6 +115,52 @@ export function AdminPrinterView() {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  useEffect(() => {
+    if (!pairingAttempt || !pairingCode) return;
+    const remaining = Math.min(120_000, new Date(pairingCode.expiresAt).getTime() - Date.now());
+    if (remaining <= 0) return;
+
+    let active = true;
+    let inFlight = false;
+    const update = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const next = await getPrintOverview();
+        if (!active) return;
+        setOverview(next);
+        const pairedDevices = next.devices.filter((device) =>
+          !device.revokedAt && !pairingAttempt.activeDeviceIds.includes(device.id),
+        );
+        const inventoryReady = pairedDevices.some((device) => next.printers.some((printer) =>
+          printer.deviceId === device.id
+          && printer.available
+          && printer.lastSeenAt
+          && new Date(printer.lastSeenAt).getTime() >= pairingAttempt.startedAt - 60_000,
+        ));
+        if (inventoryReady) {
+          setPairingAttempt(null);
+          void refresh();
+        }
+      } catch {
+        // A proxima consulta tenta novamente enquanto o conector inicia.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const onFocus = () => { void update(); };
+    void update();
+    const interval = window.setInterval(() => { void update(); }, 3000);
+    const timeout = window.setTimeout(() => setPairingAttempt(null), remaining);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [pairingAttempt, pairingCode, refresh]);
+
   /* Legacy QZ local-browser helpers removed with the connector flow.
     setSelected(printer);
     setSelectedPrinter(printer);
@@ -139,12 +186,13 @@ export function AdminPrinterView() {
     [overview],
   );
 
-  function changeDraft(destination: PrintDestination, patch: Partial<DestinationDraft>) {
+  function changeDraft(destination: ConfigurableDestination, patch: Partial<DestinationDraft>) {
     setDrafts((current) => ({ ...current, [destination]: { ...current[destination], ...patch } }));
   }
 
   async function createPairingCode() {
     setBusy("pair");
+    setPairingAttempt(null);
     try {
       setPairingCode(await createPrintPairingCode());
       showToast("Código de vinculação criado. Ele expira em 10 minutos.");
@@ -165,7 +213,7 @@ export function AdminPrinterView() {
     }
   }
 
-  async function saveDestination(destination: PrintDestination) {
+  async function saveDestination(destination: ConfigurableDestination) {
     const draft = drafts[destination];
     if (!draft.deviceId || !draft.printerId) {
       showToast("Selecione computador e impressora.", "error");
@@ -183,7 +231,7 @@ export function AdminPrinterView() {
     }
   }
 
-  async function testDestination(destination: PrintDestination) {
+  async function testDestination(destination: ConfigurableDestination) {
     setBusy(`test:${destination}`);
     try {
       await createPrintTest(destination);
@@ -359,7 +407,7 @@ export function AdminPrinterView() {
     <Root>
       <div>
         <Title>Impressão</Title>
-        <Subtitle>Gerencie conectores e impressoras pelo painel. QZ Tray não é necessário.</Subtitle>
+        <Subtitle>Gerencie conectores e impressoras pelo painel.</Subtitle>
       </div>
 
       <Panel>
@@ -368,9 +416,9 @@ export function AdminPrinterView() {
           <PanelDescription>O conector fica em segundo plano e descobre as impressoras instaladas.</PanelDescription>
         </PanelHeader>
         <DownloadActions>
-          <Button type="button" disabled>
-            <Download size={16} /> Instalador Windows em preparação
-          </Button>
+          <DownloadLink primary href="https://storage.googleapis.com/delivery-products/installers/Flyfoods-Impressao-Setup-0.1.16.exe">
+            <Download size={16} /> Instalador Windows
+          </DownloadLink>
         </DownloadActions>
         <StepList>
           <Step><StepNumber>1</StepNumber><StepContent><StepTitle>Instale o driver da impressora</StepTitle><StepDescription>Confirme que a impressora aparece no sistema operacional.</StepDescription></StepContent></Step>
@@ -378,8 +426,9 @@ export function AdminPrinterView() {
           <Step><StepNumber>3</StepNumber><StepContent><StepTitle>Vincule usando o código</StepTitle><StepDescription>Gere um código abaixo e informe-o no aplicativo.</StepDescription></StepContent></Step>
           <Step><StepNumber>4</StepNumber><StepContent><StepTitle>Escolha os destinos e faça um teste</StepTitle><StepDescription>As impressoras aparecem automaticamente após o conector sincronizar.</StepDescription></StepContent></Step>
         </StepList>
-        <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair"}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
-        {pairingCode ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code)}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink></div> : null}
+        <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair" || !connectorServerUrl}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
+        {!connectorServerUrl ? <Help>Vinculação indisponível. Contate o suporte.</Help> : null}
+        {pairingCode && connectorServerUrl ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code, connectorServerUrl)} onClick={() => setPairingAttempt({ startedAt: Date.now(), activeDeviceIds: overview?.devices.filter((device) => !device.revokedAt).map((device) => device.id) ?? [] })}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink>{pairingAttempt ? <Muted role="status">Atualizando impressoras após vinculação...</Muted> : null}</div> : null}
       </Panel>
 
       <Panel>

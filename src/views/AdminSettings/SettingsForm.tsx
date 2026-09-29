@@ -137,15 +137,15 @@ function settingsSchemaFor(scope: {
     });
   }
   if (scope.organization && values.deliveryOrganizationStrategy !== "INDIVIDUAL"
-    && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 4)) {
+    && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 15)) {
     context.addIssue({
       code: "custom",
       path: ["deliveryMaxOrdersPerRoute"],
-      message: "Escolha entre 2 e 4 pedidos.",
+      message: "Escolha entre 2 e 15 pedidos.",
     });
   }
   if (scope.organization && values.deliveryOrganizationStrategy === "PROXIMITY"
-    && ![1, 2, 3, 5].includes(values.deliveryMaxDistanceKm)) {
+    && (values.deliveryMaxDistanceKm < 1 || values.deliveryMaxDistanceKm > 10)) {
     context.addIssue({
       code: "custom",
       path: ["deliveryMaxDistanceKm"],
@@ -689,9 +689,9 @@ export function SettingsForm({
                 error={form.formState.errors.deliveryMaxOrdersPerRoute?.message}
               >
                 <Select {...form.register("deliveryMaxOrdersPerRoute", { valueAsNumber: true })}>
-                  <option value={2}>2 pedidos</option>
-                  <option value={3}>3 pedidos</option>
-                  <option value={4}>4 pedidos</option>
+                  {Array.from({ length: 14 }, (_, index) => index + 2).map((count) => (
+                    <option key={count} value={count}>{count} pedidos</option>
+                  ))}
                 </Select>
               </Field>
               <Field
@@ -712,10 +712,9 @@ export function SettingsForm({
                   error={form.formState.errors.deliveryMaxDistanceKm?.message}
                 >
                   <Select {...form.register("deliveryMaxDistanceKm", { valueAsNumber: true })}>
-                    <option value={1}>1 km</option>
-                    <option value={2}>2 km</option>
-                    <option value={3}>3 km</option>
-                    <option value={5}>5 km</option>
+                    {Array.from({ length: 10 }, (_, index) => index + 1).map((distance) => (
+                      <option key={distance} value={distance}>{distance} km</option>
+                    ))}
                   </Select>
                 </Field>
               ) : null}
