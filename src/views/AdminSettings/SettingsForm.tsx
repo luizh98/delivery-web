@@ -5,6 +5,7 @@ import { ChevronDown, ImagePlus, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import type { FieldPath } from "react-hook-form";
 import { z } from "zod";
 import { useAdminOrderSound } from "@/components/AdminOrderSoundNotifier";
 import { Button } from "@/components/Button";
@@ -62,38 +63,35 @@ import {
   Title,
 } from "./styles";
 
-const settingsSchema = z.object({
-  name: z.string().min(2, "Informe o nome."),
+const settingsBaseSchema = z.object({
+  name: z.string().refine(
+    (value) => !value.trim() || value.trim().length >= 2,
+    "Informe pelo menos 2 caracteres no nome.",
+  ),
   whatsapp: z.string().refine(
-    isValidBrazilianMobile,
+    (value) => !value.trim() || isValidBrazilianMobile(value),
     "Informe um celular válido com DDD.",
   ),
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   automaticOrderConfirmation: z.boolean(),
   overdueOrderAlertEnabled: z.boolean(),
-  overdueOrderAlertMinutes: z.number().int().min(1, "Informe pelo menos 1 minuto."),
+  overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
   deliveryOrganizationStrategy: z.enum(["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]),
-  deliveryMaxOrdersPerRoute: z.number().int().min(2).max(4),
-  deliveryWaitToleranceMinutes: z.number().int().min(0).max(30),
-  deliveryMaxDistanceKm: z.number().int().refine(
-    (value) => [1, 2, 3, 5].includes(value),
-    "Escolha uma distância válida.",
-  ),
+  deliveryMaxOrdersPerRoute: z.number().int(),
+  deliveryWaitToleranceMinutes: z.number().int(),
+  deliveryMaxDistanceKm: z.number().int(),
   pricingMode: z.enum(["PER_KM", "RANGE"]),
-  maxDistanceKm: z.number().min(0, "Distância não pode ser negativa."),
-  pricePerKmReais: z.number().min(0, "Valor por km não pode ser negativo."),
+  maxDistanceKm: z.number(),
+  pricePerKmReais: z.number(),
   deliveryFeeRanges: z.array(z.object({
-    fromDistanceKm: z.number().min(0, "Distância inicial não pode ser negativa."),
-    toDistanceKm: z.number().min(0, "Distância final não pode ser negativa.").nullable(),
+    fromDistanceKm: z.number(),
+    toDistanceKm: z.number().nullable(),
     isUnlimited: z.boolean(),
-    feeReais: z.number().min(0, "Valor não pode ser negativo."),
+    feeReais: z.number(),
   })),
-  freeDeliveryMinimumOrderReais: z.number().min(
-    0,
-    "Limite para frete grátis não pode ser negativo.",
-  ),
+  freeDeliveryMinimumOrderReais: z.number(),
   freeDeliveryDays: z.array(z.enum([
     "MONDAY",
     "TUESDAY",
@@ -105,25 +103,40 @@ const settingsSchema = z.object({
   ])),
   primaryColor: z.string().min(4),
   secondaryColor: z.string().min(4),
-  metaPixelId: z.string().refine(
-    (value) => !value.trim() || /^[0-9]{5,20}$/.test(value.trim()),
-    "Informe um ID de Pixel válido com 5 a 20 dígitos.",
-  ),
+  metaPixelId: z.string(),
   metaPixelEnabled: z.boolean(),
   street: z.string().optional(),
   number: z.string().optional(),
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
-}).superRefine((values, context) => {
-  if (values.deliveryWaitToleranceMinutes < 0 || values.deliveryWaitToleranceMinutes > 30) {
+});
+
+type SettingsFormData = z.infer<typeof settingsBaseSchema>;
+
+function settingsSchemaFor(scope: {
+  alerts: boolean;
+  delivery: boolean;
+  organization: boolean;
+  pixel: boolean;
+}) {
+  return settingsBaseSchema.superRefine((values, context) => {
+  if (scope.alerts && values.overdueOrderAlertEnabled && values.overdueOrderAlertMinutes < 1) {
+    context.addIssue({
+      code: "custom",
+      path: ["overdueOrderAlertMinutes"],
+      message: "Informe pelo menos 1 minuto.",
+    });
+  }
+  if (scope.organization && values.deliveryOrganizationStrategy !== "INDIVIDUAL"
+    && (values.deliveryWaitToleranceMinutes < 0 || values.deliveryWaitToleranceMinutes > 30)) {
     context.addIssue({
       code: "custom",
       path: ["deliveryWaitToleranceMinutes"],
       message: "Informe um tempo entre 0 e 30 minutos.",
     });
   }
-  if (values.deliveryOrganizationStrategy !== "INDIVIDUAL"
+  if (scope.organization && values.deliveryOrganizationStrategy !== "INDIVIDUAL"
     && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 4)) {
     context.addIssue({
       code: "custom",
@@ -131,15 +144,27 @@ const settingsSchema = z.object({
       message: "Escolha entre 2 e 4 pedidos.",
     });
   }
-  if (!values.deliveryEnabled) {
-    if (values.metaPixelEnabled && !values.metaPixelId.trim()) {
-      context.addIssue({
-        code: "custom",
-        path: ["metaPixelId"],
-        message: "Informe o ID do Pixel para ativar a integração.",
-      });
-    }
+  if (scope.organization && values.deliveryOrganizationStrategy === "PROXIMITY"
+    && ![1, 2, 3, 5].includes(values.deliveryMaxDistanceKm)) {
+    context.addIssue({
+      code: "custom",
+      path: ["deliveryMaxDistanceKm"],
+      message: "Escolha uma distância válida.",
+    });
+  }
+  if (scope.pixel && values.metaPixelEnabled && !/^[0-9]{5,20}$/.test(values.metaPixelId.trim())) {
+    context.addIssue({
+      code: "custom",
+      path: ["metaPixelId"],
+      message: "Informe um ID de Pixel válido com 5 a 20 dígitos.",
+    });
+  }
+  if (!scope.delivery || !values.deliveryEnabled) {
     return;
+  }
+
+  if (values.freeDeliveryMinimumOrderReais < 0) {
+    context.addIssue({ code: "custom", path: ["freeDeliveryMinimumOrderReais"], message: "Limite para frete grátis não pode ser negativo." });
   }
 
   if (values.pricingMode === "PER_KM" && values.maxDistanceKm <= 0) {
@@ -168,6 +193,15 @@ const settingsSchema = z.object({
     }
 
     values.deliveryFeeRanges.forEach((range, index) => {
+      if (range.fromDistanceKm < 0) {
+        context.addIssue({ code: "custom", path: ["deliveryFeeRanges", index, "fromDistanceKm"], message: "Distância inicial não pode ser negativa." });
+      }
+      if (range.feeReais < 0) {
+        context.addIssue({ code: "custom", path: ["deliveryFeeRanges", index, "feeReais"], message: "Valor não pode ser negativo." });
+      }
+      if (range.toDistanceKm !== null && range.toDistanceKm < 0) {
+        context.addIssue({ code: "custom", path: ["deliveryFeeRanges", index, "toDistanceKm"], message: "Distância final não pode ser negativa." });
+      }
       if (range.toDistanceKm !== null
         && range.toDistanceKm <= range.fromDistanceKm) {
         context.addIssue({
@@ -201,14 +235,8 @@ const settingsSchema = z.object({
     });
   }
 
-  if (values.metaPixelEnabled && !values.metaPixelId.trim()) {
-    context.addIssue({
-      code: "custom",
-      path: ["metaPixelId"],
-      message: "Informe o ID do Pixel para ativar a integração.",
-    });
-  }
-});
+  });
+}
 
 const deliveryWeekDays = [
   { value: "MONDAY", label: "Segunda" },
@@ -220,14 +248,13 @@ const deliveryWeekDays = [
   { value: "SUNDAY", label: "Domingo" },
 ] as const;
 
-type SettingsFormData = z.infer<typeof settingsSchema>;
-
 const MAX_MEDIA_BYTES = 5 * 1024 * 1024;
 const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export function SettingsForm({
   initialConfig,
 }: SettingsFormProps) {
+  const [currentConfig, setCurrentConfig] = useState(initialConfig);
   const [error, setError] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -243,6 +270,8 @@ export function SettingsForm({
     createWeeklyHours(initialConfig?.businessHours));
   const [holidayHours, setHolidayHours] = useState(() =>
     createHolidayHours(initialConfig?.holidayHours));
+  const [businessHoursDirty, setBusinessHoursDirty] = useState(false);
+  const [holidayHoursDirty, setHolidayHoursDirty] = useState(false);
   const [operatingHoursErrors, setOperatingHoursErrors] = useState<OperatingHoursErrors>({
     businessHours: {},
     holidayHours: {},
@@ -250,7 +279,7 @@ export function SettingsForm({
   const { showToast } = useToast();
   const { soundEnabled, setSoundEnabled } = useAdminOrderSound();
   const form = useForm<SettingsFormData>({
-    resolver: zodResolver(settingsSchema),
+    resolver: zodResolver(settingsBaseSchema),
     defaultValues: {
       name: initialConfig?.name ?? "",
       whatsapp: formatBrazilianMobileInput(initialConfig?.whatsapp ?? ""),
@@ -293,6 +322,7 @@ export function SettingsForm({
       state: initialConfig?.address?.state ?? "",
     },
   });
+  const dirtyFields = form.formState.dirtyFields;
   const deliveryRanges = useFieldArray({
     control: form.control,
     name: "deliveryFeeRanges",
@@ -355,7 +385,41 @@ export function SettingsForm({
 
   async function submit(values: SettingsFormData) {
     setError("");
-    const hoursErrors = validateOperatingHours(businessHours, holidayHours);
+    const dirty = dirtyFields;
+    const changed = (...fields: (keyof SettingsFormData)[]) =>
+      fields.some((field) => Boolean(dirty[field]));
+    if (dirty.name && !values.name.trim()) {
+      const message = "Informe o nome do restaurante.";
+      form.setError("name", { type: "manual", message });
+      setError(message);
+      showToast(message, "error");
+      return;
+    }
+    const deliveryChanged = changed("deliveryEnabled", "pricingMode", "maxDistanceKm", "pricePerKmReais", "deliveryFeeRanges", "freeDeliveryMinimumOrderReais", "freeDeliveryDays");
+    const organizationChanged = changed("deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
+    const pixelChanged = changed("metaPixelId", "metaPixelEnabled");
+    const sectionResult = settingsSchemaFor({
+      alerts: changed("overdueOrderAlertEnabled", "overdueOrderAlertMinutes"),
+      delivery: deliveryChanged,
+      organization: organizationChanged,
+      pixel: pixelChanged,
+    }).safeParse(values);
+    if (!sectionResult.success) {
+      sectionResult.error.issues.forEach((issue) => {
+        form.setError(issue.path.map(String).join(".") as FieldPath<SettingsFormData>, {
+          type: "manual",
+          message: issue.message,
+        });
+      });
+      const message = "Corrija os campos destacados antes de salvar.";
+      setError(message);
+      showToast(message, "error");
+      return;
+    }
+    const hoursErrors = validateOperatingHours(
+      businessHoursDirty ? businessHours : [],
+      holidayHoursDirty ? holidayHours : [],
+    );
     setOperatingHoursErrors(hoursErrors);
 
     if (hasOperatingHoursErrors(hoursErrors)) {
@@ -368,14 +432,15 @@ export function SettingsForm({
 
     try {
       const configPayload = {
-        name: values.name,
-        whatsapp: normalizeBrazilianMobile(values.whatsapp),
-        menuDescription: values.menuDescription,
-        minimumOrderCents: reaisToCents(values.minimumOrderReais),
-        automaticOrderConfirmation: values.automaticOrderConfirmation,
-        overdueOrderAlertEnabled: values.overdueOrderAlertEnabled,
-        overdueOrderAlertMinutes: values.overdueOrderAlertMinutes,
-        deliverySettings: {
+        ...(dirty.name && values.name.trim() ? { name: values.name.trim() } : {}),
+        ...(dirty.whatsapp ? { whatsapp: normalizeBrazilianMobile(values.whatsapp) } : {}),
+        ...(dirty.menuDescription ? { menuDescription: values.menuDescription } : {}),
+        ...(dirty.minimumOrderReais ? { minimumOrderCents: reaisToCents(values.minimumOrderReais) } : {}),
+        ...(dirty.automaticOrderConfirmation ? { automaticOrderConfirmation: values.automaticOrderConfirmation } : {}),
+        ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
+        ...(dirty.overdueOrderAlertMinutes ? { overdueOrderAlertMinutes: values.overdueOrderAlertMinutes } : {}),
+        ...(deliveryChanged ? { deliverySettings: {
+          ...currentConfig?.deliverySettings,
           enabled: values.deliveryEnabled,
           pricingMode: values.pricingMode,
           maxDistanceKm: values.maxDistanceKm,
@@ -389,32 +454,37 @@ export function SettingsForm({
             values.freeDeliveryMinimumOrderReais,
           ),
           freeDeliveryDays: values.freeDeliveryDays,
-        },
-        deliveryOrganization: {
+        }} : {}),
+        ...(organizationChanged ? { deliveryOrganization: {
+          ...currentConfig?.deliveryOrganization,
           strategy: values.deliveryOrganizationStrategy,
           maxOrdersPerRoute: values.deliveryMaxOrdersPerRoute,
           waitToleranceMinutes: values.deliveryWaitToleranceMinutes,
           maxDistanceKm: values.deliveryMaxDistanceKm,
-        },
-        theme: {
+        }} : {}),
+        ...(changed("primaryColor", "secondaryColor") ? { theme: {
+          ...currentConfig?.theme,
           primaryColor: values.primaryColor,
           secondaryColor: values.secondaryColor,
-        },
-        integrations: {
+        }} : {}),
+        ...(pixelChanged ? { integrations: {
+          ...currentConfig?.integrations,
           metaPixel: {
+            ...currentConfig?.integrations?.metaPixel,
             pixelId: values.metaPixelId.trim(),
             enabled: values.metaPixelEnabled,
           },
-        },
-        address: {
+        }} : {}),
+        ...(changed("street", "number", "neighborhood", "city", "state") ? { address: {
+          ...currentConfig?.address,
           street: values.street,
           number: values.number,
           neighborhood: values.neighborhood,
           city: values.city,
           state: values.state,
-        },
-        businessHours: normalizeBusinessHours(businessHours),
-        holidayHours: normalizeHolidayHours(holidayHours),
+        }} : {}),
+        ...(businessHoursDirty ? { businessHours: normalizeBusinessHours(businessHours) } : {}),
+        ...(holidayHoursDirty ? { holidayHours: normalizeHolidayHours(holidayHours) } : {}),
       };
       const body = new FormData();
       body.append("config", JSON.stringify(configPayload));
@@ -433,10 +503,14 @@ export function SettingsForm({
       );
       setSavedLogoUrl(savedConfig.logoUrl ?? "");
       setSavedBannerUrl(savedConfig.bannerUrl ?? "");
+      setCurrentConfig(savedConfig);
       setLogoFile(null);
       setBannerFile(null);
       setLogoPreview("");
       setBannerPreview("");
+      form.reset(values);
+      setBusinessHoursDirty(false);
+      setHolidayHoursDirty(false);
       showToast("Configuração salva com sucesso");
     } catch {
       const message = "Não foi possível salvar configuração.";
@@ -455,11 +529,13 @@ export function SettingsForm({
 
   function changeBusinessHours(hours: typeof businessHours) {
     setBusinessHours(hours);
+    setBusinessHoursDirty(true);
     setOperatingHoursErrors({ businessHours: {}, holidayHours: {} });
   }
 
   function changeHolidayHours(hours: typeof holidayHours) {
     setHolidayHours(hours);
+    setHolidayHoursDirty(true);
     setOperatingHoursErrors({ businessHours: {}, holidayHours: {} });
   }
 
