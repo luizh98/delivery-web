@@ -1,12 +1,15 @@
 "use client";
 
-import { Flame } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Flame, Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/api";
 import { money } from "@/utils/format";
 import {
   CarouselCard,
+  CarouselControl,
+  CarouselControls,
+  CarouselCount,
   CarouselDescription,
   CarouselHeader,
   CarouselHeading,
@@ -19,46 +22,15 @@ import {
   CarouselTrack,
 } from "./MostOrderedCarousel.styles";
 
-const SLIDE_DURATION_MS = 5_000;
-const TOUCH_SETTLE_MS = 180;
-
-function slidesIn(track: HTMLDivElement) {
-  return Array.from(track.querySelectorAll<HTMLButtonElement>(":scope > button[data-carousel-slide]"));
-}
-
-function slideLeft(track: HTMLDivElement, slide: HTMLElement) {
-  return slide.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft;
-}
-
-function slideStep(slides: HTMLButtonElement[]) {
-  return slides[1].getBoundingClientRect().left - slides[0].getBoundingClientRect().left;
-}
+const ADVANCE_INTERVAL_MS = 7_000;
 
 export function MostOrderedCarousel({ products }: { products: Product[] }) {
   const router = useRouter();
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startLeft: number;
-    moved: boolean;
-  } | null>(null);
-  const suppressClickRef = useRef(false);
-  const pointerActiveRef = useRef(false);
-  const stepRef = useRef(0);
-  const positionRef = useRef(0);
-  const loopStartRef = useRef(0);
-  const loopSpanRef = useRef(0);
-  const touchCoastingRef = useRef(false);
-  const resumeAtRef = useRef(0);
-  const wheelUntilRef = useRef(0);
-  const [ready, setReady] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const productIds = products.map((product) => product.id).join("\0");
-  const carouselProducts = products.length > 1
-    ? [products[products.length - 1], ...products, products[0]]
-    : products;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -68,89 +40,37 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
     return () => media.removeEventListener("change", update);
   }, []);
 
-  const wrapScroll = useCallback((track: HTMLDivElement) => {
-    const start = loopStartRef.current;
-    const span = loopSpanRef.current;
-    if (products.length < 2 || span <= 0) return 0;
-
-    let next = track.scrollLeft;
-    if (next < start) next += span;
-    if (next >= start + span - 0.5) next = start + Math.max(0, next - start - span);
-    const shift = next - track.scrollLeft;
-    if (shift) track.scrollLeft = next;
-    return shift;
-  }, [products.length]);
-
-  useLayoutEffect(() => {
+  const goTo = useCallback((index: number) => {
     const track = trackRef.current;
-    if (!track || products.length === 0) return;
-    const slides = slidesIn(track);
-    if (products.length > 1) {
-      stepRef.current = slideStep(slides);
-      loopStartRef.current = slideLeft(track, slides[1]);
-      loopSpanRef.current = slideLeft(track, slides[slides.length - 1]) - loopStartRef.current;
-      track.scrollLeft = loopStartRef.current;
-      positionRef.current = track.scrollLeft;
-    }
-    setReady(true);
+    if (!track) return;
 
-    const observer = new ResizeObserver(() => {
-      if (products.length < 2) return;
-      const nextStep = slideStep(slides);
-      const nextStart = slideLeft(track, slides[1]);
-      const nextSpan = slideLeft(track, slides[slides.length - 1]) - nextStart;
-      if (nextStep <= 0 || nextStep === stepRef.current) return;
-      const progress = (positionRef.current - loopStartRef.current) / loopSpanRef.current;
-      stepRef.current = nextStep;
-      loopStartRef.current = nextStart;
-      loopSpanRef.current = nextSpan;
-      positionRef.current = nextStart + progress * nextSpan;
-      track.scrollLeft = positionRef.current;
+    const nextIndex = (index + products.length) % products.length;
+    const slide = track.children[nextIndex] as HTMLElement | undefined;
+    if (!slide) return;
+
+    setActiveIndex(nextIndex);
+    track.scrollTo({
+      left: slide.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft,
+      behavior: reducedMotion ? "instant" : "smooth",
     });
-    observer.observe(track);
-    return () => observer.disconnect();
-  }, [productIds, products.length]);
+  }, [products.length, reducedMotion]);
 
   useEffect(() => {
-    if (!ready || products.length < 2 || interacting || reducedMotion) return;
+    if (products.length < 2 || paused || interacting || reducedMotion) return;
 
-    let frame: number;
-    let previousTime: number | null = null;
-    function advance(time: number) {
-      frame = requestAnimationFrame(advance);
-      const elapsed = previousTime === null ? 0 : time - previousTime;
-      previousTime = time;
-      if (document.hidden || pointerActiveRef.current || time < resumeAtRef.current) return;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) goTo(activeIndex + 1);
+    }, ADVANCE_INTERVAL_MS);
 
-      const track = trackRef.current;
-      if (!track || stepRef.current <= 0) return;
-      const start = loopStartRef.current;
-      const span = loopSpanRef.current;
-      positionRef.current = start + (positionRef.current - start + stepRef.current * elapsed / SLIDE_DURATION_MS) % span;
-      track.scrollLeft = positionRef.current;
-      if (time >= resumeAtRef.current) touchCoastingRef.current = false;
-    }
-    const resetClock = () => { previousTime = null; };
-    document.addEventListener("visibilitychange", resetClock);
-    frame = requestAnimationFrame(advance);
+    return () => window.clearInterval(timer);
+  }, [activeIndex, goTo, interacting, paused, products.length, reducedMotion]);
 
-    return () => {
-      cancelAnimationFrame(frame);
-      document.removeEventListener("visibilitychange", resetClock);
-    };
-  }, [interacting, products.length, ready, reducedMotion]);
+  function updateActiveIndex() {
+    const track = trackRef.current;
+    if (!track?.clientWidth) return;
 
-  function finishDrag() {
-    const drag = dragRef.current;
-    if (!drag) return;
-
-    dragRef.current = null;
-    if (!drag.moved) return;
-
-    suppressClickRef.current = true;
-    window.setTimeout(() => {
-      suppressClickRef.current = false;
-    }, 0);
+    const index = Math.round(track.scrollLeft / track.clientWidth);
+    setActiveIndex(Math.max(0, Math.min(products.length - 1, index)));
   }
 
   if (products.length === 0) return null;
@@ -159,96 +79,52 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
     <CarouselSection
       aria-label="Mais pedidos"
       aria-roledescription="carrossel"
-      onFocusCapture={(event) => {
-        if (event.target instanceof HTMLElement && event.target.matches(":focus-visible")) {
-          setInteracting(true);
-        }
-      }}
+      onMouseEnter={() => setInteracting(true)}
+      onMouseLeave={() => setInteracting(false)}
+      onFocusCapture={() => setInteracting(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setInteracting(false);
       }}
-      onPointerDown={() => {
-        pointerActiveRef.current = true;
-        touchCoastingRef.current = false;
-        positionRef.current = trackRef.current?.scrollLeft ?? 0;
-        setInteracting(true);
-      }}
-      onPointerUp={(event) => {
-        pointerActiveRef.current = false;
-        positionRef.current = trackRef.current?.scrollLeft ?? 0;
-        if (event.pointerType === "touch") {
-          touchCoastingRef.current = true;
-          resumeAtRef.current = performance.now() + TOUCH_SETTLE_MS;
-        }
-        setInteracting(false);
-      }}
-      onPointerCancel={(event) => {
-        pointerActiveRef.current = false;
-        positionRef.current = trackRef.current?.scrollLeft ?? 0;
-        if (event.pointerType === "touch") {
-          touchCoastingRef.current = true;
-          resumeAtRef.current = performance.now() + TOUCH_SETTLE_MS;
-        }
-        setInteracting(false);
-      }}
+      onPointerDown={() => setInteracting(true)}
+      onPointerUp={() => setInteracting(false)}
+      onPointerCancel={() => setInteracting(false)}
     >
       <CarouselHeader>
         <CarouselHeading>
           <Flame size={22} aria-hidden="true" />
           <CarouselTitle>Mais pedidos</CarouselTitle>
         </CarouselHeading>
+        {products.length > 1 ? (
+          <CarouselControls>
+            <CarouselControl type="button" aria-label="Item anterior" onClick={() => goTo(activeIndex - 1)}>
+              <ChevronLeft size={18} aria-hidden="true" />
+            </CarouselControl>
+            <CarouselCount aria-label={`Item ${activeIndex + 1} de ${products.length}`}>
+              {activeIndex + 1}/{products.length}
+            </CarouselCount>
+            <CarouselControl type="button" aria-label="Próximo item" onClick={() => goTo(activeIndex + 1)}>
+              <ChevronRight size={18} aria-hidden="true" />
+            </CarouselControl>
+            {!reducedMotion ? (
+              <CarouselControl
+                type="button"
+                aria-label={paused ? "Retomar carrossel" : "Pausar carrossel"}
+                aria-pressed={paused}
+                onClick={() => setPaused((current) => !current)}
+              >
+                {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
+              </CarouselControl>
+            ) : null}
+          </CarouselControls>
+        ) : null}
       </CarouselHeader>
       <CarouselTrack
         ref={trackRef}
-        style={{ visibility: ready ? "visible" : "hidden" }}
-        onScroll={(event) => {
-          if (!pointerActiveRef.current && !touchCoastingRef.current && !interacting && performance.now() >= wheelUntilRef.current) return;
-          const shift = wrapScroll(event.currentTarget);
-          if (dragRef.current?.moved) dragRef.current.startLeft += shift;
-          positionRef.current = event.currentTarget.scrollLeft;
-          if (touchCoastingRef.current) resumeAtRef.current = performance.now() + TOUCH_SETTLE_MS;
-        }}
-        onWheel={() => {
-          wheelUntilRef.current = performance.now() + TOUCH_SETTLE_MS;
-          resumeAtRef.current = wheelUntilRef.current;
-        }}
-        onPointerDown={(event) => {
-          if (event.pointerType !== "mouse" || event.button !== 0) return;
-          dragRef.current = {
-            pointerId: event.pointerId,
-            startX: event.clientX,
-            startLeft: event.currentTarget.scrollLeft,
-            moved: false,
-          };
-        }}
-        onPointerMove={(event) => {
-          const drag = dragRef.current;
-          if (!drag || drag.pointerId !== event.pointerId) return;
-          const distance = drag.startX - event.clientX;
-          if (!drag.moved && Math.abs(distance) < 6) return;
-          if (!drag.moved) {
-            drag.moved = true;
-            event.currentTarget.setPointerCapture(event.pointerId);
-          }
-          event.currentTarget.scrollLeft = drag.startLeft + distance;
-          drag.startLeft += wrapScroll(event.currentTarget);
-          positionRef.current = event.currentTarget.scrollLeft;
-        }}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
-        onClickCapture={(event) => {
-          if (!suppressClickRef.current) return;
-          event.preventDefault();
-          event.stopPropagation();
-          suppressClickRef.current = false;
-        }}
+        onScroll={updateActiveIndex}
       >
-        {carouselProducts.map((product, index) => (
+        {products.map((product) => (
           <CarouselCard
-            key={`${product.id}-${index}`}
-            data-carousel-slide=""
-            aria-hidden={products.length > 1 && (index === 0 || index === carouselProducts.length - 1)}
-            tabIndex={products.length > 1 && (index === 0 || index === carouselProducts.length - 1) ? -1 : 0}
+            key={product.id}
             type="button"
             onClick={() => router.push(`/products/${encodeURIComponent(product.id)}`)}
           >

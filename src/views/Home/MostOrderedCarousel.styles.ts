@@ -3,7 +3,6 @@ import { styled } from "styles";
 export const CarouselSection = styled("section", {
   minWidth: 0,
   marginTop: "1rem",
-  marginBottom: "1rem",
   border: "1px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border))",
   borderRadius: "1rem",
   background: "linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 13%, var(--color-surface)), var(--color-surface) 70%)",
@@ -43,14 +42,51 @@ export const CarouselTitle = styled("h2", {
   color: "var(--color-foreground)",
 });
 
+export const CarouselControls = styled("div", {
+  display: "flex",
+  flexShrink: 0,
+  alignItems: "center",
+  gap: "0.25rem",
+  marginLeft: "auto",
+});
+
+export const CarouselCount = styled("span", {
+  minWidth: "3.25rem",
+  textAlign: "center",
+  fontSize: "0.75rem",
+  fontWeight: 700,
+  color: "var(--color-muted)",
+});
+
+export const CarouselControl = styled("button", {
+  display: "inline-flex",
+  width: "2.25rem",
+  height: "2.25rem",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "9999px",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-surface)",
+  color: "var(--color-foreground)",
+  cursor: "pointer",
+
+  "&:hover": {
+    borderColor: "var(--color-primary)",
+    color: "var(--color-primary)",
+  },
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
+});
+
 export const CarouselTrack = styled("div", {
   display: "flex",
   minWidth: 0,
-  gap: "0.75rem",
   overflowX: "auto",
+  scrollSnapType: "x mandatory",
   scrollbarWidth: "none",
   overscrollBehaviorX: "contain",
-  userSelect: "none",
 
   "&::-webkit-scrollbar": {
     display: "none",
@@ -64,6 +100,7 @@ export const CarouselCard = styled("button", {
   gridTemplateColumns: "6.5rem minmax(0, 1fr)",
   alignItems: "stretch",
   gap: "0.75rem",
+  scrollSnapAlign: "start",
   border: "1px solid var(--color-border)",
   borderRadius: "0.75rem",
   background: "var(--color-surface)",
