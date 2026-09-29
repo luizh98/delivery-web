@@ -19,8 +19,8 @@ import {
   CarouselTrack,
 } from "./MostOrderedCarousel.styles";
 
-const SLIDE_DURATION_MS = 5_000;
-const TOUCH_SETTLE_MS = 180;
+const ADVANCE_INTERVAL_MS = 7_000;
+const SCROLL_SETTLE_MS = 150;
 
 function slidesIn(track: HTMLDivElement) {
   return Array.from(track.querySelectorAll<HTMLButtonElement>(":scope > button[data-carousel-slide]"));
@@ -28,10 +28,6 @@ function slidesIn(track: HTMLDivElement) {
 
 function slideLeft(track: HTMLDivElement, slide: HTMLElement) {
   return slide.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft;
-}
-
-function slideStep(slides: HTMLButtonElement[]) {
-  return slides[1].getBoundingClientRect().left - slides[0].getBoundingClientRect().left;
 }
 
 export function MostOrderedCarousel({ products }: { products: Product[] }) {
@@ -45,13 +41,8 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
   } | null>(null);
   const suppressClickRef = useRef(false);
   const pointerActiveRef = useRef(false);
-  const stepRef = useRef(0);
-  const positionRef = useRef(0);
-  const loopStartRef = useRef(0);
-  const loopSpanRef = useRef(0);
-  const touchCoastingRef = useRef(false);
-  const resumeAtRef = useRef(0);
-  const wheelUntilRef = useRef(0);
+  const slideIndexRef = useRef(0);
+  const settleTimerRef = useRef<number | null>(null);
   const [ready, setReady] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -68,86 +59,87 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
     return () => media.removeEventListener("change", update);
   }, []);
 
-  const wrapScroll = useCallback((track: HTMLDivElement) => {
-    const start = loopStartRef.current;
-    const span = loopSpanRef.current;
-    if (products.length < 2 || span <= 0) return 0;
+  const jumpTo = useCallback((index: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const slide = slidesIn(track)[index];
+    if (!slide) return;
 
-    let next = track.scrollLeft;
-    if (next < start) next += span;
-    if (next >= start + span - 0.5) next = start + Math.max(0, next - start - span);
-    const shift = next - track.scrollLeft;
-    if (shift) track.scrollLeft = next;
-    return shift;
-  }, [products.length]);
+    track.style.scrollSnapType = "none";
+    track.scrollLeft = slideLeft(track, slide);
+    slideIndexRef.current = index;
+    requestAnimationFrame(() => {
+      track.style.scrollSnapType = "";
+    });
+  }, []);
 
   useLayoutEffect(() => {
     const track = trackRef.current;
     if (!track || products.length === 0) return;
-    const slides = slidesIn(track);
-    if (products.length > 1) {
-      stepRef.current = slideStep(slides);
-      loopStartRef.current = slideLeft(track, slides[1]);
-      loopSpanRef.current = slideLeft(track, slides[slides.length - 1]) - loopStartRef.current;
-      track.scrollLeft = loopStartRef.current;
-      positionRef.current = track.scrollLeft;
-    }
+    jumpTo(products.length > 1 ? 1 : 0);
     setReady(true);
+  }, [jumpTo, productIds, products.length]);
 
-    const observer = new ResizeObserver(() => {
-      if (products.length < 2) return;
-      const nextStep = slideStep(slides);
-      const nextStart = slideLeft(track, slides[1]);
-      const nextSpan = slideLeft(track, slides[slides.length - 1]) - nextStart;
-      if (nextStep <= 0 || nextStep === stepRef.current) return;
-      const progress = (positionRef.current - loopStartRef.current) / loopSpanRef.current;
-      stepRef.current = nextStep;
-      loopStartRef.current = nextStart;
-      loopSpanRef.current = nextSpan;
-      positionRef.current = nextStart + progress * nextSpan;
-      track.scrollLeft = positionRef.current;
+  useEffect(() => () => {
+    if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current);
+  }, []);
+
+  const goTo = useCallback((index: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const slide = slidesIn(track)[index];
+    if (!slide) return;
+
+    slideIndexRef.current = index;
+    track.scrollTo({
+      left: slideLeft(track, slide),
+      behavior: reducedMotion ? "instant" : "smooth",
     });
-    observer.observe(track);
-    return () => observer.disconnect();
-  }, [productIds, products.length]);
+  }, [reducedMotion]);
 
   useEffect(() => {
     if (!ready || products.length < 2 || interacting || reducedMotion) return;
 
-    let frame: number;
-    let previousTime: number | null = null;
-    function advance(time: number) {
-      frame = requestAnimationFrame(advance);
-      const elapsed = previousTime === null ? 0 : time - previousTime;
-      previousTime = time;
-      if (document.hidden || pointerActiveRef.current || time < resumeAtRef.current) return;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) goTo(slideIndexRef.current + 1);
+    }, ADVANCE_INTERVAL_MS);
 
-      const track = trackRef.current;
-      if (!track || stepRef.current <= 0) return;
-      const start = loopStartRef.current;
-      const span = loopSpanRef.current;
-      positionRef.current = start + (positionRef.current - start + stepRef.current * elapsed / SLIDE_DURATION_MS) % span;
-      track.scrollLeft = positionRef.current;
-      if (time >= resumeAtRef.current) touchCoastingRef.current = false;
-    }
-    const resetClock = () => { previousTime = null; };
-    document.addEventListener("visibilitychange", resetClock);
-    frame = requestAnimationFrame(advance);
+    return () => window.clearInterval(timer);
+  }, [goTo, interacting, products.length, ready, reducedMotion]);
 
-    return () => {
-      cancelAnimationFrame(frame);
-      document.removeEventListener("visibilitychange", resetClock);
-    };
-  }, [interacting, products.length, ready, reducedMotion]);
+  function closestIndex(track: HTMLDivElement) {
+    const slides = slidesIn(track);
+    if (slides.length < 2) return 0;
+    const firstLeft = slideLeft(track, slides[0]);
+    const step = slideLeft(track, slides[1]) - firstLeft;
+    if (step <= 0) return 0;
+    return Math.max(0, Math.min(slides.length - 1, Math.round((track.scrollLeft - firstLeft) / step)));
+  }
 
-  function finishDrag() {
+  function updateActiveIndex() {
+    const track = trackRef.current;
+    if (!track?.clientWidth) return;
+
+    slideIndexRef.current = closestIndex(track);
+    if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = window.setTimeout(() => {
+      if (pointerActiveRef.current) return;
+      const settledIndex = closestIndex(track);
+      if (settledIndex === 0) jumpTo(products.length);
+      if (settledIndex === products.length + 1) jumpTo(1);
+    }, SCROLL_SETTLE_MS);
+  }
+
+  function finishDrag(track: HTMLDivElement) {
     const drag = dragRef.current;
     if (!drag) return;
 
     dragRef.current = null;
     if (!drag.moved) return;
 
+    track.style.scrollSnapType = "";
     suppressClickRef.current = true;
+    goTo(closestIndex(track));
     window.setTimeout(() => {
       suppressClickRef.current = false;
     }, 0);
@@ -169,27 +161,17 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
       }}
       onPointerDown={() => {
         pointerActiveRef.current = true;
-        touchCoastingRef.current = false;
-        positionRef.current = trackRef.current?.scrollLeft ?? 0;
         setInteracting(true);
       }}
-      onPointerUp={(event) => {
+      onPointerUp={() => {
         pointerActiveRef.current = false;
-        positionRef.current = trackRef.current?.scrollLeft ?? 0;
-        if (event.pointerType === "touch") {
-          touchCoastingRef.current = true;
-          resumeAtRef.current = performance.now() + TOUCH_SETTLE_MS;
-        }
         setInteracting(false);
+        updateActiveIndex();
       }}
-      onPointerCancel={(event) => {
+      onPointerCancel={() => {
         pointerActiveRef.current = false;
-        positionRef.current = trackRef.current?.scrollLeft ?? 0;
-        if (event.pointerType === "touch") {
-          touchCoastingRef.current = true;
-          resumeAtRef.current = performance.now() + TOUCH_SETTLE_MS;
-        }
         setInteracting(false);
+        updateActiveIndex();
       }}
     >
       <CarouselHeader>
@@ -201,17 +183,7 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
       <CarouselTrack
         ref={trackRef}
         style={{ visibility: ready ? "visible" : "hidden" }}
-        onScroll={(event) => {
-          if (!pointerActiveRef.current && !touchCoastingRef.current && !interacting && performance.now() >= wheelUntilRef.current) return;
-          const shift = wrapScroll(event.currentTarget);
-          if (dragRef.current?.moved) dragRef.current.startLeft += shift;
-          positionRef.current = event.currentTarget.scrollLeft;
-          if (touchCoastingRef.current) resumeAtRef.current = performance.now() + TOUCH_SETTLE_MS;
-        }}
-        onWheel={() => {
-          wheelUntilRef.current = performance.now() + TOUCH_SETTLE_MS;
-          resumeAtRef.current = wheelUntilRef.current;
-        }}
+        onScroll={updateActiveIndex}
         onPointerDown={(event) => {
           if (event.pointerType !== "mouse" || event.button !== 0) return;
           dragRef.current = {
@@ -229,13 +201,12 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
           if (!drag.moved) {
             drag.moved = true;
             event.currentTarget.setPointerCapture(event.pointerId);
+            event.currentTarget.style.scrollSnapType = "none";
           }
           event.currentTarget.scrollLeft = drag.startLeft + distance;
-          drag.startLeft += wrapScroll(event.currentTarget);
-          positionRef.current = event.currentTarget.scrollLeft;
         }}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
+        onPointerUp={(event) => finishDrag(event.currentTarget)}
+        onPointerCancel={(event) => finishDrag(event.currentTarget)}
         onClickCapture={(event) => {
           if (!suppressClickRef.current) return;
           event.preventDefault();
