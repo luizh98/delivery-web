@@ -55,7 +55,15 @@ export function createHolidayHours(hours: HolidayHour[] = []): HolidayHour[] {
 }
 
 function invalidTimeValues(openTime?: string, closeTime?: string) {
-  return !openTime || !closeTime || closeTime === openTime;
+  const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+  return !openTime || !closeTime || !timePattern.test(openTime) ||
+    !timePattern.test(closeTime) || closeTime <= openTime;
+}
+
+function validDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 export function validateOperatingHours(
@@ -70,7 +78,7 @@ export function validateOperatingHours(
   businessHours.forEach((hour) => {
     if (!hour.closed && invalidTimeValues(hour.openTime, hour.closeTime)) {
       errors.businessHours[hour.dayOfWeek ?? ""] =
-        "Informe abertura e fechamento com horários diferentes.";
+        "Informe abertura e fechamento válidos, com fechamento após abertura.";
     }
   });
 
@@ -87,6 +95,8 @@ export function validateOperatingHours(
 
     if (!holiday.date) {
       holidayErrors.date = "Informe a data.";
+    } else if (!validDate(holiday.date)) {
+      holidayErrors.date = "Informe uma data válida.";
     } else if (dateCounts[holiday.date] > 1) {
       holidayErrors.date = "Já existe um feriado nesta data.";
     }
@@ -97,7 +107,7 @@ export function validateOperatingHours(
 
     if (!holiday.closed && invalidTimeValues(holiday.openTime, holiday.closeTime)) {
       holidayErrors.time =
-        "Informe abertura e fechamento com horários diferentes.";
+        "Informe abertura e fechamento válidos, com fechamento após abertura.";
     }
 
     if (Object.keys(holidayErrors).length > 0) {

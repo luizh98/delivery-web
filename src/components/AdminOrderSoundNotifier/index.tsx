@@ -13,14 +13,15 @@ import {
 import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
+import { getOrderOverdueMinutes } from "@/utils/orders/overdue";
 import type { OrderResponse, RestaurantConfigResponse } from "@/types/api";
 
 const soundPreferenceKey = "delivery.admin.orderSoundEnabled";
-const overdueOrderStatuses = ["RECEIVED", "CONFIRMED", "PREPARING"];
 const receivedOrderSoundIntervalMs = 3_000;
 
 type AdminOrderSoundContextValue = {
   soundEnabled: boolean;
+  now: number;
   setSoundEnabled: (enabled: boolean) => Promise<void>;
 };
 
@@ -36,34 +37,10 @@ function getAudioErrorName(error: unknown) {
   return error instanceof Error ? error.message : "erro desconhecido";
 }
 
-function isOverdueOrder(
-  order: OrderResponse,
-  now: number,
-  minutes: number,
-) {
-  if (!overdueOrderStatuses.includes(order.status)) {
-    return false;
-  }
-
-  const receivedAt = order.statusHistory.find((history) => history.status === "RECEIVED")
-    ?.changedAt ?? order.createdAt;
-  const timestamp = receivedAt ? new Date(receivedAt).getTime() : Number.NaN;
-  if (!Number.isFinite(timestamp)) {
-    return false;
-  }
-
-  const orderDate = new Date(timestamp);
-  const today = new Date(now);
-  const isFromToday = orderDate.getFullYear() === today.getFullYear()
-    && orderDate.getMonth() === today.getMonth()
-    && orderDate.getDate() === today.getDate();
-
-  return isFromToday && now - timestamp > minutes * 60_000;
-}
-
 export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const [soundEnabled, setSoundEnabledState] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const overdueAudioRef = useRef<HTMLAudioElement | null>(null);
   const soundEnabledRef = useRef(false);
@@ -148,6 +125,11 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
   }, [playNextOverdueSound]);
 
   useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function alertOverdueOrders() {
@@ -164,7 +146,7 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
 
         const minutes = config.overdueOrderAlertMinutes ?? 30;
         orders.forEach((order) => {
-          if (isOverdueOrder(order, Date.now(), minutes)
+          if (getOrderOverdueMinutes(order, now, minutes) !== null
             && !alertedOverdueOrderIdsRef.current.has(order.id)
             && queueOverdueAlert()) {
             alertedOverdueOrderIdsRef.current.add(order.id);
@@ -176,12 +158,10 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
     }
 
     void alertOverdueOrders();
-    const interval = window.setInterval(() => void alertOverdueOrders(), 60_000);
     return () => {
       active = false;
-      window.clearInterval(interval);
     };
-  }, [queueOverdueAlert]);
+  }, [now, queueOverdueAlert]);
 
   const setSoundEnabled = useCallback(async (enabled: boolean) => {
     const audio = audioRef.current;
@@ -316,8 +296,9 @@ export function AdminOrderSoundProvider({ children }: { children: ReactNode }) {
 
   const contextValue = useMemo(() => ({
     soundEnabled,
+    now,
     setSoundEnabled,
-  }), [setSoundEnabled, soundEnabled]);
+  }), [now, setSoundEnabled, soundEnabled]);
 
   return (
     <AdminOrderSoundContext.Provider value={contextValue}>
