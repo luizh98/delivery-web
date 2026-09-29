@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/Button";
+import { useAdminOrderSound } from "@/components/AdminOrderSoundNotifier";
 import { useAdminOrderEvents } from "@/components/AdminOrderEvents";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
@@ -37,6 +38,7 @@ import { clientApi } from "@/services/api/client";
 import { isAutomaticConnectorEnabled } from "@/services/printing/connector";
 import { getSelectedPrinter, printTextWithQz } from "@/services/printing/qz";
 import { money, statusLabel } from "@/utils/format";
+import { getOrderOverdueMinutes } from "@/utils/orders/overdue";
 import type {
   DeliveryType,
   OrderResponse,
@@ -290,7 +292,7 @@ export function OrdersManager({
   );
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [draftDateRange, setDraftDateRange] = useState<DateRange>();
-  const [now, setNow] = useState(() => Date.now());
+  const { now } = useAdminOrderSound();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [detailsOrderId, setDetailsOrderId] = useState("");
   const [cancelReason, setCancelReason] = useState("");
@@ -340,13 +342,8 @@ export function OrdersManager({
     ? orders.find((order) => order.id === detailsOrderId) ?? null
     : null;
   const detailsWhatsAppUrl = detailsOrder ? whatsAppUrl(detailsOrder.customer.phone) : null;
-  const detailsOverdueMinutes = detailsOrder
-    ? getOverdueMinutes(
-      detailsOrder,
-      now,
-      overdueOrderAlertEnabled,
-      overdueOrderAlertMinutes,
-    )
+  const detailsOverdueMinutes = detailsOrder && overdueOrderAlertEnabled
+    ? getOrderOverdueMinutes(detailsOrder, now, overdueOrderAlertMinutes)
     : null;
   const detailsNextStatus = detailsOrder ? getNextOrderStatus(detailsOrder) : null;
   const detailsAddress = detailsOrder
@@ -355,12 +352,6 @@ export function OrdersManager({
   const mapsUrl = detailsOrder?.deliveryType === "DELIVERY" && detailsAddress
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detailsAddress)}`
     : null;
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
-
-    return () => window.clearInterval(interval);
-  }, []);
 
   useEffect(() => subscribeToOrderEvents((order) => {
     const isNewOrder = !knownOrderIdsRef.current.has(order.id);
@@ -690,12 +681,9 @@ export function OrdersManager({
         {filteredOrders.map((order) => {
           const customerOrderNumber = customerOrderNumbers.get(order.id) ?? 1;
           const whatsappUrl = whatsAppUrl(order.customer.phone);
-          const overdueMinutes = getOverdueMinutes(
-            order,
-            now,
-            overdueOrderAlertEnabled,
-            overdueOrderAlertMinutes,
-          );
+          const overdueMinutes = overdueOrderAlertEnabled
+            ? getOrderOverdueMinutes(order, now, overdueOrderAlertMinutes)
+            : null;
           const isOverdue = overdueMinutes !== null;
 
           return (
@@ -1079,27 +1067,6 @@ function whatsAppUrl(phone: string) {
   return phoneWithCountryCode ? `https://wa.me/${phoneWithCountryCode}` : null;
 }
 
-function getOverdueMinutes(
-  order: OrderResponse,
-  now: number,
-  enabled = false,
-  minutes = 30,
-) : number | null {
-  if (!enabled || !["RECEIVED", "CONFIRMED", "PREPARING"].includes(order.status)) {
-    return null;
-  }
-
-  const receivedAt = getReceivedAt(order);
-  const timestamp = receivedAt ? new Date(receivedAt).getTime() : Number.NaN;
-  if (!Number.isFinite(timestamp)) {
-    return null;
-  }
-
-  const elapsedMinutes = Math.floor((now - timestamp) / 60_000);
-  const overdueMinutes = elapsedMinutes - minutes;
-  return overdueMinutes > 0 ? overdueMinutes : null;
-}
-
 function localDateKey(value: string) {
   const date = new Date(value);
 
@@ -1162,7 +1129,9 @@ function getNextOrderStatus(order: OrderResponse): OrderStatus | null {
 
 function formatReceivedAgo(order: OrderResponse, now: number, overdueMinutes: number | null = null) {
   if (overdueMinutes !== null) {
-    return `⚠ Atrasado há ${formatOverdueDuration(overdueMinutes)}`;
+    return overdueMinutes === 0
+      ? "⚠ Atrasado agora"
+      : `⚠ Atrasado há ${formatOverdueDuration(overdueMinutes)}`;
   }
 
   const receivedAt = getReceivedAt(order);
