@@ -1,15 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Flame, Pause, Play } from "lucide-react";
+import { Flame } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/api";
 import { money } from "@/utils/format";
 import {
   CarouselCard,
-  CarouselControl,
-  CarouselControls,
-  CarouselCount,
   CarouselDescription,
   CarouselHeader,
   CarouselHeading,
@@ -27,8 +24,14 @@ const ADVANCE_INTERVAL_MS = 7_000;
 export function MostOrderedCarousel({ products }: { products: Product[] }) {
   const router = useRouter();
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startLeft: number;
+    moved: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -56,21 +59,45 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
   }, [products.length, reducedMotion]);
 
   useEffect(() => {
-    if (products.length < 2 || paused || interacting || reducedMotion) return;
+    if (products.length < 2 || interacting || reducedMotion) return;
 
     const timer = window.setInterval(() => {
       if (!document.hidden) goTo(activeIndex + 1);
     }, ADVANCE_INTERVAL_MS);
 
     return () => window.clearInterval(timer);
-  }, [activeIndex, goTo, interacting, paused, products.length, reducedMotion]);
+  }, [activeIndex, goTo, interacting, products.length, reducedMotion]);
+
+  function closestIndex(track: HTMLDivElement) {
+    const first = track.children[0] as HTMLElement | undefined;
+    const second = track.children[1] as HTMLElement | undefined;
+    if (!first || !second) return 0;
+
+    const step = second.offsetLeft - first.offsetLeft;
+    if (step <= 0) return 0;
+    return Math.max(0, Math.min(products.length - 1, Math.round(track.scrollLeft / step)));
+  }
 
   function updateActiveIndex() {
     const track = trackRef.current;
     if (!track?.clientWidth) return;
 
-    const index = Math.round(track.scrollLeft / track.clientWidth);
-    setActiveIndex(Math.max(0, Math.min(products.length - 1, index)));
+    setActiveIndex(closestIndex(track));
+  }
+
+  function finishDrag(track: HTMLDivElement) {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    dragRef.current = null;
+    if (!drag.moved) return;
+
+    track.style.scrollSnapType = "";
+    suppressClickRef.current = true;
+    goTo(closestIndex(track));
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
   }
 
   if (products.length === 0) return null;
@@ -94,33 +121,39 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
           <Flame size={22} aria-hidden="true" />
           <CarouselTitle>Mais pedidos</CarouselTitle>
         </CarouselHeading>
-        {products.length > 1 ? (
-          <CarouselControls>
-            <CarouselControl type="button" aria-label="Item anterior" onClick={() => goTo(activeIndex - 1)}>
-              <ChevronLeft size={18} aria-hidden="true" />
-            </CarouselControl>
-            <CarouselCount aria-label={`Item ${activeIndex + 1} de ${products.length}`}>
-              {activeIndex + 1}/{products.length}
-            </CarouselCount>
-            <CarouselControl type="button" aria-label="Próximo item" onClick={() => goTo(activeIndex + 1)}>
-              <ChevronRight size={18} aria-hidden="true" />
-            </CarouselControl>
-            {!reducedMotion ? (
-              <CarouselControl
-                type="button"
-                aria-label={paused ? "Retomar carrossel" : "Pausar carrossel"}
-                aria-pressed={paused}
-                onClick={() => setPaused((current) => !current)}
-              >
-                {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
-              </CarouselControl>
-            ) : null}
-          </CarouselControls>
-        ) : null}
       </CarouselHeader>
       <CarouselTrack
         ref={trackRef}
         onScroll={updateActiveIndex}
+        onPointerDown={(event) => {
+          if (event.pointerType !== "mouse" || event.button !== 0) return;
+          dragRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startLeft: event.currentTarget.scrollLeft,
+            moved: false,
+          };
+        }}
+        onPointerMove={(event) => {
+          const drag = dragRef.current;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          const distance = drag.startX - event.clientX;
+          if (!drag.moved && Math.abs(distance) < 6) return;
+          if (!drag.moved) {
+            drag.moved = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            event.currentTarget.style.scrollSnapType = "none";
+          }
+          event.currentTarget.scrollLeft = drag.startLeft + distance;
+        }}
+        onPointerUp={(event) => finishDrag(event.currentTarget)}
+        onPointerCancel={(event) => finishDrag(event.currentTarget)}
+        onClickCapture={(event) => {
+          if (!suppressClickRef.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+          suppressClickRef.current = false;
+        }}
       >
         {products.map((product) => (
           <CarouselCard
