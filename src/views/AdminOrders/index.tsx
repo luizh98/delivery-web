@@ -22,6 +22,7 @@ export async function AdminOrdersView() {
     <OrdersManager
       initialOrders={orders}
       title="Pedidos"
+      printDestination="RECEIPT"
       automaticOrderConfirmation={config?.automaticOrderConfirmation}
       overdueOrderAlertEnabled={config?.overdueOrderAlertEnabled}
       overdueOrderAlertMinutes={config?.overdueOrderAlertMinutes}

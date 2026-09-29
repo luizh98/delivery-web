@@ -1,30 +1,41 @@
 "use client";
 
-import { Download, ExternalLink, Printer, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Clipboard, Download, ExternalLink, Printer, RefreshCw, Unlink } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
-import { Field, Select } from "@/components/Field";
+import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import {
-  getSelectedPrinter,
-  getQzErrorMessage,
-  isBrowserPrintSelected,
-  listLocalPrinters,
-  printTextWithQz,
-  setSelectedPrinter,
-} from "@/services/printing/qz";
+  createPrintPairingCode,
+  createPrintTest,
+  getPrintJobs,
+  getPrintOverview,
+  type PrintDestination,
+  type PrintDestinationConfig,
+  type PrintJob,
+  type PrintOverview,
+  reprintJob,
+  revokePrintDevice,
+  savePrintDestination,
+} from "@/services/printing/connector";
 import {
   Actions,
+  Code,
+  DestinationCard,
+  DestinationGrid,
   DownloadActions,
   DownloadLink,
-  ErrorText,
+  DeviceList,
+  DeviceRow,
   Help,
+  InlineField,
+  Muted,
   Panel,
   PanelDescription,
   PanelHeader,
   PanelTitle,
-  PathCode,
   Root,
+  RowDetails,
   Status,
   StatusDot,
   Step,
@@ -37,44 +48,120 @@ import {
   Title,
 } from "./styles";
 
-export function AdminPrinterView() {
+type ConfigurableDestination = Exclude<PrintDestination, "EXPEDITION">;
+
+const destinations: Array<{ id: ConfigurableDestination; label: string; description: string }> = [
+  { id: "RECEIPT", label: "Recibo", description: "Pedido completo para o balcão." },
+  { id: "KITCHEN", label: "Cozinha", description: "Pedido completo para a cozinha." },
+];
+
+type DestinationDraft = Omit<PrintDestinationConfig, "destination">;
+
+const emptyDraft: DestinationDraft = { deviceId: "", printerId: "", automatic: true, copies: 1, model: "" };
+
+function printerChoice(deviceID: string, printerID: string) {
+  return `${deviceID}|${printerID}`;
+}
+
+function formatDate(value?: string) {
+  return value ? new Date(value).toLocaleString("pt-BR") : "Ainda não conectado";
+}
+
+function messageFrom(error: unknown) {
+  return error instanceof Error ? error.message : "Não foi possível concluir esta operação.";
+}
+
+function pairingLink(code: string, serverUrl: string) {
+  const query = new URLSearchParams({
+    server: serverUrl,
+    code,
+    panel: typeof window === "undefined" ? "" : window.location.origin,
+  });
+  return `deliveryprint://pair?${query.toString()}`;
+}
+
+export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: string | null }) {
   const { showToast } = useToast();
-  const [printers, setPrinters] = useState<string[]>([]);
-  const [selected, setSelected] = useState("");
+  const [overview, setOverview] = useState<PrintOverview | null>(null);
+  const [jobs, setJobs] = useState<PrintJob[]>([]);
+  const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft });
+  const [pairingCode, setPairingCode] = useState<{ code: string; expiresAt: string } | null>(null);
+  const [pairingAttempt, setPairingAttempt] = useState<{ startedAt: number; activeDeviceIds: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      const result = await listLocalPrinters();
-      const saved = getSelectedPrinter();
-      const nextSelected = isBrowserPrintSelected()
-        ? ""
-        : saved && result.printers.includes(saved)
-        ? saved
-        : result.defaultPrinter && result.printers.includes(result.defaultPrinter)
-          ? result.defaultPrinter
-          : result.printers[0] ?? "";
-      setPrinters(result.printers);
-      setSelected(nextSelected);
-      if (nextSelected && nextSelected !== saved) {
-        setSelectedPrinter(nextSelected);
-      }
-    } catch (cause) {
-      setError(getQzErrorMessage(cause));
+      const [nextOverview, nextJobs] = await Promise.all([getPrintOverview(), getPrintJobs()]);
+      setOverview(nextOverview);
+      setJobs(nextJobs.jobs);
+      setDrafts((current) => {
+        const next = { ...current };
+        for (const destination of destinations) {
+          const saved = nextOverview.destinations.find((value) => value.destination === destination.id);
+          next[destination.id] = saved
+            ? { deviceId: saved.deviceId, printerId: saved.printerId, automatic: saved.automatic, copies: saved.copies, model: saved.model }
+            : current[destination.id] ?? emptyDraft;
+        }
+        return next;
+      });
+    } catch (error) {
+      showToast(messageFrom(error), "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void refresh(), 0);
-    return () => window.clearTimeout(timer);
-  }, [refresh]);
+    if (!pairingAttempt || !pairingCode) return;
+    const remaining = Math.min(120_000, new Date(pairingCode.expiresAt).getTime() - Date.now());
+    if (remaining <= 0) return;
 
-  function changePrinter(printer: string) {
+    let active = true;
+    let inFlight = false;
+    const update = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const next = await getPrintOverview();
+        if (!active) return;
+        setOverview(next);
+        const pairedDevices = next.devices.filter((device) =>
+          !device.revokedAt && !pairingAttempt.activeDeviceIds.includes(device.id),
+        );
+        const inventoryReady = pairedDevices.some((device) => next.printers.some((printer) =>
+          printer.deviceId === device.id
+          && printer.available
+          && printer.lastSeenAt
+          && new Date(printer.lastSeenAt).getTime() >= pairingAttempt.startedAt - 60_000,
+        ));
+        if (inventoryReady) {
+          setPairingAttempt(null);
+          void refresh();
+        }
+      } catch {
+        // A proxima consulta tenta novamente enquanto o conector inicia.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const onFocus = () => { void update(); };
+    void update();
+    const interval = window.setInterval(() => { void update(); }, 3000);
+    const timeout = window.setTimeout(() => setPairingAttempt(null), remaining);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [pairingAttempt, pairingCode, refresh]);
+
+  /* Legacy QZ local-browser helpers removed with the connector flow.
     setSelected(printer);
     setSelectedPrinter(printer);
     showToast(printer ? "Impressora padrão salva neste computador" : "Diálogo do navegador salvo neste computador");
@@ -92,6 +179,98 @@ export function AdminPrinterView() {
     }
   }
 
+  */
+
+  const printerOptions = useMemo(
+    () => overview?.printers.map((printer) => ({ ...printer, device: overview.devices.find((device) => device.id === printer.deviceId) })) ?? [],
+    [overview],
+  );
+
+  function changeDraft(destination: ConfigurableDestination, patch: Partial<DestinationDraft>) {
+    setDrafts((current) => ({ ...current, [destination]: { ...current[destination], ...patch } }));
+  }
+
+  async function createPairingCode() {
+    setBusy("pair");
+    setPairingAttempt(null);
+    try {
+      setPairingCode(await createPrintPairingCode());
+      showToast("Código de vinculação criado. Ele expira em 10 minutos.");
+    } catch (error) {
+      showToast(messageFrom(error), "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function copyPairingCode() {
+    if (!pairingCode) return;
+    try {
+      await navigator.clipboard.writeText(pairingCode.code);
+      showToast("Código copiado.");
+    } catch {
+      showToast("Copie o código exibido manualmente.", "error");
+    }
+  }
+
+  async function saveDestination(destination: ConfigurableDestination) {
+    const draft = drafts[destination];
+    if (!draft.deviceId || !draft.printerId) {
+      showToast("Selecione computador e impressora.", "error");
+      return;
+    }
+    setBusy(`save:${destination}`);
+    try {
+      await savePrintDestination(destination, draft);
+      showToast("Destino de impressão salvo.");
+      await refresh();
+    } catch (error) {
+      showToast(messageFrom(error), "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function testDestination(destination: ConfigurableDestination) {
+    setBusy(`test:${destination}`);
+    try {
+      await createPrintTest(destination);
+      showToast("Teste colocado na fila do conector.");
+      await refresh();
+    } catch (error) {
+      showToast(messageFrom(error), "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function revokeDevice(deviceID: string) {
+    setBusy(`revoke:${deviceID}`);
+    try {
+      await revokePrintDevice(deviceID);
+      showToast("Computador desvinculado.");
+      await refresh();
+    } catch (error) {
+      showToast(messageFrom(error), "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function reprint(jobID: string) {
+    setBusy(`reprint:${jobID}`);
+    try {
+      await reprintJob(jobID);
+      showToast("Reimpressão adicionada à fila.");
+      await refresh();
+    } catch (error) {
+      showToast(messageFrom(error), "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /* Legacy QZ screen retained below only while this edit replaces its JSX.
   return (
     <Root>
       <div>
@@ -220,6 +399,69 @@ export function AdminPrinterView() {
           Use diálogo do navegador para testar ou salvar PDF. QZ Tray só é necessário para enviar
           diretamente a uma impressora. A escolha fica salva somente neste navegador.
         </Help>
+      </Panel>
+    </Root>
+  ); */
+
+  return (
+    <Root>
+      <div>
+        <Title>Impressão</Title>
+        <Subtitle>Gerencie conectores e impressoras pelo painel.</Subtitle>
+      </div>
+
+      <Panel>
+        <PanelHeader>
+          <PanelTitle>Instalar e vincular computador</PanelTitle>
+          <PanelDescription>O conector fica em segundo plano e descobre as impressoras instaladas.</PanelDescription>
+        </PanelHeader>
+        <DownloadActions>
+          <DownloadLink primary href="https://storage.googleapis.com/delivery-products/installers/Flyfoods-Impressao-Setup-0.1.16.exe">
+            <Download size={16} /> Instalador Windows
+          </DownloadLink>
+        </DownloadActions>
+        <StepList>
+          <Step><StepNumber>1</StepNumber><StepContent><StepTitle>Instale o driver da impressora</StepTitle><StepDescription>Confirme que a impressora aparece no sistema operacional.</StepDescription></StepContent></Step>
+          <Step><StepNumber>2</StepNumber><StepContent><StepTitle>Instale o conector do delivery</StepTitle><StepDescription>Use o instalador e permita iniciar junto com o computador.</StepDescription></StepContent></Step>
+          <Step><StepNumber>3</StepNumber><StepContent><StepTitle>Vincule usando o código</StepTitle><StepDescription>Gere um código abaixo e informe-o no aplicativo.</StepDescription></StepContent></Step>
+          <Step><StepNumber>4</StepNumber><StepContent><StepTitle>Escolha os destinos e faça um teste</StepTitle><StepDescription>As impressoras aparecem automaticamente após o conector sincronizar.</StepDescription></StepContent></Step>
+        </StepList>
+        <Actions><Button type="button" onClick={() => void createPairingCode()} disabled={busy === "pair" || !connectorServerUrl}><Clipboard size={16} />Gerar código de vinculação</Button></Actions>
+        {!connectorServerUrl ? <Help>Vinculação indisponível. Contate o suporte.</Help> : null}
+        {pairingCode && connectorServerUrl ? <div><Code>{pairingCode.code}</Code><Muted>Expira em {formatDate(pairingCode.expiresAt)}.</Muted><Button type="button" variant="outline" onClick={() => void copyPairingCode()}>Copiar código</Button><DownloadLink primary href={pairingLink(pairingCode.code, connectorServerUrl)} onClick={() => setPairingAttempt({ startedAt: Date.now(), activeDeviceIds: overview?.devices.filter((device) => !device.revokedAt).map((device) => device.id) ?? [] })}><ExternalLink size={16} />Abrir conector e vincular</DownloadLink>{pairingAttempt ? <Muted role="status">Atualizando impressoras após vinculação...</Muted> : null}</div> : null}
+      </Panel>
+
+      <Panel>
+        <PanelHeader><PanelTitle>Computadores vinculados</PanelTitle><PanelDescription>Impressoras continuam visíveis mesmo se o computador estiver offline.</PanelDescription></PanelHeader>
+        <Status><StatusDot connected={Boolean(overview?.devices.some((device) => !device.revokedAt))} />{loading ? "Carregando conectores..." : `${overview?.devices.filter((device) => !device.revokedAt).length ?? 0} conector(es) ativo(s)`}</Status>
+        <DeviceList>
+          {overview?.devices.map((device) => <DeviceRow key={device.id}><RowDetails><strong>{device.name}</strong><Muted>Versão {device.version || "não informada"} · última conexão: {formatDate(device.lastSeenAt)}</Muted></RowDetails>{device.revokedAt ? <Muted>Desvinculado</Muted> : <Button type="button" variant="outline" onClick={() => void revokeDevice(device.id)} disabled={busy === `revoke:${device.id}`}><Unlink size={16} />Desvincular</Button>}</DeviceRow>)}
+          {!loading && !overview?.devices.length ? <Muted>Nenhum computador vinculado ainda.</Muted> : null}
+        </DeviceList>
+      </Panel>
+
+      <Panel>
+        <PanelHeader><PanelTitle>Destinos de impressão</PanelTitle><PanelDescription>Cada destino aponta para um computador e uma impressora específicos.</PanelDescription></PanelHeader>
+        <DestinationGrid>
+          {destinations.map((destination) => {
+            const draft = drafts[destination.id];
+            return <DestinationCard key={destination.id}>
+              <div><strong>{destination.label}</strong><Muted>{destination.description}</Muted></div>
+              <Field label="Computador e impressora"><Select value={printerChoice(draft.deviceId, draft.printerId)} disabled={loading} onChange={(event) => { const [deviceId, printerId] = event.target.value.split("|"); changeDraft(destination.id, { deviceId: deviceId ?? "", printerId: printerId ?? "" }); }}><option value="">Selecione uma impressora</option>{printerOptions.map((printer) => <option key={printer.id} value={printerChoice(printer.deviceId, printer.id)}>{printer.device?.name ?? "Computador removido"} — {printer.name}{printer.available ? "" : " (indisponível)"}</option>)}</Select></Field>
+              <Field label="Vias"><Input type="number" min="1" max="5" value={draft.copies} onChange={(event) => changeDraft(destination.id, { copies: Math.min(5, Math.max(1, Number(event.target.value) || 1)) })} /></Field>
+              <InlineField><input type="checkbox" checked={draft.automatic} onChange={(event) => changeDraft(destination.id, { automatic: event.target.checked })} />Imprimir automaticamente</InlineField>
+              <Actions><Button type="button" variant="outline" onClick={() => void saveDestination(destination.id)} disabled={busy === `save:${destination.id}`}>Salvar</Button><Button type="button" onClick={() => void testDestination(destination.id)} disabled={busy === `test:${destination.id}` || !overview?.destinations.some((value) => value.destination === destination.id)}><Printer size={16} />Teste</Button></Actions>
+            </DestinationCard>;
+          })}
+        </DestinationGrid>
+      </Panel>
+
+      <Panel>
+        <PanelHeader><PanelTitle>Trabalhos recentes</PanelTitle><PanelDescription>Resultado aceito pelo sistema operacional não confirma impressão física.</PanelDescription></PanelHeader>
+        <Actions><Button type="button" variant="outline" onClick={() => void refresh()} disabled={loading}><RefreshCw size={16} />Atualizar</Button></Actions>
+        {jobs.some((job) => job.lastErrorCode) ? <Muted role="status">Falha mais recente: {jobs.find((job) => job.lastErrorCode)?.lastErrorCode}</Muted> : null}
+        <DeviceList>{jobs.map((job) => <DeviceRow key={job.id}><RowDetails><strong>{job.destination} · {job.status}</strong><Muted>{job.orderId ? `Pedido ${job.orderId}` : "Teste de impressão"} · {formatDate(job.createdAt)}</Muted></RowDetails><Button type="button" variant="outline" onClick={() => void reprint(job.id)} disabled={busy === `reprint:${job.id}`}><Printer size={16} />Reimprimir</Button></DeviceRow>)}{!loading && !jobs.length ? <Muted>Nenhum trabalho de impressão.</Muted> : null}</DeviceList>
+        <Help>Se uma impressora estiver offline, seus trabalhos permanecem pendentes no computador configurado; outro computador não os consome.</Help>
       </Panel>
     </Root>
   );

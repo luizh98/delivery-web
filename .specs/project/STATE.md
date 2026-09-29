@@ -2,6 +2,7 @@
 
 ## Active Work
 
+- Download do instalador Windows: arquivo 0.1.13 publicado no GCS; botão pronto para `staging`. Produção depende da promoção do recurso do conector; ver `.specs/features/windows-installer-download/spec.md`.
 - Lazy dashboard reports: cross-repository feature. Frontend: `C:\projetos-pessoais\delivery-app\delivery-web`; backend: `C:\projetos-pessoais\delivery-app\delivery-api`. Canonical plan: `.specs/features/lazy-dashboard-reports/`.
 - Status: specification, design and tasks drafted; implementation not started.
 
