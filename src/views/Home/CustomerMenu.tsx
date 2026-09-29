@@ -31,6 +31,7 @@ import { activeProductFlags } from "@/utils/productFlags";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import type { CustomerMenuProps } from "./types";
 import type { BusinessHour, Product } from "@/types/api";
+import { MostOrderedCarousel } from "./MostOrderedCarousel";
 import {
   CategoryBar,
   CategoryButton,
@@ -211,6 +212,13 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           (productsByCategory.get(category.id)?.length ?? 0) > 0,
       ),
     [menu.categories, productsByCategory],
+  );
+  const carouselProducts = useMemo(
+    () => menu.products.filter(
+      (product) => product.active && product.showInCarousel &&
+        productsByCategory.has(product.categoryId),
+    ),
+    [menu.products, productsByCategory],
   );
 
   useEffect(() => {
@@ -448,6 +456,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       </Hero>
 
       <PageShell bottomPad flushTop>
+      <MostOrderedCarousel products={carouselProducts} />
       {visibleCategories.length > 0 ? (
         <CategoryBar ref={categoryBarRef}>
           <CategoryList>
