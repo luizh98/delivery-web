@@ -2,54 +2,112 @@ import { styled } from "styles";
 
 export const Root = styled("section", {
   display: "grid",
+  minWidth: 0,
   gap: "0.75rem",
   borderTop: "1px solid var(--color-border)",
   paddingTop: "1rem",
   marginBottom: "1rem",
 });
 
-export const Title = styled("h2", {
-  fontSize: "1rem",
-  fontWeight: 700,
+export const Header = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
 });
 
-export const List = styled("div", {
-  display: "grid",
-  gap: "0.5rem",
+export const Title = styled("h2", {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.4rem",
+  minWidth: 0,
+  fontSize: "1rem",
+  fontWeight: 700,
 
-  "@sm": {
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  svg: { flexShrink: 0, color: "var(--color-primary)" },
+});
+
+export const CarouselControls = styled("div", {
+  display: "flex",
+  flexShrink: 0,
+  gap: "0.375rem",
+});
+
+export const CarouselControl = styled("button", {
+  display: "grid",
+  width: "2.75rem",
+  height: "2.75rem",
+  placeItems: "center",
+  border: "1px solid var(--color-border)",
+  borderRadius: "50%",
+  background: "var(--color-background)",
+  color: "var(--color-foreground)",
+  cursor: "pointer",
+
+  "&:hover:not(:disabled)": {
+    borderColor: "var(--color-primary)",
+    color: "var(--color-primary)",
+  },
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
+  "&:disabled": { opacity: 0.4, cursor: "default" },
+});
+
+export const Track = styled("div", {
+  display: "flex",
+  minWidth: 0,
+  gap: "0.75rem",
+  overflowX: "auto",
+  overscrollBehaviorX: "contain",
+  scrollSnapType: "x mandatory",
+  scrollbarWidth: "thin",
+  scrollbarColor: "var(--color-border) transparent",
+  paddingBottom: "0.5rem",
+
+  "&::-webkit-scrollbar": { height: "0.375rem" },
+  "&::-webkit-scrollbar-thumb": {
+    borderRadius: "1rem",
+    background: "var(--color-border)",
   },
 });
 
 export const Card = styled("article", {
   display: "grid",
-  gridTemplateColumns: "3.5rem minmax(0, 1fr)",
+  flex: "0 0 min(78%, 18rem)",
+  minWidth: 0,
+  gridTemplateRows: "8rem 1fr",
   gap: "0.75rem",
+  scrollSnapAlign: "start",
   border: "1px solid var(--color-border)",
-  borderRadius: "0.375rem",
+  borderRadius: "0.75rem",
   background: "var(--color-background)",
   padding: "0.75rem",
 });
 
 export const Image = styled("div", {
-  width: "3.5rem",
-  height: "3.5rem",
-  borderRadius: "0.375rem",
+  width: "100%",
+  height: "8rem",
+  borderRadius: "0.5rem",
   backgroundColor: "var(--color-surface-muted)",
   backgroundPosition: "center",
   backgroundSize: "cover",
 });
 
 export const Content = styled("div", {
-  display: "grid",
+  display: "flex",
+  flexDirection: "column",
   minWidth: 0,
   gap: "0.35rem",
+
+  button: { width: "100%", marginTop: "auto" },
 });
 
 export const Name = styled("p", {
   fontSize: "0.875rem",
   fontWeight: 700,
+  overflowWrap: "anywhere",
 });
 
 export const PriceRow = styled("div", {

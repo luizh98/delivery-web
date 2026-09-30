@@ -1,8 +1,8 @@
 "use client";
 
-import { Plus, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import {
   PENDING_UPSELL_STORAGE_KEY,
@@ -18,9 +18,11 @@ import type {
 import { money } from "@/utils/format";
 import {
   Card,
+  CarouselControl,
+  CarouselControls,
   Content,
+  Header,
   Image,
-  List,
   Name,
   Notice,
   OfferPrice,
@@ -29,6 +31,7 @@ import {
   Root,
   Savings,
   Title,
+  Track,
 } from "./UpsellBlock.styles";
 
 export function UpsellBlock() {
@@ -37,6 +40,10 @@ export function UpsellBlock() {
   const [response, setResponse] = useState<CartUpsellResponse | null>(null);
   const [notice, setNotice] = useState("");
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(false);
+  const suggestionCount = response?.suggestions.length ?? 0;
   const cartItems = useMemo(
     () =>
       items.map((item) => ({
@@ -106,6 +113,34 @@ export function UpsellBlock() {
     };
   }, [applyPromotionAdjustment, cartItems, items]);
 
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const updateControls = () => {
+      setCanScrollBack(track.scrollLeft > 1);
+      setCanScrollForward(track.scrollLeft + track.clientWidth < track.scrollWidth - 1);
+    };
+    updateControls();
+    const observer = new ResizeObserver(updateControls);
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [suggestionCount]);
+
+  function scrollSuggestions(direction: -1 | 1) {
+    const track = trackRef.current;
+    if (!track) return;
+    const cards = track.querySelectorAll<HTMLElement>(":scope > article");
+    if (!cards.length) return;
+    const step = cards.length > 1
+      ? cards[1].getBoundingClientRect().left - cards[0].getBoundingClientRect().left
+      : cards[0].getBoundingClientRect().width;
+    track.scrollBy({
+      left: direction * step,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }
+
   async function addSuggestion(suggestion: UpsellSuggestion) {
     if (!response?.campaignId) return;
     if (suggestion.requiresOptions) {
@@ -171,12 +206,49 @@ export function UpsellBlock() {
       {notice ? <Notice role="status">{notice}</Notice> : null}
       {response?.suggestions.length ? (
         <>
-          <Title>
-            <Sparkles size={16} /> {response.title}
-          </Title>
-          <List>
-            {response.suggestions.map((suggestion) => (
-              <Card key={suggestion.productId}>
+          <Header>
+            <Title>
+              <Sparkles size={16} aria-hidden="true" /> {response.title}
+            </Title>
+            {response.suggestions.length > 1 ? (
+              <CarouselControls>
+                <CarouselControl
+                  type="button"
+                  aria-label="Ver ofertas anteriores"
+                  disabled={!canScrollBack}
+                  onClick={() => scrollSuggestions(-1)}
+                >
+                  <ChevronLeft size={18} aria-hidden="true" />
+                </CarouselControl>
+                <CarouselControl
+                  type="button"
+                  aria-label="Ver próximas ofertas"
+                  disabled={!canScrollForward}
+                  onClick={() => scrollSuggestions(1)}
+                >
+                  <ChevronRight size={18} aria-hidden="true" />
+                </CarouselControl>
+              </CarouselControls>
+            ) : null}
+          </Header>
+          <Track
+            ref={trackRef}
+            role="region"
+            aria-roledescription="carrossel"
+            aria-label={response.title}
+            onScroll={(event) => {
+              const track = event.currentTarget;
+              setCanScrollBack(track.scrollLeft > 1);
+              setCanScrollForward(track.scrollLeft + track.clientWidth < track.scrollWidth - 1);
+            }}
+          >
+            {response.suggestions.map((suggestion, index) => (
+              <Card
+                key={suggestion.productId}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${index + 1} de ${response.suggestions.length}: ${suggestion.name}`}
+              >
                 <Image
                   role="img"
                   aria-label={`Foto de ${suggestion.name}`}
@@ -210,7 +282,7 @@ export function UpsellBlock() {
                 </Content>
               </Card>
             ))}
-          </List>
+          </Track>
         </>
       ) : null}
     </Root>
