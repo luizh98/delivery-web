@@ -18,6 +18,8 @@ COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
 COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs ./
 COPY src ./src
+COPY scripts ./scripts
+COPY public ./public
 
 RUN npm run build
 

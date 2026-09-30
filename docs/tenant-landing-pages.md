@@ -2,6 +2,8 @@
 
 `/` continua o cardápio. `/links` aparece apenas quando `public/landing-pages/<slug>/config.json` é válido. Slug deve coincidir com o subdomínio do restaurante. A LP usa arquivos públicos, sem consulta ao backend. Mudanças exigem novo build e publicação autorizada.
 
+Quando a staging usa um domínio exato como raiz (`NEXT_PUBLIC_ROOT_DOMAIN=dev-terraco-canecao.flyfoods.com.br`), configure `LANDING_ROOT_HOST_TENANT_SLUG=terraco-canecao` apenas nesse serviço. Sem a variável, o host raiz continua retornando 404 na LP.
+
 ## Adicionar tenant
 
 1. Crie `public/landing-pages/<slug>/` com `config.json`, logo, hero mobile e hero desktop. Imagem social é opcional. Use nomes versionados como `hero-mobile.v1.webp`; mudar imagem exige mudar nome para renovar cache.

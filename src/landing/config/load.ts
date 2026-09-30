@@ -14,6 +14,11 @@ export function landingSlugFromHost(host: string | null): string | null {
     const hostname = parsed.hostname.toLowerCase();
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "flyfoods.com.br")
       .trim().toLowerCase();
+    if (hostname === rootDomain) {
+      const rootHostTenant = process.env.LANDING_ROOT_HOST_TENANT_SLUG;
+      if (!rootHostTenant || !tenantSlugSchema.safeParse(rootHostTenant).success) return null;
+      return resolveTenantFromHost(host) === rootHostTenant ? rootHostTenant : null;
+    }
     const suffix = hostname.endsWith(".localhost")
       ? ".localhost"
       : hostname.endsWith(`.${rootDomain}`)

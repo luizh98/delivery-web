@@ -63,6 +63,30 @@ test("loader isola tenants por host e não aceita host raiz ou malformado", asyn
   assert.equal(await loadLandingConfig("../alpha", root), null);
 });
 
+test("host exato da staging exige liberação explícita do tenant", () => {
+  const previousRoot = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  const previousTenant = process.env.LANDING_ROOT_HOST_TENANT_SLUG;
+  const previousDefault = process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG;
+  try {
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN = "dev-terraco-canecao.flyfoods.com.br";
+    process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG = "terraco-canecao";
+    delete process.env.LANDING_ROOT_HOST_TENANT_SLUG;
+    assert.equal(landingSlugFromHost("dev-terraco-canecao.flyfoods.com.br"), null);
+    process.env.LANDING_ROOT_HOST_TENANT_SLUG = "terraco-canecao";
+    assert.equal(landingSlugFromHost("dev-terraco-canecao.flyfoods.com.br"), "terraco-canecao");
+    assert.equal(landingSlugFromHost("other.flyfoods.com.br"), null);
+    process.env.LANDING_ROOT_HOST_TENANT_SLUG = "outro";
+    assert.equal(landingSlugFromHost("dev-terraco-canecao.flyfoods.com.br"), null);
+  } finally {
+    if (previousRoot === undefined) delete process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+    else process.env.NEXT_PUBLIC_ROOT_DOMAIN = previousRoot;
+    if (previousTenant === undefined) delete process.env.LANDING_ROOT_HOST_TENANT_SLUG;
+    else process.env.LANDING_ROOT_HOST_TENANT_SLUG = previousTenant;
+    if (previousDefault === undefined) delete process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG;
+    else process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG = previousDefault;
+  }
+});
+
 test("validador de build aceita duas pastas e falha com imagem ausente", async () => {
   const root = await fixtureRoot();
   const command = ["--import", "tsx", "scripts/validate-landing-pages.ts"];
