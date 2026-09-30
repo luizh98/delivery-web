@@ -5,6 +5,9 @@ const slug = process.env.SMOKE_TENANT_SLUG;
 if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
   throw new Error("Informe SMOKE_TENANT_SLUG");
 }
+if (slug === "terraco-canecao") {
+  throw new Error("Terraço usa HTML próprio; execute scripts/smoke-terraco-html.mjs");
+}
 
 const origin = process.env.SMOKE_ORIGIN ?? "http://127.0.0.1:3104";
 const port = new URL(origin).port;
