@@ -55,6 +55,7 @@ export const landingConfigSchema = z.object({
   "Cores de texto e destaque precisam de contraste mínimo 4.5:1"),
   menuLabel: text(40).default("Ver cardápio"),
   addressLabel: text(40).default("Como chegar"),
+  addressText: text(120).optional(),
   mapsUrl: httpsUrl.optional(),
   whatsappUrl: httpsUrl.optional(),
   systemUrl: httpsUrl.optional(),

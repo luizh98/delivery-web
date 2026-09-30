@@ -27,6 +27,7 @@ Troque todos os valores de exemplo por conteúdo real antes de incluir cliente.
   "heroAlt": "Prato servido pelo Restaurante Exemplo",
   "colors": { "background": "#FFFFFF", "foreground": "#202124", "accent": "#0F766E" },
   "menuLabel": "Ver cardápio",
+  "addressText": "Rua Exemplo, 123 · Cidade, SP",
   "mapsUrl": "https://maps.example.com/restaurante",
   "whatsappUrl": "https://wa.me/5511999999999",
   "systemUrl": "https://flyfoods.com.br/",
@@ -39,4 +40,4 @@ Troque todos os valores de exemplo por conteúdo real antes de incluir cliente.
 }
 ```
 
-`mapsUrl`, `whatsappUrl`, `systemUrl` e `seo.image` são opcionais. Sem esses campos, botões opcionais somem; hero mobile ocupa a imagem social padrão. `extraLinks` aceita até três itens. Botão de cardápio aponta para `/` no mesmo host e preserva apenas UTMs permitidas.
+`addressText`, `mapsUrl`, `whatsappUrl`, `systemUrl` e `seo.image` são opcionais. Sem esses campos, texto e botões opcionais somem; hero mobile ocupa a imagem social padrão. `extraLinks` aceita até três itens. Botão de cardápio aponta para `/` no mesmo host e preserva apenas UTMs permitidas.

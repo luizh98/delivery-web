@@ -11,8 +11,9 @@
 .content { display: grid; gap: 32px; margin-top: 32px; }
 .intro { display: flex; flex-direction: column; justify-content: center; }
 .eyebrow { margin: 0 0 12px; color: var(--lp-accent); font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.intro h1 { margin: 0; max-width: 14ch; font-size: clamp(2.4rem, 8vw, 5rem); line-height: 1.06; letter-spacing: -.045em; }
+.intro h1 { margin: 0; max-width: 16ch; font-size: clamp(2.3rem, 6vw, 4rem); line-height: 1.06; letter-spacing: -.045em; }
 .description { max-width: 42ch; margin: 20px 0 0; font-size: 1.05rem; line-height: 1.6; }
+.address { max-width: 42ch; margin: 14px 0 0; font-size: .9rem; line-height: 1.5; opacity: .85; }
 .actions { display: grid; gap: 10px; margin-top: 32px; }
 .actions a { box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 52px; border-radius: 14px; padding: 12px 17px; font-weight: 700; text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
 .actions a:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #00000018; }
@@ -22,8 +23,8 @@
 .primaryLink { background: var(--lp-accent); color: var(--lp-background); }
 .secondaryLink { border: 1px solid var(--lp-accent); color: var(--lp-foreground); }
 .secondaryLink > svg:last-child { opacity: .7; }
-.hero { display: block; overflow: hidden; border-radius: 24px; align-self: center; }
-.hero img { display: block; width: 100%; height: auto; max-height: 580px; object-fit: cover; }
+.hero { display: block; overflow: hidden; width: min(100%, 420px); border-radius: 24px; align-self: center; justify-self: center; }
+.hero img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: cover; }
 
 @media (min-width: 720px) {
   .shell { padding: 32px 40px 64px; }

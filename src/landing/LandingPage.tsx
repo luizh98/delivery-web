@@ -43,6 +43,7 @@ export function LandingPage({ config, menuHref = "/" }: {
             <p className={styles.eyebrow}>Bem-vindo</p>
             <h1 id="landing-title">{config.headline}</h1>
             <p className={styles.description}>{config.description}</p>
+            {config.addressText && <p className={styles.address}>{config.addressText}</p>}
             <nav className={styles.actions} aria-label="Links do restaurante">
               <a className={styles.primaryLink} href={menuHref}>
                 <span>{config.menuLabel}</span><ArrowRight aria-hidden="true" size={22} />
