@@ -3,7 +3,6 @@
 import { Plus, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/Button";
 import {
   PENDING_UPSELL_STORAGE_KEY,
   type PendingUpsellOffer,
@@ -18,17 +17,20 @@ import type {
 import { money } from "@/utils/format";
 import {
   Card,
+  AddButton,
   Content,
-  Image,
-  List,
+  ImageFrame,
+  ImagePhoto,
   Name,
   Notice,
   OfferPrice,
   OriginalPrice,
+  PriceBlock,
   PriceRow,
   Root,
   Savings,
   Title,
+  Track,
 } from "./UpsellBlock.styles";
 
 export function UpsellBlock() {
@@ -37,6 +39,13 @@ export function UpsellBlock() {
   const [response, setResponse] = useState<CartUpsellResponse | null>(null);
   const [notice, setNotice] = useState("");
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 6_000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
   const cartItems = useMemo(
     () =>
       items.map((item) => ({
@@ -172,45 +181,61 @@ export function UpsellBlock() {
       {response?.suggestions.length ? (
         <>
           <Title>
-            <Sparkles size={16} /> {response.title}
+            <Sparkles size={16} aria-hidden="true" /> {response.title}
           </Title>
-          <List>
-            {response.suggestions.map((suggestion) => (
-              <Card key={suggestion.productId}>
-                <Image
-                  role="img"
-                  aria-label={`Foto de ${suggestion.name}`}
-                  style={{
-                    backgroundImage: suggestion.imageUrl
-                      ? `url(${suggestion.imageUrl})`
-                      : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
-                  }}
-                />
-                <Content>
-                  <Name>{suggestion.name}</Name>
-                  <PriceRow>
-                    {suggestion.discountAmountCents > 0 ? (
-                      <OriginalPrice>{money(suggestion.originalPriceCents)}</OriginalPrice>
-                    ) : null}
-                    <OfferPrice>{money(suggestion.offerPriceCents)}</OfferPrice>
-                  </PriceRow>
-                  {suggestion.showSavings && suggestion.discountAmountCents > 0 ? (
-                    <Savings>Economize {money(suggestion.discountAmountCents)}</Savings>
-                  ) : null}
-                  <Button
+          <Track
+            role="region"
+            aria-roledescription="carrossel"
+            aria-label={response.title}
+            tabIndex={0}
+          >
+            {response.suggestions.map((suggestion, index) => (
+              <Card
+                key={suggestion.productId}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${index + 1} de ${response.suggestions.length}: ${suggestion.name}`}
+              >
+                <ImageFrame>
+                  <ImagePhoto
+                    role="img"
+                    aria-label={`Foto de ${suggestion.name}`}
+                    style={{
+                      backgroundImage: suggestion.imageUrl
+                        ? `url(${suggestion.imageUrl})`
+                        : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
+                    }}
+                  />
+                  <AddButton
                     type="button"
                     onClick={() => addSuggestion(suggestion)}
                     disabled={addingProductId === suggestion.productId}
+                    aria-label={addingProductId === suggestion.productId
+                      ? `Validando ${suggestion.name}`
+                      : suggestion.requiresOptions
+                        ? `Escolher adicionais para ${suggestion.name} por ${money(suggestion.offerPriceCents)}`
+                        : `Adicionar ${suggestion.name} ao carrinho por ${money(suggestion.offerPriceCents)}`}
                   >
-                    <Plus size={15} />
-                    {addingProductId === suggestion.productId
-                      ? "Validando..."
-                      : `Adicionar por ${money(suggestion.offerPriceCents)}`}
-                  </Button>
+                    <Plus size={20} aria-hidden="true" />
+                  </AddButton>
+                </ImageFrame>
+                <Content>
+                  <Name title={suggestion.name}>{suggestion.name}</Name>
+                  <PriceBlock>
+                    {suggestion.showSavings && suggestion.discountAmountCents > 0 ? (
+                      <Savings>Economize {money(suggestion.discountAmountCents)}</Savings>
+                    ) : null}
+                    <PriceRow>
+                      {suggestion.discountAmountCents > 0 ? (
+                        <OriginalPrice>{money(suggestion.originalPriceCents)}</OriginalPrice>
+                      ) : null}
+                      <OfferPrice>{money(suggestion.offerPriceCents)}</OfferPrice>
+                    </PriceRow>
+                  </PriceBlock>
                 </Content>
               </Card>
             ))}
-          </List>
+          </Track>
         </>
       ) : null}
     </Root>
