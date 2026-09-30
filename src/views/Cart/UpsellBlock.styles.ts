@@ -27,20 +27,14 @@ export const Track = styled("div", {
   overflowX: "auto",
   overscrollBehaviorX: "contain",
   scrollSnapType: "x mandatory",
-  scrollbarWidth: "thin",
-  scrollbarColor: "var(--color-border) transparent",
-  paddingBottom: "0.5rem",
+  scrollbarWidth: "none",
 
   "&:focus-visible": {
     outline: "2px solid var(--color-primary)",
     outlineOffset: "-2px",
   },
 
-  "&::-webkit-scrollbar": { height: "0.375rem" },
-  "&::-webkit-scrollbar-thumb": {
-    borderRadius: "1rem",
-    background: "var(--color-border)",
-  },
+  "&::-webkit-scrollbar": { display: "none" },
 });
 
 export const Card = styled("article", {
