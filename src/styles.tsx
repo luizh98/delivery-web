@@ -51,6 +51,7 @@ const unitlessProperties = new Set([
   "flexShrink",
   "fontWeight",
   "lineHeight",
+  "WebkitLineClamp",
   "opacity",
   "order",
   "orphans",
