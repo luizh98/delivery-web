@@ -10,7 +10,7 @@ Exibir sugestões de upsell do carrinho em um carrossel responsivo, mantendo a s
 - **UC-2**: Cartões preservam imagem, preço original, preço da oferta e economia; nomes longos ficam em até duas linhas com reticências e preços alinhados na base.
 - **UC-3**: Um botão `+` no canto inferior direito da foto mantém o fluxo de adicionar ou selecionar adicionais, com nome acessível e alvo de toque adequado.
 - **UC-4**: Layout funciona em larguras mobile e desktop, com pistas visuais de que há mais sugestões.
-- **UC-5**: Avisos e fluxo de validação/adicionar oferta mantêm comportamento atual.
+- **UC-5**: Avisos de atualização ou indisponibilidade desaparecem após seis segundos; fluxo de validação/adicionar oferta mantém comportamento atual.
 
 ## Verificação
 

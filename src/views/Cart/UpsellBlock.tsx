@@ -39,6 +39,13 @@ export function UpsellBlock() {
   const [response, setResponse] = useState<CartUpsellResponse | null>(null);
   const [notice, setNotice] = useState("");
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 6_000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
   const cartItems = useMemo(
     () =>
       items.map((item) => ({
