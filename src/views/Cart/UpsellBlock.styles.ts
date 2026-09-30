@@ -103,6 +103,10 @@ export const Content = styled("div", {
 });
 
 export const Name = styled("p", {
+  display: "-webkit-box",
+  overflow: "hidden",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 2,
   fontSize: "0.8125rem",
   fontWeight: 700,
   lineHeight: 1.3,

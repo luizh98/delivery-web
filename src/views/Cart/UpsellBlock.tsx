@@ -213,7 +213,7 @@ export function UpsellBlock() {
                   </AddButton>
                 </ImageFrame>
                 <Content>
-                  <Name>{suggestion.name}</Name>
+                  <Name title={suggestion.name}>{suggestion.name}</Name>
                   <PriceBlock>
                     {suggestion.showSavings && suggestion.discountAmountCents > 0 ? (
                       <Savings>Economize {money(suggestion.discountAmountCents)}</Savings>
