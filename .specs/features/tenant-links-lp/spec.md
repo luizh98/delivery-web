@@ -1,6 +1,6 @@
 # LP de links por tenant — especificação
 
-**Status:** Implementação técnica e testes com fixtures concluídos; conteúdo real e gates com backend pendentes.
+**Status:** LP real do `terraco-canecao` implementada e validada em laboratório; fluxo de compra com backend e revisão final de conteúdo pendentes.
 **Data:** 2026-09-29.
 
 ## Problema e objetivo
@@ -25,7 +25,7 @@ Cada restaurante precisa de uma página curta para o link da bio do Instagram: c
 | Layout livre ou código React por restaurante | Impede manutenção e controle de performance previsível. |
 | Mudar backend, modelo de tenant ou fluxo de pedidos | LP apenas apresenta links. |
 | Embeds de mapas, vídeos, pixels e scripts de terceiros na LP | Peso e chamadas extras na primeira visita. |
-| Publicação/deploy | Esta entrega é somente planejamento; execução futura seguirá as tarefas. |
+| Publicação/deploy | Requer autorização explícita do usuário após os gates. |
 
 ## Histórias e critérios de aceite
 
@@ -93,14 +93,14 @@ Como visitante, quero uma página rápida; como operador, quero o cardápio est�
 
 | ID | Requisito | Tarefas | Status |
 | --- | --- | --- | --- |
-| LP-01 | `/links` por host | T04, T06, T07 | Verificado com fixtures |
+| LP-01 | `/links` por host | T04, T06, T07 | Verificado com fixtures e tenant real |
 | LP-02 | `/` preservado e CTA principal | T01, T02, T06, T07, T11 | Parcial: checkout real pendente |
-| LP-03 | Pasta/config automática por slug | T03, T04, T05, T09, T13 | Parcial: tenant real pendente |
-| LP-04 | Isolamento e validação | T03, T04, T05, T07, T13 | Verificado com fixtures |
-| LP-05 | Endereço e links opcionais | T03, T06, T09 | Verificado com fixtures; conteúdo real pendente |
-| LP-06 | LP leve | T02, T05, T06, T10, T12 | Parcial: performance real pendente |
+| LP-03 | Pasta/config automática por slug | T03, T04, T05, T09, T13 | Verificado com tenant real; conteúdo requer revisão antes de publicar |
+| LP-04 | Isolamento e validação | T03, T04, T05, T07, T13 | Verificado com fixtures e tenant real |
+| LP-05 | Endereço e links opcionais | T03, T06, T09 | Verificado com tenant real; divulgação do sistema omitida por não haver URL no material |
+| LP-06 | LP leve | T02, T05, T06, T10, T12 | Laboratório: mediana 98, sem API ou recurso externo; campo/CDN pendentes |
 | LP-07 | Regressão do cardápio | T01, T02, T11 | Parcial: backend indisponível |
-| LP-08 | Metadados e UTM | T08 | Verificado com fixtures |
+| LP-08 | Metadados e UTM | T08 | Verificado com fixtures e tenant real |
 
 **Cobertura:** 8 requisitos, 8 mapeados para tarefas.
 

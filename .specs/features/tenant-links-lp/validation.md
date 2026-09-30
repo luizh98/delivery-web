@@ -1,37 +1,42 @@
 # Validação da LP de links — 2026-09-30
 
-**Branch:** `feat/tenant-links-lp`. **Estado:** implementação técnica pronta para revisão; publicação bloqueada por conteúdo real e gates de backend. Nenhum deploy foi feito.
+**Branch:** `feat/tenant-links-lp`. **Estado:** `terraco-canecao` implementado e validado localmente. Nenhum deploy foi feito.
 
-## Evidência
+## Requisitos e regressão
 
 | Gate | Resultado |
 | --- | --- |
-| `npm test` | 22/22 testes passam, inclusive schema, isolamento de dois tenants, imagens e UTMs. |
-| `npm run build` | Passa com duas fixtures temporárias e, após removê-las, passa novamente sem tenant real; inventário mantém 37 rotas anteriores e adiciona `/links`. |
-| Smoke T01/T11 | `/`, `/cart`, `/cart/address`, `/admin/login`, produto e BFF mantêm os status registrados em `demo.localhost` e `segundo.localhost`. `/` ainda renderiza `HomeView`. |
-| Smoke da LP | `lp-test-a.localhost` e `lp-test-b.localhost` recebem conteúdo próprio; `X-Tenant-Slug` forjado não troca página; host sem pasta e host raiz recebem 404; CTA leva a `/` e mantém apenas UTMs aceitas. |
-| HTML/metadados | Marca, texto, hero, links opcionais, título, descrição e imagem social por tenant conferidos. Links externos usam `noopener noreferrer`. |
-| Rede | Três relatórios Lighthouse: 13 recursos, 0 chamadas `/api/`, 0 recursos externos por execução. Código da LP não tem Client Component próprio; layout não importa providers do produto. |
-| Cache | Imagem `.v1.webp`: `Cache-Control: public, max-age=31536000, immutable`; `config.json`: `max-age=0`; `/links`: `private, no-cache, no-store`. |
-| CSS/UI | Capturas `landing-mobile.png` (390×844) e `landing-desktop.png` (1440×900), geradas com fixture. |
-| Lint | Arquivos novos da LP sem erros. Lint geral falha em três regras preexistentes de `react-hooks/set-state-in-effect` em `AdminDashboard` e `AdminPrinter`; aviso anterior de variável não usada no dashboard. |
+| LP-01, LP-03–LP-05, LP-08 | `/links` do Terraço retorna 200 com marca, texto, endereço, imagem, links, metadata e CTA com somente UTMs aceitas; host sem pasta retorna 404. Duas fixtures comprovam isolamento e header forjado ineficaz. Build valida pasta e imagens. |
+| LP-02, LP-07 | `/` segue `HomeView`/cardápio. Inventário das 37 rotas antigas preservado; smoke de `/`, produto, carrinho, endereço de checkout, admin e BFF em `demo.localhost` e `segundo.localhost` reproduz baseline. Produto `1` retorna 404 e BFF 503 sem backend local; adicionar produto e concluir checkout continua sem validação. |
+| LP-06 | Template Server Component sem JavaScript próprio da LP, provider de produto, consulta à API ou recurso externo. Três relatórios reais registram 13 recursos por execução, 0 `/api/`, 0 terceiros. O runtime Next carrega 8 scripts. |
+| Testes | `npm test`: 22/22; `npm run build`: passa, `OK terraco-canecao`; lint direcionado da LP e scripts novos: passa; `git diff --check`: passa. |
+| Lint geral | Falha em 3 erros anteriores de `react-hooks/set-state-in-effect` em `AdminDashboard` e `AdminPrinter`, mais 1 aviso anterior. Não atribuídos à LP; gate geral ainda aberto. |
+| Cache local | `/links`: `private, no-cache, no-store, max-age=0, must-revalidate`; logo versionado: `public, max-age=31536000, immutable`; `config.json`: `public, max-age=0`. CDN/hospedagem real ainda não verificada. |
 
-## Lighthouse mobile — fixture local
+## Conteúdo do primeiro tenant
 
-Chrome headless, Lighthouse 13.5.0, build de produção, perfil mobile com throttling `simulate`, URL `http://lp-test-a.localhost:3102/links`, três execuções comparáveis.
+Fonte: `inbox/terraco-site/index.html`, `logo.webp` e `batata-costela.webp`, fornecidos pelo usuário. Slug `terraco-canecao` confirmado pelo destino do cardápio no HTML. Configuração em `public/landing-pages/terraco-canecao/config.json`; arquivos versionados preservam as imagens originais. Logo: 15.950 B, 180×180. Hero: 52.262 B, 320×320. Soma inicial: **68.212 B**; abaixo do orçamento de 250 KB. O hero original de 320 px é exibido até 420 px no desktop; uma imagem maior poderá melhorar nitidez depois.
+
+O template compartilhado usa título, frase do Ancho, endereço, CTA, mapa, WhatsApp, Instagram, reserva e eventos do material enviado. A URL de divulgação do FlyFoods não foi fornecida como link, então `systemUrl` foi omitido. O limite de três links extras deixou o link de avaliação Google de fora. Seções de combo, horário dinâmico, Pixel e scripts do HTML de origem não entram na LP conforme spec e escolha do usuário. Conteúdo ainda requer revisão final da equipe antes de publicar.
+
+Capturas finais: `terraco-mobile.png` (390×844) e `terraco-desktop.png` (1440×900). Smoke reproduzível: `SMOKE_TENANT_SLUG=terraco-canecao node scripts/smoke-tenant-landing.mjs`, com `SMOKE_ORIGIN` apontando ao servidor de produção local. Confere conteúdo, destinos no HTML, CTA, metadata, cache, `/` e 404.
+
+## Lighthouse mobile — tenant real
+
+Chrome headless, Lighthouse 13.5.0, build de produção local, perfil mobile com throttling `simulate`, URL `http://terraco-canecao.localhost:3104/links`, três execuções comparáveis após a revisão visual final.
 
 | Execução | Performance | LCP | CLS | TTFB | Transferência |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 1 | 99 | 1660 ms | 0 | 11 ms | 159779 B |
-| 2 | 99 | 1661 ms | 0 | 12 ms | 159779 B |
-| 3 | 100 | 1663 ms | 0 | 10 ms | 159779 B |
-| **Mediana** | **99** | **1661 ms** | **0** | **11 ms** | **159779 B** |
+| 1 | 98 | 2469 ms | 0 | 15 ms | 227369 B |
+| 2 | 98 | 2441 ms | 0 | 13 ms | 227369 B |
+| 3 | 98 | 2459 ms | 0 | 14 ms | 227369 B |
+| **Mediana** | **98** | **2459 ms** | **0** | **14 ms** | **227369 B** |
 
-Relatórios completos: `lighthouse-1.json`, `lighthouse-2.json`, `lighthouse-3.json`. A fixture tem hero mobile de 1252 B com cor sólida. Repetir as três medições com imagens finais; números acima não representam campanha real. Metas de campo p75 para LCP, INP e CLS aguardam tráfego suficiente.
+Relatórios: `terraco-lighthouse-1.json`, `terraco-lighthouse-2.json`, `terraco-lighthouse-3.json`. Auditoria de rede: `node scripts/audit-landing-network.mjs <relatórios>`. Os três relatórios anteriores `lighthouse-{1,2,3}.json` usam fixture com hero de cor sólida; mediana 99 e não representam conteúdo real. Metas de campo p75 para LCP, INP e CLS aguardam tráfego suficiente.
 
-## Pendências para concluir gates
+## Gates antes de publicação
 
-1. Conteúdo aprovado do primeiro tenant: slug, textos, logo, hero mobile/desktop, mapa, WhatsApp e links. T09 depende desses dados; não há pasta real versionada.
-2. Backend local respondeu 503 durante baseline e regressão. `/products/1` respondeu 404; por isso não foi possível adicionar produto e avançar com carrinho real até checkout. T01/T11 continuam parciais. O primeiro smoke anterior à migração usou URL por IP com header `Host`; Next recebeu `127.0.0.1`. O script foi corrigido para URLs `*.localhost` diretas no teste posterior. Não reivindicar isolamento por host no baseline anterior.
-3. Reexecutar smoke completo, Lighthouse mobile e revisão visual com conteúdo final. Lint geral precisa de correção nos módulos existentes ou exceção explícita do gate antes de publicar.
-4. Verificar cache/CDN na hospedagem real após autorização de publicação. Aqui foram verificados headers do Next local. Sem dados de produção, TTFB real e metas p75 permanecem desconhecidos.
+1. Revalidar produto → carrinho → checkout em dois tenants quando o backend estiver disponível; comparar entrada direta em `/` com entrada via `/links`.
+2. Resolver os 3 erros anteriores do lint geral ou aprovar exceção explícita do gate pela equipe.
+3. Revisar conteúdo e destinos finais do Terraço com a equipe, inclusive se haverá link de divulgação do FlyFoods e avaliação Google dentro do limite de extras.
+4. Verificar cache/CDN e métricas reais após autorização de publicação. **Não publicar sem autorização do usuário.**

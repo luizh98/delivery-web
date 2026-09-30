@@ -1,7 +1,7 @@
 # LP de links por tenant — desenho
 
 **Spec:** `.specs/features/tenant-links-lp/spec.md`  
-**Status:** Implementação técnica concluída; validação com tenant real pendente.
+**Status:** Implementação e validação local com `terraco-canecao` concluídas; backend de pedidos e ambiente publicado pendentes.
 
 ## Arquitetura escolhida
 
@@ -114,8 +114,8 @@ Como o tenant vem do host, o HTML pode exigir renderização por requisição; o
 - Next.js, arquivos públicos e cache: https://nextjs.org/docs/pages/api-reference/file-conventions/public-folder
 - Google, limites de Core Web Vitals: https://web.dev/articles/vitals
 
-## Decisões em aberto para a execução
+## Decisões e limites após a execução local
 
-- Conteúdo real do primeiro tenant: textos, imagens, mapa, WhatsApp e destino da divulgação do sistema. Os placeholders do exemplo não devem ser publicados.
+- Material do Terraço Canecão em `inbox/terraco-site` foi usado como fonte. A versão compartilhada conserva marca, mensagem, endereço, imagem, cardápio, mapa, WhatsApp, Instagram, reserva e eventos. As seções interativas, Pixel e fontes externas ficaram fora do escopo conforme a spec e a escolha do usuário. O HTML fornecido não traz URL de divulgação do FlyFoods; `systemUrl` foi omitido. Revisar conteúdo com a equipe antes de publicar.
 - Política de cache/CDN disponível na hospedagem real. O repositório tem Dockerfile, mas não informa como o tráfego de produção é distribuído.
 - Se a equipe quiser exibir endereço/horário operacionais atualizados automaticamente, isso muda a decisão de LP sem API e exige um desenho de cache próprio.

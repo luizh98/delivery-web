@@ -1,7 +1,7 @@
 # LP de links por tenant — tarefas
 
 **Design:** `.specs/features/tenant-links-lp/design.md`  
-**Status:** T02–T08 e T10 verificados com fixtures; T01, T09, T11 e T12 pendentes de gates reais; T13 documentado.  
+**Status:** T02–T10 e T13 implementados; T12 passou no laboratório com tenant real. T01/T11 aguardam backend funcional para fluxo de compra.
 **Regra:** implementar em branch própria, em commits pequenos; parar antes de publicar se qualquer gate falhar. Publicação depende de autorização explícita.
 
 ## Andamento em 2026-09-30
@@ -11,12 +11,12 @@
 | T01 | Parcial | Inventário e smoke antes da migração; backend 503 impediu produto e checkout real. |
 | T02 | Verificada | Build e inventário de 37 rotas antigas passaram após migração. Lint geral tem erros anteriores fora da LP. |
 | T03–T05 | Verificadas | Schema, loader, validador e testes de pasta inválida passaram. |
-| T06–T08 | Verificadas com fixtures | Duas LPs, 404, CTA, opcionais, metadata e UTMs passaram no build de produção. |
-| T09 | Pendente | Slug, textos e imagens finais do primeiro cliente não fornecidos. |
-| T10 | Verificada com fixture | Lighthouse registra 0 chamadas de API e 0 recursos externos na LP. |
+| T06–T08 | Verificadas | Duas fixtures e `terraco-canecao`: 404, CTA, opcionais, metadata e UTMs passaram no build de produção. |
+| T09 | Implementada | HTML, logo e foto fornecidos em `inbox/terraco-site` adaptados ao template; config, links e imagens validados. Revisão de conteúdo antes de publicar continua necessária. |
+| T10 | Verificada | Três relatórios do tenant real: 0 chamadas de API e 0 recursos externos na LP. |
 | T11 | Parcial | Smoke de rotas passou; backend 503 impediu fluxo de compra. |
-| T12 | Parcial | Lighthouse mobile com fixture: mediana 99; cache verificado. Repetir com imagens finais. |
-| T13 | Documentada | Guia de onboarding e AGENTS.md atualizados; validar primeiro tenant real após T09. |
+| T12 | Verificada em laboratório | Lighthouse mobile com tenant real: mediana 98; cache local verificado. CDN/produção depende de publicação autorizada. |
+| T13 | Verificada | Guia de onboarding e AGENTS.md atualizados; pasta real e fixtures validadas sem registro central. |
 
 ## Sequência
 
@@ -169,8 +169,8 @@ T04 e T05 são independentes entre si após T03. T06 exige T05; T07 exige T04 e 
 
 ## Gate final de execução futura
 
-- [ ] Requisitos LP-01 a LP-08 verificados e anotados em `validation.md`.
+- [x] Requisitos LP-01 a LP-08 anotados em `validation.md`, com limites dos gates de backend.
 - [ ] Nenhuma alteração de URL ou comportamento do cardápio/checkout/admin.
-- [ ] LP mobile rápida pelos critérios da spec, sem chamadas à API do produto.
-- [ ] Primeiro tenant contém conteúdo real e aprovado pela equipe.
+- [x] LP mobile rápida pelos critérios de laboratório da spec, sem chamadas à API do produto.
+- [ ] Primeiro tenant contém conteúdo real; revisão final de conteúdo pela equipe antes de publicar.
 - [ ] Sem deploy até revisão do resultado e autorização de publicação na sessão de execução.
