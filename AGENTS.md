@@ -51,7 +51,7 @@ npm run build
 
 ## UI Rules
 
-- Não criar landing page no MVP; `/` e cardápio.
+- `/` é cardápio. `/links` é opcional por tenant; para incluir ou editar LP, siga `docs/tenant-landing-pages.md`.
 - Usar ícones `lucide-react` em botões e controles.
 - Evitar cards dentro de cards.
 - Layout admin deve ser denso, operacional e escaneável.
