@@ -4,6 +4,10 @@
 
 Quando a staging usa um domínio exato como raiz (`NEXT_PUBLIC_ROOT_DOMAIN=dev-terraco-canecao.flyfoods.com.br`), configure `LANDING_ROOT_HOST_TENANT_SLUG=terraco-canecao` apenas nesse serviço. Sem a variável, o host raiz continua retornando 404 na LP.
 
+## Terraço Canecão
+
+O Terraço usa o HTML entregue pela equipe em `public/landing-pages/terraco-canecao/index.html`. O proxy serve esse arquivo em `/links` somente no host do tenant; o cardápio continua em `/`. Para editar essa LP, altere o HTML diretamente e rode o build. O `config.json` dessa pasta permanece como configuração validada e fallback, mas não controla o visual servido para o Terraço. O HTML inclui as fontes externas, scripts e Pixel do material original.
+
 ## Adicionar tenant
 
 1. Crie `public/landing-pages/<slug>/` com `config.json`, logo, hero mobile e hero desktop. Imagem social é opcional. Use nomes versionados como `hero-mobile.v1.webp`; mudar imagem exige mudar nome para renovar cache.

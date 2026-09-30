@@ -1,11 +1,13 @@
 # LP de links por tenant — desenho
 
 **Spec:** `.specs/features/tenant-links-lp/spec.md`  
-**Status:** Implementação e validação local com `terraco-canecao` concluídas; backend de pedidos e ambiente publicado pendentes.
+**Status:** Template compartilhado implementado; Terraço passou a usar seu HTML original por pedido posterior do usuário.
 
 ## Arquitetura escolhida
 
 Uma rota Next `/links` usa o tenant do host para buscar arquivos públicos da pasta `public/landing-pages/<slug>/`. O cardápio permanece em `/`. A LP usa HTML gerado no servidor e uma estrutura compartilhada, sem React Client Components próprios e sem consulta à API. Cada pasta de tenant contém todo o conteúdo visual que pode variar.
+
+**Exceção do Terraço Canecão:** `src/proxy.ts` reescreve `/links` para `public/landing-pages/terraco-canecao/index.html` somente nos hosts reconhecidos do tenant. O HTML original é servido sem o layout React; caminhos de imagens e o link do cardápio foram ajustados para este app. Scripts, animações, fontes externas e Pixel do arquivo fornecido permanecem. O template compartilhado continua disponível para os demais tenants.
 
 O layout atual em `src/app/layout.tsx` envolve todas as páginas com configuração de restaurante, autenticação, carrinho, consentimento e tracking. Um layout aninhado de `/links` não remove esse trabalho. Por isso, a implementação proposta separa **dois layouts raiz**:
 
@@ -116,6 +118,6 @@ Como o tenant vem do host, o HTML pode exigir renderização por requisição; o
 
 ## Decisões e limites após a execução local
 
-- Material do Terraço Canecão em `inbox/terraco-site` foi usado como fonte. A versão compartilhada conserva marca, mensagem, endereço, imagem, cardápio, mapa, WhatsApp, Instagram, reserva e eventos. As seções interativas, Pixel e fontes externas ficaram fora do escopo conforme a spec e a escolha do usuário. O HTML fornecido não traz URL de divulgação do FlyFoods; `systemUrl` foi omitido. Revisar conteúdo com a equipe antes de publicar.
+- O material em `inbox/terraco-site` foi inicialmente adaptado ao template. Após revisão visual do usuário, o HTML original completo passou a ser servido apenas para esse tenant. `config.json` permanece como fallback, sem controlar a apresentação ativa do Terraço.
 - Política de cache/CDN disponível na hospedagem real. O repositório tem Dockerfile, mas não informa como o tráfego de produção é distribuído.
 - Se a equipe quiser exibir endereço/horário operacionais atualizados automaticamente, isso muda a decisão de LP sem API e exige um desenho de cache próprio.

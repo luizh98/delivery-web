@@ -1,7 +1,7 @@
 # LP de links por tenant — tarefas
 
 **Design:** `.specs/features/tenant-links-lp/design.md`  
-**Status:** T02–T10 e T13 implementados; T12 passou no laboratório com tenant real. T01/T11 aguardam backend funcional para fluxo de compra.
+**Status:** Template compartilhado concluído. Por pedido posterior, `terraco-canecao` usa o HTML original; T10/T12 devem ser medidos novamente nessa versão. T01/T11 aguardam backend funcional para fluxo de compra.
 **Regra:** implementar em branch própria, em commits pequenos; parar antes de publicar se qualquer gate falhar. Publicação depende de autorização explícita.
 
 ## Andamento em 2026-09-30
@@ -12,10 +12,10 @@
 | T02 | Verificada | Build e inventário de 37 rotas antigas passaram após migração. Lint geral tem erros anteriores fora da LP. |
 | T03–T05 | Verificadas | Schema, loader, validador e testes de pasta inválida passaram. |
 | T06–T08 | Verificadas | Duas fixtures e `terraco-canecao`: 404, CTA, opcionais, metadata e UTMs passaram no build de produção. |
-| T09 | Implementada | HTML, logo e foto fornecidos em `inbox/terraco-site` adaptados ao template; config, links e imagens validados. Revisão de conteúdo antes de publicar continua necessária. |
-| T10 | Verificada | Três relatórios do tenant real: 0 chamadas de API e 0 recursos externos na LP. |
+| T09 | Implementada | HTML original servido em `/links` só para o host do Terraço; caminhos de imagens e cardápio adaptados ao app. |
+| T10 | Revalidar | Relatórios anteriores pertencem ao template. O HTML original inclui fontes e Pixel externos. |
 | T11 | Parcial | Smoke de rotas passou; backend 503 impediu fluxo de compra. |
-| T12 | Verificada em laboratório | Lighthouse mobile com tenant real: mediana 98; cache local verificado. CDN/produção depende de publicação autorizada. |
+| T12 | Revalidar | Mediana 98 era do template. Medir o HTML original após o ajuste. |
 | T13 | Verificada | Guia de onboarding e AGENTS.md atualizados; pasta real e fixtures validadas sem registro central. |
 
 ## Sequência

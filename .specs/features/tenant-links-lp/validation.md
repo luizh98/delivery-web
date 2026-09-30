@@ -1,6 +1,14 @@
 # Validação da LP de links — 2026-09-30
 
-**Branch:** `feat/tenant-links-lp`. **Estado:** `terraco-canecao` implementado e validado localmente. Nenhum deploy foi feito.
+**Branch:** `feat/tenant-links-lp`. **Estado atual:** o Terraço usa seu HTML original em `/links` por pedido posterior do usuário. As tabelas e capturas abaixo registram a versão anterior do template e não descrevem a LP ativa.
+
+## Revisão do HTML original
+
+- `src/proxy.ts` serve `public/landing-pages/terraco-canecao/index.html` no host do Terraço. Os demais tenants continuam no template compartilhado.
+- Diferenças em relação ao arquivo recebido: URLs de favicon, imagem social e duas imagens apontam para arquivos versionados; o cardápio aponta para `/` no mesmo host. CSS, conteúdo, animações, cálculo de horário, combos, fontes e Pixel foram mantidos.
+- Smoke local: `/links` retorna o HTML estático idêntico ao arquivo versionado; logo, foto e `/` retornam 200. Build e lint do proxy passaram. Medição de rede e staging ainda precisam ser atualizadas após esta revisão.
+
+## Histórico: template compartilhado anterior
 
 ## Requisitos e regressão
 

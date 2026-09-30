@@ -1,6 +1,6 @@
 # LP de links por tenant — especificação
 
-**Status:** LP real do `terraco-canecao` implementada e validada em laboratório; fluxo de compra com backend e revisão final de conteúdo pendentes.
+**Status:** Template compartilhado implementado. Para `terraco-canecao`, decisão posterior do usuário exige servir o HTML original completo em `/links`; medições anteriores do template não representam essa versão.
 **Data:** 2026-09-29.
 
 ## Problema e objetivo
@@ -24,7 +24,7 @@ Cada restaurante precisa de uma página curta para o link da bio do Instagram: c
 | Painel para editar LP, CMS ou edição sem deploy | Configuração inicial por arquivos versionados. |
 | Layout livre ou código React por restaurante | Impede manutenção e controle de performance previsível. |
 | Mudar backend, modelo de tenant ou fluxo de pedidos | LP apenas apresenta links. |
-| Embeds de mapas, vídeos, pixels e scripts de terceiros na LP | Peso e chamadas extras na primeira visita. |
+| Embeds de mapas, vídeos, pixels e scripts de terceiros no template compartilhado | Peso e chamadas extras na primeira visita. O HTML original do Terraço é exceção solicitada depois. |
 | Publicação/deploy | Requer autorização explícita do usuário após os gates. |
 
 ## Histórias e critérios de aceite
@@ -62,7 +62,7 @@ Como visitante, quero encontrar endereço e demais canais da loja.
 Como visitante, quero uma página rápida; como operador, quero o cardápio estável.
 
 1. **WHEN** `/links` é carregada, **THEN** não **SHALL** montar `CustomerAuthProvider`, `CartProvider` ou `TrackingProvider`, nem requisitar `/api/customer/me`, `/api/public/menu` ou `/api/public/restaurant/config`.
-2. **WHEN** `/links` é carregada, **THEN** não **SHALL** incluir JavaScript cliente específico da LP, embed ou fonte externa adicional; imagens acima da dobra **SHALL** ter dimensões, versão mobile e formato otimizado.
+2. **WHEN** `/links` usa o template compartilhado, **THEN** não **SHALL** incluir JavaScript cliente específico da LP, embed ou fonte externa adicional; imagens acima da dobra **SHALL** ter dimensões, versão mobile e formato otimizado. A versão do Terraço preserva os scripts, fontes e Pixel do HTML fornecido.
 3. **WHEN** o projeto compila, **THEN** todas as URLs públicas e de admin anteriores **SHALL** conservar seu caminho; especialmente `/`, `/cart`, `/products/[id]`, `/admin/login` e `/api/backend/**`.
 4. **WHEN** entram visitas na LP, **THEN** nenhum dado do cardápio, pedido ou sessão **SHALL** mudar pela visita.
 5. **Teste independente:** inspeção da rede, comparação de rotas antes/depois, smoke test de cardápio e checkout, auditoria mobile de performance.
@@ -75,7 +75,7 @@ Como visitante, quero uma página rápida; como operador, quero o cardápio est�
 
 ## Orçamento e medição de performance
 
-- Critério de implementação: 0 chamadas à API no carregamento de `/links`; 0 JavaScript cliente escrito especificamente para a LP; hero mobile inicial até 150 KB, imagens iniciais somadas até 250 KB. Orçamentos de imagem são limites iniciais e podem ser ajustados após medição documentada.
+- Critério de implementação do template: 0 chamadas à API no carregamento de `/links`; 0 JavaScript cliente escrito especificamente para a LP; hero mobile inicial até 150 KB, imagens iniciais somadas até 250 KB. O Terraço segue o HTML original por pedido posterior; medir sua rede e performance separadamente.
 - Gate de laboratório: Lighthouse mobile, build de produção, mediana de 3 medições no mesmo perfil de rede/dispositivo, nota Performance >= 90. Guardar relatório e tamanho de recursos.
 - Meta em campo, após volume suficiente: percentil 75 mobile com LCP <= 2,5 s, INP <= 200 ms e CLS <= 0,1. Sem tráfego real, registrar como meta posterior, não afirmar que foi atingida.
 - Comparar `/` antes e depois: rotas, requisições e resultado de fluxo de compra; investigar qualquer regressão atribuível à LP.
@@ -98,7 +98,7 @@ Como visitante, quero uma página rápida; como operador, quero o cardápio est�
 | LP-03 | Pasta/config automática por slug | T03, T04, T05, T09, T13 | Verificado com tenant real; conteúdo requer revisão antes de publicar |
 | LP-04 | Isolamento e validação | T03, T04, T05, T07, T13 | Verificado com fixtures e tenant real |
 | LP-05 | Endereço e links opcionais | T03, T06, T09 | Verificado com tenant real; divulgação do sistema omitida por não haver URL no material |
-| LP-06 | LP leve | T02, T05, T06, T10, T12 | Laboratório: mediana 98, sem API ou recurso externo; campo/CDN pendentes |
+| LP-06 | LP leve | T02, T05, T06, T10, T12 | Mediana 98 era do template; versão HTML do Terraço requer nova medição e inclui recursos externos por decisão do usuário |
 | LP-07 | Regressão do cardápio | T01, T02, T11 | Parcial: backend indisponível |
 | LP-08 | Metadados e UTM | T08 | Verificado com fixtures e tenant real |
 
