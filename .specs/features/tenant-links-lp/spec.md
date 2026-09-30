@@ -1,6 +1,6 @@
 # LP de links por tenant — especificação
 
-**Status:** Template compartilhado implementado. Para `terraco-canecao`, decisão posterior do usuário exige servir o HTML original completo em `/links`; medições anteriores do template não representam essa versão.
+**Status:** Template compartilhado implementado. Para `terraco-canecao`, decisão posterior do usuário exige servir o HTML original completo em `/links`; versão publicada em staging com mediana Lighthouse mobile 78.
 **Data:** 2026-09-29.
 
 ## Problema e objetivo
@@ -98,7 +98,7 @@ Como visitante, quero uma página rápida; como operador, quero o cardápio est�
 | LP-03 | Pasta/config automática por slug | T03, T04, T05, T09, T13 | Verificado com tenant real; conteúdo requer revisão antes de publicar |
 | LP-04 | Isolamento e validação | T03, T04, T05, T07, T13 | Verificado com fixtures e tenant real |
 | LP-05 | Endereço e links opcionais | T03, T06, T09 | Verificado com tenant real; divulgação do sistema omitida por não haver URL no material |
-| LP-06 | LP leve | T02, T05, T06, T10, T12 | Mediana 98 era do template; versão HTML do Terraço requer nova medição e inclui recursos externos por decisão do usuário |
+| LP-06 | LP leve | T02, T05, T06, T10, T12 | HTML do Terraço: 0 API, 7 recursos externos; mediana 78, abaixo da meta 90. Template compartilhado mediu 98. |
 | LP-07 | Regressão do cardápio | T01, T02, T11 | Parcial: backend indisponível |
 | LP-08 | Metadados e UTM | T08 | Verificado com fixtures e tenant real |
 

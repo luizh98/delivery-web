@@ -1,7 +1,7 @@
 # LP de links por tenant — tarefas
 
 **Design:** `.specs/features/tenant-links-lp/design.md`  
-**Status:** Template compartilhado concluído. Por pedido posterior, `terraco-canecao` usa o HTML original; T10/T12 devem ser medidos novamente nessa versão. T01/T11 aguardam backend funcional para fluxo de compra.
+**Status:** Template compartilhado concluído. Por pedido posterior, `terraco-canecao` usa o HTML original em staging; T10/T12 medidos novamente. T01/T11 aguardam validação do fluxo de compra.
 **Regra:** implementar em branch própria, em commits pequenos; parar antes de publicar se qualquer gate falhar. Publicação depende de autorização explícita.
 
 ## Andamento em 2026-09-30
@@ -13,9 +13,9 @@
 | T03–T05 | Verificadas | Schema, loader, validador e testes de pasta inválida passaram. |
 | T06–T08 | Verificadas | Duas fixtures e `terraco-canecao`: 404, CTA, opcionais, metadata e UTMs passaram no build de produção. |
 | T09 | Implementada | HTML original servido em `/links` só para o host do Terraço; caminhos de imagens e cardápio adaptados ao app. |
-| T10 | Revalidar | Relatórios anteriores pertencem ao template. O HTML original inclui fontes e Pixel externos. |
+| T10 | Medida | HTML original: 0 chamadas de API; 7 recursos externos de fontes e Pixel por execução. |
 | T11 | Parcial | Smoke de rotas passou; backend 503 impediu fluxo de compra. |
-| T12 | Revalidar | Mediana 98 era do template. Medir o HTML original após o ajuste. |
+| T12 | Medida; gate não atingido | HTML original: mediana Lighthouse mobile 78, abaixo do alvo 90 da spec. Staging publicada para revisão visual a pedido do usuário. |
 | T13 | Verificada | Guia de onboarding e AGENTS.md atualizados; pasta real e fixtures validadas sem registro central. |
 
 ## Sequência

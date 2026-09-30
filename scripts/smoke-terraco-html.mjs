@@ -9,7 +9,9 @@ const landing = await fetch(new URL("/links?utm_source=qa", origin), {
 });
 assert.equal(landing.status, 200);
 assert.match(landing.headers.get("content-type") ?? "", /text\/html/);
-assert.equal(await landing.text(), expected, "/links deve servir o HTML original adaptado");
+const normalizeLines = (value) => value.replaceAll("\r\n", "\n");
+assert.ok(normalizeLines(await landing.text()) === normalizeLines(expected),
+  "/links deve servir o HTML original adaptado");
 assert.match(expected, /var LINK_CARDAPIO = '\/';/);
 
 for (const asset of ["logo.v1.webp", "batata-costela.v1.webp"]) {

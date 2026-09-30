@@ -6,7 +6,10 @@
 
 - `src/proxy.ts` serve `public/landing-pages/terraco-canecao/index.html` no host do Terraço. Os demais tenants continuam no template compartilhado.
 - Diferenças em relação ao arquivo recebido: URLs de favicon, imagem social e duas imagens apontam para arquivos versionados; o cardápio aponta para `/` no mesmo host. CSS, conteúdo, animações, cálculo de horário, combos, fontes e Pixel foram mantidos.
-- Smoke local: `/links` retorna o HTML estático idêntico ao arquivo versionado; logo, foto e `/` retornam 200. Build e lint do proxy passaram. Medição de rede e staging ainda precisam ser atualizadas após esta revisão.
+- Smoke local e público: `/links` retorna o HTML estático idêntico ao arquivo versionado (normalizando apenas CRLF/LF); logo, foto e `/` retornam 200. O botão de pedido no DOM da staging aponta para `/?utm_source=qa&utm_medium=link_bio&utm_campaign=staging`. Build, 24 testes e lint direcionado passaram na base atual da staging.
+- Staging: `https://dev-terraco-canecao.flyfoods.com.br/links`, commit `ef795a1`; deploy EasyPanel `cmuomo2ex005t07pg91qkd3sg` concluído em 2026-09-30. Captura visual: `terraco-html-staging-mobile.png`.
+- Lighthouse mobile da versão HTML original, build de produção local (3 execuções comparáveis): Performance **77, 79, 78; mediana 78**. LCP **3917, 3789, 3798 ms; mediana 3798 ms**. CLS **0,0054, 0,0064, 0,0044**. TTFB **8, 7, 7 ms**. Transferência mediana **383391 B**.
+- Rede por execução: **11 recursos, 0 chamadas `/api/`, 7 recursos externos** de Google Fonts e Meta/Facebook. Os relatórios são `terraco-html-lighthouse-{1,2,3}.json`. A meta original de Performance >= 90 não é atingida por esta versão; o usuário priorizou fidelidade ao HTML para o teste em staging.
 
 ## Histórico: template compartilhado anterior
 
