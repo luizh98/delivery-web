@@ -25,6 +25,7 @@ import {
   Notice,
   OfferPrice,
   OriginalPrice,
+  PriceBlock,
   PriceRow,
   Root,
   Savings,
@@ -213,15 +214,17 @@ export function UpsellBlock() {
                 </ImageFrame>
                 <Content>
                   <Name>{suggestion.name}</Name>
-                  <PriceRow>
-                    {suggestion.discountAmountCents > 0 ? (
-                      <OriginalPrice>{money(suggestion.originalPriceCents)}</OriginalPrice>
+                  <PriceBlock>
+                    {suggestion.showSavings && suggestion.discountAmountCents > 0 ? (
+                      <Savings>Economize {money(suggestion.discountAmountCents)}</Savings>
                     ) : null}
-                    <OfferPrice>{money(suggestion.offerPriceCents)}</OfferPrice>
-                  </PriceRow>
-                  {suggestion.showSavings && suggestion.discountAmountCents > 0 ? (
-                    <Savings>Economize {money(suggestion.discountAmountCents)}</Savings>
-                  ) : null}
+                    <PriceRow>
+                      {suggestion.discountAmountCents > 0 ? (
+                        <OriginalPrice>{money(suggestion.originalPriceCents)}</OriginalPrice>
+                      ) : null}
+                      <OfferPrice>{money(suggestion.offerPriceCents)}</OfferPrice>
+                    </PriceRow>
+                  </PriceBlock>
                 </Content>
               </Card>
             ))}

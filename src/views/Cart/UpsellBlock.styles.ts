@@ -45,9 +45,9 @@ export const Track = styled("div", {
 
 export const Card = styled("article", {
   display: "grid",
-  flex: "0 0 min(68%, 13rem)",
+  flex: "0 0 min(55%, 10.5rem)",
   minWidth: 0,
-  gridTemplateRows: "6rem 1fr",
+  gridTemplateRows: "5rem 1fr",
   gap: "0.5rem",
   scrollSnapAlign: "start",
   border: "1px solid var(--color-border)",
@@ -59,7 +59,7 @@ export const Card = styled("article", {
 export const ImageFrame = styled("div", {
   position: "relative",
   width: "100%",
-  height: "6rem",
+  height: "5rem",
   overflow: "hidden",
   borderRadius: "0.5rem",
   backgroundColor: "var(--color-surface-muted)",
@@ -100,13 +100,19 @@ export const Content = styled("div", {
   flexDirection: "column",
   minWidth: 0,
   gap: "0.35rem",
-
 });
 
 export const Name = styled("p", {
-  fontSize: "0.875rem",
+  fontSize: "0.8125rem",
   fontWeight: 700,
+  lineHeight: 1.3,
   overflowWrap: "anywhere",
+});
+
+export const PriceBlock = styled("div", {
+  display: "grid",
+  gap: "0.125rem",
+  marginTop: "auto",
 });
 
 export const PriceRow = styled("div", {
