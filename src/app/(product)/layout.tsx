@@ -9,7 +9,7 @@ import { TrackingProvider } from "@/components/TrackingProvider";
 import { getCurrentTenantSlug, getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "@daypicker/react/style.css";
-import "./globals.css";
+import "../globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
