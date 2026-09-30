@@ -9,13 +9,6 @@ export const Root = styled("section", {
   marginBottom: "1rem",
 });
 
-export const Header = styled("div", {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "0.75rem",
-});
-
 export const Title = styled("h2", {
   display: "flex",
   alignItems: "center",
@@ -25,34 +18,6 @@ export const Title = styled("h2", {
   fontWeight: 700,
 
   svg: { flexShrink: 0, color: "var(--color-primary)" },
-});
-
-export const CarouselControls = styled("div", {
-  display: "flex",
-  flexShrink: 0,
-  gap: "0.375rem",
-});
-
-export const CarouselControl = styled("button", {
-  display: "grid",
-  width: "2.75rem",
-  height: "2.75rem",
-  placeItems: "center",
-  border: "1px solid var(--color-border)",
-  borderRadius: "50%",
-  background: "var(--color-background)",
-  color: "var(--color-foreground)",
-  cursor: "pointer",
-
-  "&:hover:not(:disabled)": {
-    borderColor: "var(--color-primary)",
-    color: "var(--color-primary)",
-  },
-  "&:focus-visible": {
-    outline: "2px solid var(--color-primary)",
-    outlineOffset: "2px",
-  },
-  "&:disabled": { opacity: 0.4, cursor: "default" },
 });
 
 export const Track = styled("div", {
@@ -66,6 +31,11 @@ export const Track = styled("div", {
   scrollbarColor: "var(--color-border) transparent",
   paddingBottom: "0.5rem",
 
+  "&:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "-2px",
+  },
+
   "&::-webkit-scrollbar": { height: "0.375rem" },
   "&::-webkit-scrollbar-thumb": {
     borderRadius: "1rem",
@@ -75,24 +45,54 @@ export const Track = styled("div", {
 
 export const Card = styled("article", {
   display: "grid",
-  flex: "0 0 min(78%, 18rem)",
+  flex: "0 0 min(68%, 13rem)",
   minWidth: 0,
-  gridTemplateRows: "8rem 1fr",
-  gap: "0.75rem",
+  gridTemplateRows: "6rem 1fr",
+  gap: "0.5rem",
   scrollSnapAlign: "start",
   border: "1px solid var(--color-border)",
   borderRadius: "0.75rem",
   background: "var(--color-background)",
-  padding: "0.75rem",
+  padding: "0.5rem",
 });
 
-export const Image = styled("div", {
+export const ImageFrame = styled("div", {
+  position: "relative",
   width: "100%",
-  height: "8rem",
+  height: "6rem",
+  overflow: "hidden",
   borderRadius: "0.5rem",
   backgroundColor: "var(--color-surface-muted)",
+});
+
+export const ImagePhoto = styled("div", {
+  position: "absolute",
+  inset: 0,
   backgroundPosition: "center",
   backgroundSize: "cover",
+});
+
+export const AddButton = styled("button", {
+  position: "absolute",
+  right: "0.375rem",
+  bottom: "0.375rem",
+  display: "grid",
+  width: "2.75rem",
+  height: "2.75rem",
+  placeItems: "center",
+  border: "1px solid var(--color-primary)",
+  borderRadius: "50%",
+  background: "var(--color-primary)",
+  color: "#ffffff",
+  boxShadow: "0 2px 8px rgb(0 0 0 / 0.22)",
+  cursor: "pointer",
+
+  "&:hover:not(:disabled)": { filter: "brightness(0.92)" },
+  "&:focus-visible": {
+    outline: "2px solid #ffffff",
+    outlineOffset: "2px",
+  },
+  "&:disabled": { opacity: 0.65, cursor: "wait" },
 });
 
 export const Content = styled("div", {
@@ -101,7 +101,6 @@ export const Content = styled("div", {
   minWidth: 0,
   gap: "0.35rem",
 
-  button: { width: "100%", marginTop: "auto" },
 });
 
 export const Name = styled("p", {
