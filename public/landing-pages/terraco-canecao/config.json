@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "tenantSlug": "terraco-canecao",
+  "name": "Terraço Canecão",
+  "headline": "Batata com Costela é o carro-chefe.",
+  "description": "O Ancho Angus, queridinho da casa. Batata com Costela, porções e chopp gelado. Peça o delivery em São José do Rio Pardo.",
+  "logo": { "file": "logo.v1.webp", "width": 180, "height": 180 },
+  "heroMobile": { "file": "batata-costela.v1.webp", "width": 320, "height": 320 },
+  "heroDesktop": { "file": "batata-costela.v1.webp", "width": 320, "height": 320 },
+  "heroAlt": "Batata especial com costela do Terraço Canecão",
+  "colors": {
+    "background": "#1E5E3F",
+    "foreground": "#FFF8EC",
+    "accent": "#FDCB42"
+  },
+  "menuLabel": "Ver cardápio digital",
+  "addressLabel": "Como chegar",
+  "addressText": "Rua Siqueira Campos, 825 · São José do Rio Pardo, SP",
+  "mapsUrl": "https://www.google.com/maps/dir/?api=1&destination=Terra%C3%A7o%20Canec%C3%A3o%2C%20Rua%20Siqueira%20Campos%20825%2C%20S%C3%A3o%20Jos%C3%A9%20do%20Rio%20Pardo",
+  "whatsappUrl": "https://wa.me/551936816512",
+  "extraLinks": [
+    { "label": "Instagram", "url": "https://www.instagram.com/terraco.canecao/" },
+    { "label": "Reservar mesa", "url": "https://wa.me/551936816512?text=Ol%C3%A1!%20Quero%20reservar%20uma%20mesa%20no%20Terra%C3%A7o%20Canec%C3%A3o." },
+    { "label": "Eventos e aluguel", "url": "https://wa.me/551936816512?text=Ol%C3%A1!%20Quero%20saber%20sobre%20eventos%20e%20aluguel%20do%20Terra%C3%A7o%20Clube." }
+  ],
+  "seo": {
+    "title": "Terraço Canecão · Gastrobar e Delivery em São José do Rio Pardo",
+    "description": "A Batata com Costela que todo mundo fala. Delivery em São José do Rio Pardo.",
+    "image": { "file": "batata-costela.v1.webp", "width": 320, "height": 320 }
+  }
+}

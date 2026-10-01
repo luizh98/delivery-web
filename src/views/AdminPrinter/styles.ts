@@ -173,6 +173,69 @@ export const Help = styled("p", {
 });
 
 export const ErrorText = styled("p", {
-  fontSize: "0.875rem",
-  color: "#dc2626",
+	fontSize: "0.875rem",
+	color: "#dc2626",
+});
+
+export const Code = styled("code", {
+	display: "block",
+	padding: "0.75rem",
+	borderRadius: "0.375rem",
+	background: "var(--color-surface-muted)",
+	fontSize: "1rem",
+	fontWeight: 700,
+	letterSpacing: "0.06em",
+	overflowWrap: "anywhere",
+});
+
+export const DestinationGrid = styled("div", {
+	display: "grid",
+	gap: "0.75rem",
+	gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))",
+});
+
+export const DestinationCard = styled("section", {
+	display: "grid",
+	gap: "0.75rem",
+	padding: "0.875rem",
+	border: "1px solid var(--color-border)",
+	borderRadius: "0.375rem",
+});
+
+export const DeviceList = styled("ul", {
+	display: "grid",
+	gap: "0.625rem",
+	margin: 0,
+	padding: 0,
+	listStyle: "none",
+});
+
+export const DeviceRow = styled("li", {
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	gap: "0.75rem",
+	padding: "0.75rem",
+	border: "1px solid var(--color-border)",
+	borderRadius: "0.375rem",
+});
+
+export const RowDetails = styled("div", {
+	display: "grid",
+	gap: "0.2rem",
+	minWidth: 0,
+});
+
+export const Muted = styled("p", {
+	fontSize: "0.8125rem",
+	lineHeight: 1.5,
+	color: "var(--color-muted)",
+});
+
+export const InlineField = styled("label", {
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "0.5rem",
+	fontSize: "0.8125rem",
+	color: "var(--color-muted)",
 });

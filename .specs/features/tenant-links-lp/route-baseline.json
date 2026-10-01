@@ -1,0 +1,21 @@
+{
+  "routes": [
+    "/", "/account", "/account/login", "/account/register", "/account/reset-password",
+    "/admin", "/admin/analytics", "/admin/catalog/categories", "/admin/catalog/products",
+    "/admin/catalog/upsell", "/admin/customers", "/admin/deliveries", "/admin/kitchen",
+    "/admin/login", "/admin/marketing/promotions", "/admin/orders", "/admin/printer",
+    "/admin/settings", "/admin/table-orders", "/admin/tables", "/admin/users",
+    "/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/backend/[...path]",
+    "/api/customer-auth/[action]", "/api/places/autocomplete", "/api/places/details",
+    "/cart", "/cart/address", "/login", "/login/reset-password", "/mesa/[token]",
+    "/orders", "/orders/[trackingCode]", "/products/[id]", "/promocoes/[code]"
+  ],
+  "probes": [
+    { "path": "/", "statuses": [200], "contentType": "text/html" },
+    { "path": "/products/1", "statuses": [404], "contentType": "text/html" },
+    { "path": "/cart", "statuses": [200], "contentType": "text/html" },
+    { "path": "/cart/address", "statuses": [200], "contentType": "text/html" },
+    { "path": "/admin/login", "statuses": [200], "contentType": "text/html" },
+    { "path": "/api/backend/public/menu", "statuses": [503], "contentType": "application/json" }
+  ]
+}

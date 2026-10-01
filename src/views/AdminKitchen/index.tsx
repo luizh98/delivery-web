@@ -15,6 +15,7 @@ export async function AdminKitchenView() {
       initialOrders={orders}
       visibleStatuses={kitchenStatuses}
       title="Cozinha"
+      printDestination="KITCHEN"
       compact
       automaticOrderConfirmation={config?.automaticOrderConfirmation}
       overdueOrderAlertEnabled={config?.overdueOrderAlertEnabled}
