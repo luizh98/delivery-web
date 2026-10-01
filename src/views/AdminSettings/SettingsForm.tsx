@@ -137,11 +137,7 @@ function settingsSchemaFor(scope: {
     });
   }
   if (scope.organization && values.deliveryOrganizationStrategy !== "INDIVIDUAL"
-<<<<<<< HEAD
-    && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 4)) {
-=======
     && (values.deliveryMaxOrdersPerRoute < 2 || values.deliveryMaxOrdersPerRoute > 15)) {
->>>>>>> 3a475d8a86944e45346479198cb53a06622b3737
     context.addIssue({
       code: "custom",
       path: ["deliveryMaxOrdersPerRoute"],
@@ -149,11 +145,7 @@ function settingsSchemaFor(scope: {
     });
   }
   if (scope.organization && values.deliveryOrganizationStrategy === "PROXIMITY"
-<<<<<<< HEAD
-    && ![1, 2, 3, 5].includes(values.deliveryMaxDistanceKm)) {
-=======
     && (values.deliveryMaxDistanceKm < 1 || values.deliveryMaxDistanceKm > 10)) {
->>>>>>> 3a475d8a86944e45346479198cb53a06622b3737
     context.addIssue({
       code: "custom",
       path: ["deliveryMaxDistanceKm"],
