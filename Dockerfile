@@ -4,7 +4,13 @@ FROM node:22-alpine AS dependencies
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# Limit concurrent downloads and retry installations interrupted by network resets.
+RUN for attempt in 1 2 3; do \
+      npm ci --maxsockets=5 --fetch-retries=3 && break; \
+      if [ "$attempt" -eq 3 ]; then exit 1; fi; \
+      echo "npm ci failed; retrying installation ($attempt/3)..."; \
+      sleep 5; \
+    done
 
 FROM dependencies AS production-dependencies
 RUN npm prune --omit=dev
