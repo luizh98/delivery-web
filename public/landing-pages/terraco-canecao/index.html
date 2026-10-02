@@ -237,7 +237,7 @@
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="t" id="total">R$ 0</span><span class="economia" id="economia"></span></div>
       <span class="por-pessoa" id="pessoa"></span>
     </div>
-    <a class="linha link-pedido" data-ancora="category-1790714308404127841" href="#">
+    <a id="link-combo" class="linha link-pedido" href="/">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
       Pedir esse combo<span class="seta">→</span>
     </a>
@@ -294,7 +294,7 @@
       Como chegar<span class="seta">→</span>
     </a>
   </section>
-  <a class="privacidade" href="#privacidade" onclick="alert('Este site não coleta dados pessoais. Usamos o Pixel do Meta apenas para medir visitas e cliques nos anúncios.');return false;">Política de privacidade</a>
+  <a class="privacidade" href="#privacidade" onclick="alert('O Terraço Canecão usa os dados dos seus pedidos (nome, telefone, endereço e itens) para entregar, atender e enviar novidades. Usamos cookies e o Pixel da Meta para medir visitas e mostrar anúncios no Facebook e Instagram — inclusive compartilhando seu telefone/e-mail com a Meta de forma criptografada. Não vendemos seus dados. Para consultar, corrigir, excluir ou pedir para sair: WhatsApp (19) 3681-6512 ou terraco.canecao@gmail.com.');return false;">Política de privacidade</a>
   <div class="credito">
     <span class="linha-fina"></span>
     <span class="credito-txt">Desenvolvido por <b>FlyFoods</b></span>
@@ -321,21 +321,27 @@ var HORARIOS = {
 };
 var DIAS = ['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'];
 
-/* ===== Link do cardápio com UTM (mantém a origem do anúncio) ===== */
-(function () {
-  var p = new URLSearchParams(location.search);
-  var utm = new URLSearchParams();
-  utm.set('utm_source', p.get('utm_source') || 'site');
-  utm.set('utm_medium', p.get('utm_medium') || 'link_bio');
-  if (p.get('utm_campaign')) utm.set('utm_campaign', p.get('utm_campaign'));
-  var url = LINK_CARDAPIO + '?' + utm.toString();
-  document.querySelectorAll('.link-pedido').forEach(function (a) {
-    a.href = url + (a.dataset.ancora ? '#' + a.dataset.ancora : '');
-    a.addEventListener('click', function () {
-      if (window.fbq) fbq('trackCustom', 'CliquePedido');
+/* ===== Links do cardápio com UTM (repassa a origem do anúncio) ===== */
+var PARAMS_CARDAPIO = (function () {
+  var p = new URLSearchParams(location.search), out = new URLSearchParams();
+  out.set('utm_source', p.get('utm_source') || 'site');
+  out.set('utm_medium', p.get('utm_medium') || 'link_bio');
+  ['utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'fbclid'].forEach(function (k) {
+    if (p.get(k)) out.set(k, p.get(k));
+  });
+  return out.toString();
+})();
+function linkCardapio(caminho) { return (caminho || LINK_CARDAPIO) + '?' + PARAMS_CARDAPIO; }
+
+document.querySelectorAll('.link-pedido').forEach(function (a) {
+  if (a.id !== 'link-combo') a.href = linkCardapio();
+  a.addEventListener('click', function () {
+    if (window.fbq) fbq('trackCustom', 'CliquePedido', {
+      destino: a.id === 'link-combo' ? 'combo' : 'cardapio',
+      combo: a.dataset.combo || ''
     });
   });
-})();
+});
 
 /* ===== Aberto / fechado pelo horário de Brasília ===== */
 function agoraSP() {
@@ -376,9 +382,9 @@ setInterval(atualizarStatus, 60000);
 
 /* ===== Quantos vão comer? ===== */
 var SUGESTOES = {
-  2: { pessoas: 2, combo: 79.90, nome: 'Combo 1–2 pessoas', itens: [['Batata especial com costela', 59.90], ['Chopp Terraço 1 litro', 25.00]] },
-  4: { pessoas: 4, combo: 239.90, nome: 'Combo 3–4 pessoas', itens: [['Batata especial com costela', 59.90], ['Ancho 600g + fritas fininhas', 149.90], ['2× Chopp Terraço 1 litro', 50.00]] },
-  6: { pessoas: 5, combo: 379.90, nome: 'Combo 5+ pessoas', itens: [['2× Batata especial com costela', 119.80], ['Ancho 600g + fritas fininhas', 149.90], ['Costela aos quatro queijos', 69.90], ['3× Chopp Terraço 1 litro', 75.00]] }
+  2: { pessoas: 2, combo: 89.90,  nome: 'Combo 1–2 pessoas', produto: '/promocoes/7ad34eb3-c612-48ca-a81c-1ae2d2531a9e', itens: [['Batata especial com costela', 59.90], ['2× Smash Salada', 45.80]] },
+  4: { pessoas: 4, combo: 199.90, nome: 'Combo 3–4 pessoas', produto: '/promocoes/750c6c83-ac00-4ea5-9dc4-d53ea0c79e9f', itens: [['Ancho 600g + fritas fininhas', 149.90], ['Arroz Biro-Biro', 39.90], ['Bolo Matilda', 36.90]] },
+  6: { pessoas: 5, combo: 349.90, nome: 'Combo 5+ pessoas',  produto: '/promocoes/dc430a7d-b596-4847-a3e1-4747e75fae35', itens: [['Ancho 600g + fritas fininhas', 149.90], ['Batata especial com costela', 59.90], ['Costela aos quatro queijos', 69.90], ['Arroz Biro-Biro', 39.90], ['2× Bolo Matilda', 73.80]] }
 };
 function real(v) { return 'R$ ' + v.toFixed(2).replace('.', ','); }
 function contar(el, fim) {
@@ -402,6 +408,9 @@ function mostrar(n) {
   eco.classList.remove('pop'); void eco.offsetWidth; eco.classList.add('pop');
   contar(document.getElementById('total'), sg.combo);
   document.getElementById('pessoa').textContent = '≈ ' + real(sg.combo / sg.pessoas) + ' por pessoa';
+  var lc = document.getElementById('link-combo');
+  lc.href = linkCardapio(sg.produto);
+  lc.dataset.combo = sg.nome;
   document.querySelectorAll('.opcoes button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.p == n); });
 }
 document.querySelectorAll('.opcoes button').forEach(function (b) {
