@@ -6,8 +6,8 @@
 - Lazy dashboard reports: cross-repository feature. Frontend: `C:\projetos-pessoais\delivery-app\delivery-web`; backend: `C:\projetos-pessoais\delivery-app\delivery-api`. Canonical plan: `.specs/features/lazy-dashboard-reports/`.
 - Status: specification, design and tasks drafted; implementation not started.
 
-**Last Updated:** 2026-09-28
-**Current Work:** Desmarcar adicional de escolha única - concluída
+**Last Updated:** 2026-10-03
+**Current Work:** Data do pedido nos modais de Pedidos e Cozinha - implementação validada, publicação em staging autorizada
 
 ---
 
@@ -60,6 +60,8 @@ Nenhum.
 ---
 
 ## Quick Tasks Completed
+
+024: Data e hora nos modais de Pedidos e Cozinha (2026-10-03). Commit: `feat(admin): show order date in orders and kitchen modals`. Build, lint do componente, 24 testes e 5 verificações de datas aprovados. Lint geral com falhas preexistentes em Dashboard/Impressora. Publicação em staging acompanhada após push.
 
 | # | Description | Date | Commit | Status |
 | --- | --- | --- | --- | --- |

@@ -837,6 +837,7 @@ export function OrdersManager({
                   Pedido #{detailsOrder.orderNumber ?? detailsOrder.id.slice(-6).toUpperCase()}
                 </Title>
                 <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
+                <Subtitle>Data do pedido: {formatOrderDate(detailsOrder)}</Subtitle>
                 {detailsOverdueMinutes !== null ? (
                   <ReceivedTime overdue>
                     <Clock3 size={14} aria-hidden="true" />
@@ -1054,6 +1055,20 @@ function normalizeSearch(value: string) {
 function getReceivedAt(order: OrderResponse) {
   return order.statusHistory.find((history) => history.status === "RECEIVED")?.changedAt
     ?? order.createdAt;
+}
+
+function formatOrderDate(order: OrderResponse) {
+  const value = order.createdAt ?? getReceivedAt(order);
+  const date = value ? new Date(value) : null;
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return "Data indisponível";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function whatsAppUrl(phone: string) {
