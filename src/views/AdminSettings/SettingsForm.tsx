@@ -42,6 +42,9 @@ import {
   ColorFields,
   ErrorText,
   Form,
+  SaveBar,
+  SettingsGroup,
+  SectionTitle,
   GridTwo,
   MediaActions,
   MediaPreview,
@@ -276,6 +279,7 @@ export function SettingsForm({
     businessHours: {},
     holidayHours: {},
   });
+  const formRef = useRef<HTMLFormElement>(null);
   const { showToast } = useToast();
   const { soundEnabled, setSoundEnabled } = useAdminOrderSound();
   const form = useForm<SettingsFormData>({
@@ -323,6 +327,8 @@ export function SettingsForm({
     },
   });
   const dirtyFields = form.formState.dirtyFields;
+  const hasChanges = form.formState.isDirty || businessHoursDirty || holidayHoursDirty
+    || Boolean(logoFile || bannerFile);
   const deliveryRanges = useFieldArray({
     control: form.control,
     name: "deliveryFeeRanges",
@@ -354,6 +360,24 @@ export function SettingsForm({
       }
     };
   }, [bannerPreview, logoPreview]);
+
+  useEffect(() => {
+    const root = formRef.current;
+    if (!root) return;
+    const errors = Object.keys(form.formState.errors);
+    const invalidFields = Array.from(root.querySelectorAll<HTMLInputElement>("[name]"))
+      .filter((field) => errors.some((key) => field.name === key || field.name.startsWith(key + ".")));
+    invalidFields.forEach((field) => {
+      const section = field.closest("details");
+      if (section) section.open = true;
+    });
+    if (hasOperatingHoursErrors(operatingHoursErrors)) {
+      const section = root.querySelector<HTMLDetailsElement>("#operating-hours");
+      if (section) section.open = true;
+      section?.scrollIntoView({ block: "nearest" });
+    }
+    invalidFields[0]?.focus();
+  }, [form.formState.errors, operatingHoursErrors]);
 
   function selectMedia(
     file: File | undefined,
@@ -540,17 +564,17 @@ export function SettingsForm({
   }
 
   return (
-    <Form onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
+    <Form ref={formRef} noValidate onSubmit={form.handleSubmit(submit, onInvalidSubmit)}>
       <div>
-        <Title>Configuração</Title>
-        <Subtitle>Identidade, tema e funcionamento.</Subtitle>
+        <Title>Configurações</Title>
+        <Subtitle>Abra uma seção, ajuste o que precisa e salve as alterações.</Subtitle>
       </div>
 
-      <Accordion>
+      <Accordion id="restaurant">
         <AccordionSummary>
           <AccordionSummaryText>
-            <strong>Identidade do restaurante</strong>
-            <span>Nome, contato, descrição, imagens e pedido mínimo.</span>
+            <strong>Restaurante</strong>
+            <span>Nome, WhatsApp e endereço.</span>
           </AccordionSummaryText>
           <AccordionIcon data-accordion-icon>
             <ChevronDown size={18} aria-hidden="true" />
@@ -574,22 +598,47 @@ export function SettingsForm({
               }}
             />
           </Field>
+          </GridTwo>
+          <SettingsGroup>
+          <SectionTitle as="h3">Endereço</SectionTitle>
+          <GridTwo>
+          <Field label="Rua">
+            <Input {...form.register("street")} />
+          </Field>
+          <Field label="Número">
+            <Input {...form.register("number")} />
+          </Field>
+          <Field label="Bairro">
+            <Input {...form.register("neighborhood")} />
+          </Field>
+          <Field label="Cidade">
+            <Input {...form.register("city")} />
+          </Field>
+          <Field label="Estado">
+            <Input {...form.register("state")} />
+          </Field>
+          </GridTwo>
+          </SettingsGroup>
+        </AccordionBody>
+      </Accordion>
+
+      <Accordion id="appearance">
+        <AccordionSummary>
+          <AccordionSummaryText>
+            <strong>Cardápio e aparência</strong>
+            <span>Descrição, logo, banner e cores do cardápio.</span>
+          </AccordionSummaryText>
+          <AccordionIcon data-accordion-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </AccordionIcon>
+        </AccordionSummary>
+        <AccordionBody>
+          <AppearanceLayout>
+            <AppearanceControls>
           <Field label="Descrição do cardápio">
             <Textarea rows={3} {...form.register("menuDescription")} />
           </Field>
-          <Field
-            label="Pedido mínimo (R$)"
-            error={form.formState.errors.minimumOrderReais?.message}
-          >
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              {...form.register("minimumOrderReais", { valueAsNumber: true })}
-            />
-          </Field>
-          </GridTwo>
-          <MediaUploadGrid>
+          <MediaUploadGrid css={{ gridTemplateColumns: "minmax(0, 1fr)" }}>
             <Field label="Logo" error={logoError}>
               <input
                 ref={logoInputRef}
@@ -654,124 +703,7 @@ export function SettingsForm({
               <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
             </Field>
           </MediaUploadGrid>
-        </AccordionBody>
-      </Accordion>
 
-      <Accordion>
-        <AccordionSummary>
-          <AccordionSummaryText>
-            <strong>Organização das entregas</strong>
-            <span>Escolha como os pedidos podem seguir juntos.</span>
-          </AccordionSummaryText>
-          <AccordionIcon data-accordion-icon>
-            <ChevronDown size={18} aria-hidden="true" />
-          </AccordionIcon>
-        </AccordionSummary>
-        <AccordionBody>
-          <Field label="Como você quer organizar suas entregas?">
-            <Select {...form.register("deliveryOrganizationStrategy")}>
-              <option value="INDIVIDUAL">Uma entrega por vez</option>
-              <option value="NEIGHBORHOOD">Agrupar por bairro</option>
-              <option value="PROXIMITY">Agrupar por proximidade</option>
-            </Select>
-          </Field>
-          <Muted>
-            {deliveryOrganizationStrategy === "INDIVIDUAL"
-              ? "Cada pedido é enviado individualmente para um motoboy."
-              : deliveryOrganizationStrategy === "NEIGHBORHOOD"
-                ? "Pedidos do mesmo bairro podem ser enviados juntos."
-                : "Pedidos com endereços próximos podem ser enviados juntos."}
-          </Muted>
-          {deliveryOrganizationStrategy !== "INDIVIDUAL" ? (
-            <GridTwo>
-              <Field
-                label="Quantos pedidos o motoboy pode levar por viagem?"
-                error={form.formState.errors.deliveryMaxOrdersPerRoute?.message}
-              >
-                <Select {...form.register("deliveryMaxOrdersPerRoute", { valueAsNumber: true })}>
-                  {Array.from({ length: 14 }, (_, index) => index + 2).map((count) => (
-                    <option key={count} value={count}>{count} pedidos</option>
-                  ))}
-                </Select>
-              </Field>
-              <Field
-                label="Tempo de espera para agrupar pedidos (minutos)"
-                error={form.formState.errors.deliveryWaitToleranceMinutes?.message}
-              >
-                <Input
-                  type="number"
-                  min="0"
-                  max="30"
-                  step="1"
-                  {...form.register("deliveryWaitToleranceMinutes", { valueAsNumber: true })}
-                />
-              </Field>
-              {deliveryOrganizationStrategy === "PROXIMITY" ? (
-                <Field
-                  label="Distância máxima entre entregas"
-                  error={form.formState.errors.deliveryMaxDistanceKm?.message}
-                >
-                  <Select {...form.register("deliveryMaxDistanceKm", { valueAsNumber: true })}>
-                    {Array.from({ length: 10 }, (_, index) => index + 1).map((distance) => (
-                      <option key={distance} value={distance}>{distance} km</option>
-                    ))}
-                  </Select>
-                </Field>
-              ) : null}
-            </GridTwo>
-          ) : null}
-          <Muted>O tempo é um limite máximo: se surgir uma combinação adequada antes, ela segue imediatamente.</Muted>
-        </AccordionBody>
-      </Accordion>
-
-      <Accordion>
-        <AccordionSummary>
-          <AccordionSummaryText>
-            <strong>Integrações / Marketing</strong>
-            <span>Conecte o cardápio a ferramentas de marketing.</span>
-          </AccordionSummaryText>
-          <AccordionIcon data-accordion-icon>
-            <ChevronDown size={18} aria-hidden="true" />
-          </AccordionIcon>
-        </AccordionSummary>
-        <AccordionBody>
-          <div>
-            <strong>Meta Pixel</strong>
-            <Muted>Informe somente o ID. Scripts personalizados não são aceitos.</Muted>
-          </div>
-          <GridTwo>
-            <Field
-              label="ID do Pixel"
-              error={form.formState.errors.metaPixelId?.message}
-            >
-              <Input
-                inputMode="numeric"
-                maxLength={20}
-                autoComplete="off"
-                {...form.register("metaPixelId")}
-              />
-            </Field>
-          </GridTwo>
-          <StatusToggle>
-            <input type="checkbox" {...form.register("metaPixelEnabled")} />
-            <span>Ativar Meta Pixel</span>
-          </StatusToggle>
-        </AccordionBody>
-      </Accordion>
-
-      <Accordion>
-        <AccordionSummary>
-          <AccordionSummaryText>
-            <strong>Aparência do cardápio</strong>
-            <span>Cores da marca e preview da home.</span>
-          </AccordionSummaryText>
-          <AccordionIcon data-accordion-icon>
-            <ChevronDown size={18} aria-hidden="true" />
-          </AccordionIcon>
-        </AccordionSummary>
-        <AccordionBody>
-          <AppearanceLayout>
-            <AppearanceControls>
               <ColorFields>
                 <Field label="Cor primária">
                   <Input type="color" {...form.register("primaryColor")} />
@@ -817,21 +749,33 @@ export function SettingsForm({
         </AccordionBody>
       </Accordion>
 
-      <Accordion>
+      <Accordion id="orders">
         <AccordionSummary>
           <AccordionSummaryText>
             <strong>Pedidos e alertas</strong>
-            <span>Automação e notificações deste navegador.</span>
+            <span>Pedido mínimo, confirmação automática e notificações.</span>
           </AccordionSummaryText>
           <AccordionIcon data-accordion-icon>
             <ChevronDown size={18} aria-hidden="true" />
           </AccordionIcon>
         </AccordionSummary>
         <AccordionBody>
+          <Field
+            label="Pedido mínimo (R$)"
+            error={form.formState.errors.minimumOrderReais?.message}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              {...form.register("minimumOrderReais", { valueAsNumber: true })}
+            />
+          </Field>
           <StatusToggle>
             <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
             <span>Confirmar pedidos automaticamente e enviar para impressão</span>
           </StatusToggle>
+          <SettingsGroup>
           <StatusToggle>
             <input
               type="checkbox"
@@ -842,6 +786,8 @@ export function SettingsForm({
             />
             <span>Ativar alerta sonoro de novos pedidos neste navegador</span>
           </StatusToggle>
+          <Muted>Aplicado na hora, somente neste navegador. Não precisa salvar.</Muted>
+          </SettingsGroup>
           <StatusToggle>
             <input type="checkbox" {...form.register("overdueOrderAlertEnabled")} />
             <span>Alertar pedidos atrasados na cozinha</span>
@@ -860,17 +806,18 @@ export function SettingsForm({
         </AccordionBody>
       </Accordion>
 
-      <Accordion>
+      <Accordion id="delivery">
         <AccordionSummary>
           <AccordionSummaryText>
-            <strong>Entrega e frete</strong>
-            <span>Distâncias, faixas de cobrança e promoções.</span>
+            <strong>Entregas</strong>
+            <span>Cálculo de frete, promoções e organização dos motoboys.</span>
           </AccordionSummaryText>
           <AccordionIcon data-accordion-icon>
             <ChevronDown size={18} aria-hidden="true" />
           </AccordionIcon>
         </AccordionSummary>
         <AccordionBody>
+          <SectionTitle as="h3">Frete e promoções</SectionTitle>
           <StatusToggle>
             <input type="checkbox" {...form.register("deliveryEnabled")} />
             <span>Ativar cálculo de frete</span>
@@ -1093,37 +1040,62 @@ export function SettingsForm({
             ))}
           </GridTwo>
           </div>
-        </AccordionBody>
-      </Accordion>
-
-      <Accordion>
-        <AccordionSummary>
-          <AccordionSummaryText>
-            <strong>Endereço</strong>
-            <span>Localização usada pelo restaurante.</span>
-          </AccordionSummaryText>
-          <AccordionIcon data-accordion-icon>
-            <ChevronDown size={18} aria-hidden="true" />
-          </AccordionIcon>
-        </AccordionSummary>
-        <AccordionBody>
-          <GridTwo>
-          <Field label="Rua">
-            <Input {...form.register("street")} />
+          <SettingsGroup>
+          <SectionTitle as="h3">Organização das entregas</SectionTitle>
+          <Field label="Como você quer organizar suas entregas?">
+            <Select {...form.register("deliveryOrganizationStrategy")}>
+              <option value="INDIVIDUAL">Uma entrega por vez</option>
+              <option value="NEIGHBORHOOD">Agrupar por bairro</option>
+              <option value="PROXIMITY">Agrupar por proximidade</option>
+            </Select>
           </Field>
-          <Field label="Número">
-            <Input {...form.register("number")} />
-          </Field>
-          <Field label="Bairro">
-            <Input {...form.register("neighborhood")} />
-          </Field>
-          <Field label="Cidade">
-            <Input {...form.register("city")} />
-          </Field>
-          <Field label="Estado">
-            <Input {...form.register("state")} />
-          </Field>
-          </GridTwo>
+          <Muted>
+            {deliveryOrganizationStrategy === "INDIVIDUAL"
+              ? "Cada pedido é enviado individualmente para um motoboy."
+              : deliveryOrganizationStrategy === "NEIGHBORHOOD"
+                ? "Pedidos do mesmo bairro podem ser enviados juntos."
+                : "Pedidos com endereços próximos podem ser enviados juntos."}
+          </Muted>
+          {deliveryOrganizationStrategy !== "INDIVIDUAL" ? (
+            <GridTwo>
+              <Field
+                label="Quantos pedidos o motoboy pode levar por viagem?"
+                error={form.formState.errors.deliveryMaxOrdersPerRoute?.message}
+              >
+                <Select {...form.register("deliveryMaxOrdersPerRoute", { valueAsNumber: true })}>
+                  {Array.from({ length: 14 }, (_, index) => index + 2).map((count) => (
+                    <option key={count} value={count}>{count} pedidos</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field
+                label="Tempo de espera para agrupar pedidos (minutos)"
+                error={form.formState.errors.deliveryWaitToleranceMinutes?.message}
+              >
+                <Input
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="1"
+                  {...form.register("deliveryWaitToleranceMinutes", { valueAsNumber: true })}
+                />
+              </Field>
+              {deliveryOrganizationStrategy === "PROXIMITY" ? (
+                <Field
+                  label="Distância máxima entre entregas"
+                  error={form.formState.errors.deliveryMaxDistanceKm?.message}
+                >
+                  <Select {...form.register("deliveryMaxDistanceKm", { valueAsNumber: true })}>
+                    {Array.from({ length: 10 }, (_, index) => index + 1).map((distance) => (
+                      <option key={distance} value={distance}>{distance} km</option>
+                    ))}
+                  </Select>
+                </Field>
+              ) : null}
+            </GridTwo>
+          ) : null}
+          <Muted>O tempo é um limite máximo: se surgir uma combinação adequada antes, ela segue imediatamente.</Muted>
+          </SettingsGroup>
         </AccordionBody>
       </Accordion>
 
@@ -1135,11 +1107,52 @@ export function SettingsForm({
         onHolidayHoursChange={changeHolidayHours}
       />
 
-      {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button type="submit" disabled={form.formState.isSubmitting}>
-        <Save size={16} />
-        Salvar
-      </Button>
+      <Accordion id="marketing">
+        <AccordionSummary>
+          <AccordionSummaryText>
+            <strong>Marketing</strong>
+            <span>Meta Pixel e acompanhamento do cardápio.</span>
+          </AccordionSummaryText>
+          <AccordionIcon data-accordion-icon>
+            <ChevronDown size={18} aria-hidden="true" />
+          </AccordionIcon>
+        </AccordionSummary>
+        <AccordionBody>
+          <div>
+            <strong>Meta Pixel</strong>
+            <Muted>Informe somente o ID. Scripts personalizados não são aceitos.</Muted>
+          </div>
+          <GridTwo>
+            <Field
+              label="ID do Pixel"
+              error={form.formState.errors.metaPixelId?.message}
+            >
+              <Input
+                inputMode="numeric"
+                maxLength={20}
+                autoComplete="off"
+                {...form.register("metaPixelId")}
+              />
+            </Field>
+          </GridTwo>
+          <StatusToggle>
+            <input type="checkbox" {...form.register("metaPixelEnabled")} />
+            <span>Ativar Meta Pixel</span>
+          </StatusToggle>
+        </AccordionBody>
+      </Accordion>
+
+      {error ? <ErrorText role="alert">{error}</ErrorText> : null}
+      <SaveBar>
+        <Subtitle role="status" aria-live="polite">
+          {form.formState.isSubmitting ? "Salvando alterações…"
+            : hasChanges ? "Você tem alterações não salvas." : "Nenhuma alteração pendente."}
+        </Subtitle>
+        <Button type="submit" disabled={form.formState.isSubmitting || !hasChanges}>
+          <Save size={16} />
+          {form.formState.isSubmitting ? "Salvando…" : "Salvar alterações"}
+        </Button>
+      </SaveBar>
     </Form>
   );
 }
