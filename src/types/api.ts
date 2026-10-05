@@ -81,6 +81,7 @@ export type RestaurantConfigResponse = {
   deliveryOrganization?: DeliveryOrganizationSettings;
   integrations?: RestaurantIntegrations;
   automaticOrderConfirmation?: boolean;
+  whatsappNotificationsEnabled?: boolean;
   overdueOrderAlertEnabled?: boolean;
   overdueOrderAlertMinutes?: number;
   open?: boolean;

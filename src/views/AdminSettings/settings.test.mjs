@@ -69,3 +69,13 @@ test("related settings share six independently expandable sections", () => {
     for (const content of contents) assert.ok(section.includes(content), `${id}: ${content}`);
   }
 });
+
+test("WhatsApp status toggle defaults off and loads saved tenant setting", () => {
+  const off = renderSettings();
+  assert.match(off, /name="whatsappNotificationsEnabled"/);
+  assert.doesNotMatch(off, /name="whatsappNotificationsEnabled"[^>]*checked/);
+  const on = renderSettings({ whatsappNotificationsEnabled: true });
+  assert.match(on, /name="whatsappNotificationsEnabled"[^>]*checked/);
+  const orders = on.slice(on.indexOf('<details id="orders"')).split("</details>")[0];
+  assert.ok(orders.includes("Enviar status dos pedidos por WhatsApp"));
+});
