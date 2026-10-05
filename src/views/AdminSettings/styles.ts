@@ -3,6 +3,49 @@ import { styled } from "styles";
 export const Form = styled("form", {
   display: "grid",
   gap: "1rem",
+  minWidth: 0,
+  "& input:not([type=checkbox]), & select, & textarea": {
+    minWidth: 0,
+    width: "100%",
+  },
+  "& input, & select, & textarea": {
+    scrollMarginBottom: "7rem",
+    caretColor: "var(--color-primary)",
+  },
+  "@bp2": {
+    "& input:not([type=checkbox]), & select, & textarea": {
+      fontSize: "1rem",
+    },
+  },
+});
+
+export const SettingsGroup = styled("div", {
+  display: "grid",
+  gap: "1rem",
+  marginTop: "0.5rem",
+  paddingTop: "1.25rem",
+  borderTop: "1px solid var(--color-border)",
+});
+
+export const SaveBar = styled("div", {
+  position: "sticky",
+  bottom: 0,
+  zIndex: 10,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexWrap: "wrap",
+  gap: "0.75rem",
+  padding: "1rem 0",
+  borderTop: "1px solid var(--color-border)",
+  background: "var(--color-background)",
+  "@bp2": {
+    "& button": { width: "100%" },
+  },
+  "& button:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "3px",
+  },
 });
 
 export const Title = styled("h1", {
@@ -44,6 +87,9 @@ export const AccordionSummary = styled("summary", {
   gap: "0.75rem",
   padding: "0.875rem 1rem",
   listStyle: "none",
+  "&:hover": {
+    background: "var(--color-surface-muted)",
+  },
 
   "&::-webkit-details-marker": {
     display: "none",
@@ -82,6 +128,7 @@ export const AccordionBody = styled("div", {
   gap: "1rem",
   borderTop: "1px solid var(--color-border)",
   padding: "1rem",
+  minWidth: 0,
 });
 
 export const GridTwo = styled("div", {
@@ -147,6 +194,8 @@ export const StatusToggle = styled("label", {
   fontSize: "0.8125rem",
   fontWeight: 600,
   cursor: "pointer",
+  minHeight: "2.75rem",
+  maxWidth: "100%",
 
   "& input": {
     position: "relative",
@@ -170,19 +219,16 @@ export const StatusToggle = styled("label", {
       borderRadius: "9999px",
       background: "#ffffff",
       boxShadow: "0 1px 3px rgb(0 0 0 / 0.25)",
-      content: "",
-      transform: "translateX(2.6875rem)",
+      content: '""',
+      transform: "translateX(0)",
       transition: "transform 150ms ease",
     },
 
     "&::after": {
       position: "absolute",
       top: "50%",
-      left: "0.4rem",
-      background: "#6b7280",
-      border: "1px solid #000000",
-      borderRadius: "9999px",
-      color: "#000000",
+      right: "0.4rem",
+      color: "var(--color-foreground)",
       content: '"NÃO"',
       fontSize: "0.625rem",
       fontWeight: 800,
@@ -197,13 +243,12 @@ export const StatusToggle = styled("label", {
     },
 
     "&:checked::before": {
-      transform: "translateX(0)",
+      transform: "translateX(2.6875rem)",
     },
 
     "&:checked::after": {
-      right: "0.4rem",
-      left: "auto",
-      borderColor: "#ffffff",
+      right: "auto",
+      left: "0.4rem",
       color: "#ffffff",
       content: '"SIM"',
     },
@@ -282,6 +327,8 @@ export const AppearanceLayout = styled("div", {
 export const AppearanceControls = styled("div", {
   display: "grid",
   alignContent: "start",
+  gap: "1.25rem",
+  minWidth: 0,
 });
 
 export const AppearanceDivider = styled("div", {
@@ -301,11 +348,11 @@ export const ThemePreview = styled("div", {
   maxWidth: "none",
   overflow: "hidden",
   justifySelf: "center",
-  border: "1px solid var(--color-border)",
   borderRadius: "0.75rem",
   background: "#ffffff",
   boxShadow: "0 12px 30px rgb(15 23 42 / 0.12)",
   color: "#171717",
+  alignSelf: "start",
 });
 
 export const ThemePreviewBanner = styled("div", {
@@ -407,9 +454,8 @@ export const RangeRow = styled("div", {
   display: "grid",
   gap: "0.75rem",
   alignItems: "end",
-  padding: "0.75rem",
-  border: "1px solid var(--color-border)",
-  borderRadius: "0.375rem",
+  padding: "0.75rem 0",
+  borderBottom: "1px solid var(--color-border)",
 
   "@sm": {
     gridTemplateColumns: "repeat(3, minmax(0, 1fr)) auto",

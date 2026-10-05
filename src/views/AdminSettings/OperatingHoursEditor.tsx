@@ -26,6 +26,8 @@ import {
   HoursRow,
   RowError,
   SectionHeader,
+  SectionTitle,
+  SettingsGroup,
   StatusOptions,
   StatusToggle,
   TimeFields,
@@ -82,18 +84,18 @@ export function OperatingHoursEditor({
   }
 
   return (
-    <>
-      <Accordion>
+      <Accordion id="operating-hours">
         <AccordionSummary>
           <AccordionSummaryText>
-            <strong>Horário semanal</strong>
-            <span>Dias abertos e períodos de atendimento.</span>
+            <strong>Horários e feriados</strong>
+            <span>Atendimento semanal e exceções para datas especiais.</span>
           </AccordionSummaryText>
           <AccordionIcon data-accordion-icon>
             <ChevronDown size={18} aria-hidden="true" />
           </AccordionIcon>
         </AccordionSummary>
         <AccordionBody>
+          <SectionTitle as="h3">Horário semanal</SectionTitle>
           <HoursList>
           {WEEK_DAYS.map((day, index) => {
             const hour = businessHours[index];
@@ -134,22 +136,9 @@ export function OperatingHoursEditor({
             );
           })}
           </HoursList>
-        </AccordionBody>
-      </Accordion>
-
-      <Accordion>
-        <AccordionSummary>
-          <AccordionSummaryText>
-            <strong>Feriados e datas especiais</strong>
-            <span>Fechamentos e horários especiais.</span>
-          </AccordionSummaryText>
-          <AccordionIcon data-accordion-icon>
-            <ChevronDown size={18} aria-hidden="true" />
-          </AccordionIcon>
-        </AccordionSummary>
-        <AccordionBody>
+          <SettingsGroup>
           <SectionHeader>
-            <span />
+            <SectionTitle as="h3">Feriados e datas especiais</SectionTitle>
             <Button
               type="button"
               variant="outline"
@@ -236,8 +225,8 @@ export function OperatingHoursEditor({
             </HolidayRow>
           );
         })}
+          </SettingsGroup>
         </AccordionBody>
       </Accordion>
-    </>
   );
 }
