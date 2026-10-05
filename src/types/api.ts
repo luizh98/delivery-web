@@ -82,6 +82,13 @@ export type RestaurantConfigResponse = {
   integrations?: RestaurantIntegrations;
   automaticOrderConfirmation?: boolean;
   whatsappNotificationsEnabled?: boolean;
+  whatsappIntegration?: {
+    phoneNumberId: string;
+    apiVersion: string;
+    language: string;
+    templates: { production?: string; delivery?: string; completed?: string } | null;
+    tokenConfigured: boolean;
+  };
   overdueOrderAlertEnabled?: boolean;
   overdueOrderAlertMinutes?: number;
   open?: boolean;
