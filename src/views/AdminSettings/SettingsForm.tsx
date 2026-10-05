@@ -78,6 +78,7 @@ const settingsBaseSchema = z.object({
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   automaticOrderConfirmation: z.boolean(),
+  whatsappNotificationsEnabled: z.boolean(),
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
@@ -291,6 +292,7 @@ export function SettingsForm({
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
+      whatsappNotificationsEnabled: initialConfig?.whatsappNotificationsEnabled ?? false,
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
@@ -461,6 +463,7 @@ export function SettingsForm({
         ...(dirty.menuDescription ? { menuDescription: values.menuDescription } : {}),
         ...(dirty.minimumOrderReais ? { minimumOrderCents: reaisToCents(values.minimumOrderReais) } : {}),
         ...(dirty.automaticOrderConfirmation ? { automaticOrderConfirmation: values.automaticOrderConfirmation } : {}),
+        ...(dirty.whatsappNotificationsEnabled ? { whatsappNotificationsEnabled: values.whatsappNotificationsEnabled } : {}),
         ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
         ...(dirty.overdueOrderAlertMinutes ? { overdueOrderAlertMinutes: values.overdueOrderAlertMinutes } : {}),
         ...(deliveryChanged ? { deliverySettings: {
@@ -775,6 +778,11 @@ export function SettingsForm({
             <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
             <span>Confirmar pedidos automaticamente e enviar para impressão</span>
           </StatusToggle>
+          <StatusToggle>
+            <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} {...form.register("whatsappNotificationsEnabled")} />
+            <span>Enviar status dos pedidos por WhatsApp</span>
+          </StatusToggle>
+          <Muted>Clientes recebem avisos de preparação, saída para entrega e conclusão pelo WhatsApp do restaurante.</Muted>
           <SettingsGroup>
           <StatusToggle>
             <input

@@ -1,5 +1,11 @@
 # State
 
+## WhatsApp order status — 2026-10-05
+
+- Checkbox por restaurante em Configurações → Pedidos, default false: `whatsappNotificationsEnabled`. Schema, payload parcial e tipo de API atualizados.
+- Plano canônico no repositório irmão `delivery-api/.specs/features/whatsapp-order-status/`; backend UAzapi e fila implementados.
+- 28 testes, TypeScript e lint dos arquivos alterados passaram. Lint global mantém três erros preexistentes em LazyAdminDashboard/AdminPrinter. Sem publicação nesta tarefa.
+
 ## Active Work
 
 - Download do instalador Windows: arquivo 0.1.13 publicado no GCS; botão pronto para `staging`. Produção depende da promoção do recurso do conector; ver `.specs/features/windows-installer-download/spec.md`.
