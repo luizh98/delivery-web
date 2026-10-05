@@ -1,6 +1,6 @@
 "use client";
 
-import { Clipboard, Download, ExternalLink, Printer, RefreshCw, Unlink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clipboard, Download, ExternalLink, Printer, RefreshCw, Unlink } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
@@ -58,6 +58,7 @@ const destinations: Array<{ id: ConfigurableDestination; label: string; descript
 type DestinationDraft = Omit<PrintDestinationConfig, "destination">;
 
 const emptyDraft: DestinationDraft = { deviceId: "", printerId: "", automatic: true, copies: 1, model: "" };
+const jobsPerPage = 10;
 
 function printerChoice(deviceID: string, printerID: string) {
   return `${deviceID}|${printerID}`;
@@ -84,6 +85,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
   const { showToast } = useToast();
   const [overview, setOverview] = useState<PrintOverview | null>(null);
   const [jobs, setJobs] = useState<PrintJob[]>([]);
+  const [jobsPage, setJobsPage] = useState(0);
   const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft });
   const [pairingCode, setPairingCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [pairingAttempt, setPairingAttempt] = useState<{ startedAt: number; activeDeviceIds: string[] } | null>(null);
@@ -95,7 +97,8 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     try {
       const [nextOverview, nextJobs] = await Promise.all([getPrintOverview(), getPrintJobs()]);
       setOverview(nextOverview);
-      setJobs(nextJobs.jobs);
+      setJobs(nextJobs.jobs ?? []);
+      setJobsPage(0);
       setDrafts((current) => {
         const next = { ...current };
         for (const destination of destinations) {
@@ -185,6 +188,8 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     () => overview?.printers.map((printer) => ({ ...printer, device: overview.devices.find((device) => device.id === printer.deviceId) })) ?? [],
     [overview],
   );
+  const jobsTotalPages = Math.ceil(jobs.length / jobsPerPage);
+  const visibleJobs = jobs.slice(jobsPage * jobsPerPage, (jobsPage + 1) * jobsPerPage);
 
   function changeDraft(destination: ConfigurableDestination, patch: Partial<DestinationDraft>) {
     setDrafts((current) => ({ ...current, [destination]: { ...current[destination], ...patch } }));
@@ -460,7 +465,18 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
         <PanelHeader><PanelTitle>Trabalhos recentes</PanelTitle><PanelDescription>Resultado aceito pelo sistema operacional não confirma impressão física.</PanelDescription></PanelHeader>
         <Actions><Button type="button" variant="outline" onClick={() => void refresh()} disabled={loading}><RefreshCw size={16} />Atualizar</Button></Actions>
         {jobs.some((job) => job.lastErrorCode) ? <Muted role="status">Falha mais recente: {jobs.find((job) => job.lastErrorCode)?.lastErrorCode}</Muted> : null}
-        <DeviceList>{jobs.map((job) => <DeviceRow key={job.id}><RowDetails><strong>{job.destination} · {job.status}</strong><Muted>{job.orderId ? `Pedido ${job.orderId}` : "Teste de impressão"} · {formatDate(job.createdAt)}</Muted></RowDetails><Button type="button" variant="outline" onClick={() => void reprint(job.id)} disabled={busy === `reprint:${job.id}`}><Printer size={16} />Reimprimir</Button></DeviceRow>)}{!loading && !jobs.length ? <Muted>Nenhum trabalho de impressão.</Muted> : null}</DeviceList>
+        <DeviceList>{visibleJobs.map((job) => <DeviceRow key={job.id}><RowDetails><strong>{job.destination} · {job.status}</strong><Muted>{job.orderId ? `Pedido ${job.orderId}` : "Teste de impressão"} · {formatDate(job.createdAt)}</Muted></RowDetails><Button type="button" variant="outline" onClick={() => void reprint(job.id)} disabled={busy === `reprint:${job.id}`}><Printer size={16} />Reimprimir</Button></DeviceRow>)}{!loading && !jobs.length ? <Muted>Nenhum trabalho de impressão.</Muted> : null}</DeviceList>
+        {jobs.length > 0 ? (
+          <Actions role="navigation" aria-label="Paginação dos trabalhos de impressão">
+            <Muted role="status">Página {jobsPage + 1} de {jobsTotalPages}</Muted>
+            <Button type="button" variant="outline" disabled={loading || jobsPage === 0} onClick={() => setJobsPage((page) => page - 1)}>
+              <ChevronLeft size={16} />Anterior
+            </Button>
+            <Button type="button" variant="outline" disabled={loading || jobsPage + 1 >= jobsTotalPages} onClick={() => setJobsPage((page) => page + 1)}>
+              Próxima<ChevronRight size={16} />
+            </Button>
+          </Actions>
+        ) : null}
         <Help>Se uma impressora estiver offline, seus trabalhos permanecem pendentes no computador configurado; outro computador não os consome.</Help>
       </Panel>
     </Root>
