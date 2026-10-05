@@ -40,6 +40,25 @@ export function renderSettings(config = null) {
   return renderToStaticMarkup(React.createElement(SettingsForm, { initialConfig: config }));
 }
 
+test("WhatsApp configuration stays inside orders and never renders a saved token", () => {
+  const html = renderSettings({ whatsappIntegration: { phoneNumberId: "123456789", apiVersion: "v25.0", language: "pt_BR", tokenConfigured: true, templates: { production: "pedido_producao", delivery: "pedido_entrega", completed: "pedido_concluido" }, accessToken: "must-never-render" } });
+  const section = html.slice(html.indexOf('<details id="orders"')).split("</details>")[0];
+  for (const field of ["whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappCompletedTemplate"]) assert.ok(section.includes(`name="${field}"`), field);
+  assert.ok(section.includes("Token configurado"));
+  assert.ok(section.includes('type="password"'));
+  assert.ok(!html.includes("must-never-render"));
+  assert.equal((html.match(/<details /g) ?? []).length, 6);
+});
+
+test("WhatsApp first setup requires token; saved setup permits blank token", () => {
+  const { whatsappSettingsSchema } = load(path.join(src, "views/AdminSettings/whatsappSettings.ts"));
+  const values = { whatsappPhoneNumberId: "123456789", whatsappAccessToken: "", whatsappApiVersion: "v25.0", whatsappProductionTemplate: "pedido_producao", whatsappDeliveryTemplate: "pedido_entrega", whatsappCompletedTemplate: "pedido_concluido", tokenConfigured: false };
+  assert.equal(whatsappSettingsSchema.safeParse(values).success, false);
+  assert.equal(whatsappSettingsSchema.safeParse({ ...values, tokenConfigured: true }).success, true);
+  assert.equal(whatsappSettingsSchema.safeParse({ ...values, whatsappAccessToken: "fake-token" }).success, true);
+  for (const patch of [{ whatsappPhoneNumberId: "abc" }, { whatsappApiVersion: "v25.0/path" }, { whatsappProductionTemplate: "Nome com espaço" }, { whatsappAccessToken: "fake\nheader" }]) assert.equal(whatsappSettingsSchema.safeParse({ ...values, tokenConfigured: true, ...patch }).success, false);
+});
+
 test("settings preserves editable fields, media, sound and operating hours", () => {
   const html = renderSettings({ name: "Restaurante de teste", deliverySettings: { enabled: true, pricingMode: "PER_KM", maxDistanceKm: 5, pricePerKmCents: 200 } });
   for (const name of ["name", "whatsapp", "menuDescription", "minimumOrderReais", "primaryColor", "secondaryColor", "street", "number", "neighborhood", "city", "state", "automaticOrderConfirmation", "overdueOrderAlertEnabled", "overdueOrderAlertMinutes", "deliveryEnabled", "pricingMode", "maxDistanceKm", "pricePerKmReais", "freeDeliveryMinimumOrderReais", "freeDeliveryDays", "deliveryOrganizationStrategy", "metaPixelId", "metaPixelEnabled"]) assert.ok(html.includes(`name="${name}"`), name);

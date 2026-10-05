@@ -103,6 +103,10 @@ export async function getRestaurantConfig() {
   }
 }
 
+export async function getAdminRestaurantConfig() {
+  return backendFetch<RestaurantConfigResponse>("admin/restaurant/config");
+}
+
 export async function getCurrentTenantSlug() {
   const headerStore = await headers();
   return resolveTenantFromHeaders(headerStore);

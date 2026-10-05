@@ -20,6 +20,7 @@ import {
 } from "@/utils/customerInput";
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
+import { whatsappSettingsSchema } from "./whatsappSettings";
 import {
   createHolidayHours,
   createWeeklyHours,
@@ -79,6 +80,12 @@ const settingsBaseSchema = z.object({
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   automaticOrderConfirmation: z.boolean(),
   whatsappNotificationsEnabled: z.boolean(),
+  whatsappPhoneNumberId: z.string(),
+  whatsappAccessToken: z.string(),
+  whatsappApiVersion: z.string(),
+  whatsappProductionTemplate: z.string(),
+  whatsappDeliveryTemplate: z.string(),
+  whatsappCompletedTemplate: z.string(),
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
@@ -293,6 +300,12 @@ export function SettingsForm({
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
       whatsappNotificationsEnabled: initialConfig?.whatsappNotificationsEnabled ?? false,
+      whatsappPhoneNumberId: initialConfig?.whatsappIntegration?.phoneNumberId ?? "",
+      whatsappAccessToken: "",
+      whatsappApiVersion: initialConfig?.whatsappIntegration?.apiVersion ?? "v25.0",
+      whatsappProductionTemplate: initialConfig?.whatsappIntegration?.templates?.production ?? "pedido_producao",
+      whatsappDeliveryTemplate: initialConfig?.whatsappIntegration?.templates?.delivery ?? "pedido_entrega",
+      whatsappCompletedTemplate: initialConfig?.whatsappIntegration?.templates?.completed ?? "pedido_concluido",
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
@@ -424,6 +437,18 @@ export function SettingsForm({
     const deliveryChanged = changed("deliveryEnabled", "pricingMode", "maxDistanceKm", "pricePerKmReais", "deliveryFeeRanges", "freeDeliveryMinimumOrderReais", "freeDeliveryDays");
     const organizationChanged = changed("deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
     const pixelChanged = changed("metaPixelId", "metaPixelEnabled");
+    const whatsappChanged = changed("whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappCompletedTemplate");
+    if (whatsappChanged || (values.whatsappNotificationsEnabled && !currentConfig?.whatsappIntegration?.tokenConfigured)) {
+      const result = whatsappSettingsSchema.safeParse({ ...values, tokenConfigured: currentConfig?.whatsappIntegration?.tokenConfigured ?? false });
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          form.setError(issue.path[0] as FieldPath<SettingsFormData>, { type: "manual", message: issue.message });
+        }
+        setError("Revise a configuração do WhatsApp antes de salvar.");
+        showToast("Revise a configuração do WhatsApp antes de salvar.", "error");
+        return;
+      }
+    }
     const sectionResult = settingsSchemaFor({
       alerts: changed("overdueOrderAlertEnabled", "overdueOrderAlertMinutes"),
       delivery: deliveryChanged,
@@ -464,6 +489,13 @@ export function SettingsForm({
         ...(dirty.minimumOrderReais ? { minimumOrderCents: reaisToCents(values.minimumOrderReais) } : {}),
         ...(dirty.automaticOrderConfirmation ? { automaticOrderConfirmation: values.automaticOrderConfirmation } : {}),
         ...(dirty.whatsappNotificationsEnabled ? { whatsappNotificationsEnabled: values.whatsappNotificationsEnabled } : {}),
+        ...(whatsappChanged ? { whatsappIntegration: {
+          phoneNumberId: values.whatsappPhoneNumberId.trim(),
+          accessToken: values.whatsappAccessToken.trim(),
+          apiVersion: values.whatsappApiVersion.trim(),
+          language: "pt_BR",
+          templates: { production: values.whatsappProductionTemplate.trim(), delivery: values.whatsappDeliveryTemplate.trim(), completed: values.whatsappCompletedTemplate.trim() },
+        }} : {}),
         ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
         ...(dirty.overdueOrderAlertMinutes ? { overdueOrderAlertMinutes: values.overdueOrderAlertMinutes } : {}),
         ...(deliveryChanged ? { deliverySettings: {
@@ -535,7 +567,7 @@ export function SettingsForm({
       setBannerFile(null);
       setLogoPreview("");
       setBannerPreview("");
-      form.reset(values);
+      form.reset({ ...values, whatsappAccessToken: "" });
       setBusinessHoursDirty(false);
       setHolidayHoursDirty(false);
       showToast("Configuração salva com sucesso");
@@ -778,11 +810,46 @@ export function SettingsForm({
             <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
             <span>Confirmar pedidos automaticamente e enviar para impressão</span>
           </StatusToggle>
-          <StatusToggle>
-            <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} {...form.register("whatsappNotificationsEnabled")} />
-            <span>Enviar status dos pedidos por WhatsApp</span>
-          </StatusToggle>
-          <Muted>Clientes recebem avisos de preparação, saída para entrega e conclusão pelo WhatsApp do restaurante.</Muted>
+          <SettingsGroup aria-labelledby="whatsapp-settings-title" css={{ "& input::placeholder": { color: "var(--color-muted)", opacity: 1 } }}>
+            <SectionTitle as="h3" id="whatsapp-settings-title">WhatsApp dos pedidos</SectionTitle>
+            <Muted>Avisos de preparação, saída para entrega e conclusão pelo número do restaurante.</Muted>
+            <StatusToggle>
+              <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} {...form.register("whatsappNotificationsEnabled")} />
+              <span>Enviar status dos pedidos por WhatsApp</span>
+            </StatusToggle>
+            <Muted role="status">{currentConfig?.whatsappIntegration?.tokenConfigured ? "Token configurado. Deixe o campo vazio para manter o atual." : "Para começar, informe o ID do número e o token obtidos na Meta."}</Muted>
+            <GridTwo>
+              <Field label="ID do número na Meta" error={form.formState.errors.whatsappPhoneNumberId?.message}>
+                <Input inputMode="numeric" autoComplete="off" placeholder="Ex.: 123456789012345" aria-describedby="whatsapp-number-help" aria-invalid={!!form.formState.errors.whatsappPhoneNumberId} {...form.register("whatsappPhoneNumberId")} />
+                <Muted id="whatsapp-number-help">É o Phone Number ID, não o telefone. Use o número cadastrado em Restaurante → Celular.</Muted>
+              </Field>
+              <Field label={currentConfig?.whatsappIntegration?.tokenConfigured ? "Substituir token de acesso" : "Token de acesso"} error={form.formState.errors.whatsappAccessToken?.message}>
+                <Input type="password" autoComplete="new-password" spellCheck={false} placeholder={currentConfig?.whatsappIntegration?.tokenConfigured ? "Deixe vazio para manter" : "Cole o token da Meta"} aria-describedby="whatsapp-token-help" aria-invalid={!!form.formState.errors.whatsappAccessToken} {...form.register("whatsappAccessToken")} />
+                <Muted id="whatsapp-token-help">O token é protegido e não será exibido depois de salvar.</Muted>
+              </Field>
+            </GridTwo>
+            <SectionTitle as="h4">Mensagens aprovadas na Meta</SectionTitle>
+            <Muted>Use os nomes exatos dos templates em Português (Brasil), com os parâmetros definidos para cada etapa.</Muted>
+            <Field label="Recebido / Confirmado · preparação" error={form.formState.errors.whatsappProductionTemplate?.message}>
+              <Input autoComplete="off" spellCheck={false} aria-describedby="whatsapp-production-help" aria-invalid={!!form.formState.errors.whatsappProductionTemplate} {...form.register("whatsappProductionTemplate")} />
+              <Muted id="whatsapp-production-help">Um único aviso. Parâmetros: número do pedido e detalhes.</Muted>
+            </Field>
+            <GridTwo>
+              <Field label="Saiu para entrega" error={form.formState.errors.whatsappDeliveryTemplate?.message}>
+                <Input autoComplete="off" spellCheck={false} aria-describedby="whatsapp-delivery-help" aria-invalid={!!form.formState.errors.whatsappDeliveryTemplate} {...form.register("whatsappDeliveryTemplate")} />
+                <Muted id="whatsapp-delivery-help">Parâmetro: número do pedido.</Muted>
+              </Field>
+              <Field label="Concluído · avaliação" error={form.formState.errors.whatsappCompletedTemplate?.message}>
+                <Input autoComplete="off" spellCheck={false} aria-describedby="whatsapp-completed-help" aria-invalid={!!form.formState.errors.whatsappCompletedTemplate} {...form.register("whatsappCompletedTemplate")} />
+                <Muted id="whatsapp-completed-help">Parâmetros: primeiro nome e número do pedido.</Muted>
+              </Field>
+            </GridTwo>
+            <Field label="Versão da API Meta" error={form.formState.errors.whatsappApiVersion?.message}>
+              <Input autoComplete="off" placeholder="v25.0" aria-describedby="whatsapp-version-help" aria-invalid={!!form.formState.errors.whatsappApiVersion} {...form.register("whatsappApiVersion")} />
+              <Muted id="whatsapp-version-help">Mantenha v25.0, a menos que sua integração use outra versão.</Muted>
+            </Field>
+            <Muted>Salve no botão abaixo. Alterações passam a valer nos próximos envios, sem reiniciar o sistema. Ative após registrar o número, aprovar os templates na Meta e obter autorização dos clientes.</Muted>
+          </SettingsGroup>
           <SettingsGroup>
           <StatusToggle>
             <input

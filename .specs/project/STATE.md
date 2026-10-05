@@ -1,5 +1,14 @@
 # State
 
+## WhatsApp admin configuration — 2026-10-05
+
+- Conta Meta cadastrável em Configurações > Pedidos e alertas > WhatsApp dos pedidos: ID, token, três templates e versão Graph. Mantidos seis accordions e único Salvar alterações.
+- Settings usa GET admin uncached, recebe somente resumo/tokenConfigured. Token input password sem valor salvo; blank mantém, replacement troca, campo limpo após save. PUT parcial inclui integração somente se alterada.
+- Backend persiste restaurant_configs.whatsappIntegration cifrada por tenant e lê por envio. Plano/validação canônicos ../delivery-api/.specs/features/whatsapp-admin/.
+- Impeccable: identidade existente preservada. Capturas .impeccable/review/ desktop/mobile, sem overflow; fix de contraste aprovado 5.05:1. Documenter não alterou sistema. Launcher/detector indisponíveis pelo cache fora do sandbox.
+- 31 testes web, tsc e scoped eslint passaram; Playwright fixture validou cadastro/blank/token rotation/template edit. Sem envio real ou deploy.
+- Branch isolada feat/whatsapp-admin-settings, base origin/staging 6729199, para preservar checkout delivery-web em deploy/printer-history-pagination-main.
+
 ## WhatsApp order status — 2026-10-05
 
 - Checkbox por restaurante em Configurações → Pedidos, default false: `whatsappNotificationsEnabled`. Schema, payload parcial e tipo de API atualizados.
