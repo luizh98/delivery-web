@@ -6,24 +6,20 @@ import { DiscountBadge, OriginalPrice, PriceRow, SalePrice } from "./styles";
 export function ProductPrice({ product }: { product: ProductPricing }) {
   const salePrice = productSalePrice(product);
   const discounted = salePrice < product.priceCents;
-  const percentage = product.discountType === "PERCENTAGE";
 
   return (
     <PriceRow data-discounted={discounted || undefined}>
-      {discounted && !percentage ? (
+      {discounted ? (
         <OriginalPrice aria-label={`Preço original: ${money(product.priceCents)}`}>
           {money(product.priceCents)}
         </OriginalPrice>
       ) : null}
-      <SalePrice aria-label={discounted ? `Preço com desconto: ${money(salePrice)}` : undefined}>
-        {money(salePrice)}
-      </SalePrice>
       {discounted ? (
-        <DiscountBadge>
+        <DiscountBadge aria-label={`Preço com desconto: ${money(salePrice)}`}>
           <Tag size={12} aria-hidden="true" />
-          {percentage ? `${product.discountValue}% OFF` : "OFERTA"}
+          {money(salePrice)}
         </DiscountBadge>
-      ) : null}
+      ) : <SalePrice>{money(salePrice)}</SalePrice>}
     </PriceRow>
   );
 }

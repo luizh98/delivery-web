@@ -33,7 +33,7 @@ export const DiscountBadge = styled("span", {
   padding: "0.1875rem 0.4375rem",
   background: "#fde68a",
   color: "#000000",
-  fontSize: "0.6875rem",
+  fontSize: "inherit",
   fontWeight: 800,
   whiteSpace: "nowrap",
 });

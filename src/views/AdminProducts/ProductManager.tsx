@@ -23,7 +23,7 @@ import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { ApiError, clientApi } from "@/services/api/client";
 import { centsToReais, reaisToCents } from "@/utils/format";
-import { isProductDiscountValid } from "@/utils/productPricing";
+import { isProductDiscountValid, productSalePrice } from "@/utils/productPricing";
 import type {
   Product,
   ProductCategory,
@@ -104,7 +104,7 @@ const productSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
   description: z.string().optional(),
   priceReais: z.number().min(0),
-  discountType: z.enum(["", "PERCENTAGE", "FIXED"]),
+  discountType: z.enum(["", "FIXED"]),
   discountValue: z.number().finite(),
   sortOrder: z.number(),
   active: z.boolean(),
@@ -117,14 +117,12 @@ const productSchema = z.object({
   if (!isProductDiscountValid({
     priceCents: reaisToCents(values.priceReais),
     discountType: values.discountType,
-    discountValue: values.discountType === "FIXED" ? reaisToCents(values.discountValue) : values.discountValue,
+    discountValue: reaisToCents(values.discountValue),
   })) {
     context.addIssue({
       code: "custom",
       path: ["discountValue"],
-      message: values.discountType === "PERCENTAGE"
-        ? "Informe uma porcentagem inteira de 1 a 100 e um preço original maior que zero."
-        : "Informe um valor final de zero até abaixo do preço original.",
+      message: "Informe um valor final de zero até abaixo do preço original.",
     });
   }
 });
@@ -207,15 +205,15 @@ const defaultProductForm = (categoryId = ""): ProductForm => ({
 });
 
 function productToForm(product: Product): ProductForm {
+  const salePrice = productSalePrice(product);
+  const discounted = salePrice < product.priceCents;
   return {
     categoryId: product.categoryId,
     name: product.name,
     description: product.description ?? "",
     priceReais: centsToReais(product.priceCents),
-    discountType: product.discountType ?? "",
-    discountValue: product.discountType === "FIXED"
-      ? centsToReais(product.discountValue ?? 0)
-      : product.discountValue ?? 0,
+    discountType: discounted ? "FIXED" : "",
+    discountValue: discounted ? centsToReais(salePrice) : 0,
     sortOrder: product.sortOrder,
     active: product.active,
     showInCarousel: product.showInCarousel ?? false,
@@ -402,7 +400,7 @@ export function ProductManager({
   const discountPreview = {
     priceCents: reaisToCents(priceReais),
     discountType,
-    discountValue: discountType === "FIXED" ? reaisToCents(discountValue) : discountValue,
+    discountValue: reaisToCents(discountValue),
   };
 
   useEffect(() => {
@@ -714,9 +712,7 @@ export function ProductManager({
         description: values.description,
         priceCents: reaisToCents(values.priceReais),
         discountType: values.discountType,
-        discountValue: values.discountType === "FIXED"
-          ? reaisToCents(values.discountValue)
-          : values.discountType ? values.discountValue : 0,
+        discountValue: values.discountType ? reaisToCents(values.discountValue) : 0,
         sortOrder: values.sortOrder,
         active: values.active,
         showInCarousel: values.showInCarousel,
@@ -943,20 +939,18 @@ export function ProductManager({
                   },
                 })}>
                   <option value="">Sem desconto</option>
-                  <option value="PERCENTAGE">Porcentagem</option>
                   <option value="FIXED">Valor final</option>
                 </Select>
               </Field>
               {discountType ? (
                 <Field
-                  label={discountType === "PERCENTAGE" ? "Desconto (%)" : "Preço com desconto (R$)"}
+                  label="Preço com desconto (R$)"
                   error={form.formState.errors.discountValue?.message}
                 >
                   <Input
                     type="number"
-                    min={discountType === "PERCENTAGE" ? 1 : 0}
-                    max={discountType === "PERCENTAGE" ? 100 : undefined}
-                    step={discountType === "PERCENTAGE" ? 1 : 0.01}
+                    min={0}
+                    step={0.01}
                     {...form.register("discountValue", { valueAsNumber: true })}
                   />
                 </Field>
