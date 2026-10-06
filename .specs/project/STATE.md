@@ -1,5 +1,11 @@
 # State
 
+## Desconto no produto — 2026-10-06
+
+- Desconto opcional por porcentagem inteira ou preço final. Cadastro com prévia; cardápio/carrossel/detalhe usam paleta da tenant. API preserva preço original e calcula preço efetivo; carrinho, combos e pedidos aplicam desconto sem afetar adicionais.
+- Especificação e evidências: `.specs/features/product-discounts/`. API no repositório irmão `delivery-api`.
+- Go: 196 testes; web: 31 testes; TypeScript, build e lint dos arquivos alterados aprovados. Lint geral mantém erros anteriores em Dashboard/Impressora. Browser validado com backend de teste em memória.
+
 ## Active Work
 
 - Download do instalador Windows: arquivo 0.1.13 publicado no GCS; botão pronto para `staging`. Produção depende da promoção do recurso do conector; ver `.specs/features/windows-installer-download/spec.md`.
