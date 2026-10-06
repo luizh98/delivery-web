@@ -17,3 +17,13 @@ Verificar: edição exibe barra sticky na parte inferior em desktop/mobile; envi
 - Revisão visual final: ship. Documentação: extensão do sistema existente, sem drift visual material.
 - Deploy staging: commit `47cd720`, ação `cmuwmu2v9005u07l710rm6ojb`, sucesso em 06/10/2026; container running.
 - Smoke após deploy: homepage e menu HTTP 200; JavaScript publicado contém componente de desconto e não contém as duas misturas antigas com preto.
+
+## Refinamento do selo de desconto
+
+- Usuário confirmou amarelo suave `#FDE68A` para o fundo e preto `#000000` para o texto; preço permanece na primária da tenant.
+- Alteração local em `DiscountBadge`: duas cores fixas, independente da secondary.
+- Componente real renderizado via SSR e conferido no browser: fundo `rgb(253, 230, 138)`, texto `rgb(0, 0, 0)`, preço igual à primária mesmo com secondary verde.
+- Evidência isolada: `.impeccable/review/discount-yellow-badge.png`.
+- ESLint, diff check e revisão visual passaram; veredito ship, documentação sem drift não autorizado.
+- Commit staging `9dcd582`, ação de deploy `cmuwnpp32006107l7ctfa2usv`.
+- Deploy concluído com sucesso em 06/10/2026, container running; homepage e menu HTTP 200. Bundle publicado conferido com as cores novas do selo.
