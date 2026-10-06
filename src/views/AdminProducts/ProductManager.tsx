@@ -30,6 +30,7 @@ import type {
   ProductOptionItem,
 } from "@/types/api";
 import { CategoryManager } from "../AdminCategories/CategoryManager";
+import { SaveBar } from "../AdminSettings/styles";
 import { ReusableOptionGroupsPanel } from "./ReusableOptionGroupsPanel";
 import {
   emptyProductOptionsErrors,
@@ -1089,10 +1090,24 @@ export function ProductManager({
           </CheckboxBackground>
 
           {error ? <ErrorTextLarge>{error}</ErrorTextLarge> : null}
-          <Button type="submit" disabled={categories.length === 0}>
-            <Save size={16} />
-            Salvar produto
-          </Button>
+          {editingProduct ? (
+            <SaveBar css={{ padding: "1rem", borderRadius: "0.375rem" }}>
+              <Muted role="status" aria-live="polite">
+                {form.formState.isSubmitting
+                  ? "Salvando alterações…"
+                  : "Salve para aplicar as alterações no produto."}
+              </Muted>
+              <Button type="submit" disabled={categories.length === 0 || form.formState.isSubmitting}>
+                <Save size={16} />
+                {form.formState.isSubmitting ? "Salvando…" : "Salvar alterações"}
+              </Button>
+            </SaveBar>
+          ) : (
+            <Button type="submit" disabled={categories.length === 0 || form.formState.isSubmitting}>
+              <Save size={16} />
+              {form.formState.isSubmitting ? "Salvando…" : "Salvar produto"}
+            </Button>
+          )}
         </ProductForm>
       </DetailsCard>
 
