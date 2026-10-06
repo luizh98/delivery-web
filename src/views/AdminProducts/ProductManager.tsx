@@ -1161,7 +1161,7 @@ export function ProductManager({
 
           {error ? <ErrorTextLarge>{error}</ErrorTextLarge> : null}
           {editingProduct ? (
-            <SaveBar>
+            <SaveBar css={{ padding: "1rem", borderRadius: "0.375rem" }}>
               <Muted role="status" aria-live="polite">
                 {form.formState.isSubmitting
                   ? "Salvando alterações…"
