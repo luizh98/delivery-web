@@ -1,5 +1,7 @@
 # delivery-web
 
+[Conexão WhatsApp no admin e configuração da Meta](docs/meta-tech-provider.md).
+
 Frontend Next.js para MVP SaaS de delivery.
 
 ## Stack
