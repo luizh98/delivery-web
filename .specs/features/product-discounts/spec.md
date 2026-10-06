@@ -1,5 +1,18 @@
 # Desconto no produto
 
+## Ajuste vigente — somente valor final
+
+Solicitação de 2026-10-06 substitui as opções percentuais de DISC-01, DISC-03 e DISC-04 na interface:
+
+- Cadastro/edição oferece apenas Sem desconto / Valor final, com valor em reais convertido para centavos no envio.
+- Exibição compartilhada no cardápio, carrossel, detalhe e prévia: original riscado seguido do preço final dentro do selo amarelo suave (#FDE68A), com texto preto. Sem OFERTA, X% OFF ou repetição do preço final.
+- Produtos percentuais antigos continuam com cálculo compatível no carrinho/API. Ao editar, o formulário apresenta o preço final equivalente; salvar persiste FIXED. Se o arredondamento não gera economia, apresenta Sem desconto para evitar FIXED inválido.
+- Preservar a barra fixa de salvar e as alterações locais existentes fora deste ajuste.
+
+Verificação: tsc sem incremental, ESLint dos arquivos alterados, quatro testes de preços/combos e `npx tsx scripts/qa-product-price.tsx`. Renderização real do componente em desktop (1440px) e mobile (390px), sem overflow. Evidências: `.impeccable/review/final-price-badge-1440.png` e `final-price-badge-390.png`.
+
+Publicação: implementação `e3481e8`, staging `84281f6`. Deploy inicial cancelado pelo painel durante TypeScript; deploy posterior `cmuwucgco000707og2qiy8b6e` concluído com `7417886`, que inclui este ajuste e uma alteração independente da barra de salvar. Homepage e menu público HTTP 200; bundle público contém selo amarelo e não contém o texto OFERTA. Revisão: ship, sem drift. Compatibilidade percentual permanece apenas para dados antigos/API; a interface não oferece porcentagem.
+
 Escopo médio, implementação em `delivery-api` e `delivery-web`. Preservar UI existente; sem novas dependências ou migração MongoDB.
 
 ## Requisitos
