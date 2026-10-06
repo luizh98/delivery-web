@@ -32,6 +32,7 @@ import type {
   ProductOptionItem,
 } from "@/types/api";
 import { CategoryManager } from "../AdminCategories/CategoryManager";
+import { SaveBar } from "../AdminSettings/styles";
 import { ReusableOptionGroupsPanel } from "./ReusableOptionGroupsPanel";
 import {
   emptyProductOptionsErrors,
@@ -936,7 +937,10 @@ export function ProductManager({
             <GridTwo>
               <Field label="Tipo de desconto">
                 <Select {...form.register("discountType", {
-                  onChange: () => form.setValue("discountValue", 0, { shouldValidate: true }),
+                  onChange: () => {
+                    form.setValue("discountValue", 0);
+                    form.clearErrors("discountValue");
+                  },
                 })}>
                   <option value="">Sem desconto</option>
                   <option value="PERCENTAGE">Porcentagem</option>
@@ -1162,10 +1166,24 @@ export function ProductManager({
           </CheckboxBackground>
 
           {error ? <ErrorTextLarge>{error}</ErrorTextLarge> : null}
-          <Button type="submit" disabled={categories.length === 0}>
-            <Save size={16} />
-            Salvar produto
-          </Button>
+          {editingProduct ? (
+            <SaveBar>
+              <Muted role="status" aria-live="polite">
+                {form.formState.isSubmitting
+                  ? "Salvando alterações…"
+                  : "Salve para aplicar as alterações no produto."}
+              </Muted>
+              <Button type="submit" disabled={categories.length === 0 || form.formState.isSubmitting}>
+                <Save size={16} />
+                {form.formState.isSubmitting ? "Salvando…" : "Salvar alterações"}
+              </Button>
+            </SaveBar>
+          ) : (
+            <Button type="submit" disabled={categories.length === 0 || form.formState.isSubmitting}>
+              <Save size={16} />
+              {form.formState.isSubmitting ? "Salvando…" : "Salvar produto"}
+            </Button>
+          )}
         </ProductForm>
       </DetailsCard>
 
