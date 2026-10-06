@@ -27,6 +27,43 @@ export const SettingsGroup = styled("div", {
   borderTop: "1px solid var(--color-border)",
 });
 
+export const ConnectionSurface = styled("div", {
+  display: "grid",
+  gap: "0.875rem",
+  minWidth: 0,
+  "& strong": { fontSize: "1rem", fontWeight: 600 },
+  "& a": { color: "var(--color-foreground)", textDecoration: "underline", textUnderlineOffset: "3px" },
+  "& a:focus-visible, & summary:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "3px" },
+  "& summary": { cursor: "pointer", fontSize: "0.875rem", minHeight: "2.75rem", display: "flex", alignItems: "center" },
+});
+
+export const ConnectionActions = styled("div", {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: "0.75rem",
+  "& button": { minHeight: "2.75rem" },
+  "& button:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "3px" },
+  "@bp2": { "& button": { width: "100%" } },
+});
+
+export const ConnectionSteps = styled("ul", {
+  listStyle: "none",
+  margin: 0,
+  padding: 0,
+  "& li": { display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem 1rem", padding: "0.75rem 0", borderBottom: "1px solid var(--color-border)", fontSize: "0.875rem" },
+  "& li span:first-child, & a": { display: "inline-flex", alignItems: "center", gap: "0.5rem" },
+  "& li span:last-child": { color: "var(--color-muted)" },
+});
+
+export const AdvancedWhatsAppSettings = styled("details", {
+  paddingTop: "0.5rem",
+  "& > summary": { cursor: "pointer", padding: "0.5rem 0", minHeight: "2.75rem", fontSize: "0.875rem", fontWeight: 600 },
+  "& > summary:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "3px" },
+  "&[open] > summary": { marginBottom: "0.75rem" },
+  "& > div": { display: "grid", gap: "1rem" },
+});
+
 export const SaveBar = styled("div", {
   position: "sticky",
   bottom: 0,

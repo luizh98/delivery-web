@@ -88,11 +88,26 @@ export type RestaurantConfigResponse = {
     language: string;
     templates: { production?: string; delivery?: string; completed?: string } | null;
     tokenConfigured: boolean;
+	  source?: "manual" | "embedded_signup" | "disconnected";
+	  wabaId?: string;
+	  displayPhone?: string;
+	  registered?: boolean;
+	  templateStatus?: Record<string, string> | null;
+	  status?: string;
+	  ready?: boolean;
+	  expiresAt?: number;
   };
   overdueOrderAlertEnabled?: boolean;
   overdueOrderAlertMinutes?: number;
   open?: boolean;
   nextOpeningAt?: string;
+};
+
+export type WhatsAppConnectionResponse = {
+  provider: { enabled: boolean; appId: string; configId: string; apiVersion: string };
+  integration: NonNullable<RestaurantConfigResponse["whatsappIntegration"]>;
+  pending: boolean;
+  notificationsEnabled: boolean;
 };
 
 export type ProductCategory = {

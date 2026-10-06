@@ -21,6 +21,7 @@ import {
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
 import { whatsappSettingsSchema } from "./whatsappSettings";
+import { WhatsAppConnection } from "./WhatsAppConnection";
 import {
   createHolidayHours,
   createWeeklyHours,
@@ -33,6 +34,7 @@ import {
 import type { SettingsFormProps } from "./types";
 import {
   Accordion,
+  AdvancedWhatsAppSettings,
   AccordionBody,
   AccordionIcon,
   AccordionSummary,
@@ -813,10 +815,24 @@ export function SettingsForm({
           <SettingsGroup aria-labelledby="whatsapp-settings-title" css={{ "& input::placeholder": { color: "var(--color-muted)", opacity: 1 } }}>
             <SectionTitle as="h3" id="whatsapp-settings-title">WhatsApp dos pedidos</SectionTitle>
             <Muted>Avisos de preparação, saída para entrega e conclusão pelo número do restaurante.</Muted>
+            <WhatsAppConnection phoneSaved={!form.formState.dirtyFields.whatsapp && !!currentConfig?.whatsapp} onChange={(connection) => {
+              setCurrentConfig((previous) => ({ ...previous, whatsappIntegration: connection.integration, whatsappNotificationsEnabled: connection.notificationsEnabled }));
+              form.resetField("whatsappNotificationsEnabled", { defaultValue: connection.notificationsEnabled });
+              form.resetField("whatsappPhoneNumberId", { defaultValue: connection.integration.phoneNumberId });
+              form.resetField("whatsappAccessToken", { defaultValue: "" });
+              form.resetField("whatsappApiVersion", { defaultValue: connection.integration.apiVersion || "v25.0" });
+              form.resetField("whatsappProductionTemplate", { defaultValue: connection.integration.templates?.production || "pedido_producao" });
+              form.resetField("whatsappDeliveryTemplate", { defaultValue: connection.integration.templates?.delivery || "pedido_entrega" });
+              form.resetField("whatsappCompletedTemplate", { defaultValue: connection.integration.templates?.completed || "pedido_concluido" });
+            }} />
             <StatusToggle>
-              <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} {...form.register("whatsappNotificationsEnabled")} />
+              <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} disabled={currentConfig?.whatsappIntegration?.source === "disconnected" || (currentConfig?.whatsappIntegration?.source === "embedded_signup" && !currentConfig.whatsappIntegration.ready)} {...form.register("whatsappNotificationsEnabled")} />
               <span>Enviar status dos pedidos por WhatsApp</span>
             </StatusToggle>
+            <Muted>Ative após conferir a cobrança na Meta e obter autorização dos clientes. Salve essa opção no botão Salvar alterações.</Muted>
+            <AdvancedWhatsAppSettings open={Object.keys(form.formState.errors).some((field) => field.startsWith("whatsapp") && field !== "whatsappNotificationsEnabled" && field !== "whatsapp") || undefined}>
+            <summary>Configuração avançada · cadastro manual</summary>
+            <div>
             <Muted role="status">{currentConfig?.whatsappIntegration?.tokenConfigured ? "Token configurado. Deixe o campo vazio para manter o atual." : "Para começar, informe o ID do número e o token obtidos na Meta."}</Muted>
             <GridTwo>
               <Field label="ID do número na Meta" error={form.formState.errors.whatsappPhoneNumberId?.message}>
@@ -849,6 +865,8 @@ export function SettingsForm({
               <Muted id="whatsapp-version-help">Mantenha v25.0, a menos que sua integração use outra versão.</Muted>
             </Field>
             <Muted>Salve no botão abaixo. Alterações passam a valer nos próximos envios, sem reiniciar o sistema. Ative após registrar o número, aprovar os templates na Meta e obter autorização dos clientes.</Muted>
+            </div>
+            </AdvancedWhatsAppSettings>
           </SettingsGroup>
           <SettingsGroup>
           <StatusToggle>
