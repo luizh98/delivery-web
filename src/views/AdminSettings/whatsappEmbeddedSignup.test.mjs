@@ -1,8 +1,31 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseMetaSignupMessage, connectionErrorMessage, templateStatusLabel } from "./whatsappEmbeddedSignup.ts";
+import { parseMetaSignupMessage, connectionErrorMessage, templateStatusLabel, loadMetaSDK } from "./whatsappEmbeddedSignup.ts";
 
 const completed = { type: "WA_EMBEDDED_SIGNUP", event: "FINISH", data: { waba_id: "456", phone_number_id: "123", business_id: "789" } };
+
+test("SDK bootstrap does not enable login before the real bundle is ready", async () => {
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  const script = {};
+  let initialized = 0;
+  globalThis.window = { setTimeout: () => 1, clearTimeout() {} };
+  globalThis.document = { getElementById: () => null, createElement: () => script, head: { appendChild() {} } };
+  try {
+    const ready = loadMetaSDK("123", "v25.0");
+    window.FB = { __buffer: { calls: [] }, init() { initialized++; }, login() {} };
+    script.onload();
+    await Promise.resolve();
+    assert.equal(initialized, 0, "bootstrap queued login would lose the click activation");
+    delete window.FB.__buffer;
+    window.fbAsyncInit();
+    assert.equal(await ready, window.FB);
+    assert.equal(initialized, 1);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.document = previousDocument;
+  }
+});
 
 test("signup accepts official origins and validates identities before completion", () => {
   const expected = { event: "FINISH", wabaId: "456", phoneNumberId: "123", businessId: "789" };

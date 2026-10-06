@@ -32,7 +32,7 @@ export type MetaSDK = {
 };
 
 declare global {
-  interface Window { FB?: MetaSDK }
+  interface Window { FB?: MetaSDK; fbAsyncInit?: () => void }
 }
 
 let sdkPromise: Promise<MetaSDK> | null = null;
@@ -40,12 +40,33 @@ let sdkPromise: Promise<MetaSDK> | null = null;
 export function loadMetaSDK(appId: string, version: string): Promise<MetaSDK> {
   if (sdkPromise) return sdkPromise;
   sdkPromise = new Promise<MetaSDK>((resolve, reject) => {
+    let settled = false;
+    const previousAsyncInit = window.fbAsyncInit;
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      if (window.fbAsyncInit === onReady) window.fbAsyncInit = previousAsyncInit;
+    };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("SDK indisponível"));
+    };
     const initialize = () => {
-      if (!window.FB) { reject(new Error("SDK indisponível")); return; }
-      window.FB.init({ appId, version, xfbml: false, autoLogAppEvents: false });
+      // sdk.js first exposes a buffered stub; login on that stub loses user activation.
+      if (settled || !window.FB || "__buffer" in window.FB) return;
+      try { window.FB.init({ appId, version, xfbml: false, autoLogAppEvents: false }); }
+      catch { fail(); return; }
+      settled = true;
+      cleanup();
       resolve(window.FB);
     };
-    if (window.FB) { initialize(); return; }
+    const onReady = () => {
+      try { previousAsyncInit?.(); } finally { initialize(); }
+    };
+    window.fbAsyncInit = onReady;
+    const timeout = window.setTimeout(fail, 15000);
+    if (window.FB && !("__buffer" in window.FB)) { initialize(); return; }
     const previous = document.getElementById("whatsapp-meta-sdk");
     previous?.remove();
     const script = document.createElement("script");
@@ -53,9 +74,8 @@ export function loadMetaSDK(appId: string, version: string): Promise<MetaSDK> {
     script.src = "https://connect.facebook.net/pt_BR/sdk.js";
     script.async = true;
     script.crossOrigin = "anonymous";
-    const timeout = window.setTimeout(() => reject(new Error("SDK indisponível")), 15000);
-    script.onload = () => { window.clearTimeout(timeout); initialize(); };
-    script.onerror = () => { window.clearTimeout(timeout); reject(new Error("SDK indisponível")); };
+    script.onload = initialize;
+    script.onerror = fail;
     document.head.appendChild(script);
   }).catch((error: unknown) => { sdkPromise = null; throw error; });
   return sdkPromise;

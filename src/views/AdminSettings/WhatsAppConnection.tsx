@@ -16,6 +16,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
   const [connection, setConnection] = useState<WhatsAppConnectionResponse | null>(null);
   const [sdk, setSDK] = useState<MetaSDK | null>(null);
   const [busy, setBusy] = useState(false);
+  const [authorizing, setAuthorizing] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
             const loaded = await loadMetaSDK(result.provider.appId, result.provider.apiVersion);
             if (!cancelled) setSDK(loaded);
           } catch {
-            if (!cancelled) setError("Não foi possível carregar a conexão com a Meta. Permita o acesso ao Facebook no navegador e tente novamente.");
+            if (!cancelled) setError("O Facebook não terminou de carregar. Verifique extensões de privacidade ou bloqueadores, permita acesso a connect.facebook.net e recarregue a página.");
           }
         }
       }).catch(() => {
@@ -59,6 +60,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
     async function finish(signup: ActiveSignup) {
       if (!signup.code || !signup.finished || signup.submitting || active.current !== signup) return;
       signup.submitting = true;
+      setAuthorizing(false);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setNotice("Autorização recebida. Estamos preparando o número e as mensagens.");
       try {
@@ -102,9 +104,16 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
 
   const finishRef = useRef<((signup: ActiveSignup) => Promise<void>) | null>(null);
 
+  function cancelSignup() {
+    active.current = null;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setBusy(false);
+    setNotice("Tentativa cancelada. Feche a janela da Meta, se estiver aberta, e tente novamente.");
+  }
+
   function connect() {
     if (!sdk || !connection?.provider.enabled || active.current || !phoneSaved) return;
-    setError(""); setNotice("Conclua a autorização na janela da Meta."); setBusy(true);
+    setError(""); setNotice("Conclua a autorização na janela da Meta."); setAuthorizing(true); setBusy(true);
     const signup: ActiveSignup = { attempt: clientApi<{ attemptId: string }>("admin/whatsapp/signup", { method: "POST" }), submitting: false };
     active.current = signup;
     // Handle rejection immediately even if the user leaves the popup open.
@@ -130,7 +139,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
 
   async function updateConnection(method: "POST" | "DELETE") {
     if (method === "DELETE" && !await requestConfirmation({ message: "Desconectar desativa os avisos e remove a autorização salva nesta plataforma. Seu número e sua conta na Meta serão mantidos.", confirmLabel: "Desconectar WhatsApp" })) return;
-    setBusy(true); setError(""); setNotice("");
+    setAuthorizing(false); setBusy(true); setError(""); setNotice("");
     try {
       const result = await clientApi<WhatsAppConnectionResponse>(method === "DELETE" ? "admin/whatsapp/connection" : "admin/whatsapp/connection/refresh", { method });
       setConnection(result); changeRef.current(result);
@@ -158,10 +167,14 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       </ConnectionSteps> : null}
       {connection?.pending ? <Muted>Autorização salva. Clique em Atualizar status para retomar a preparação do número e das mensagens.</Muted> : null}
       <ConnectionActions>
-        <Button type="button" onClick={connect} disabled={busy || !sdk || !connection?.provider.enabled || !phoneSaved} aria-describedby={!connection?.provider.enabled ? "whatsapp-provider-help" : undefined}><Link2 size={18} aria-hidden="true" />{busy ? "Aguarde…" : connected ? "Conectar novamente" : "Conectar WhatsApp"}</Button>
+        <Button type="button" onClick={connect} disabled={busy || !sdk || !connection?.provider.enabled || !phoneSaved} aria-describedby={!connection?.provider.enabled ? "whatsapp-provider-help" : undefined}><Link2 size={18} aria-hidden="true" />{busy ? authorizing ? "Aguardando autorização na Meta…" : "Preparando WhatsApp…" : connected ? "Conectar novamente" : "Conectar WhatsApp"}</Button>
+        {busy && authorizing ? <Button type="button" variant="outline" onClick={cancelSignup}>Cancelar conexão</Button> : null}
         {(embedded || connection?.pending) ? <Button type="button" variant="outline" disabled={busy || !connection?.provider.enabled} onClick={() => void updateConnection("POST")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
         {(connected || connection?.pending) ? <Button type="button" variant="dangerText" disabled={busy} onClick={() => void updateConnection("DELETE")}><Unplug size={16} aria-hidden="true" /> Desconectar</Button> : null}
-        {(!connection || (connection.provider.enabled && !sdk)) && error ? <Button type="button" variant="outline" onClick={() => { setError(""); setLoading(true); setReload((n) => n + 1); }}>Carregar novamente</Button> : null}
+        {(!connection || (connection.provider.enabled && !sdk)) && error ? <Button type="button" variant="outline" onClick={() => {
+          if (connection?.provider.enabled && !sdk) { window.location.reload(); return; }
+          setError(""); setLoading(true); setReload((n) => n + 1);
+        }}>{connection?.provider.enabled ? "Recarregar página" : "Carregar novamente"}</Button> : null}
       </ConnectionActions>
       {!connected ? <details><summary>Meu número já usa WhatsApp Business</summary><Muted>Manter o aplicativo e conectar a API no mesmo número exige coexistência, que ainda não está disponível aqui. Fale com o suporte para configurar seu caso.</Muted></details> : null}
       {embedded ? <Muted>A Meta decide a aprovação das mensagens. Configure a cobrança na sua conta e envie avisos apenas a clientes que autorizaram o contato.</Muted> : null}
