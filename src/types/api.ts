@@ -134,6 +134,9 @@ export type Product = {
   description?: string;
   imageUrl?: string;
   priceCents: number;
+  discountType?: "" | "PERCENTAGE" | "FIXED";
+  discountValue?: number;
+  salePriceCents?: number;
   sortOrder: number;
   active: boolean;
   showInCarousel: boolean;

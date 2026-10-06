@@ -1,5 +1,6 @@
 import type { CartItem } from "@/components/CartProvider";
 import type { PromotionComboPublicResponse } from "@/types/api";
+import { productSalePrice } from "../../utils/productPricing.ts";
 
 export function buildPromotionComboCartItems(
   combo: PromotionComboPublicResponse,
@@ -12,9 +13,9 @@ export function buildPromotionComboCartItems(
     imageUrl: product.imageUrl,
     quantity,
     unitOriginalPriceCents: product.priceCents,
-    unitPriceCents: product.priceCents,
-    discountAmountCents: 0,
+    unitPriceCents: productSalePrice(product),
+    discountAmountCents: (product.priceCents - productSalePrice(product)) * quantity,
     options: [],
-    totalCents: product.priceCents * quantity,
+    totalCents: productSalePrice(product) * quantity,
   }));
 }

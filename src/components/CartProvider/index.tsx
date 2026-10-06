@@ -318,6 +318,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return {
             ...item,
             quantity,
+            discountAmountCents: ((item.unitOriginalPriceCents ?? item.unitPriceCents) - item.unitPriceCents) * quantity,
             totalCents: (item.unitPriceCents + optionsTotalCents) * quantity,
           };
         }),
@@ -345,9 +346,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (item.lineId !== lineId) {
             return item;
           }
-          const unitPriceCents = eligible
-            ? offerPriceCents
-            : originalPriceCents;
+          const unitPriceCents = offerPriceCents;
           const optionsTotalCents = item.options.reduce(
             (sum, option) => sum + option.priceCents,
             0,

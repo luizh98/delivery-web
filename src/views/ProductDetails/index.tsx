@@ -19,6 +19,7 @@ import {
 } from "@/components/CartProvider";
 import { Field, Textarea } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
+import { ProductPrice as DiscountPrice } from "@/components/ProductPrice";
 import { useTracking } from "@/components/TrackingProvider";
 import { clientApi } from "@/services/api/client";
 import type {
@@ -27,6 +28,7 @@ import type {
   UpsellOfferValidationResponse,
 } from "@/types/api";
 import { money } from "@/utils/format";
+import { productSalePrice } from "@/utils/productPricing";
 import { activeProductFlags } from "@/utils/productFlags";
 import {
   ExpandedImage,
@@ -202,7 +204,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     setAdding(true);
     try {
       let originalPriceCents = product.priceCents;
-      let offerPriceCents = product.priceCents;
+      let offerPriceCents = productSalePrice(product);
       let maximumPromotionalQuantity: number | undefined;
 
       if (pendingUpsell) {
@@ -320,7 +322,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 ))}
               </FlagBadges>
             ) : null}
-            <ProductPrice>{money(product.priceCents)}</ProductPrice>
+            <ProductPrice><DiscountPrice product={product} /></ProductPrice>
           </ProductHeader>
 
           {product.optionGroups

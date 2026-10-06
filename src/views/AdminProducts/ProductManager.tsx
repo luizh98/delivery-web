@@ -14,14 +14,16 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
+import { ProductPrice as DiscountPrice } from "@/components/ProductPrice";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { ApiError, clientApi } from "@/services/api/client";
-import { centsToReais, money, reaisToCents } from "@/utils/format";
+import { centsToReais, reaisToCents } from "@/utils/format";
+import { isProductDiscountValid } from "@/utils/productPricing";
 import type {
   Product,
   ProductCategory,
@@ -101,6 +103,8 @@ const productSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
   description: z.string().optional(),
   priceReais: z.number().min(0),
+  discountType: z.enum(["", "PERCENTAGE", "FIXED"]),
+  discountValue: z.number().finite(),
   sortOrder: z.number(),
   active: z.boolean(),
   showInCarousel: z.boolean(),
@@ -108,6 +112,20 @@ const productSchema = z.object({
   glutenFree: z.boolean(),
   lactoseFree: z.boolean(),
   vegetarian: z.boolean(),
+}).superRefine((values, context) => {
+  if (!isProductDiscountValid({
+    priceCents: reaisToCents(values.priceReais),
+    discountType: values.discountType,
+    discountValue: values.discountType === "FIXED" ? reaisToCents(values.discountValue) : values.discountValue,
+  })) {
+    context.addIssue({
+      code: "custom",
+      path: ["discountValue"],
+      message: values.discountType === "PERCENTAGE"
+        ? "Informe uma porcentagem inteira de 1 a 100 e um preço original maior que zero."
+        : "Informe um valor final de zero até abaixo do preço original.",
+    });
+  }
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -176,6 +194,8 @@ const defaultProductForm = (categoryId = ""): ProductForm => ({
   name: "",
   description: "",
   priceReais: 0,
+  discountType: "",
+  discountValue: 0,
   sortOrder: 0,
   active: true,
   showInCarousel: false,
@@ -191,6 +211,10 @@ function productToForm(product: Product): ProductForm {
     name: product.name,
     description: product.description ?? "",
     priceReais: centsToReais(product.priceCents),
+    discountType: product.discountType ?? "",
+    discountValue: product.discountType === "FIXED"
+      ? centsToReais(product.discountValue ?? 0)
+      : product.discountValue ?? 0,
     sortOrder: product.sortOrder,
     active: product.active,
     showInCarousel: product.showInCarousel ?? false,
@@ -370,6 +394,15 @@ export function ProductManager({
     resolver: zodResolver(productSchema),
     defaultValues: defaultProductForm(initialCategories[0]?.id ?? ""),
   });
+  const [discountType, discountValue, priceReais] = useWatch({
+    control: form.control,
+    name: ["discountType", "discountValue", "priceReais"],
+  });
+  const discountPreview = {
+    priceCents: reaisToCents(priceReais),
+    discountType,
+    discountValue: discountType === "FIXED" ? reaisToCents(discountValue) : discountValue,
+  };
 
   useEffect(() => {
     return () => {
@@ -679,6 +712,10 @@ export function ProductManager({
         name: values.name,
         description: values.description,
         priceCents: reaisToCents(values.priceReais),
+        discountType: values.discountType,
+        discountValue: values.discountType === "FIXED"
+          ? reaisToCents(values.discountValue)
+          : values.discountType ? values.discountValue : 0,
         sortOrder: values.sortOrder,
         active: values.active,
         showInCarousel: values.showInCarousel,
@@ -881,7 +918,7 @@ export function ProductManager({
             <Field label="Nome" error={form.formState.errors.name?.message}>
               <Input {...form.register("name")} />
             </Field>
-            <Field label="Preço (R$)">
+            <Field label="Preço original (R$)" error={form.formState.errors.priceReais?.message}>
               <Input
                 type="number"
                 min={0}
@@ -893,6 +930,42 @@ export function ProductManager({
               <Input type="number" {...form.register("sortOrder", { valueAsNumber: true })} />
             </Field>
           </GridTwo>
+
+          <FlagFieldset>
+            <FlagLegend>Desconto no cardápio</FlagLegend>
+            <GridTwo>
+              <Field label="Tipo de desconto">
+                <Select {...form.register("discountType", {
+                  onChange: () => form.setValue("discountValue", 0, { shouldValidate: true }),
+                })}>
+                  <option value="">Sem desconto</option>
+                  <option value="PERCENTAGE">Porcentagem</option>
+                  <option value="FIXED">Valor final</option>
+                </Select>
+              </Field>
+              {discountType ? (
+                <Field
+                  label={discountType === "PERCENTAGE" ? "Desconto (%)" : "Preço com desconto (R$)"}
+                  error={form.formState.errors.discountValue?.message}
+                >
+                  <Input
+                    type="number"
+                    min={discountType === "PERCENTAGE" ? 1 : 0}
+                    max={discountType === "PERCENTAGE" ? 100 : undefined}
+                    step={discountType === "PERCENTAGE" ? 1 : 0.01}
+                    {...form.register("discountValue", { valueAsNumber: true })}
+                  />
+                </Field>
+              ) : null}
+            </GridTwo>
+            {discountType && isProductDiscountValid(discountPreview) ? (
+              <div aria-live="polite">
+                <Muted>Assim aparece no cardápio</Muted>
+                <DiscountPrice product={discountPreview} />
+              </div>
+            ) : null}
+            <Muted>Desconto aplicado ao produto. Adicionais mantêm seus preços.</Muted>
+          </FlagFieldset>
 
           <Field label="Imagem do produto" error={imageError}>
             <input
@@ -1175,7 +1248,7 @@ export function ProductManager({
                   ) : null}
                 </div>
                 <ProductActions>
-                  <Price>{money(product.priceCents)}</Price>
+                  <Price><DiscountPrice product={product} /></Price>
                   <Button type="button" variant="outline" onClick={() => startEdit(product)}>
                     <Pencil size={16} />
                     Editar

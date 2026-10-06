@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { PageShell } from "@/components/PageShell";
+import { ProductPrice as DiscountPrice } from "@/components/ProductPrice";
 import { useTracking } from "@/components/TrackingProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import {
@@ -530,7 +531,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                           </FlagBadges>
                         ) : null}
                         <ProductPrice>
-                          {money(product.priceCents)}
+                          <DiscountPrice product={product} />
                         </ProductPrice>
                       </ProductInfo>
                       <ProductImage
