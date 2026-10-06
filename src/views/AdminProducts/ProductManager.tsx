@@ -937,7 +937,10 @@ export function ProductManager({
             <GridTwo>
               <Field label="Tipo de desconto">
                 <Select {...form.register("discountType", {
-                  onChange: () => form.setValue("discountValue", 0, { shouldValidate: true }),
+                  onChange: () => {
+                    form.setValue("discountValue", 0);
+                    form.clearErrors("discountValue");
+                  },
                 })}>
                   <option value="">Sem desconto</option>
                   <option value="PERCENTAGE">Porcentagem</option>
