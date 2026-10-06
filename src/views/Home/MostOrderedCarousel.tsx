@@ -4,7 +4,7 @@ import { Flame } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/api";
-import { money } from "@/utils/format";
+import { ProductPrice } from "@/components/ProductPrice";
 import {
   CarouselCard,
   CarouselDescription,
@@ -262,7 +262,7 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
             <CarouselInfo>
               <CarouselName>{product.name}</CarouselName>
               {product.description ? <CarouselDescription>{product.description}</CarouselDescription> : null}
-              <CarouselPrice>{money(product.priceCents)}</CarouselPrice>
+              <CarouselPrice><ProductPrice product={product} /></CarouselPrice>
             </CarouselInfo>
           </CarouselCard>
         ))}

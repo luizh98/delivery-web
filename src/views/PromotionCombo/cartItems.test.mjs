@@ -41,3 +41,14 @@ test("builds normal cart lines using current product prices", () => {
   assert.equal(items[0].upsellCampaignId, undefined);
   assert.equal(items[0].unitPriceCents, 700);
 });
+
+test("combo keeps original price and charges product discount for every unit", () => {
+  const combo = {
+    items: [{ quantity: 3, product: { id: "burger", name: "Burger", priceCents: 2500, discountType: "PERCENTAGE", discountValue: 20, salePriceCents: 2000 } }],
+  };
+  const [item] = buildPromotionComboCartItems(combo, () => "line-id");
+  assert.equal(item.unitOriginalPriceCents, 2500);
+  assert.equal(item.unitPriceCents, 2000);
+  assert.equal(item.discountAmountCents, 1500);
+  assert.equal(item.totalCents, 6000);
+});
