@@ -31,7 +31,7 @@ export const DiscountBadge = styled("span", {
   gap: "0.25rem",
   borderRadius: "0.375rem",
   padding: "0.1875rem 0.4375rem",
-  background: "#fde68a",
+  background: "color-mix(in srgb, var(--color-primary) 13%, var(--color-surface))",
   color: "#000000",
   fontSize: "inherit",
   fontWeight: 800,
