@@ -31,4 +31,13 @@ Commits de implementação: API `d27f404`; frontend `863aba2`.
 
 ## Limites
 
-Browser usa backend descartável em memória (porta 18080), isolado de tenants reais. Testes Go cobrem cálculo, validação, contrato e serialização BSON; não executamos checkout integrado com MongoDB real. Nenhum deploy/push nesta entrega.
+Browser usa backend descartável em memória (porta 18080), isolado de tenants reais. Testes Go cobrem cálculo, validação, contrato e serialização BSON; não executamos checkout integrado com MongoDB real.
+
+## Staging — 2026-10-06
+
+- Publicação autorizada pelo usuário após implementação. Destino: Easypanel `delivery-app-staging`; produção não foi alterada.
+- API: `ea7c614088a638cb557a68bcf63e1a280954eff1`, deploy `cmuwlrtpv005807l74exk7vvr`, status `done`, build `Success`, container `running`.
+- Web: `5810733948d58c044403b79a05f22b44af1113e0` (cherry-pick de `863aba2` sobre `origin/staging`), deploy `cmuwlvxi8005e07l7edf0hj00`, status `done`, build `Success`, container `running`.
+- Checkout isolado `.staging-product-discounts`: quatro testes de preço/combos, TypeScript e diff check aprovados. Evidências genéricas já existentes na staging preservadas; commit de documentação local não foi aplicado lá.
+- Smoke em `https://dev-terraco-canecao.flyfoods.com.br`: home e `/api/backend/public/menu` HTTP 200; 62 produtos com campos de desconto; produtos legados preservam preço; bundle público contém novo componente (`discountValue`/`OFERTA`).
+- Nenhum produto da staging teve desconto configurado durante conferência. Cadastro: `https://dev-terraco-canecao.flyfoods.com.br/admin/catalog/products`.
