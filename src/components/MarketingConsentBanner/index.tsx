@@ -40,6 +40,13 @@ export function MarketingConsentBanner() {
         Utilizamos cookies para melhorar sua experiência de navegação, entender como
         o cardápio é utilizado e aprimorar nossos serviços. Escolha se deseja aceitar
         ou recusar cookies opcionais.
+        {" "}
+        <a
+          href="/politicas-e-diretrizes"
+          className="underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Leia nossa Política de Privacidade.
+        </a>
       </BannerText>
       <BannerActions>
         <Button
