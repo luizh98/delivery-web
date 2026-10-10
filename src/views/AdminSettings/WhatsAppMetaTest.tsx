@@ -31,7 +31,7 @@ export function WhatsAppMetaTest() {
       form.resetField("accessToken");
     }
   });
-  return <details onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }}>
+  return <details onKeyDown={(event) => { if (event.key === "Enter" && event.target instanceof HTMLInputElement) event.preventDefault(); }}>
     <summary>Teste com número da Meta · ambiente dev</summary>
     <Muted>Remetente +1 (555) 648-1161. Envia mensagem demonstrativa em inglês, sem criar pedidos ou alterar o número do restaurante.</Muted>
     <Field label="Token temporário para teste" error={form.formState.errors.accessToken?.message}>
