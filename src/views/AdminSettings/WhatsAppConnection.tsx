@@ -7,6 +7,7 @@ import { useConfirmation } from "@/components/ConfirmationProvider";
 import { clientApi } from "@/services/api/client";
 import type { WhatsAppConnectionResponse } from "@/types/api";
 import { WhatsAppMetaTest } from "./WhatsAppMetaTest";
+import { WhatsAppMetaTemplateTest } from "./WhatsAppMetaTemplateTest";
 import { connectionErrorMessage, loadMetaSDK, parseMetaSignupMessage, templateStatusLabel, type MetaSDK, type MetaSignupMessage } from "./whatsappEmbeddedSignup";
 import { ConnectionActions, ConnectionSteps, ConnectionSurface, ErrorText, Muted } from "./styles";
 
@@ -180,7 +181,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       {!connected ? <details><summary>Meu número já usa WhatsApp Business</summary><Muted>Manter o aplicativo e conectar a API no mesmo número exige coexistência, que ainda não está disponível aqui. Fale com o suporte para configurar seu caso.</Muted></details> : null}
       {embedded ? <Muted>A Meta decide a aprovação das mensagens. Configure a cobrança na sua conta e envie avisos apenas a clientes que autorizaram o contato.</Muted> : null}
     </>}
-    {connection?.provider.testEnabled ? <WhatsAppMetaTest /> : null}
+    {connection?.provider.testEnabled ? <><WhatsAppMetaTest /><WhatsAppMetaTemplateTest /></> : null}
     {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
     {error ? <ErrorText role="alert">{error}</ErrorText> : null}
   </ConnectionSurface>;
