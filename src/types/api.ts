@@ -104,7 +104,7 @@ export type RestaurantConfigResponse = {
 };
 
 export type WhatsAppConnectionResponse = {
-  provider: { enabled: boolean; appId: string; configId: string; apiVersion: string };
+  provider: { enabled: boolean; testEnabled?: boolean; appId: string; configId: string; apiVersion: string };
   integration: NonNullable<RestaurantConfigResponse["whatsappIntegration"]>;
   pending: boolean;
   notificationsEnabled: boolean;
