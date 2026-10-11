@@ -101,3 +101,22 @@ test("WhatsApp status toggle defaults off and loads saved tenant setting", () =>
   const orders = on.slice(on.indexOf('<details id="orders"'), on.indexOf('<details id="delivery"'));
   assert.ok(orders.includes("Enviar status dos pedidos por WhatsApp"));
 });
+
+test("automatic motoboy assignment is off by default and belongs to delivery organization", () => {
+  const html = renderSettings();
+  const section = html.slice(html.indexOf('<details id="delivery"')).split("</details>")[0];
+  const control = section.match(/<input[^>]*name="automaticMotoboyAssignment"[^>]*>/)?.[0];
+  assert.ok(control, "assignment control belongs to delivery section");
+  assert.ok(!control.includes("checked"), "legacy config defaults to manual assignment");
+  assert.ok(control.includes('aria-describedby="automatic-motoboy-help"'));
+  for (const text of ["Atribuir motoboy automaticamente", "menos", "pedidos pendentes", "apenas um", "todas as novas entregas", "Sem entregadores ativos", "iniciada manualmente"]) assert.ok(section.includes(text), text);
+  assert.ok(section.indexOf("Organização das entregas") < section.indexOf("automaticMotoboyAssignment"));
+});
+
+test("automatic motoboy assignment restores saved enabled state for grouped and individual delivery", () => {
+  for (const strategy of ["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]) {
+    const html = renderSettings({ deliveryOrganization: { strategy, automaticMotoboyAssignment: true } });
+    const control = html.match(/<input[^>]*name="automaticMotoboyAssignment"[^>]*>/)?.[0];
+    assert.ok(control?.includes("checked"), `${strategy}: enabled state restored`);
+  }
+});

@@ -91,6 +91,7 @@ const settingsBaseSchema = z.object({
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
+  automaticMotoboyAssignment: z.boolean(),
   deliveryOrganizationStrategy: z.enum(["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]),
   deliveryMaxOrdersPerRoute: z.number().int(),
   deliveryWaitToleranceMinutes: z.number().int(),
@@ -311,6 +312,7 @@ export function SettingsForm({
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
+      automaticMotoboyAssignment: initialConfig?.deliveryOrganization?.automaticMotoboyAssignment ?? false,
       deliveryOrganizationStrategy: initialConfig?.deliveryOrganization?.strategy ?? "INDIVIDUAL",
       deliveryMaxOrdersPerRoute: initialConfig?.deliveryOrganization?.maxOrdersPerRoute ?? 2,
       deliveryWaitToleranceMinutes: initialConfig?.deliveryOrganization?.waitToleranceMinutes ?? 5,
@@ -358,6 +360,7 @@ export function SettingsForm({
     control: form.control,
     name: "deliveryOrganizationStrategy",
   });
+  const automaticMotoboyAssignment = useWatch({ control: form.control, name: "automaticMotoboyAssignment" });
   const rangeValues = useWatch({
     control: form.control,
     name: "deliveryFeeRanges",
@@ -437,7 +440,7 @@ export function SettingsForm({
       return;
     }
     const deliveryChanged = changed("deliveryEnabled", "pricingMode", "maxDistanceKm", "pricePerKmReais", "deliveryFeeRanges", "freeDeliveryMinimumOrderReais", "freeDeliveryDays");
-    const organizationChanged = changed("deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
+    const organizationChanged = changed("automaticMotoboyAssignment", "deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
     const pixelChanged = changed("metaPixelId", "metaPixelEnabled");
     const whatsappChanged = changed("whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappCompletedTemplate");
     if (whatsappChanged || (values.whatsappNotificationsEnabled && !currentConfig?.whatsappIntegration?.tokenConfigured)) {
@@ -518,6 +521,7 @@ export function SettingsForm({
         }} : {}),
         ...(organizationChanged ? { deliveryOrganization: {
           ...currentConfig?.deliveryOrganization,
+          automaticMotoboyAssignment: values.automaticMotoboyAssignment,
           strategy: values.deliveryOrganizationStrategy,
           maxOrdersPerRoute: values.deliveryMaxOrdersPerRoute,
           waitToleranceMinutes: values.deliveryWaitToleranceMinutes,
@@ -1148,6 +1152,21 @@ export function SettingsForm({
               : deliveryOrganizationStrategy === "NEIGHBORHOOD"
                 ? "Pedidos do mesmo bairro podem ser enviados juntos."
                 : "Pedidos com endereços próximos podem ser enviados juntos."}
+          </Muted>
+          <StatusToggle>
+            <input
+              type="checkbox"
+              aria-describedby="automatic-motoboy-help"
+              checked={automaticMotoboyAssignment}
+              {...form.register("automaticMotoboyAssignment")}
+            />
+            <span>Atribuir motoboy automaticamente</span>
+          </StatusToggle>
+          <Muted id="automatic-motoboy-help">
+            Ao enviar um pedido para entrega, ele será atribuído ao entregador ativo com menos
+            pedidos pendentes. Se houver apenas um, ele receberá todas as novas entregas.
+            Sem entregadores ativos, escolha um manualmente em Entregas. A viagem continua
+            sendo iniciada manualmente.
           </Muted>
           {deliveryOrganizationStrategy !== "INDIVIDUAL" ? (
             <GridTwo>
