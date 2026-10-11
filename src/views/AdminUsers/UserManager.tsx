@@ -9,8 +9,9 @@ import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
-import { clientApi } from "@/services/api/client";
+import { ApiError, clientApi } from "@/services/api/client";
 import type { AdminUserResponse } from "@/types/api";
+import { adminPhoneSchema } from "@/utils/adminAuth";
 import {
   Actions,
   Card,
@@ -38,7 +39,7 @@ import {
 
 const userSchema = z.object({
   name: z.string().trim().max(120, "O nome deve ter no máximo 120 caracteres."),
-  phone: z.string().trim().max(30, "O celular deve ter no máximo 30 caracteres."),
+  phone: adminPhoneSchema,
   email: z.email("Informe um e-mail válido."),
   password: z
     .string()
@@ -148,8 +149,10 @@ export function UserManager({
       );
       resetForm();
       showToast("Usuário salvo com sucesso");
-    } catch {
-      const message = "Não foi possível salvar o usuário.";
+    } catch (error) {
+      const message = error instanceof ApiError && error.status === 409
+        ? "E-mail ou celular já cadastrado neste restaurante. Use outro ou edite a conta existente."
+        : "Não foi possível salvar o usuário.";
       setError(message);
       showToast(message, "error");
     }
@@ -218,6 +221,10 @@ export function UserManager({
               <Field label="E-mail" error={form.formState.errors.email?.message}>
                 <Input type="email" autoComplete="off" {...form.register("email")} />
               </Field>
+              <Field label="Celular (opcional)" error={form.formState.errors.phone?.message}>
+                <Input type="tel" autoComplete="tel" placeholder="(11) 98765-4321" aria-describedby="admin-phone-help" {...form.register("phone")} />
+                <SectionHelp id="admin-phone-help">Com DDD. Também pode ser usado para entrar no painel.</SectionHelp>
+              </Field>
               <Field
                 label={isEditing ? "Nova senha (opcional)" : "Senha"}
                 error={form.formState.errors.password?.message}
@@ -240,9 +247,6 @@ export function UserManager({
                 <>
                   <Field label="Nome do motoboy" error={form.formState.errors.name?.message}>
                     <Input autoComplete="name" {...form.register("name")} />
-                  </Field>
-                  <Field label="Celular" error={form.formState.errors.phone?.message}>
-                    <Input type="tel" autoComplete="tel" {...form.register("phone")} />
                   </Field>
                 </>
               ) : null}
@@ -280,6 +284,7 @@ export function UserManager({
                       <Muted>
                         {user.role === "ENTREGADOR" ? `${user.email}${user.phone ? ` · ${user.phone}` : ""}` : user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
                       </Muted>
+                      {user.role !== "ENTREGADOR" && user.phone ? <Muted>{user.phone}</Muted> : null}
                     </div>
                     <ShieldCheck size={18} />
                   </CardHeader>

@@ -9,22 +9,18 @@ import { z } from "zod";
 import { Button } from "@/components/Button";
 import { Field, Input } from "@/components/Field";
 import { authApi } from "@/services/api/client";
+import { adminLoginSchema } from "@/utils/adminAuth";
 import { ErrorText, Form, Root, Subtitle, Title } from "./styles";
 
-const loginSchema = z.object({
-  email: z.string().email("Email inválido."),
-  password: z.string().min(1, "Informe a senha."),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginForm = z.infer<typeof adminLoginSchema>;
 
 export function AdminLoginView() {
   const router = useRouter();
   const [error, setError] = useState("");
   const form = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(adminLoginSchema),
     defaultValues: {
-      email: "admin@delivery.local",
+      identifier: "admin@delivery.local",
       password: "admin123",
     },
   });
@@ -52,11 +48,11 @@ export function AdminLoginView() {
           <Title>Admin</Title>
           <Subtitle>Acesse o painel do restaurante.</Subtitle>
         </div>
-        <Field label="Email" error={form.formState.errors.email?.message}>
-          <Input type="email" {...form.register("email")} />
+        <Field label="E-mail ou celular" error={form.formState.errors.identifier?.message}>
+          <Input type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} {...form.register("identifier")} />
         </Field>
         <Field label="Senha" error={form.formState.errors.password?.message}>
-          <Input type="password" {...form.register("password")} />
+          <Input type="password" autoComplete="current-password" {...form.register("password")} />
         </Field>
         {error ? <ErrorText>{error}</ErrorText> : null}
         <Button type="submit" disabled={form.formState.isSubmitting}>
