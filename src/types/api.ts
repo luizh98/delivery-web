@@ -52,6 +52,7 @@ export type DeliverySettings = {
 export type DeliveryOrganizationStrategy = "INDIVIDUAL" | "NEIGHBORHOOD" | "PROXIMITY";
 
 export type DeliveryOrganizationSettings = {
+  automaticMotoboyAssignment?: boolean;
   strategy?: DeliveryOrganizationStrategy;
   maxOrdersPerRoute?: number;
   waitToleranceMinutes?: number;
