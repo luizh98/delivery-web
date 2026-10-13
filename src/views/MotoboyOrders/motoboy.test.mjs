@@ -35,7 +35,7 @@ function load(file) {
   return loadedModule.exports;
 }
 
-const order = { id: "pedido123", orderNumber: "123", customer: { name: "João", phone: "11999999999" }, status: "PREPARING", deliveryAddress: { street: "Rua das Flores", number: "45", neighborhood: "Centro" }, items: [{ productId: "food", quantity: 2, name: "Marmita", observations: "Sem cebola", options: [{ itemName: "Feijão" }] }], notes: "Conferir bebida" };
+const order = { id: "pedido123", orderNumber: "123", customer: { name: "João", phone: "11999999999" }, status: "PREPARING", createdAt: "2026-10-13T14:00:00Z", statusHistory: [{ status: "RECEIVED", changedAt: "2026-10-13T14:05:00Z" }], deliveryAddress: { street: "Rua das Flores", number: "45", neighborhood: "Centro" }, items: [{ productId: "food", quantity: 2, name: "Marmita", observations: "Sem cebola", options: [{ itemName: "Feijão" }] }], notes: "Conferir bebida" };
 const route = { id: "rota123", status: "OUT_FOR_DELIVERY", orders: [{ ...order, status: "OUT_FOR_DELIVERY" }] };
 function render(routes = [], enabled = true, orders = [order]) {
   const { MotoboyOrdersBoard } = load(path.join(src, "views/MotoboyOrders/MotoboyOrdersBoard.tsx"));
@@ -44,9 +44,26 @@ function render(routes = [], enabled = true, orders = [order]) {
 
 test("pickup starts with physical check and one primary action", () => {
   const html = render();
-  for (const text of ["Para retirar · 1", "Em entrega · 0", "Retirar e sair para entrega", "confira pedido físico", "2 × Marmita", "Sem cebola", "Feijão", "Conferir bebida"]) assert.ok(html.includes(text), text);
+  for (const text of ["Para retirar · 1", "Em entrega · 0", "Retirar e sair para entrega", "confira pedido físico"]) assert.ok(html.includes(text), text);
   assert.ok(!html.includes("Confirmar entrega"));
   assert.match(html, /aria-pressed="true"[^>]*>Para retirar/);
+});
+
+test("both tabs show order date, customer, phone and address in the same order without item descriptions", () => {
+  for (const html of [render(), render([route])]) {
+    const fields = ["Pedido #123 · 13/10/2026, 11:05", "João", "11999999999", "Rua das Flores, 45, Centro"];
+    for (const text of fields) assert.ok(html.includes(text), text);
+    for (let i = 1; i < fields.length; i++) assert.ok(html.indexOf(fields[i - 1]) < html.indexOf(fields[i]));
+    for (const text of ["Marmita", "Sem cebola", "Feijão", "Conferir bebida"]) assert.ok(!html.includes(text), text);
+  }
+});
+
+test("date falls back to creation and missing or invalid dates stay readable", () => {
+  assert.ok(render([], true, [{ ...order, statusHistory: [] }]).includes("13/10/2026, 11:00"));
+  for (const createdAt of [undefined, "invalid"]) {
+    const html = render([], true, [{ ...order, statusHistory: [], createdAt, customer: { name: "João", phone: "" }, deliveryAddress: null }]);
+    for (const text of ["Data não informada", "Telefone não informado", "Endereço não informado"]) assert.ok(html.includes(text), text);
+  }
 });
 
 test("kitchen-dispatched orders open deliveries and retain navigation tools", () => {
