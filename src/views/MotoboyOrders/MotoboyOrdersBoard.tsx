@@ -54,6 +54,23 @@ function whatsAppUrl(phone: string) {
   return `https://wa.me/${number}`;
 }
 
+function OrderDetails({ order }: { order: OrderResponse }) {
+  const receivedAt = order.statusHistory.find((history) => history.status === "RECEIVED")?.changedAt ?? order.createdAt;
+  const date = receivedAt ? new Date(receivedAt) : null;
+  const dateLabel = date && Number.isFinite(date.getTime())
+    ? date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "Data não informada";
+
+  return (
+    <div>
+      <OrderTitle>Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()} · {dateLabel}</OrderTitle>
+      <Address><UserRound size={16} aria-hidden="true" /> {order.customer.name}</Address>
+      <OrderMeta>{order.customer.phone || "Telefone não informado"}</OrderMeta>
+      <Address><MapPin size={15} aria-hidden="true" /> {address(order)}</Address>
+    </div>
+  );
+}
+
 export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
   const [routes, setRoutes] = useState(initialRoutes);
   const [pickup, setPickup] = useState(initialPickup);
@@ -185,11 +202,7 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
           {pickup.orders.length === 0 ? <Empty><PackageCheck size={28} aria-hidden="true" /> Nenhum pedido disponível para retirar.</Empty> : null}
           {pickup.orders.map((order) => (
             <RouteCard key={order.id}>
-              <OrderTitle>Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
-              <Address><MapPin size={15} aria-hidden="true" /> {address(order)}</Address>
-              <OrderMeta>{order.items.map((item) => `${item.quantity} × ${item.name}`).join(" · ")}</OrderMeta>
-              {order.items.filter((item) => item.observations || item.options?.length).map((item, index) => <OrderMeta key={`${item.productId}-${index}`}>{item.name}: {[item.observations, ...(item.options ?? []).map((option) => option.itemName)].filter(Boolean).join(" · ")}</OrderMeta>)}
-              {order.notes ? <OrderMeta>Observação: {order.notes}</OrderMeta> : null}
+              <OrderDetails order={order} />
               <OrderMeta>{order.status === "READY" ? "Pronto — confira antes de retirar" : "Em preparo — confira pedido físico"}</OrderMeta>
               <Button type="button" disabled={loadingId !== null || refreshError} onClick={() => void pickupOrder(order)}><Bike size={16} aria-hidden="true" /> {loadingId === order.id ? "Confirmando saída…" : "Retirar e sair para entrega"}</Button>
             </RouteCard>
@@ -211,11 +224,7 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
 
             return (
               <OrderCard key={order.id}>
-              <div>
-                <OrderTitle><UserRound size={16} aria-hidden="true" /> Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()} · {order.customer.name}</OrderTitle>
-                <Address><MapPin size={15} aria-hidden="true" /> {address(order)}</Address>
-                <OrderMeta>{order.customer.phone || "Telefone não informado"}</OrderMeta>
-              </div>
+              <OrderDetails order={order} />
               <OrderActions>
                 {mapsUrl ? <Button type="button" variant="outline" onClick={() => window.open(mapsUrl, "_blank", "noopener,noreferrer")}><ExternalLink size={16} aria-hidden="true" /> Ver no Google Maps</Button> : null}
                 {whatsappUrl ? <Button type="button" variant="outline" onClick={() => window.open(whatsappUrl, "_blank", "noopener,noreferrer")}><WhatsAppIcon size={16} /> WhatsApp</Button> : null}
