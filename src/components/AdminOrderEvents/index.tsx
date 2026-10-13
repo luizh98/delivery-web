@@ -14,28 +14,31 @@ import type { OrderResponse } from "@/types/api";
 type OrderListener = (order: OrderResponse) => void;
 
 const AdminOrderEventsContext = createContext<{
-  subscribe: (listener: OrderListener) => () => void;
+  subscribe: (listener: OrderListener, onConnect?: () => void) => () => void;
 } | null>(null);
 
 export function AdminOrderEventsProvider({ children }: { children: ReactNode }) {
-  const listenersRef = useRef(new Set<OrderListener>());
+  const listenersRef = useRef(new Map<OrderListener, (() => void) | undefined>());
 
   useEffect(() => {
     const events = new EventSource("/api/backend/admin/orders/events");
     const handleOrder = (event: MessageEvent<string>) => {
       const order = JSON.parse(event.data) as OrderResponse;
-      listenersRef.current.forEach((listener) => listener(order));
+      listenersRef.current.forEach((_, listener) => listener(order));
     };
+    const handleOpen = () => listenersRef.current.forEach((onConnect) => onConnect?.());
 
     events.addEventListener("order", handleOrder);
+    events.addEventListener("open", handleOpen);
     return () => {
       events.removeEventListener("order", handleOrder);
+      events.removeEventListener("open", handleOpen);
       events.close();
     };
   }, []);
 
-  const subscribe = useCallback((listener: OrderListener) => {
-    listenersRef.current.add(listener);
+  const subscribe = useCallback((listener: OrderListener, onConnect?: () => void) => {
+    listenersRef.current.set(listener, onConnect);
     return () => listenersRef.current.delete(listener);
   }, []);
 
