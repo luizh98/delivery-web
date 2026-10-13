@@ -78,6 +78,7 @@ const settingsBaseSchema = z.object({
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   automaticOrderConfirmation: z.boolean(),
+  automaticOrderStatus: z.enum(["CONFIRMED", "PREPARING", "READY"]),
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
@@ -292,6 +293,7 @@ export function SettingsForm({
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
+      automaticOrderStatus: initialConfig?.automaticOrderStatus ?? "CONFIRMED",
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
@@ -344,6 +346,7 @@ export function SettingsForm({
     name: "deliveryOrganizationStrategy",
   });
   const automaticMotoboyAssignment = useWatch({ control: form.control, name: "automaticMotoboyAssignment" });
+  const automaticOrderConfirmation = useWatch({ control: form.control, name: "automaticOrderConfirmation" });
   const rangeValues = useWatch({
     control: form.control,
     name: "deliveryFeeRanges",
@@ -464,6 +467,7 @@ export function SettingsForm({
         ...(dirty.menuDescription ? { menuDescription: values.menuDescription } : {}),
         ...(dirty.minimumOrderReais ? { minimumOrderCents: reaisToCents(values.minimumOrderReais) } : {}),
         ...(dirty.automaticOrderConfirmation ? { automaticOrderConfirmation: values.automaticOrderConfirmation } : {}),
+        ...(dirty.automaticOrderStatus ? { automaticOrderStatus: values.automaticOrderStatus } : {}),
         ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
         ...(dirty.overdueOrderAlertMinutes ? { overdueOrderAlertMinutes: values.overdueOrderAlertMinutes } : {}),
         ...(deliveryChanged ? { deliverySettings: {
@@ -775,10 +779,36 @@ export function SettingsForm({
               {...form.register("minimumOrderReais", { valueAsNumber: true })}
             />
           </Field>
-          <StatusToggle>
-            <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
-            <span>Confirmar pedidos automaticamente e enviar para impressão</span>
-          </StatusToggle>
+          <SettingsGroup>
+            <StatusToggle>
+              <input
+                type="checkbox"
+                aria-describedby="automatic-order-help"
+                {...form.register("automaticOrderConfirmation")}
+              />
+              <span>Confirmar pedidos automaticamente</span>
+            </StatusToggle>
+            <Muted id="automatic-order-help">
+              Novos pedidos avançam para o status escolhido sem confirmação manual.
+              Desativado, ficam em Recebido até você confirmar.
+            </Muted>
+            {automaticOrderConfirmation && (
+              <Field label="Enviar novos pedidos para" error={form.formState.errors.automaticOrderStatus?.message}>
+                <Select
+                  defaultValue={initialConfig?.automaticOrderStatus ?? "CONFIRMED"}
+                  aria-describedby="automatic-order-print-help"
+                  {...form.register("automaticOrderStatus")}
+                >
+                  <option value="CONFIRMED">Confirmado</option>
+                  <option value="PREPARING">Em preparo</option>
+                  <option value="READY">Pronto</option>
+                </Select>
+              </Field>
+            )}
+            <Muted id="automatic-order-print-help">
+              A impressão automática segue as configurações de Impressoras, independentemente do status escolhido.
+            </Muted>
+          </SettingsGroup>
           <SettingsGroup>
           <StatusToggle>
             <input

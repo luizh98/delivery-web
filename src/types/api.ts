@@ -82,6 +82,7 @@ export type RestaurantConfigResponse = {
   deliveryOrganization?: DeliveryOrganizationSettings;
   integrations?: RestaurantIntegrations;
   automaticOrderConfirmation?: boolean;
+  automaticOrderStatus?: "CONFIRMED" | "PREPARING" | "READY";
   overdueOrderAlertEnabled?: boolean;
   overdueOrderAlertMinutes?: number;
   open?: boolean;

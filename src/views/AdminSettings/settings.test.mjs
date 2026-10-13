@@ -88,3 +88,25 @@ test("automatic motoboy assignment restores saved enabled state for grouped and 
     assert.ok(control?.includes("checked"), `${strategy}: enabled state restored`);
   }
 });
+
+test("automatic confirmation shows saved destination and independent printing help", () => {
+  for (const status of ["CONFIRMED", "PREPARING", "READY"]) {
+    const html = renderSettings({ automaticOrderConfirmation: true, automaticOrderStatus: status });
+    const select = html.match(/<select[^>]*name="automaticOrderStatus"[\s\S]*?<\/select>/)?.[0];
+    assert.ok(select, "enabled confirmation shows destination selector");
+    assert.ok(select.includes(`value="${status}" selected=""`), "saved status restored");
+    for (const label of ["Confirmado", "Em preparo", "Pronto"]) assert.ok(select.includes(label));
+    assert.ok(!select.includes("OUT_FOR_DELIVERY"));
+    assert.ok(html.includes("independentemente do status escolhido"));
+    assert.ok(html.includes('aria-describedby="automatic-order-print-help"'));
+  }
+});
+
+test("legacy automatic confirmation defaults to Confirmed; disabled hides selector", () => {
+  const legacy = renderSettings({ automaticOrderConfirmation: true });
+  assert.ok(legacy.includes('value="CONFIRMED" selected=""'));
+  const disabled = renderSettings({ automaticOrderConfirmation: false, automaticOrderStatus: "PREPARING" });
+  assert.ok(!disabled.includes('name="automaticOrderStatus"'));
+  assert.ok(disabled.includes("ficam em Recebido"));
+  assert.ok(disabled.includes("independentemente do status escolhido"));
+});
