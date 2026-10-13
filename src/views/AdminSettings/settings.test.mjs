@@ -102,6 +102,16 @@ test("WhatsApp status toggle defaults off and loads saved tenant setting", () =>
   assert.ok(orders.includes("Enviar status dos pedidos por WhatsApp"));
 });
 
+test("driver pickup defaults off and restores tenant opt-in", () => {
+  const off = renderSettings();
+  const on = renderSettings({ deliveryOrganization: { motoboyPickupEnabled: true } });
+  assert.match(off, /name="motoboyPickupEnabled"/);
+  assert.doesNotMatch(off, /name="motoboyPickupEnabled"[^>]*checked/);
+  assert.match(on, /name="motoboyPickupEnabled"[^>]*checked/);
+  assert.ok(on.includes("Motoboy pode retirar pedidos em preparo"));
+  assert.ok(on.includes("confere o pedido físico"));
+});
+
 test("automatic motoboy assignment is off by default and belongs to delivery organization", () => {
   const html = renderSettings();
   const section = html.slice(html.indexOf('<details id="delivery"')).split("</details>")[0];

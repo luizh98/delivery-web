@@ -838,6 +838,9 @@ export function OrdersManager({
                 </Title>
                 <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
                 <Subtitle>Data do pedido: {formatOrderDate(detailsOrder)}</Subtitle>
+                {detailsOrder.statusHistory.filter((entry) => entry.status === "OUT_FOR_DELIVERY" && entry.changedByName).slice(-1).map((entry) => (
+                  <Subtitle key={entry.changedAt}>Retirado por {entry.changedByName} · {new Date(entry.changedAt).toLocaleString("pt-BR")}</Subtitle>
+                ))}
                 {detailsOverdueMinutes !== null ? (
                   <ReceivedTime overdue>
                     <Clock3 size={14} aria-hidden="true" />

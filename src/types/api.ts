@@ -52,6 +52,7 @@ export type DeliverySettings = {
 export type DeliveryOrganizationStrategy = "INDIVIDUAL" | "NEIGHBORHOOD" | "PROXIMITY";
 
 export type DeliveryOrganizationSettings = {
+  motoboyPickupEnabled?: boolean;
   automaticMotoboyAssignment?: boolean;
   strategy?: DeliveryOrganizationStrategy;
   maxOrdersPerRoute?: number;
@@ -240,6 +241,8 @@ export type OrderResponse = {
     status: OrderStatus;
     changedAt: string;
     reason?: string;
+    changedById?: string;
+    changedByName?: string;
   }[];
   totals: OrderTotals;
   cancellation?: {
