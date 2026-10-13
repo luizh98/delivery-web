@@ -353,25 +353,52 @@ export function OrdersManager({
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detailsAddress)}`
     : null;
 
-  useEffect(() => subscribeToOrderEvents((order) => {
-    const isNewOrder = !knownOrderIdsRef.current.has(order.id);
-    knownOrderIdsRef.current.add(order.id);
-    const isVisible = !visibleStatuses || visibleStatuses.includes(order.status);
-    setOrders((items) => isVisible
-      ? [order, ...items.filter((item) => item.id !== order.id)]
-      : items.filter((item) => item.id !== order.id));
+  useEffect(() => {
+    let active = true;
+    let syncVersion = 0;
+    let liveUpdates = new Map<string, OrderResponse>();
+    const unsubscribe = subscribeToOrderEvents((order) => {
+      liveUpdates.set(order.id, order);
+      const isNewOrder = !knownOrderIdsRef.current.has(order.id);
+      knownOrderIdsRef.current.add(order.id);
+      const isVisible = !visibleStatuses || visibleStatuses.includes(order.status);
+      setOrders((items) => isVisible
+        ? [order, ...items.filter((item) => item.id !== order.id)]
+        : items.filter((item) => item.id !== order.id));
 
-    if (automaticOrderConfirmation && isNewOrder) {
-      void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
-        if (!enabled) {
-          return printOrderDirectly(order, printDestination, true);
-        }
-        return undefined;
-      }).catch(() => {
-        showToast("Não foi possível imprimir pedido automaticamente.", "error");
-      });
-    }
-  }), [automaticOrderConfirmation, printDestination, showToast, subscribeToOrderEvents, visibleStatuses]);
+      if (automaticOrderConfirmation && isNewOrder) {
+        void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
+          if (!enabled) {
+            return printOrderDirectly(order, printDestination, true);
+          }
+          return undefined;
+        }).catch(() => {
+          showToast("Não foi possível imprimir pedido automaticamente.", "error");
+        });
+      }
+    }, async () => {
+      const version = ++syncVersion;
+      const updates = new Map<string, OrderResponse>();
+      liveUpdates = updates;
+      const query = new URLSearchParams();
+      (visibleStatuses ?? orderStatuses).forEach((status) => query.append("status", status));
+      try {
+        const snapshot = await clientApi<OrderResponse[]>(`admin/orders?${query}`);
+        if (!active || version !== syncVersion) return;
+        snapshot.forEach((order) => knownOrderIdsRef.current.add(order.id));
+        const merged = new Map(snapshot.map((order) => [order.id, order]));
+        // Events arriving during the fetch take precedence over its older snapshot.
+        updates.forEach((order) => merged.set(order.id, order));
+        setOrders([...merged.values()].filter((order) => !visibleStatuses || visibleStatuses.includes(order.status)));
+      } catch {
+        // Keep current orders; the next connection retries without replaying print alerts.
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [automaticOrderConfirmation, printDestination, showToast, subscribeToOrderEvents, visibleStatuses]);
 
   useEffect(() => {
     if (!detailsOrderId && !isDatePopoverOpen) {
