@@ -1,5 +1,12 @@
 # State
 
+## Indicadores do acompanhamento — 2026-10-13
+
+- Status atual e anteriores preenchidos com check; apenas próximo passo pulsa. Horários preservados; cancelados/finalizados sem pulso; movimento reduzido respeitado.
+- Quick task: `.specs/quick/025-tracking-next-status/`. Base atualizada: `origin/staging` em `6d45cc5`; checkout principal preservado.
+- Validação: 45 testes, TypeScript, lint alterado e build Webpack aprovados; navegador 390/1280 px sem overflow. Turbopack local limitado pela junção de node_modules; deploy usa instalação própria.
+- Publicação autorizada exclusivamente em staging, com deploy automático no Easypanel.
+
 ## WhatsApp admin configuration — 2026-10-05
 
 - Conta Meta cadastrável em Configurações > Pedidos e alertas > WhatsApp dos pedidos: ID, token, três templates e versão Graph. Mantidos seis accordions e único Salvar alterações.
