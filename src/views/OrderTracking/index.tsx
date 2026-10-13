@@ -334,7 +334,7 @@ export function OrderTrackingView({
           <SectionTitle>Acompanhe seu pedido</SectionTitle>
           <Timeline>
             {steps.map((step, index) => {
-              const completed = order.status === "COMPLETED" || index <= currentIndex;
+              const completed = order.status === "COMPLETED" || index < currentIndex;
               const state = index === currentIndex
                 ? "current"
                 : completed
@@ -342,8 +342,8 @@ export function OrderTrackingView({
                   : "upcoming";
               const markerState = completed
                 ? "completed"
-                : !terminal && currentIndex >= 0 && index === currentIndex + 1
-                  ? "next"
+                : !terminal && index === currentIndex
+                  ? "current"
                   : "upcoming";
               const changedAt = historyTime(order, step.status);
 
