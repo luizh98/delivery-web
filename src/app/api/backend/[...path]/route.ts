@@ -19,6 +19,16 @@ type RouteParams = {
 async function forward(request: NextRequest, context: RouteParams) {
   const { path } = await context.params;
   const requestUrl = new URL(request.url);
+  if (!["GET", "HEAD"].includes(request.method) && path[0] === "admin" && (path[1] === "whatsapp" || (path[1] === "restaurant" && path[2] === "config"))) {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+    let sameOrigin = false;
+    try {
+      const source = new URL(origin ?? "");
+      sameOrigin = source.host === host && (source.protocol === "https:" || (source.protocol === "http:" && source.hostname === "localhost"));
+    } catch { /* An absent or malformed origin is not a browser authorization. */ }
+    if (!sameOrigin) return NextResponse.json({ message: "Solicitação não autorizada. Atualize a página e tente novamente." }, { status: 403 });
+  }
   const targetUrl = new URL(`/api/${path.join("/")}`, backendBaseUrl());
   targetUrl.search = requestUrl.search;
 

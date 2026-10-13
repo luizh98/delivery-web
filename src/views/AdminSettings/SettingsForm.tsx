@@ -21,6 +21,7 @@ import {
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
 import { whatsappSettingsSchema } from "./whatsappSettings";
+import { WhatsAppConnection } from "./WhatsAppConnection";
 import {
   createHolidayHours,
   createWeeklyHours,
@@ -33,6 +34,7 @@ import {
 import type { SettingsFormProps } from "./types";
 import {
   Accordion,
+  AdvancedWhatsAppSettings,
   AccordionBody,
   AccordionIcon,
   AccordionSummary,
@@ -86,10 +88,12 @@ const settingsBaseSchema = z.object({
   whatsappProductionTemplate: z.string(),
   whatsappDeliveryTemplate: z.string(),
   whatsappCompletedTemplate: z.string(),
+  automaticOrderStatus: z.enum(["CONFIRMED", "PREPARING", "READY"]),
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
   automaticMotoboyAssignment: z.boolean(),
+  motoboyPickupEnabled: z.boolean(),
   deliveryOrganizationStrategy: z.enum(["INDIVIDUAL", "NEIGHBORHOOD", "PROXIMITY"]),
   deliveryMaxOrdersPerRoute: z.number().int(),
   deliveryWaitToleranceMinutes: z.number().int(),
@@ -307,10 +311,12 @@ export function SettingsForm({
       whatsappProductionTemplate: initialConfig?.whatsappIntegration?.templates?.production ?? "pedido_producao",
       whatsappDeliveryTemplate: initialConfig?.whatsappIntegration?.templates?.delivery ?? "pedido_entrega",
       whatsappCompletedTemplate: initialConfig?.whatsappIntegration?.templates?.completed ?? "pedido_concluido",
+      automaticOrderStatus: initialConfig?.automaticOrderStatus ?? "CONFIRMED",
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
       automaticMotoboyAssignment: initialConfig?.deliveryOrganization?.automaticMotoboyAssignment ?? false,
+      motoboyPickupEnabled: initialConfig?.deliveryOrganization?.motoboyPickupEnabled ?? false,
       deliveryOrganizationStrategy: initialConfig?.deliveryOrganization?.strategy ?? "INDIVIDUAL",
       deliveryMaxOrdersPerRoute: initialConfig?.deliveryOrganization?.maxOrdersPerRoute ?? 2,
       deliveryWaitToleranceMinutes: initialConfig?.deliveryOrganization?.waitToleranceMinutes ?? 5,
@@ -359,6 +365,8 @@ export function SettingsForm({
     name: "deliveryOrganizationStrategy",
   });
   const automaticMotoboyAssignment = useWatch({ control: form.control, name: "automaticMotoboyAssignment" });
+  const motoboyPickupEnabled = useWatch({ control: form.control, name: "motoboyPickupEnabled" });
+  const automaticOrderConfirmation = useWatch({ control: form.control, name: "automaticOrderConfirmation" });
   const rangeValues = useWatch({
     control: form.control,
     name: "deliveryFeeRanges",
@@ -438,7 +446,7 @@ export function SettingsForm({
       return;
     }
     const deliveryChanged = changed("deliveryEnabled", "pricingMode", "maxDistanceKm", "pricePerKmReais", "deliveryFeeRanges", "freeDeliveryMinimumOrderReais", "freeDeliveryDays");
-    const organizationChanged = changed("automaticMotoboyAssignment", "deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
+    const organizationChanged = changed("automaticMotoboyAssignment", "motoboyPickupEnabled", "deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
     const pixelChanged = changed("metaPixelId", "metaPixelEnabled");
     const whatsappChanged = changed("whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappCompletedTemplate");
     if (whatsappChanged || (values.whatsappNotificationsEnabled && !currentConfig?.whatsappIntegration?.tokenConfigured)) {
@@ -499,6 +507,7 @@ export function SettingsForm({
           language: "pt_BR",
           templates: { production: values.whatsappProductionTemplate.trim(), delivery: values.whatsappDeliveryTemplate.trim(), completed: values.whatsappCompletedTemplate.trim() },
         }} : {}),
+        ...(dirty.automaticOrderStatus ? { automaticOrderStatus: values.automaticOrderStatus } : {}),
         ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
         ...(dirty.overdueOrderAlertMinutes ? { overdueOrderAlertMinutes: values.overdueOrderAlertMinutes } : {}),
         ...(deliveryChanged ? { deliverySettings: {
@@ -520,6 +529,7 @@ export function SettingsForm({
         ...(organizationChanged ? { deliveryOrganization: {
           ...currentConfig?.deliveryOrganization,
           automaticMotoboyAssignment: values.automaticMotoboyAssignment,
+          motoboyPickupEnabled: values.motoboyPickupEnabled,
           strategy: values.deliveryOrganizationStrategy,
           maxOrdersPerRoute: values.deliveryMaxOrdersPerRoute,
           waitToleranceMinutes: values.deliveryWaitToleranceMinutes,
@@ -810,17 +820,27 @@ export function SettingsForm({
               {...form.register("minimumOrderReais", { valueAsNumber: true })}
             />
           </Field>
-          <StatusToggle>
-            <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
-            <span>Confirmar pedidos automaticamente e enviar para impressão</span>
-          </StatusToggle>
           <SettingsGroup aria-labelledby="whatsapp-settings-title" css={{ "& input::placeholder": { color: "var(--color-muted)", opacity: 1 } }}>
             <SectionTitle as="h3" id="whatsapp-settings-title">WhatsApp dos pedidos</SectionTitle>
             <Muted>Avisos de preparação, saída para entrega e conclusão pelo número do restaurante.</Muted>
+            <WhatsAppConnection phoneSaved={!form.formState.dirtyFields.whatsapp && !!currentConfig?.whatsapp} onChange={(connection) => {
+              setCurrentConfig((previous) => ({ ...previous, whatsappIntegration: connection.integration, whatsappNotificationsEnabled: connection.notificationsEnabled }));
+              form.resetField("whatsappNotificationsEnabled", { defaultValue: connection.notificationsEnabled });
+              form.resetField("whatsappPhoneNumberId", { defaultValue: connection.integration.phoneNumberId });
+              form.resetField("whatsappAccessToken", { defaultValue: "" });
+              form.resetField("whatsappApiVersion", { defaultValue: connection.integration.apiVersion || "v25.0" });
+              form.resetField("whatsappProductionTemplate", { defaultValue: connection.integration.templates?.production || "pedido_producao" });
+              form.resetField("whatsappDeliveryTemplate", { defaultValue: connection.integration.templates?.delivery || "pedido_entrega" });
+              form.resetField("whatsappCompletedTemplate", { defaultValue: connection.integration.templates?.completed || "pedido_concluido" });
+            }} />
             <StatusToggle>
-              <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} {...form.register("whatsappNotificationsEnabled")} />
+              <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} disabled={currentConfig?.whatsappIntegration?.source === "disconnected" || (currentConfig?.whatsappIntegration?.source === "embedded_signup" && !currentConfig.whatsappIntegration.ready)} {...form.register("whatsappNotificationsEnabled")} />
               <span>Enviar status dos pedidos por WhatsApp</span>
             </StatusToggle>
+            <Muted>Ative após conferir a cobrança na Meta e obter autorização dos clientes. Salve essa opção no botão Salvar alterações.</Muted>
+            <AdvancedWhatsAppSettings open={Object.keys(form.formState.errors).some((field) => field.startsWith("whatsapp") && field !== "whatsappNotificationsEnabled" && field !== "whatsapp") || undefined}>
+            <summary>Configuração avançada · cadastro manual</summary>
+            <div>
             <Muted role="status">{currentConfig?.whatsappIntegration?.tokenConfigured ? "Token configurado. Deixe o campo vazio para manter o atual." : "Para começar, informe o ID do número e o token obtidos na Meta."}</Muted>
             <GridTwo>
               <Field label="ID do número na Meta" error={form.formState.errors.whatsappPhoneNumberId?.message}>
@@ -853,6 +873,38 @@ export function SettingsForm({
               <Muted id="whatsapp-version-help">Mantenha v25.0, a menos que sua integração use outra versão.</Muted>
             </Field>
             <Muted>Salve no botão abaixo. Alterações passam a valer nos próximos envios, sem reiniciar o sistema. Ative após registrar o número, aprovar os templates na Meta e obter autorização dos clientes.</Muted>
+            </div>
+            </AdvancedWhatsAppSettings>
+          </SettingsGroup>
+          <SettingsGroup>
+            <StatusToggle>
+              <input
+                type="checkbox"
+                aria-describedby="automatic-order-help"
+                {...form.register("automaticOrderConfirmation")}
+              />
+              <span>Confirmar pedidos automaticamente</span>
+            </StatusToggle>
+            <Muted id="automatic-order-help">
+              Novos pedidos avançam para o status escolhido sem confirmação manual.
+              Desativado, ficam em Recebido até você confirmar.
+            </Muted>
+            {automaticOrderConfirmation && (
+              <Field label="Enviar novos pedidos para" error={form.formState.errors.automaticOrderStatus?.message}>
+                <Select
+                  defaultValue={initialConfig?.automaticOrderStatus ?? "CONFIRMED"}
+                  aria-describedby="automatic-order-print-help"
+                  {...form.register("automaticOrderStatus")}
+                >
+                  <option value="CONFIRMED">Confirmado</option>
+                  <option value="PREPARING">Em preparo</option>
+                  <option value="READY">Pronto</option>
+                </Select>
+              </Field>
+            )}
+            <Muted id="automatic-order-print-help">
+              A impressão automática segue as configurações de Impressoras, independentemente do status escolhido.
+            </Muted>
           </SettingsGroup>
           <SettingsGroup>
           <StatusToggle>
@@ -1134,6 +1186,13 @@ export function SettingsForm({
               : deliveryOrganizationStrategy === "NEIGHBORHOOD"
                 ? "Pedidos do mesmo bairro podem ser enviados juntos."
                 : "Pedidos com endereços próximos podem ser enviados juntos."}
+          </Muted>
+          <StatusToggle>
+            <input type="checkbox" aria-describedby="motoboy-pickup-help" checked={motoboyPickupEnabled} {...form.register("motoboyPickupEnabled")} />
+            <span>Motoboy pode retirar pedidos em preparo</span>
+          </StatusToggle>
+          <Muted id="motoboy-pickup-help">
+            O entregador confere o pedido físico e confirma a saída pelo celular. Pedidos em preparo ou prontos ficam disponíveis para retirada; quem retira assume a entrega. A cozinha também pode continuar confirmando a saída.
           </Muted>
           <StatusToggle>
             <input

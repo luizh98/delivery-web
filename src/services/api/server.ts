@@ -155,6 +155,10 @@ export async function getMotoboyDeliveryRoutes() {
   return (await backendFetch<DeliveryRouteResponse[]>("admin/motoboy/delivery-routes")) ?? [];
 }
 
+export async function getMotoboyPickupOrders() {
+  return (await backendFetch<{ enabled: boolean; orders: OrderResponse[] }>("admin/motoboy/pickup-orders")) ?? { enabled: false, orders: [] };
+}
+
 export async function getAdminMotoboys() {
   return (await backendFetch<MotoboyResponse[]>("admin/motoboys")) ?? [];
 }

@@ -334,18 +334,23 @@ export function OrderTrackingView({
           <SectionTitle>Acompanhe seu pedido</SectionTitle>
           <Timeline>
             {steps.map((step, index) => {
-              const completed = order.status === "COMPLETED" || index < currentIndex;
-              const state = completed
+              const completed = order.status === "COMPLETED" || index <= currentIndex;
+              const state = index === currentIndex
+                ? "current"
+                : completed
+                  ? "completed"
+                  : "upcoming";
+              const markerState = completed
                 ? "completed"
-                : index === currentIndex
-                  ? "current"
+                : !terminal && currentIndex >= 0 && index === currentIndex + 1
+                  ? "next"
                   : "upcoming";
               const changedAt = historyTime(order, step.status);
 
               return (
-                <TimelineItem key={step.status}>
+                <TimelineItem key={step.status} aria-current={index === currentIndex ? "step" : undefined}>
                   <TimelineRail>
-                    <TimelineMarker state={state}>
+                    <TimelineMarker state={markerState} aria-hidden="true">
                       {completed ? <Check size={15} /> : index + 1}
                     </TimelineMarker>
                     {index < steps.length - 1 ? (

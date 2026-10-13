@@ -361,7 +361,7 @@ export function OrdersManager({
       ? [order, ...items.filter((item) => item.id !== order.id)]
       : items.filter((item) => item.id !== order.id));
 
-    if (automaticOrderConfirmation && isNewOrder && order.status === "CONFIRMED") {
+    if (automaticOrderConfirmation && isNewOrder) {
       void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
         if (!enabled) {
           return printOrderDirectly(order, printDestination, true);
@@ -838,6 +838,9 @@ export function OrdersManager({
                 </Title>
                 <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
                 <Subtitle>Data do pedido: {formatOrderDate(detailsOrder)}</Subtitle>
+                {detailsOrder.statusHistory.filter((entry) => entry.status === "OUT_FOR_DELIVERY" && entry.changedByName).slice(-1).map((entry) => (
+                  <Subtitle key={entry.changedAt}>Retirado por {entry.changedByName} · {new Date(entry.changedAt).toLocaleString("pt-BR")}</Subtitle>
+                ))}
                 {detailsOverdueMinutes !== null ? (
                   <ReceivedTime overdue>
                     <Clock3 size={14} aria-hidden="true" />

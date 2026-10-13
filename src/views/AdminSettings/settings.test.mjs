@@ -37,17 +37,18 @@ function load(file) {
 
 export function renderSettings(config = null) {
   const { SettingsForm } = load(path.join(src, "views/AdminSettings/SettingsForm.tsx"));
-  return renderToStaticMarkup(React.createElement(SettingsForm, { initialConfig: config }));
+  const { ConfirmationProvider } = load(path.join(src, "components/ConfirmationProvider/index.tsx"));
+  return renderToStaticMarkup(React.createElement(ConfirmationProvider, null, React.createElement(SettingsForm, { initialConfig: config })));
 }
 
 test("WhatsApp configuration stays inside orders and never renders a saved token", () => {
   const html = renderSettings({ whatsappIntegration: { phoneNumberId: "123456789", apiVersion: "v25.0", language: "pt_BR", tokenConfigured: true, templates: { production: "pedido_producao", delivery: "pedido_entrega", completed: "pedido_concluido" }, accessToken: "must-never-render" } });
-  const section = html.slice(html.indexOf('<details id="orders"')).split("</details>")[0];
+  const section = html.slice(html.indexOf('<details id="orders"'), html.indexOf('<details id="delivery"'));
   for (const field of ["whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappCompletedTemplate"]) assert.ok(section.includes(`name="${field}"`), field);
   assert.ok(section.includes("Token configurado"));
   assert.ok(section.includes('type="password"'));
   assert.ok(!html.includes("must-never-render"));
-  assert.equal((html.match(/<details /g) ?? []).length, 6);
+  assert.equal((html.match(/<details id=/g) ?? []).length, 6);
 });
 
 test("WhatsApp first setup requires token; saved setup permits blank token", () => {
@@ -75,7 +76,7 @@ test("settings preserves grouped routes, distance ranges and holiday editing", (
 
 test("related settings share six independently expandable sections", () => {
   const html = renderSettings();
-  assert.equal((html.match(/<details /g) ?? []).length, 6);
+  assert.equal((html.match(/<details id=/g) ?? []).length, 6);
   for (const [id, contents] of [
     ["restaurant", ["name", "whatsapp", "street", "city"]],
     ["appearance", ["menuDescription", "primaryColor", "secondaryColor", "Escolher logo", "Escolher banner"]],
@@ -84,7 +85,9 @@ test("related settings share six independently expandable sections", () => {
     ["operating-hours", ["Horário semanal", "Adicionar feriado"]],
     ["marketing", ["metaPixelId", "metaPixelEnabled"]],
   ]) {
-    const section = html.slice(html.indexOf(`<details id="${id}"`)).split("</details>")[0];
+    const start = html.indexOf(`<details id="${id}"`);
+    const next = html.indexOf('<details id=', start + 10);
+    const section = html.slice(start, next < 0 ? undefined : next);
     for (const content of contents) assert.ok(section.includes(content), `${id}: ${content}`);
   }
 });
@@ -95,10 +98,19 @@ test("WhatsApp status toggle defaults off and loads saved tenant setting", () =>
   assert.doesNotMatch(off, /name="whatsappNotificationsEnabled"[^>]*checked/);
   const on = renderSettings({ whatsappNotificationsEnabled: true });
   assert.match(on, /name="whatsappNotificationsEnabled"[^>]*checked/);
-  const orders = on.slice(on.indexOf('<details id="orders"')).split("</details>")[0];
+  const orders = on.slice(on.indexOf('<details id="orders"'), on.indexOf('<details id="delivery"'));
   assert.ok(orders.includes("Enviar status dos pedidos por WhatsApp"));
 });
 
+test("driver pickup defaults off and restores tenant opt-in", () => {
+  const off = renderSettings();
+  const on = renderSettings({ deliveryOrganization: { motoboyPickupEnabled: true } });
+  assert.match(off, /name="motoboyPickupEnabled"/);
+  assert.doesNotMatch(off, /name="motoboyPickupEnabled"[^>]*checked/);
+  assert.match(on, /name="motoboyPickupEnabled"[^>]*checked/);
+  assert.ok(on.includes("Motoboy pode retirar pedidos em preparo"));
+  assert.ok(on.includes("confere o pedido físico"));
+});
 test("automatic motoboy assignment is off by default and belongs to delivery organization", () => {
   const html = renderSettings();
   const section = html.slice(html.indexOf('<details id="delivery"')).split("</details>")[0];
@@ -116,4 +128,26 @@ test("automatic motoboy assignment restores saved enabled state for grouped and 
     const control = html.match(/<input[^>]*name="automaticMotoboyAssignment"[^>]*>/)?.[0];
     assert.ok(control?.includes("checked"), `${strategy}: enabled state restored`);
   }
+});
+
+test("automatic confirmation shows saved destination and independent printing help", () => {
+  for (const status of ["CONFIRMED", "PREPARING", "READY"]) {
+    const html = renderSettings({ automaticOrderConfirmation: true, automaticOrderStatus: status });
+    const select = html.match(/<select[^>]*name="automaticOrderStatus"[\s\S]*?<\/select>/)?.[0];
+    assert.ok(select, "enabled confirmation shows destination selector");
+    assert.ok(select.includes(`value="${status}" selected=""`), "saved status restored");
+    for (const label of ["Confirmado", "Em preparo", "Pronto"]) assert.ok(select.includes(label));
+    assert.ok(!select.includes("OUT_FOR_DELIVERY"));
+    assert.ok(html.includes("independentemente do status escolhido"));
+    assert.ok(html.includes('aria-describedby="automatic-order-print-help"'));
+  }
+});
+
+test("legacy automatic confirmation defaults to Confirmed; disabled hides selector", () => {
+  const legacy = renderSettings({ automaticOrderConfirmation: true });
+  assert.ok(legacy.includes('value="CONFIRMED" selected=""'));
+  const disabled = renderSettings({ automaticOrderConfirmation: false, automaticOrderStatus: "PREPARING" });
+  assert.ok(!disabled.includes('name="automaticOrderStatus"'));
+  assert.ok(disabled.includes("ficam em Recebido"));
+  assert.ok(disabled.includes("independentemente do status escolhido"));
 });
