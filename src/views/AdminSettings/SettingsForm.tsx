@@ -88,6 +88,7 @@ const settingsBaseSchema = z.object({
   whatsappProductionTemplate: z.string(),
   whatsappDeliveryTemplate: z.string(),
   whatsappCompletedTemplate: z.string(),
+  automaticOrderStatus: z.enum(["CONFIRMED", "PREPARING", "READY"]),
   overdueOrderAlertEnabled: z.boolean(),
   overdueOrderAlertMinutes: z.number().int(),
   deliveryEnabled: z.boolean(),
@@ -310,6 +311,7 @@ export function SettingsForm({
       whatsappProductionTemplate: initialConfig?.whatsappIntegration?.templates?.production ?? "pedido_producao",
       whatsappDeliveryTemplate: initialConfig?.whatsappIntegration?.templates?.delivery ?? "pedido_entrega",
       whatsappCompletedTemplate: initialConfig?.whatsappIntegration?.templates?.completed ?? "pedido_concluido",
+      automaticOrderStatus: initialConfig?.automaticOrderStatus ?? "CONFIRMED",
       overdueOrderAlertEnabled: initialConfig?.overdueOrderAlertEnabled ?? false,
       overdueOrderAlertMinutes: initialConfig?.overdueOrderAlertMinutes ?? 30,
       deliveryEnabled: initialConfig?.deliverySettings?.enabled ?? false,
@@ -364,6 +366,7 @@ export function SettingsForm({
   });
   const automaticMotoboyAssignment = useWatch({ control: form.control, name: "automaticMotoboyAssignment" });
   const motoboyPickupEnabled = useWatch({ control: form.control, name: "motoboyPickupEnabled" });
+  const automaticOrderConfirmation = useWatch({ control: form.control, name: "automaticOrderConfirmation" });
   const rangeValues = useWatch({
     control: form.control,
     name: "deliveryFeeRanges",
@@ -504,6 +507,7 @@ export function SettingsForm({
           language: "pt_BR",
           templates: { production: values.whatsappProductionTemplate.trim(), delivery: values.whatsappDeliveryTemplate.trim(), completed: values.whatsappCompletedTemplate.trim() },
         }} : {}),
+        ...(dirty.automaticOrderStatus ? { automaticOrderStatus: values.automaticOrderStatus } : {}),
         ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
         ...(dirty.overdueOrderAlertMinutes ? { overdueOrderAlertMinutes: values.overdueOrderAlertMinutes } : {}),
         ...(deliveryChanged ? { deliverySettings: {
@@ -816,10 +820,6 @@ export function SettingsForm({
               {...form.register("minimumOrderReais", { valueAsNumber: true })}
             />
           </Field>
-          <StatusToggle>
-            <input type="checkbox" {...form.register("automaticOrderConfirmation")} />
-            <span>Confirmar pedidos automaticamente e enviar para impressão</span>
-          </StatusToggle>
           <SettingsGroup aria-labelledby="whatsapp-settings-title" css={{ "& input::placeholder": { color: "var(--color-muted)", opacity: 1 } }}>
             <SectionTitle as="h3" id="whatsapp-settings-title">WhatsApp dos pedidos</SectionTitle>
             <Muted>Avisos de preparação, saída para entrega e conclusão pelo número do restaurante.</Muted>
@@ -875,6 +875,36 @@ export function SettingsForm({
             <Muted>Salve no botão abaixo. Alterações passam a valer nos próximos envios, sem reiniciar o sistema. Ative após registrar o número, aprovar os templates na Meta e obter autorização dos clientes.</Muted>
             </div>
             </AdvancedWhatsAppSettings>
+          </SettingsGroup>
+          <SettingsGroup>
+            <StatusToggle>
+              <input
+                type="checkbox"
+                aria-describedby="automatic-order-help"
+                {...form.register("automaticOrderConfirmation")}
+              />
+              <span>Confirmar pedidos automaticamente</span>
+            </StatusToggle>
+            <Muted id="automatic-order-help">
+              Novos pedidos avançam para o status escolhido sem confirmação manual.
+              Desativado, ficam em Recebido até você confirmar.
+            </Muted>
+            {automaticOrderConfirmation && (
+              <Field label="Enviar novos pedidos para" error={form.formState.errors.automaticOrderStatus?.message}>
+                <Select
+                  defaultValue={initialConfig?.automaticOrderStatus ?? "CONFIRMED"}
+                  aria-describedby="automatic-order-print-help"
+                  {...form.register("automaticOrderStatus")}
+                >
+                  <option value="CONFIRMED">Confirmado</option>
+                  <option value="PREPARING">Em preparo</option>
+                  <option value="READY">Pronto</option>
+                </Select>
+              </Field>
+            )}
+            <Muted id="automatic-order-print-help">
+              A impressão automática segue as configurações de Impressoras, independentemente do status escolhido.
+            </Muted>
           </SettingsGroup>
           <SettingsGroup>
           <StatusToggle>

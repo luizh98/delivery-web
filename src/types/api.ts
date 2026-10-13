@@ -99,6 +99,7 @@ export type RestaurantConfigResponse = {
 	  ready?: boolean;
 	  expiresAt?: number;
   };
+  automaticOrderStatus?: "CONFIRMED" | "PREPARING" | "READY";
   overdueOrderAlertEnabled?: boolean;
   overdueOrderAlertMinutes?: number;
   open?: boolean;
