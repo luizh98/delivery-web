@@ -51,15 +51,15 @@ function order(status, deliveryType = "DELIVERY") {
     { status: "CONFIRMED", changedAt: "2026-10-13T12:01:00Z" },
   ], items: [], totalCents: 1000, createdAt: "2026-10-13T12:00:00Z" };
 }
-test("current status has check/time, only next status pulses throughout each flow", () => {
+test("only current status pulses throughout each flow, preserving checks and times", () => {
   for (const deliveryType of ["DELIVERY", "PICKUP", "TABLE"]) {
     const steps = status.getTrackingSteps(deliveryType);
     for (const [index, step] of steps.entries()) {
       const nodes = timeline(order(step.status, deliveryType));
       const markers = nodes.filter((node) => node.type === "TimelineMarker");
       assert.deepEqual(markers.map((node) => node.props.state), Array.from(steps, (_, i) =>
-        i <= index ? "completed" : i === index + 1 ? "next" : "upcoming"));
-      assert.equal(typeof markers[index].props.children, "object");
+        step.status === "COMPLETED" || i < index ? "completed" : i === index ? "current" : "upcoming"));
+      assert.equal(typeof markers[index].props.children, step.status === "COMPLETED" ? "object" : "number");
       assert.equal(nodes.filter((node) => node.props["aria-current"] === "step").length, 1);
       if (step.status === "CONFIRMED") {
         assert.equal(nodes.filter((node) => node.type === "TimelineTime").length, 2);
@@ -67,21 +67,21 @@ test("current status has check/time, only next status pulses throughout each flo
     }
   }
 });
-test("canceled orders do not pulse; delivery READY continues towards delivery", () => {
+test("canceled orders do not pulse; delivery READY keeps preparation current", () => {
   for (const deliveryType of ["DELIVERY", "PICKUP", "TABLE"]) {
-    assert.equal(timeline(order("CANCELED", deliveryType)).some((node) => node.props.state === "next"), false);
+    assert.equal(timeline(order("CANCELED", deliveryType)).some((node) => node.type === "TimelineMarker" && node.props.state === "current"), false);
   }
   const markers = timeline(order("READY")).filter((node) => node.type === "TimelineMarker");
-  assert.equal(markers[2].props.state, "completed");
-  assert.equal(markers[3].props.state, "next");
+  assert.equal(markers[2].props.state, "current");
+  assert.equal(markers[3].props.state, "upcoming");
 });
-test("filled markers stay still and next marker supports reduced motion", () => {
+test("filled markers stay still and current marker supports reduced motion", () => {
   const marker = (state) => renderToStaticMarkup(React.createElement(styles.TimelineMarker, { state }));
   assert.match(marker("completed"), /background:var\(--color-primary\)/);
-  const nextHtml = marker("next");
-  const pulseClass = nextHtml.match(/\.([^{}]+)\{[^{}]*animation:order-tracking-next-pulse/)[1];
-  assert.ok(nextHtml.match(/<span class="([^"]+)"/)[1].split(" ").includes(pulseClass));
-  assert.match(nextHtml, /prefers-reduced-motion:\s*reduce.*animation:none/);
+  const currentHtml = marker("current");
+  const pulseClass = currentHtml.match(/\.([^{}]+)\{[^{}]*animation:order-tracking-current-pulse/)[1];
+  assert.ok(currentHtml.match(/<span class="([^"]+)"/)[1].split(" ").includes(pulseClass));
+  assert.match(currentHtml, /prefers-reduced-motion:\s*reduce.*animation:none/);
   for (const state of ["completed", "upcoming"]) {
     assert.equal(marker(state).match(/<span class="([^"]+)"/)[1].split(" ").includes(pulseClass), false);
   }
