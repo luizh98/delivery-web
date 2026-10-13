@@ -361,7 +361,7 @@ export function OrdersManager({
       ? [order, ...items.filter((item) => item.id !== order.id)]
       : items.filter((item) => item.id !== order.id));
 
-    if (automaticOrderConfirmation && isNewOrder && order.status === "CONFIRMED") {
+    if (automaticOrderConfirmation && isNewOrder) {
       void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
         if (!enabled) {
           return printOrderDirectly(order, printDestination, true);
