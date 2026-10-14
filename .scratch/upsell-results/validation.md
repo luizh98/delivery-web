@@ -16,7 +16,9 @@ Data: 2026-10-14 (America/Sao_Paulo)
 
 - API staging: 3a77d53 — feat(upsell): add historical sales report. Push e deploy concluídos; container running e health UP. Commit ativo 3a77d53b139c8f747cea9a9144fbf69b75e2c080.
 - Smoke autenticado no Mongo da staging: relatório 200, cinco combinações históricas e 287 dias; somas dos itens reconciliadas com resumo e original − desconto = vendido. Filtro de campanha validado. Sem token 401, tenant diferente 403, data inválida 400. Somente leituras; sem criação/alteração de pedidos.
-- Web staging: revisão e validação final concluídas; aguardando publicação.
+- Web staging: 8383067bec4e082e2d93defa8e300712313614d4 — feat(upsell): show campaign sales results. Push e deploy concluídos; container running. Build remoto padrão também aprovado.
+- Browser autenticado na staging: login 200, navegação por Campanhas → Ver resultados, relatório 200 com cinco combinações e 287 datas. Tabela diária acessível expandida, quantidade de linhas conferida; soma da evolução diária reconciliada com valor vendido. Nenhum overflow em 1440×1000 e 390×844; zero erros de JavaScript. Capturas adicionais staging-desktop.png e staging-mobile.png no diretório de evidências.
+- URL: https://dev-terraco-canecao.flyfoods.com.br/admin/catalog/upsell/results.
 - Ambiente: Easypanel delivery-app-staging; fontes confirmadas origin/staging em API/web, autoDeploy ativo. Main não alterada.
 
 ## Limites

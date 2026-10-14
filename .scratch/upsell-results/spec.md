@@ -1,6 +1,6 @@
 # Resultado dos upsells
 
-Status: claimed
+Status: resolved
 Data: 2026-10-14
 Solicitação: planejar e executar com TLC Spec Driven e Impeccable; publicar em staging.
 
@@ -26,3 +26,7 @@ Fora de escopo: custo/margem, causalidade, eventos de exibição, comparação d
 ## Verificação
 
 Testar múltiplas quantidades/linhas, mesmo produto em campanhas diferentes, descontos, adicionais excluídos, cancelados/pendentes, filtro, fuso/dias vazios, valores zero e dados legados. Confirmar autenticação/tenant e datas inválidas. Validar estados/filtros/paginação no navegador com dados de teste explicitamente identificados.
+
+## Resultado
+
+R1–R6 atendidos. API 3a77d53 e web 8383067 publicados em staging, builds remotos concluídos, containers running. Relatório autenticado e interface desktop/mobile validados com dados reais somente por leitura. Evidências e limites: [validation.md](validation.md). Issues 01, 02 e 03 resolvidas.
