@@ -621,14 +621,17 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
               <UpsellBlock />
 
               <TotalsBox>
-                <TotalGrand>
-                  Subtotal <TotalStrong>{money(originalSubtotalCents)}</TotalStrong>
-                </TotalGrand>
+                <TotalRow>
+                  Subtotal <strong>{money(originalSubtotalCents)}</strong>
+                </TotalRow>
                 {discountCents > 0 ? (
                   <TotalRow>
                     Desconto <strong>- {money(discountCents)}</strong>
                   </TotalRow>
                 ) : null}
+                <TotalGrand>
+                  Total <TotalStrong>{money(subtotalCents)}</TotalStrong>
+                </TotalGrand>
                 {belowMinimumOrder ? (
                   <CheckoutError role="status">
                     Pedido mínimo: {money(minimumOrderCents)}.
