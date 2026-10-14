@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ClipboardList,
   Clock3,
+  Play,
   ShoppingBag,
   ShoppingCart,
   UserRound,
@@ -65,6 +66,7 @@ import {
   ProductList,
   ProductName,
   ProductPrice,
+  VideoBadge,
   SystemCredit,
   TrackingActions,
   TrackingShortcut,
@@ -540,7 +542,9 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                             ? `url(${product.imageUrl})`
                             : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
                         }}
-                      />
+                      >
+                        {product.videoUrl && product.imageUrl ? <VideoBadge><Play size={12} aria-hidden="true" />Vídeo</VideoBadge> : null}
+                      </ProductImage>
                     </ProductCard>
                   );
                 })}

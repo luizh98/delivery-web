@@ -1,6 +1,7 @@
 "use client";
 
-import { Flame } from "lucide-react";
+import { Flame, Play } from "lucide-react";
+import { VideoBadge } from "./styles";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/api";
@@ -258,7 +259,9 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
                   ? `url(${product.imageUrl})`
                   : "linear-gradient(135deg, var(--color-surface-muted), var(--color-border))",
               }}
-            />
+            >
+              {product.videoUrl && product.imageUrl ? <VideoBadge><Play size={12} aria-hidden="true" />Vídeo</VideoBadge> : null}
+            </CarouselImage>
             <CarouselInfo>
               <CarouselName>{product.name}</CarouselName>
               {product.description ? <CarouselDescription>{product.description}</CarouselDescription> : null}

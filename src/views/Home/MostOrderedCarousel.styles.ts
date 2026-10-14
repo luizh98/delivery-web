@@ -86,6 +86,7 @@ export const CarouselCard = styled("button", {
 });
 
 export const CarouselImage = styled("span", {
+  position: "relative",
   minHeight: "7rem",
   borderRadius: "0.5rem",
   backgroundColor: "var(--color-surface-muted)",

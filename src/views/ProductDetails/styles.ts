@@ -23,7 +23,7 @@ export const OverlayCloseButton = styled("button", {
 export const ZoomButton = styled("button", {
   position: "absolute",
   right: "1rem",
-  bottom: "1rem",
+  top: "1rem",
   zIndex: 2,
   display: "grid",
   width: "2.75rem",
@@ -96,36 +96,31 @@ export const ProductImage = styled("div", {
   },
 });
 
-export const ImageOverlay = styled("div", {
+export const ImageOverlay = styled("dialog", {
   position: "fixed",
   inset: 0,
   zIndex: 100,
-  background: "rgb(0 0 0 / 0.94)",
+  width: "100%",
+  maxWidth: "100%",
+  height: "100dvh",
+  maxHeight: "100dvh",
+  margin: 0,
+  padding: 0,
+  border: 0,
+  background: "#000",
+  color: "#fff",
+  "&::backdrop": { background: "#000" },
 });
 
 export const ImageOverlayContent = styled("div", {
-  display: "flex",
+  display: "grid",
   width: "100%",
-  height: "100%",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "1rem",
-  overflowY: "auto",
-  padding: "4.75rem 1rem 2rem",
-
-  "@sm": {
-    paddingLeft: "2rem",
-    paddingRight: "2rem",
-  },
-});
-
-export const ExpandedImage = styled("img", {
-  display: "block",
-  maxWidth: "100%",
-  maxHeight: "calc(100vh - 12rem)",
-  borderRadius: "0.375rem",
-  objectFit: "contain",
+  height: "calc(100% - 5rem - env(safe-area-inset-bottom))",
+  gridTemplateRows: "minmax(0, 1fr) auto",
+  maxWidth: "64rem",
+  margin: "0 auto",
+  paddingTop: "4.5rem",
+  "@md": { gridTemplateColumns: "minmax(0, 3fr) minmax(16rem, 2fr)", gridTemplateRows: "minmax(0, 1fr)", gap: "2rem", padding: "4.5rem 2rem 1rem" },
 });
 
 export const ImageOverlayHeader = styled("div", {
@@ -133,6 +128,11 @@ export const ImageOverlayHeader = styled("div", {
   width: "100%",
   maxWidth: "64rem",
   gap: "0.25rem",
+  padding: "0.75rem 1rem",
+  maxHeight: "25dvh",
+  overflowY: "auto",
+  overflowWrap: "anywhere",
+  "@md": { alignSelf: "center", maxHeight: "100%" },
 });
 
 export const ImageOverlayTitle = styled("h2", {
@@ -299,6 +299,68 @@ export const QuantityRow = styled("div", {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "0.75rem",
+  position: "fixed",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  zIndex: 20,
+  padding: "0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom))",
+  background: "var(--color-surface)",
+  borderTop: "1px solid var(--color-border)",
+  "@md": { position: "sticky", left: "auto", right: "auto", marginTop: "0.5rem" },
+});
+
+export const MediaFrame = styled("div", {
+  position: "relative",
+  display: "grid",
+  width: "100%",
+  height: "65dvh",
+  minHeight: "16rem",
+  maxHeight: "48rem",
+  background: "#000",
+  variants: { expanded: { true: { minHeight: 0, maxHeight: "none", height: "100%" } } },
+});
+
+export const MediaVideo = styled("video", {
+  display: "block",
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
+  objectFit: "contain",
+});
+
+export const MediaImage = styled("img", {
+  display: "block",
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
+  objectFit: "contain",
+});
+
+export const MediaNotice = styled("p", {
+  position: "absolute",
+  bottom: "1rem",
+  left: "1rem",
+  right: "1rem",
+  padding: "0.5rem",
+  background: "#000",
+  color: "#fff",
+  fontSize: "0.875rem",
+});
+
+export const MediaAction = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "1rem",
+  width: "100%",
+  maxWidth: "64rem",
+  height: "calc(5rem + env(safe-area-inset-bottom))",
+  margin: "0 auto",
+  padding: "0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom))",
+  borderTop: "1px solid #333",
+  background: "#000",
+  fontWeight: 700,
 });
 
 export const QuantityControl = styled("div", {

@@ -3,6 +3,7 @@
 import {
   Minus,
   Plus,
+  Maximize2,
   ShoppingCart,
   X,
   ZoomIn,
@@ -31,7 +32,6 @@ import { money } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
 import { activeProductFlags } from "@/utils/productFlags";
 import {
-  ExpandedImage,
   FlagBadge,
   FlagBadges,
   ImageArea,
@@ -52,7 +52,7 @@ import {
   ProductBackButton,
   ProductDescription,
   ProductHeader,
-  ProductImage,
+  MediaAction,
   ProductLayout,
   ProductPrice,
   ProductTitle,
@@ -63,6 +63,7 @@ import {
   ZoomButton,
 } from "./styles";
 import type { ProductDetailsProps } from "./types";
+import { ProductMedia } from "./ProductMedia";
 
 const PRODUCT_FOCUS_STORAGE_KEY = "delivery:return-focus-product-id";
 const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
@@ -78,6 +79,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
   const [observations, setObservations] = useState("");
   const [imageExpanded, setImageExpanded] = useState(false);
+  const mediaDialog = useRef<HTMLDialogElement>(null);
+  const zoomButton = useRef<HTMLButtonElement>(null);
   const [invalidGroupIds, setInvalidGroupIds] = useState<string[]>([]);
   const [pendingUpsell] = useState<PendingUpsellOffer | null>(() => {
     if (typeof window === "undefined") {
@@ -116,19 +119,14 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     }
 
     const previousOverflow = document.body.style.overflow;
+    const trigger = zoomButton.current;
 
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setImageExpanded(false);
-      }
-    }
-
+    mediaDialog.current?.showModal();
     document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", closeOnEscape);
 
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
+      trigger?.focus({ preventScroll: true });
     };
   }, [imageExpanded]);
 
@@ -179,6 +177,12 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     setInvalidGroupIds(invalidRequiredGroupIds);
 
     if (invalidRequiredGroupIds.length > 0) {
+      setImageExpanded(false);
+      window.requestAnimationFrame(() => {
+        const group = document.getElementById(`option-${invalidRequiredGroupIds[0]}`);
+        group?.focus({ preventScroll: true });
+        group?.scrollIntoView({ block: "center", behavior: "instant" });
+      });
       return;
     }
 
@@ -281,28 +285,21 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   }
 
   return (
-    <PageShell>
+    <PageShell bottomPad>
       <ProductLayout>
         <ImageArea>
-          <ProductImage
-            role="img"
-            aria-label={`Foto de ${product.name}`}
-            style={{
-              backgroundImage: product.imageUrl
-                ? `url(${product.imageUrl})`
-                : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
-            }}
-          />
+          <ProductMedia key={product.id} product={product} playing={!imageExpanded} />
           <ProductBackButton>
             <BackButton onClick={returnToMenu} />
           </ProductBackButton>
           {product.imageUrl ? (
             <ZoomButton
+              ref={zoomButton}
               type="button"
               onClick={() => setImageExpanded(true)}
-              aria-label="Ampliar foto do produto"
+              aria-label={product.videoUrl ? "Ampliar vídeo do produto" : "Ampliar foto do produto"}
             >
-              <ZoomIn size={20} />
+              {product.videoUrl ? <Maximize2 size={20} /> : <ZoomIn size={20} />}
             </ZoomButton>
           ) : null}
         </ImageArea>
@@ -333,7 +330,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               const minimumSelections = Math.max(1, group.minSelections);
 
               return (
-                <OptionGroup key={groupId} aria-invalid={isInvalid}>
+                <OptionGroup key={groupId} id={`option-${groupId}`} tabIndex={-1} aria-invalid={isInvalid}>
                   <div>
                     <OptionGroupTitle>{group.name}</OptionGroupTitle>
                     <Muted>
@@ -429,24 +426,32 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       </ProductLayout>
 
       {imageExpanded && product.imageUrl ? (
-        <ImageOverlay role="dialog" aria-modal="true" aria-label="Foto ampliada">
+        <ImageOverlay ref={mediaDialog} aria-labelledby="expanded-product-title" onCancel={() => setImageExpanded(false)} onClose={() => setImageExpanded(false)}>
           <OverlayCloseButton
             type="button"
             onClick={() => setImageExpanded(false)}
-            aria-label="Fechar foto ampliada"
+            aria-label="Fechar mídia ampliada"
             autoFocus
           >
             <X size={20} />
           </OverlayCloseButton>
           <ImageOverlayContent>
-            <ExpandedImage src={product.imageUrl} alt={product.name} />
+            <ProductMedia product={product} expanded />
             <ImageOverlayHeader>
-              <ImageOverlayTitle>{product.name}</ImageOverlayTitle>
+              <ImageOverlayTitle id="expanded-product-title">{product.name}</ImageOverlayTitle>
               <ImageOverlayDescription>
                 {product.description || "Sem descrição."}
               </ImageOverlayDescription>
+              {upsellError ? <p role="alert" style={{ color: "#fca5a5" }}>{upsellError}</p> : null}
             </ImageOverlayHeader>
           </ImageOverlayContent>
+          <MediaAction>
+            <span>{money((productSalePrice(product) + Object.values(selectedOptions).flat().reduce((total, option) => total + option.priceCents, 0)) * quantity)}</span>
+            <Button type="button" onClick={addProduct} disabled={adding}>
+              <ShoppingCart size={16} />
+              {adding ? "Validando..." : "Adicionar"}
+            </Button>
+          </MediaAction>
         </ImageOverlay>
       ) : null}
     </PageShell>
