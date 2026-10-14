@@ -21,6 +21,10 @@ Revisão visual anterior informou `ship`, sem mudança material; detector inform
 
 ## Limites
 
+### Reprodução sem controles — 14/10/2026
+
+Player do cliente mantém loop e reprodução silenciosa, sem controles nativos, PiP ou reprodução remota. Clique/toque alterna pausa; Enter/Espaço oferecem a mesma ação com foco visível e nome acessível atualizado. Detalhe e ampliação usam o mesmo componente. Autoplay continua respeitando movimento reduzido; foto de fallback e ações de compra permanecem.
+
 Admin recomenda exportação vertical de 1080 × 1920 pixels (9:16), com prato centralizado e sem faixas pretas. Resolução é orientação, sem nova restrição de upload. O preenchimento pode recortar bordas; faixas gravadas dentro do arquivo continuam fazendo parte do vídeo.
 
 Conferência estática de contrato, componentes, estilos e diff. Browser, testes, contraste calculado e dispositivos reais não executados neste passe de documentação. Verificação visual em execução pertence às evidências da revisão anterior e às verificações de publicação do responsável pela feature.

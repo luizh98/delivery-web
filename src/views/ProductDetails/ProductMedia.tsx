@@ -6,7 +6,14 @@ import { MediaImage, MediaVideo, MediaFrame, MediaNotice } from "./styles";
 
 export function ProductMedia({ product, playing = true, expanded = false }: { product: Product; playing?: boolean; expanded?: boolean }) {
   const [failed, setFailed] = useState(false);
+  const [paused, setPaused] = useState(true);
   const video = useRef<HTMLVideoElement>(null);
+
+  const togglePlayback = (element: HTMLVideoElement) => {
+    element.muted = true;
+    if (element.paused) void element.play().catch(() => undefined);
+    else element.pause();
+  };
 
   useEffect(() => {
     const element = video.current;
@@ -31,7 +38,20 @@ export function ProductMedia({ product, playing = true, expanded = false }: { pr
   return (
     <MediaFrame expanded={expanded}>
       {product.videoUrl && product.imageUrl && !failed ? (
-        <MediaVideo ref={video} src={product.videoUrl} poster={product.imageUrl} controls muted loop playsInline preload="metadata" aria-label={`Vídeo de ${product.name}`} />
+        <MediaVideo
+          ref={video} src={product.videoUrl} poster={product.imageUrl}
+          muted loop playsInline disablePictureInPicture disableRemotePlayback preload="metadata"
+          role="button" tabIndex={0} aria-pressed={!paused}
+          aria-label={`${paused ? "Reproduzir" : "Pausar"} vídeo de ${product.name}`}
+          onPlay={() => setPaused(false)} onPause={() => setPaused(true)}
+          onClick={(event) => togglePlayback(event.currentTarget)}
+          onKeyDown={(event) => {
+            if (event.key === " " || event.key === "Enter") {
+              event.preventDefault();
+              if (!event.repeat) togglePlayback(event.currentTarget);
+            }
+          }}
+        />
       ) : product.imageUrl ? (
         <MediaImage src={product.imageUrl} alt={`Foto de ${product.name}`} />
       ) : <MediaNotice>Produto sem foto</MediaNotice>}
