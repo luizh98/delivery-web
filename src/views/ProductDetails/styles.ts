@@ -328,6 +328,11 @@ export const MediaVideo = styled("video", {
   minHeight: 0,
   objectFit: "cover",
   objectPosition: "center",
+  cursor: "pointer",
+  "&:focus-visible": {
+    outline: "3px solid var(--color-primary)",
+    outlineOffset: "-3px",
+  },
 });
 
 export const MediaImage = styled("img", {
