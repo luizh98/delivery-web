@@ -18,11 +18,16 @@ try {
   await page.goto(`${base}/admin/catalog/upsell`);
   await page.getByRole("link", { name: "Ver resultados" }).click();
   await page.getByRole("heading", { name: "Resultado dos upsells", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Aplicar filtros" }).waitFor({ state: "visible" });
-  await page.getByLabel("Data inicial").fill("2026-01-01");
-  await page.getByLabel("Data final").fill("2026-10-14");
+
+  await page.getByLabel("Período", { exact: true }).selectOption("custom");
+  const calendar = page.getByRole("dialog", { name: "Período personalizado" });
+  await calendar.waitFor();
+  for (let i = 0; i < 9; i++) await calendar.locator(".rdp-button_previous").click();
+  await calendar.locator(".rdp-day_button").filter({ hasText: /^1$/ }).click();
+  for (let i = 0; i < 9; i++) await calendar.locator(".rdp-button_next").click();
+  await calendar.locator(".rdp-day_button").filter({ hasText: /^14$/ }).click();
   const reportResponse = page.waitForResponse((response) => response.url().includes("/api/backend/admin/upsell-report?") && response.url().includes("startDate=2026-01-01"));
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await page.getByRole("button", { name: "Aplicar período", exact: true }).click();
   const response = await reportResponse;
   assert.equal(response.status(), 200);
   const data = await response.json();

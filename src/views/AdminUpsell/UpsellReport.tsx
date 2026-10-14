@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, Filter, RefreshCw } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { ArrowLeft, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { DateRangeFilter, getPresetDateRange, type DateFilterRange } from "@/components/DateRangeFilter";
 import { Button } from "@/components/Button";
-import { Field, Input, Select } from "@/components/Field";
+import { Field, Select } from "@/components/Field";
 import { clientApi } from "@/services/api/client";
 import type { UpsellReport } from "@/types/api";
 import { money } from "@/utils/format";
@@ -15,29 +13,15 @@ import { MetricChart } from "@/views/AdminDashboard/charts";
 import { Empty, Feedback, Header, PerformancePageActions, PerformancePagination, Section, SectionHeader, SectionSubtitle, SectionTitle, Subtitle, TableViewport, Title, ToggleButton, ToggleGroup } from "@/views/AdminDashboard/styles";
 import { BarFill, BarTrack, ContextLine, Filters, Ranking, RankingLabel, RankingRow, RankingValue, ReportLinks, ReportNote, ReportRoot, ReportTable, Summary, Warning } from "./report.styles";
 
-const filterSchema = z.object({
-  startDate: z.string().min(1, "Informe a data inicial."),
-  endDate: z.string().min(1, "Informe a data final."),
-  campaignId: z.string(),
-}).refine((value) => value.startDate <= value.endDate, { path: ["endDate"], message: "A data final deve ser igual ou posterior à inicial." })
-  .refine((value) => (Date.parse(value.endDate) - Date.parse(value.startDate)) / 86400000 <= 365, { path: ["endDate"], message: "Selecione um período de até 366 dias." });
-type ReportFilters = z.infer<typeof filterSchema>;
+type ReportFilters = DateFilterRange & { campaignId: string };
 const number = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 const date = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" });
 const pageSize = 10;
 
-function initialFilters(): ReportFilters {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
-  const part = (name: string) => parts.find((value) => value.type === name)?.value;
-  const endDate = `${part("year")}-${part("month")}-${part("day")}`;
-  const start = new Date(`${endDate}T12:00:00Z`);
-  start.setUTCDate(start.getUTCDate() - 29);
-  return { startDate: start.toISOString().slice(0, 10), endDate, campaignId: "" };
-}
+function initialFilters(): ReportFilters { return { ...getPresetDateRange("thisMonth"), campaignId: "" }; }
 
 export function UpsellReportView() {
   const [filters, setFilters] = useState(initialFilters);
-  const form = useForm<ReportFilters>({ resolver: zodResolver(filterSchema), defaultValues: filters });
   const [report, setReport] = useState<UpsellReport | null>(null);
   const [campaigns, setCampaigns] = useState<UpsellReport["campaigns"]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,11 +67,9 @@ export function UpsellReportView() {
         <div><Title>Resultado dos upsells</Title><Subtitle>Veja quais ofertas vendem e quanto geram após os descontos.</Subtitle></div>
         <ReportLinks><Link href="/admin/catalog/upsell"><ArrowLeft size={16} aria-hidden="true" />Campanhas</Link></ReportLinks>
       </Header>
-      <Filters onSubmit={form.handleSubmit(applyFilters)} aria-label="Filtros do relatório">
-        <Field label="De" error={form.formState.errors.startDate?.message}><Input type="date" aria-label="Data inicial" {...form.register("startDate")} /></Field>
-        <Field label="Até" error={form.formState.errors.endDate?.message}><Input type="date" aria-label="Data final" {...form.register("endDate")} /></Field>
-        <Field label="Campanha"><Select aria-label="Campanha" {...form.register("campaignId")}><option value="">Todas as campanhas</option>{campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}{filters.campaignId && !campaigns.some((campaign) => campaign.id === filters.campaignId) ? <option value={filters.campaignId}>Campanha selecionada sem registros no período</option> : null}</Select></Field>
-        <Button type="submit" disabled={loading}><Filter size={16} aria-hidden="true" />Aplicar filtros</Button>
+      <Filters aria-label="Filtros do relatório">
+        <DateRangeFilter value={filters} onChange={(range) => applyFilters({ ...filters, ...range })} maxDays={366} />
+        <Field label="Campanha"><Select aria-label="Campanha" value={filters.campaignId} onChange={(event) => applyFilters({ ...filters, campaignId: event.target.value })}><option value="">Todas as campanhas</option>{campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}{filters.campaignId && !campaigns.some((campaign) => campaign.id === filters.campaignId) ? <option value={filters.campaignId}>Campanha selecionada sem registros no período</option> : null}</Select></Field>
       </Filters>
       <ReportNote>Período: {period} · Fuso de Brasília · Data de criação do pedido. Apenas pedidos concluídos compõem as vendas.</ReportNote>
       {loading ? <Feedback role="status">Carregando resultado dos upsells…</Feedback> : error ? <Feedback role="alert"><span>Não foi possível carregar o relatório. Tente novamente.</span><Button type="button" variant="outline" onClick={() => applyFilters(filters)}><RefreshCw size={16} aria-hidden="true" />Tentar novamente</Button></Feedback> : summary && report ? <>

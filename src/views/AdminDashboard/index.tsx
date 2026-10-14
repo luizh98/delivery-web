@@ -1,21 +1,18 @@
 "use client";
 
+import { DateRangeFilter, getPresetDateRange } from "@/components/DateRangeFilter";
+
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DayPicker, type DateRange } from "@daypicker/react";
-import { ptBR } from "@daypicker/react/locale";
 import {
   Banknote,
-  CalendarDays,
   ClipboardList,
   DollarSign,
   Percent,
   ReceiptText,
   RefreshCw,
   Truck,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/Button";
-import { Field, Select } from "@/components/Field";
 import { clientApi } from "@/services/api/client";
 import type {
   AdminDashboardPerformance,
@@ -33,13 +30,6 @@ import {
   type DashboardMetricKey,
 } from "./charts";
 import {
-  CalendarPanel,
-  DateFilterWrap,
-  DateModalActions,
-  DatePopover,
-  DatePopoverBody,
-  DatePopoverHeader,
-  DateRangeText,
   Feedback,
   FullSection,
   Header,
@@ -62,20 +52,11 @@ import {
   ToggleGroup,
 } from "./styles";
 
-type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
 type PerformanceMode = "items" | "options";
 
 const PERFORMANCE_PAGE_SIZE = 20;
 
-const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
-const datePresetLabels: Record<DatePreset, string> = {
-  last7: "Últimos 7 dias",
-  yesterday: "Ontem",
-  today: "Hoje",
-  thisMonth: "Este mês",
-  custom: "Personalizado",
-};
 
 const metrics: {
   key: DashboardMetricKey;
@@ -91,13 +72,9 @@ const metrics: {
 ];
 
 function LegacyAdminDashboardView() {
-  const datePopoverRef = useRef<HTMLDivElement>(null);
   const performanceSentinelRef = useRef<HTMLDivElement>(null);
   const performanceRequestRef = useRef<AbortController | null>(null);
-  const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [{ startDate, endDate }, setDateRange] = useState(() => getPresetDateRange("today"));
-  const [draftDateRange, setDraftDateRange] = useState<DateRange>();
-  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<DashboardMetricKey>("revenueCents");
   const [performanceMode, setPerformanceMode] = useState<PerformanceMode>("items");
   const [data, setData] = useState<AdminDashboardResponse | null>(null);
@@ -217,39 +194,6 @@ function LegacyAdminDashboardView() {
     return () => observer.disconnect();
   }, [hasMorePerformance, loadMorePerformance, performanceLoading]);
 
-  useEffect(() => {
-    if (!isDatePopoverOpen) return;
-    function handlePointerDown(event: PointerEvent) {
-      if (!datePopoverRef.current?.contains(event.target as Node)) setIsDatePopoverOpen(false);
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setIsDatePopoverOpen(false);
-    }
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isDatePopoverOpen]);
-
-  function selectDatePreset(preset: DatePreset) {
-    if (preset === "custom") {
-      setDraftDateRange({ from: dateFromKey(startDate), to: dateFromKey(endDate) });
-      setIsDatePopoverOpen(true);
-      return;
-    }
-    setDatePreset(preset);
-    setDateRange(getPresetDateRange(preset));
-  }
-
-  function applyCustomDateRange() {
-    if (!draftDateRange?.from || !draftDateRange.to) return;
-    setDatePreset("custom");
-    setDateRange({ startDate: dateKey(draftDateRange.from), endDate: dateKey(draftDateRange.to) });
-    setIsDatePopoverOpen(false);
-  }
-
   const monthLabel = data
     ? monthFormatter.format(new Date(data.monthlySales.year, data.monthlySales.month - 1, 1))
     : "mês selecionado";
@@ -263,55 +207,7 @@ function LegacyAdminDashboardView() {
             Desempenho do restaurante{loading && data ? " · Atualizando…" : ""}
           </Subtitle>
         </div>
-        <DateFilterWrap ref={datePopoverRef}>
-          <Field label={`Período: ${formatDateRange(startDate, endDate)}`}>
-            <Select value="" onChange={(event) => selectDatePreset(event.target.value as DatePreset)}>
-              <option value="" disabled>{datePresetLabels[datePreset]}</option>
-              <option value="today">Hoje</option>
-              <option value="yesterday">Ontem</option>
-              <option value="last7">Últimos 7 dias</option>
-              <option value="thisMonth">Este mês</option>
-              <option value="custom">Personalizado</option>
-            </Select>
-          </Field>
-          {isDatePopoverOpen ? (
-            <DatePopover role="dialog" aria-labelledby="dashboard-date-title">
-              <DatePopoverHeader>
-                <div>
-                  <strong id="dashboard-date-title">Período personalizado</strong>
-                  <Subtitle>Selecione início e fim.</Subtitle>
-                </div>
-                <Button type="button" variant="outline" aria-label="Fechar período" onClick={() => setIsDatePopoverOpen(false)}>
-                  <X size={16} />
-                </Button>
-              </DatePopoverHeader>
-              <DatePopoverBody>
-                <CalendarPanel>
-                  <DayPicker
-                    mode="range"
-                    locale={ptBR}
-                    selected={draftDateRange}
-                    onSelect={setDraftDateRange}
-                    defaultMonth={draftDateRange?.from}
-                    resetOnSelect
-                  />
-                </CalendarPanel>
-                <DateRangeText>
-                  <CalendarDays size={16} aria-hidden="true" />
-                  {draftDateRange?.from && draftDateRange.to
-                    ? formatDateRange(dateKey(draftDateRange.from), dateKey(draftDateRange.to))
-                    : "Selecione o início e o fim do período"}
-                </DateRangeText>
-                <DateModalActions>
-                  <Button type="button" variant="outline" onClick={() => setIsDatePopoverOpen(false)}>Cancelar</Button>
-                  <Button type="button" disabled={!draftDateRange?.from || !draftDateRange.to} onClick={applyCustomDateRange}>
-                    Aplicar período
-                  </Button>
-                </DateModalActions>
-              </DatePopoverBody>
-            </DatePopover>
-          ) : null}
-        </DateFilterWrap>
+        <DateRangeFilter value={{ startDate, endDate }} onChange={setDateRange} maxDays={366} />
       </Header>
 
       <MetricsGrid aria-label="Indicadores do período">
@@ -450,31 +346,3 @@ function LegacyAdminDashboardView() {
 }
 
 export { AdminDashboardView } from "./LazyAdminDashboard";
-
-function getPresetDateRange(preset: Exclude<DatePreset, "custom">) {
-  const today = new Date();
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const start = new Date(end);
-  if (preset === "last7") start.setDate(start.getDate() - 6);
-  else if (preset === "yesterday") {
-    start.setDate(start.getDate() - 1);
-    end.setDate(end.getDate() - 1);
-  } else if (preset === "thisMonth") start.setDate(1);
-  return { startDate: dateKey(start), endDate: dateKey(end) };
-}
-
-function dateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function dateFromKey(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatDateRange(startDate: string, endDate: string) {
-  return `${dateFormatter.format(dateFromKey(startDate))} a ${dateFormatter.format(dateFromKey(endDate))}`;
-}

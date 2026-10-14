@@ -25,6 +25,19 @@ const mock = createServer((request, response) => {
     response.end(JSON.stringify({ id: "qa", tenantId: "qa", tenantSlug: "qa", email: "qa@example.test", roles: ["ADMIN"] }));
   } else if (url.pathname === "/api/public/restaurant/config") {
     response.end(JSON.stringify({ name: "Validação — dados ilustrativos", open: true, theme: { primaryColor: "#1d4ed8", secondaryColor: "#172554" } }));
+
+  } else if (url.pathname === "/api/admin/dashboard/overview") {
+    response.end(JSON.stringify({ summary: { revenueCents: 0, orders: 0, averageTicketCents: 0, discountsCents: 0, deliveryFeesCents: 0 }, metricSeries: [] }));
+  } else if (url.pathname === "/api/admin/dashboard/status-times") {
+    response.end(JSON.stringify({ averageStatusTimes: [] }));
+  } else if (url.pathname === "/api/admin/dashboard/payment-methods") {
+    response.end(JSON.stringify({ paymentMethods: [] }));
+  } else if (url.pathname === "/api/admin/dashboard/performance") {
+    response.end(JSON.stringify({ items: [], page: 0, size: 10, totalPages: 0, totalElements: 0 }));
+  } else if (url.pathname === "/api/admin/dashboard/order-heatmap") {
+    response.end(JSON.stringify({ orderHeatmap: [], heatmapSchedules: [] }));
+  } else if (url.pathname === "/api/admin/dashboard/monthly-sales") {
+    response.end(JSON.stringify({ monthlySales: { year: 2026, month: 10, days: [] } }));
   } else if (url.pathname === "/api/admin/upsell-report") {
     if (state === "error") { response.statusCode = 500; response.end("{}"); return; }
     const items = state === "empty" ? [] : allItems.filter((item) => !url.searchParams.get("campaignId") || item.campaignId === url.searchParams.get("campaignId")).map((item) => ({ ...item, missingOriginalPriceUnits: state === "legacy" ? 1 : 0 }));
@@ -66,9 +79,7 @@ try {
   assert.equal(await financialRows.count(), 10);
   assert.match(await page.getByRole("list", { name: "Ranking por valor vendido" }).locator("li").first().innerText(), /Produto ilustrativo 12/);
   await page.getByRole("button", { name: "Unidades", exact: true }).click();
-  await page.getByLabel("Data inicial").fill("2026-10-08");
-  await page.getByLabel("Data final").fill("2026-10-14");
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await page.getByLabel("Período", { exact: true }).selectOption("last7");
   await page.getByRole("heading", { name: "Upsells mais vendidos" }).waitFor();
   const dailyValues = page.getByRole("region", { name: "Valores de upsell por dia", exact: true });
   assert.equal(await dailyValues.isVisible(), false, "daily table starts collapsed");
@@ -85,28 +96,55 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name} page overflow`);
   }
   await page.getByLabel("Campanha", { exact: true }).selectOption("c1");
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await page.getByLabel("Período", { exact: true }).selectOption("last7");
   await page.getByRole("heading", { name: "Upsells mais vendidos" }).waitFor();
   assert.equal(await financialRows.count(), 2);
   state = "legacy";
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await page.getByLabel("Período", { exact: true }).selectOption("last7");
   await page.getByText(/unidades sem preço original registrado/).waitFor();
   assert.equal(await page.locator("dl dd").first().innerText(), "—");
   state = "empty";
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await page.getByLabel("Período", { exact: true }).selectOption("last7");
   await page.getByRole("heading", { name: "Nenhuma venda de upsell neste período" }).waitFor();
   state = "error";
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await page.getByLabel("Período", { exact: true }).selectOption("last7");
   await page.getByRole("button", { name: "Tentar novamente" }).waitFor();
   state = "slow";
   await page.getByRole("button", { name: "Tentar novamente" }).click();
   await page.getByText("Carregando resultado dos upsells…").waitFor();
   assert.equal(await page.locator("dl").count(), 0, "loading must clear old financial totals");
   await page.getByRole("heading", { name: "Upsells mais vendidos" }).waitFor();
-  await page.getByLabel("Data inicial").fill("2026-10-15");
-  await page.getByLabel("Data final").fill("2026-10-14");
-  await page.getByRole("button", { name: "Aplicar filtros" }).click();
-  await page.getByText("A data final deve ser igual ou posterior à inicial.").waitFor();
+
+  await page.getByLabel("Período", { exact: true }).selectOption("custom");
+  await page.getByRole("dialog", { name: "Período personalizado" }).waitFor();
+  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  assert.equal(await page.getByRole("dialog", { name: "Período personalizado" }).count(), 0);
+  await page.getByLabel("Período", { exact: true }).selectOption("custom");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.getByRole("dialog", { name: "Período personalizado" }).count(), 0);
+  assert.equal(await page.getByLabel("Período", { exact: true }).evaluate((el) => el === document.activeElement), true);
+  await page.getByLabel("Período", { exact: true }).selectOption("custom");
+  await page.locator(".rdp-day_button").filter({ hasText: /^8$/ }).click();
+  assert.equal(await page.getByRole("button", { name: "Aplicar período", exact: true }).isDisabled(), true);
+  await page.locator(".rdp-day_button").filter({ hasText: /^14$/ }).click();
+  await page.getByRole("button", { name: "Aplicar período", exact: true }).click();
+  await page.getByRole("heading", { name: "Upsells mais vendidos" }).waitFor();
+  for (const [name, width, height] of [["date-desktop", 1440, 1000], ["date-mobile", 390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.getByLabel("Período", { exact: true }).selectOption("custom");
+    await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name + " calendar overflow");
+    await page.screenshot({ path: path.join(review, name + ".png"), fullPage: true });
+    await page.keyboard.press("Escape");
+  }
+  state = "sales";
+  for (const route of ["/admin/analytics", "/admin/orders", "/admin/kitchen", "/admin/deliveries"]) {
+    await page.goto("http://127.0.0.1:3108" + route);
+    await page.getByLabel("Período", { exact: true }).selectOption("last7");
+    await page.getByLabel("Período", { exact: true }).selectOption("custom");
+    await page.getByRole("dialog", { name: "Período personalizado" }).waitFor();
+    await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  }
   assert.deepEqual(errors, [], "browser runtime errors");
   console.log("PASS: pagination, sorting, campaign/date filters, daily values keyboard expansion, legacy, empty, error/retry, loading, validation and desktop/mobile overflow.");
   console.log(`Screenshots: ${review}`);

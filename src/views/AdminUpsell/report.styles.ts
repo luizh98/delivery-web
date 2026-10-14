@@ -15,10 +15,10 @@ export const ReportRoot = styled("div", {
   display: "grid", gap: "1.25rem", minWidth: 0, fontVariantNumeric: "tabular-nums",
 });
 
-export const Filters = styled("form", {
+export const Filters = styled("div", {
   display: "grid", gap: "0.75rem", alignItems: "end",
   "@sm": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
-  "@lg": { gridTemplateColumns: "minmax(9rem, 1fr) minmax(9rem, 1fr) minmax(12rem, 2fr) auto" },
+  "@lg": { gridTemplateColumns: "minmax(0, 19rem) minmax(12rem, 1fr)" },
   "& > *": { minWidth: 0 },
 });
 

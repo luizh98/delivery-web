@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { getPresetDateRange } from "../../components/DateRangeFilter/dates.ts";
 
 test("performance paginates ten items and options, resets filters and ignores stale responses", async () => {
   const slots = [];
@@ -50,6 +51,7 @@ test("performance paginates ten items and options, resets filters and ignores st
         },
       };
       if (name === "@/utils/format") return { money: String };
+      if (name === "@/components/DateRangeFilter") return { DateRangeFilter: "DateRangeFilter", getPresetDateRange };
       if (name === "react/jsx-runtime") return require(name);
       return new Proxy({}, { get: (_, key) => key });
     },
@@ -126,7 +128,7 @@ test("performance paginates ten items and options, resets filters and ignores st
   await resolve();
   assert.equal(table().props.values[0].id, 10);
 
-  render().find((node) => node.type === "Select").props.onChange({ target: { value: "last7" } });
+  render().find((node) => node.type === "DateRangeFilter").props.onChange(getPresetDateRange("last7"));
   render();
   click("Carregar mais relatórios");
   click("Carregar mais relatórios");
