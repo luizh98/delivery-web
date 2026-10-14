@@ -23,4 +23,10 @@ Data: 2026-10-14 (America/Sao_Paulo)
 
 ## Limites
 
+## Atualização — filtro de período padronizado
+
+- DateRangeFilter único com CSS/calendário das Análises, usado em Análises ativa/legada, Pedidos/Cozinha, Entregas e Upsells. Select: Hoje, Ontem, Últimos 7 dias, Este mês, Personalizado; aplicação direta, cancelar/Escape, foco restaurado e popup posicionado dentro da tela. Relatórios mantêm limite de 366 dias.
+- 64 testes web, TypeScript, lint do novo componente/consumidores, build e detector aprovados. Dois erros de lint preexistentes em effects do LazyAdminDashboard e warning da view legada mantidos. Browser local confirmou presets/calendário/cancelar/Escape/aplicação nas cinco telas, sem overflow. Capturas date-desktop.png/date-mobile.png.
+- Staging c5c944a1e528eeca6db04eb7dda38229dfd1607e: deploy done, commit ativo conferido. Browser com login real validou calendário por select e consulta personalizada, relatório 200, cinco combinações e 287 dias reconciliados; navegação e filtro compartilhado funcionando nas outras quatro telas. Sem erros de runtime ou alteração de pedidos.
+
 Sem custo/margem, conversão por exibições, causalidade, exportação ou comparação de períodos. Receita apresentada é valor dos produtos após descontos dos itens, sem adicionais/frete/cupom geral. Histórico sem identidade de campanha não pode ser atribuído; preço original ausente sinalizado, sem reconstrução por catálogo atual.

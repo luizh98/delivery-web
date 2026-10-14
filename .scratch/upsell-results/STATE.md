@@ -2,7 +2,7 @@
 
 Concluído em 2026-10-14. Requisitos R1–R6 verificados e feature publicada somente em staging.
 
-Atualização 2026-10-14: filtro de período extraído para src/components/DateRangeFilter e adotado em todas as telas operacionais que tinham filtro por período. Upsells usa select de presets e aplicação direta, com Este mês inicial. 64 testes, TypeScript, build e navegador aprovados; publicação do ajuste em andamento. Issue 04 registra escopo/evidências. Dois erros preexistentes de lint em effects do dashboard preservados.
+Atualização 2026-10-14: filtro de período extraído para src/components/DateRangeFilter e adotado em todas as telas operacionais que tinham filtro por período. Upsells usa select de presets e aplicação direta, com Este mês inicial. 64 testes, TypeScript, build e navegador aprovados; ajuste c5c944a publicado e validado nas cinco telas da staging. Issue 04 registra escopo/evidências. Dois erros preexistentes de lint em effects do dashboard preservados.
 
 Decisões: snapshots históricos, somente COMPLETED nas vendas, cancelados/pendentes separados, valores dos produtos sem adicionais/frete/cupom geral, campanha/período de até 366 dias, fuso Brasília por criação. Preços originais ausentes sinalizados. Sem migração ou dependência nova.
 

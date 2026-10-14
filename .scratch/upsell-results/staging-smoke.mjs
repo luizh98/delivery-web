@@ -46,6 +46,14 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name} overflow`);
     await page.screenshot({ path: path.join(review, `${name}.png`), fullPage: true });
   }
+  for (const route of ["/admin/analytics", "/admin/orders", "/admin/kitchen", "/admin/deliveries"]) {
+    await page.goto(base + route);
+    await page.getByLabel("Período", { exact: true }).selectOption("last7");
+    await page.getByLabel("Período", { exact: true }).selectOption("custom");
+    await page.getByRole("dialog", { name: "Período personalizado" }).waitFor();
+    await page.getByRole("dialog", { name: "Período personalizado" }).getByRole("button", { name: "Cancelar", exact: true }).click();
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${route} overflow`);
+  }
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ staging: "passed", reportStatus: response.status(), combinations: data.items.length, dailyRows: data.series.length, desktopMobileOverflow: false, runtimeErrors: 0 }));
 } finally {
