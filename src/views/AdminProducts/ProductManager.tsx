@@ -11,6 +11,7 @@ import {
   Save,
   Search,
   Trash2,
+  Video,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -387,6 +388,15 @@ export function ProductManager({
   const [removeImage, setRemoveImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState("");
+  const [videoError, setVideoError] = useState("");
+  const [videoChecking, setVideoChecking] = useState(false);
+  const [removeVideo, setRemoveVideo] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const videoSelection = useRef(0);
+  const hasImage = Boolean(!removeImage && (selectedImage || editingProduct?.imageUrl));
+  const hasVideo = Boolean(!removeVideo && (selectedVideo || editingProduct?.videoUrl));
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
   const form = useForm<ProductForm>({
@@ -413,6 +423,52 @@ export function ProductManager({
 
   function updateOptionGroups(nextGroups: ProductOptionGroup[]) {
     setOptionGroups(nextGroups);
+  }
+
+  useEffect(() => () => { if (videoPreview) URL.revokeObjectURL(videoPreview); }, [videoPreview]);
+
+  function resetVideo() {
+    videoSelection.current += 1;
+    setSelectedVideo(null);
+    setVideoPreview("");
+    setVideoError("");
+    setVideoChecking(false);
+    setRemoveVideo(false);
+  }
+
+  async function selectProductVideo(file: File | undefined) {
+    if (!file) return;
+    const selection = ++videoSelection.current;
+    setVideoError("");
+    if (!hasImage) { setVideoError("Configure uma imagem antes de adicionar vídeo."); return; }
+    if (file.type !== "video/mp4" || file.size === 0 || file.size > 20 * 1024 * 1024) {
+      setVideoError("Use um vídeo MP4 de até 20 MB.");
+      return;
+    }
+    setVideoChecking(true);
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    try {
+      const duration = await new Promise<number>((resolve, reject) => {
+        const timeout = window.setTimeout(() => reject(new Error("Não foi possível ler o vídeo. Tente outro MP4.")), 10000);
+        video.onloadedmetadata = () => { window.clearTimeout(timeout); resolve(video.duration); };
+        video.onerror = () => { window.clearTimeout(timeout); reject(new Error("Não foi possível ler o vídeo. Tente outro MP4.")); };
+        video.src = url;
+      });
+      if (selection !== videoSelection.current) return;
+      if (!Number.isFinite(duration) || duration <= 0 || duration > 15) throw new Error("O vídeo deve ter até 15 segundos.");
+      setSelectedVideo(file);
+      setVideoPreview(URL.createObjectURL(file));
+      setRemoveVideo(false);
+    } catch (error) {
+      if (selection === videoSelection.current) setVideoError(error instanceof Error ? error.message : "Não foi possível ler o vídeo.");
+    } finally {
+      video.removeAttribute("src");
+      video.load();
+      URL.revokeObjectURL(url);
+      if (selection === videoSelection.current) setVideoChecking(false);
+    }
   }
 
   function updateTemplateDraftGroups(nextGroups: ProductOptionGroup[]) {
@@ -442,6 +498,7 @@ export function ProductManager({
   }
 
   function resetForm(categoryId = form.getValues("categoryId")) {
+    resetVideo();
     form.reset(defaultProductForm(categoryId));
     setEditingProduct(null);
     setOptionGroups([]);
@@ -458,6 +515,7 @@ export function ProductManager({
   }
 
   function startEdit(product: Product) {
+    resetVideo();
     setEditingProduct(product);
     form.reset(productToForm(product));
     setOptionGroups(cloneOptionGroups(product.optionGroups ?? []));
@@ -495,6 +553,10 @@ export function ProductManager({
   }
 
   function removeProductImage() {
+    if (hasVideo || videoChecking) {
+      setImageError("Remova o vídeo antes de remover a imagem.");
+      return;
+    }
     setSelectedImage(null);
     setSelectedImagePreview("");
     setRemoveImage(Boolean(editingProduct?.imageUrl));
@@ -699,6 +761,9 @@ export function ProductManager({
 
   async function submit(values: ProductForm) {
     setError("");
+    if (videoChecking) { setVideoError("Aguarde a validação do vídeo."); return; }
+    if (videoError) return;
+    if (hasVideo && !hasImage) { setVideoError("Configure uma imagem antes de adicionar vídeo."); return; }
 
     if (selectedImage && selectedImage.size > MAX_PRODUCT_IMAGE_BYTES) {
       setImageError("A imagem deve ter no máximo 5 MB.");
@@ -730,6 +795,8 @@ export function ProductManager({
       if (selectedImage) {
         body.append("image", selectedImage);
       }
+      if (selectedVideo) body.append("video", selectedVideo);
+      body.append("removeVideo", String(removeVideo));
       if (editingProduct) {
         body.append("removeImage", String(removeImage));
       }
@@ -882,7 +949,7 @@ export function ProductManager({
           </DetailsIcon>
         </DetailsSummary>
 
-        <ProductForm onSubmit={form.handleSubmit(submit)}>
+        <ProductForm onSubmit={(event) => { void form.handleSubmit(submit)(event); }}>
           <SectionHeader>
             <div>
               <FormTitle>
@@ -1004,6 +1071,30 @@ export function ProductManager({
             ) : null}
             {removeImage ? <Muted>A foto será removida somente ao salvar.</Muted> : null}
             <Muted>JPEG, PNG ou WebP. Máximo de 5 MB.</Muted>
+          </Field>
+
+          <Field label="Vídeo do produto (opcional)" error={videoError}>
+            <input ref={videoInputRef} type="file" accept="video/mp4" hidden onChange={(event) => {
+              void selectProductVideo(event.target.files?.[0]);
+              event.target.value = "";
+            }} />
+            <div>
+              <Button type="button" variant="outline" disabled={!hasImage || videoChecking || form.formState.isSubmitting} onClick={() => videoInputRef.current?.click()}>
+                <Video size={16} />
+                {videoChecking ? "Validando vídeo..." : hasVideo ? "Trocar vídeo" : "Escolher vídeo"}
+              </Button>
+            </div>
+            {hasVideo ? (
+              <>
+                <video src={videoPreview || editingProduct?.videoUrl} poster={selectedImagePreview || editingProduct?.imageUrl} controls playsInline muted preload="metadata" style={{ width: "100%", maxHeight: "18rem", background: "#000", objectFit: "contain" }} aria-label="Prévia do vídeo do produto" />
+                <div><Button type="button" variant="dangerText" disabled={videoChecking || form.formState.isSubmitting} onClick={() => {
+                  resetVideo();
+                  setRemoveVideo(Boolean(editingProduct?.videoUrl));
+                }}><Trash2 size={16} />Remover vídeo</Button></div>
+              </>
+            ) : null}
+            {removeVideo ? <Muted>O vídeo será removido somente ao salvar.</Muted> : null}
+            <Muted>{!hasImage ? "Escolha uma imagem para habilitar o vídeo. " : "Imagem obrigatória. "}MP4 (H.264), áudio AAC opcional. Até 15 segundos e 20 MB. Prefira vídeo vertical.</Muted>
           </Field>
 
           <Field label="Descrição">

@@ -159,6 +159,7 @@ export type Product = {
   name: string;
   description?: string;
   imageUrl?: string;
+  videoUrl?: string;
   priceCents: number;
   discountType?: "" | "PERCENTAGE" | "FIXED";
   discountValue?: number;
