@@ -1,5 +1,11 @@
 # State
 
+## Paginação do desempenho — 2026-10-14
+
+- Ranking ativo de itens e opcionais com 10 registros por página, Anterior/Próxima e reinício ao trocar tipo ou período.
+- 40 testes, TypeScript e build aprovados; detector Impeccable sem ocorrências. Dois erros anteriores de lint em effects do dashboard permanecem. Inspeção visual em navegador pendente.
+- Registro: `.specs/quick/025-dashboard-performance-pagination/`.
+
 ## Indicadores do acompanhamento — 2026-10-13
 
 - Status atual e anteriores preenchidos com check; apenas próximo passo pulsa. Horários preservados; cancelados/finalizados sem pulso; movimento reduzido respeitado.
