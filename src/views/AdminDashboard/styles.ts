@@ -129,6 +129,13 @@ export const ToggleButton = styled("button", {
 });
 
 export const TableViewport = styled("div", { overflowX: "auto" });
+export const PerformancePagination = styled("nav", {
+  display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem",
+  flexWrap: "wrap", fontSize: "0.8125rem", color: "var(--color-muted)",
+});
+export const PerformancePageActions = styled("div", {
+  display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap",
+});
 export const Table = styled("table", {
   width: "100%", minWidth: "44rem", borderCollapse: "collapse", fontSize: "0.75rem",
   "th, td": { padding: "0.65rem 0.5rem", borderBottom: "1px solid var(--color-border)", textAlign: "right", whiteSpace: "nowrap" },
