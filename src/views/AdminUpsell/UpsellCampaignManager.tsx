@@ -1,11 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  ChartNoAxesCombined,
   CopyPlus,
   Pencil,
   Plus,
@@ -31,6 +33,7 @@ import type {
   UpsellTriggerType,
 } from "@/types/api";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
+import { ReportLinks } from "./report.styles";
 import {
   Actions,
   CampaignCard,
@@ -579,9 +582,12 @@ export function UpsellCampaignManager({
           <PageTitle>Campanhas</PageTitle>
           <PageSubtitle>Campanhas de produtos complementares no carrinho.</PageSubtitle>
         </div>
-        <Button type="button" onClick={openCreate}>
-          <Plus size={16} /> Criar campanha
-        </Button>
+        <ReportLinks>
+          <Link href="/admin/catalog/upsell/results"><ChartNoAxesCombined size={16} aria-hidden="true" />Ver resultados</Link>
+          <Button type="button" onClick={openCreate}>
+            <Plus size={16} /> Criar campanha
+          </Button>
+        </ReportLinks>
       </PageHeader>
 
       {formOpen ? (

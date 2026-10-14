@@ -1,0 +1,24 @@
+# Validação — resultado dos upsells
+
+Data: 2026-10-14 (America/Sao_Paulo)
+
+## Checks locais
+
+- API: 254 testes aprovados; go vet aprovado. Integrações opt-in de Mongo não executadas, Docker indisponível. Testes da feature cobrem finanças/status/filtros/fuso/legado e autorização admin/tenant/role/datas.
+- Web: 62 testes existentes aprovados; TypeScript e ESLint dos arquivos alterados aprovados.
+- Build de produção Webpack aprovado, incluindo nova rota /admin/catalog/upsell/results. Build inicial sem rede não baixou Google Fonts; repetição com rede aprovada.
+- Detector Impeccable: zero ocorrências.
+- Finish reviewer: visual aprovado. P2 de alternativa textual do gráfico corrigido com “Ver valores por dia”, tabela semântica de datas/valores. Expansão por Enter e dados diários aprovados no QA; lint, TypeScript e build final repetidos após correção, aprovados. Leitor de tela real não testado.
+- Browser isolado com backend de fixtures (identificado como dados ilustrativos): paginação 10+2, ordenação por unidades/valor, filtro por campanha/datas, ausência de original, vazio, erro/retry, loading sem totais antigos e validação de datas passaram. Sem erro de JavaScript ou overflow da página em 1440×1000 e 390×844.
+- Capturas: ../../.impeccable/review/upsell-results/desktop.png e mobile.png. Dados locais de demonstração; nenhum pedido real criado/alterado.
+
+## Publicação
+
+- API staging: 3a77d53 — feat(upsell): add historical sales report. Push e deploy concluídos; container running e health UP. Commit ativo 3a77d53b139c8f747cea9a9144fbf69b75e2c080.
+- Smoke autenticado no Mongo da staging: relatório 200, cinco combinações históricas e 287 dias; somas dos itens reconciliadas com resumo e original − desconto = vendido. Filtro de campanha validado. Sem token 401, tenant diferente 403, data inválida 400. Somente leituras; sem criação/alteração de pedidos.
+- Web staging: revisão e validação final concluídas; aguardando publicação.
+- Ambiente: Easypanel delivery-app-staging; fontes confirmadas origin/staging em API/web, autoDeploy ativo. Main não alterada.
+
+## Limites
+
+Sem custo/margem, conversão por exibições, causalidade, exportação ou comparação de períodos. Receita apresentada é valor dos produtos após descontos dos itens, sem adicionais/frete/cupom geral. Histórico sem identidade de campanha não pode ser atribuído; preço original ausente sinalizado, sem reconstrução por catálogo atual.

@@ -387,6 +387,36 @@ export type AdminCustomerPage = {
   totalPages: number;
 };
 
+export type UpsellReportTotals = {
+  units: number;
+  orders: number;
+  originalCents: number;
+  discountCents: number;
+  revenueCents: number;
+  missingOriginalPriceUnits: number;
+};
+
+export type UpsellReportItem = UpsellReportTotals & {
+  campaignId: string;
+  campaignName: string;
+  productId: string;
+  productName: string;
+};
+
+export type UpsellReport = {
+  summary: UpsellReportTotals & {
+    completedOrders: number;
+    participationPercent: number;
+    averagePerOrderCents: number;
+    canceledOrders: number;
+    canceledRevenueCents: number;
+    pendingOrders: number;
+  };
+  items: UpsellReportItem[];
+  series: AdminDashboardMetricPoint[];
+  campaigns: { id: string; name: string }[];
+};
+
 export type UpsellTriggerType =
   | "PRODUCT"
   | "CATEGORY"
