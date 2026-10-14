@@ -26,7 +26,11 @@ try {
   const data = await response.json();
   assert.equal(data.items.reduce((total, row) => total + row.revenueCents, 0), data.summary.revenueCents);
   assert.equal(data.series.reduce((total, day) => total + day.revenueCents, 0), data.summary.revenueCents);
+  const filteredResponse = page.waitForResponse((response) => response.url().includes("/api/backend/admin/upsell-report?"));
   await page.getByLabel("Período", { exact: true }).selectOption("last7");
+  assert.equal((await filteredResponse).status(), 200);
+  await page.getByText("Carregando resultado dos upsells…", { exact: true }).waitFor({ state: "hidden" });
+  await page.getByLabel("Resumo das vendas de upsell").waitFor();
   await page.getByLabel("Período", { exact: true }).selectOption("custom");
   const dialog = page.getByRole("dialog", { name: "Período personalizado" });
   await dialog.waitFor();
