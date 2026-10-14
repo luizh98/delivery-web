@@ -1,5 +1,11 @@
 # State
 
+## Paginação do desempenho — 2026-10-14
+
+- Ranking ativo de itens e opcionais com 10 registros por página, Anterior/Próxima e reinício ao trocar tipo ou período.
+- 40 testes, TypeScript e build aprovados; detector Impeccable sem ocorrências. Dois erros anteriores de lint em effects do dashboard permanecem. Inspeção visual em navegador pendente.
+- Registro: `.specs/quick/025-dashboard-performance-pagination/`.
+
 ## Desconto no produto — 2026-10-06
 
 - Desconto opcional por porcentagem inteira ou preço final. Cadastro com prévia; cardápio/carrossel/detalhe usam paleta da tenant. API preserva preço original e calcula preço efetivo; carrinho, combos e pedidos aplicam desconto sem afetar adicionais.
