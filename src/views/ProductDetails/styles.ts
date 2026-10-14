@@ -326,7 +326,8 @@ export const MediaVideo = styled("video", {
   width: "100%",
   height: "100%",
   minHeight: 0,
-  objectFit: "contain",
+  objectFit: "cover",
+  objectPosition: "center",
 });
 
 export const MediaImage = styled("img", {

@@ -1094,7 +1094,8 @@ export function ProductManager({
               </>
             ) : null}
             {removeVideo ? <Muted>O vídeo será removido somente ao salvar.</Muted> : null}
-            <Muted>{!hasImage ? "Escolha uma imagem para habilitar o vídeo. " : "Imagem obrigatória. "}MP4 (H.264), áudio AAC opcional. Até 15 segundos e 20 MB. Prefira vídeo vertical.</Muted>
+            <Muted>{!hasImage ? "Escolha uma imagem para habilitar o vídeo. " : "Imagem obrigatória. "}MP4 (H.264), áudio AAC opcional. Até 15 segundos e 20 MB.</Muted>
+            <Muted>Recomendado: vídeo vertical de 1080 × 1920 pixels (9:16), como um Reels. Mantenha o prato no centro: o vídeo preenche a tela e pode ter as bordas recortadas. Exporte sem faixas pretas.</Muted>
           </Field>
 
           <Field label="Descrição">

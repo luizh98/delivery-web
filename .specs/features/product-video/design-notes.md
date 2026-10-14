@@ -9,7 +9,7 @@ Extensão da identidade existente, conforme `spec.md`. Contexto de produto lido 
 - `src/app/globals.css`: fonte Plus Jakarta Sans e aliases de tema para cores primária/secundária por tenant, superfícies, texto e bordas. Sem alteração nesta feature.
 - `src/components/Button/*`: CTA reutiliza botão existente; cor primária continua `var(--color-primary)`, altura de 2,75 rem, cantos de 0,375 rem e estados incumbentes. Cadastro reutiliza `Field`, `Muted` e variantes `outline`/`dangerText` de `Button`.
 - `src/views/Home/*`: cards e carrossel mantêm foto e composição incumbentes. Selo textual “Vídeo”, com ícone, indica disponibilidade; nenhum player é montado na lista.
-- `src/views/ProductDetails/ProductMedia.tsx`: player nativo com controles, `muted`, `playsInline`, poster e fallback para foto em erro. Autoplay respeita preferência de movimento reduzido. Foto/vídeo preservam proporção com `object-fit: contain`.
+- `src/views/ProductDetails/ProductMedia.tsx`: player nativo com controles, `muted`, `playsInline`, poster e fallback para foto em erro. Autoplay respeita preferência de movimento reduzido. Foto preserva proporção com `object-fit: contain`; vídeo usa `cover` centralizado na visualização normal e ampliada, conforme ajuste solicitado em 14/10/2026, preenchendo o quadro sem faixas adicionadas pelo player.
 - `src/views/ProductDetails/styles.ts`: quadro de mídia usa 65dvh, mínimo de 16 rem e máximo de 48 rem. Ampliação ocupa viewport; descrição possui rolagem própria e CTA permanece na faixa inferior, com safe area. Layout ampliado muda para duas colunas em `@md`.
 - `src/views/ProductDetails/index.tsx`: ampliação usa `dialog.showModal()`, nome acessível, fechamento por Escape e retorno de foco ao acionador. CTA ampliado chama o mesmo fluxo de adicionar; opcionais obrigatórios levam foco ao grupo inválido.
 
@@ -20,5 +20,7 @@ Comparação com `HEAD` confirma manutenção dos componentes e aliases do tema.
 Revisão visual anterior informou `ship`, sem mudança material; detector informou `[]`. Este registro não transforma esses resultados em nova inspeção de navegador.
 
 ## Limites
+
+Admin recomenda exportação vertical de 1080 × 1920 pixels (9:16), com prato centralizado e sem faixas pretas. Resolução é orientação, sem nova restrição de upload. O preenchimento pode recortar bordas; faixas gravadas dentro do arquivo continuam fazendo parte do vídeo.
 
 Conferência estática de contrato, componentes, estilos e diff. Browser, testes, contraste calculado e dispositivos reais não executados neste passe de documentação. Verificação visual em execução pertence às evidências da revisão anterior e às verificações de publicação do responsável pela feature.
