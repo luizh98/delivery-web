@@ -285,7 +285,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   }
 
   return (
-    <PageShell bottomPad>
+    <PageShell>
       <ProductLayout>
         <ImageArea>
           <ProductMedia key={product.id} product={product} playing={!imageExpanded} />
