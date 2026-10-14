@@ -43,8 +43,8 @@ export const ZoomButton = styled("button", {
 export const ProductLayout = styled("article", {
   display: "grid",
   width: "calc(100% + 2rem)",
-  margin: "-1rem -1rem 0",
-  overflow: "hidden",
+  margin: "-1rem -1rem -1rem",
+  overflow: "clip",
   background: "var(--color-surface)",
 
   "@sm": {
@@ -299,15 +299,14 @@ export const QuantityRow = styled("div", {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "0.75rem",
-  position: "fixed",
+  position: "sticky",
   bottom: 0,
-  left: 0,
-  right: 0,
   zIndex: 20,
+  margin: "0 -1rem -1rem",
   padding: "0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom))",
   background: "var(--color-surface)",
   borderTop: "1px solid var(--color-border)",
-  "@md": { position: "sticky", left: "auto", right: "auto", marginTop: "0.5rem" },
+  "@sm": { margin: "0 -1.5rem -1.5rem" },
 });
 
 export const MediaFrame = styled("div", {
@@ -340,7 +339,8 @@ export const MediaImage = styled("img", {
   width: "100%",
   height: "100%",
   minHeight: 0,
-  objectFit: "contain",
+  objectFit: "cover",
+  objectPosition: "center",
 });
 
 export const MediaNotice = styled("p", {
