@@ -21,4 +21,8 @@ Autorização: usuário solicitou subir tudo para main, incluindo alterações n
 
 ## Publicação
 
-Push main e confirmação do Easypanel pendentes. Nenhum dado/pedido/configuração de restaurante será alterado como parte da publicação. Smoke em produção será somente leitura com conta já existente.
+Push origin/main concluído nos dois repositórios. Easypanel delivery-app: ambos os deploys done, commits ativos conferidos. API dcdda4a848c0375f741739721345aa634a2d641b; web 32ebe9502e1a916996cb24b61e23547d82edd3bf (código da integração).
+
+API health respondeu UP após deploy. Smoke autenticado em https://flyfoods.com.br: login 200, relatório 200, valores vendidos dos itens e série diária reconciliados com resumo, select/calendário/cancelamento funcionando. Home, login e políticas responderam 200; desktop/mobile sem overflow e zero erros de JavaScript. Capturas em .impeccable/review/release-main-20261014/.
+
+Auditoria final dos worktrees antes do smoke: zero checkouts com alterações pendentes. Evidências do smoke e este registro serão commitados em main. Nenhum pedido ou configuração de restaurante alterado. Nenhuma migração executada.
