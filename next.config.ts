@@ -7,6 +7,8 @@ const appRoot = dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   experimental: {
     turbopackServerFastRefresh: true,
+    // Match the API's multipart cap, including video, image and form fields.
+    proxyClientMaxBodySize: "28mb",
   },
   turbopack: {
     root: appRoot,
