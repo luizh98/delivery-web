@@ -1,7 +1,7 @@
 # Vídeo do produto
 
 ## Requisitos
-- R1: cadastrar um vídeo MP4/H.264 de até 15 segundos e 20 MB; imagem obrigatória.
+- R1: cadastrar um vídeo MP4/H.264 de até 8 segundos e 20 MB; imagem obrigatória. Limite reduzido de 15 para 8 segundos por solicitação de 14/10/2026; vídeos existentes são preservados ao editar sem novo upload.
 - R2: validar arquivo e duração no servidor, sem confiar em metadados enviados pelo cliente.
 - R3: clique no card/imagem abre detalhes com vídeo grande, sem som inicialmente, controles e reprodução em linha. Sem vídeo ou com falha, mostrar foto.
 - R4: manter descrição e ação de adicionar acessíveis; preservar quantidade, opcionais e fluxo de carrinho.
