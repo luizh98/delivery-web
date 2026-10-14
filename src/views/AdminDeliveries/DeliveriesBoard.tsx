@@ -1,9 +1,9 @@
 "use client";
 
-import { DayPicker, type DateRange } from "@daypicker/react";
-import { ptBR } from "@daypicker/react/locale";
-import { Bike, CalendarDays, Check, CircleCheck, Clock3, ExternalLink, GripVertical, RefreshCw, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { DateRangeFilter, getPresetDateRange, dateKey } from "@/components/DateRangeFilter";
+
+import { Bike, Check, CircleCheck, Clock3, ExternalLink, GripVertical, RefreshCw, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
@@ -36,13 +36,6 @@ import {
   Waiting,
 } from "./styles";
 import {
-  CalendarPanel,
-  DateFilterWrap,
-  DateModalActions,
-  DatePopover,
-  DatePopoverBody,
-  DatePopoverHeader,
-  DateRangeText,
   SearchFilter,
   StatusCount,
   StatusFilter,
@@ -76,19 +69,8 @@ const statusIcons = {
   COMPLETED: CircleCheck,
 } satisfies Record<DeliveryRouteStatus, typeof Clock3>;
 
-type DatePreset = "last7" | "yesterday" | "today" | "thisMonth" | "custom";
 type DraggedOrder = { orderId: string; routeId: string };
 type DropTarget = { routeId: string; orderId?: string };
-
-const dateFormatter = new Intl.DateTimeFormat("pt-BR");
-
-const datePresetLabels: Record<DatePreset, string> = {
-  last7: "Últimos 7 dias",
-  yesterday: "Ontem",
-  today: "Hoje",
-  thisMonth: "Este mês",
-  custom: "Personalizado",
-};
 
 export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
   const [routes, setRoutes] = useState(initialRoutes);
@@ -96,13 +78,9 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
   const [now, setNow] = useState(() => Date.now());
   const [statusFilter, setStatusFilter] = useState<DeliveryRouteStatus | null>(null);
   const [search, setSearch] = useState("");
-  const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [{ startDate, endDate }, setDateRange] = useState(() => getPresetDateRange("today"));
-  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
-  const [draftDateRange, setDraftDateRange] = useState<DateRange>();
   const [draggedOrder, setDraggedOrder] = useState<DraggedOrder | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
-  const datePopoverRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
   async function reload() {
@@ -124,27 +102,6 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
       window.clearInterval(timer);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isDatePopoverOpen) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setIsDatePopoverOpen(false);
-    }
-
-    function handlePointerDown(event: PointerEvent) {
-      if (!datePopoverRef.current?.contains(event.target as Node)) {
-        setIsDatePopoverOpen(false);
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("pointerdown", handlePointerDown);
-    };
-  }, [isDatePopoverOpen]);
 
   const matchingRoutes = useMemo(() => {
     const normalizedSearch = normalizeSearch(search);
@@ -189,24 +146,6 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
     });
     return Array.from(grouped.values());
   }, [filteredRoutes]);
-
-  function selectDatePreset(preset: DatePreset) {
-    if (preset === "custom") {
-      setDraftDateRange({ from: dateFromKey(startDate), to: dateFromKey(endDate) });
-      setIsDatePopoverOpen(true);
-      return;
-    }
-
-    setDatePreset(preset);
-    setDateRange(getPresetDateRange(preset));
-  }
-
-  function applyCustomDateRange() {
-    if (!draftDateRange?.from || !draftDateRange.to) return;
-    setDatePreset("custom");
-    setDateRange({ startDate: dateKey(draftDateRange.from), endDate: dateKey(draftDateRange.to) });
-    setIsDatePopoverOpen(false);
-  }
 
   async function assign(route: DeliveryRouteResponse, motoboyId: string) {
     if (!motoboyId) return;
@@ -312,53 +251,7 @@ export function DeliveriesBoard({ initialRoutes, initialMotoboys }: Props) {
             placeholder="Nome, ID da entrega ou celular"
           />
         </Field>
-        <DateFilterWrap ref={datePopoverRef}>
-          <Field label={`Período: ${formatDateRange(startDate, endDate)}`}>
-            <Select value="" onChange={(event) => selectDatePreset(event.target.value as DatePreset)}>
-              <option value="" disabled>{datePresetLabels[datePreset]}</option>
-              <option value="today">Hoje</option>
-              <option value="yesterday">Ontem</option>
-              <option value="last7">Últimos 7 dias</option>
-              <option value="thisMonth">Este mês</option>
-              <option value="custom">Personalizado</option>
-            </Select>
-          </Field>
-          {isDatePopoverOpen ? (
-            <DatePopover role="dialog" aria-labelledby="delivery-date-range-title">
-              <DatePopoverHeader>
-                <div>
-                  <strong id="delivery-date-range-title">Período personalizado</strong>
-                  <Subtitle>Selecione início e fim.</Subtitle>
-                </div>
-                <Button type="button" variant="outline" aria-label="Fechar seleção de período" onClick={() => setIsDatePopoverOpen(false)}>
-                  <X size={16} />
-                </Button>
-              </DatePopoverHeader>
-              <DatePopoverBody>
-                <CalendarPanel>
-                  <DayPicker
-                    mode="range"
-                    locale={ptBR}
-                    selected={draftDateRange}
-                    onSelect={setDraftDateRange}
-                    defaultMonth={draftDateRange?.from}
-                    resetOnSelect
-                  />
-                </CalendarPanel>
-                <DateRangeText>
-                  <CalendarDays size={16} aria-hidden="true" />
-                  {draftDateRange?.from && draftDateRange.to
-                    ? formatDateRange(dateKey(draftDateRange.from), dateKey(draftDateRange.to))
-                    : "Selecione o início e o fim do período"}
-                </DateRangeText>
-                <DateModalActions>
-                  <Button type="button" variant="outline" onClick={() => setIsDatePopoverOpen(false)}>Cancelar</Button>
-                  <Button type="button" disabled={!draftDateRange?.from || !draftDateRange.to} onClick={applyCustomDateRange}>Aplicar período</Button>
-                </DateModalActions>
-              </DatePopoverBody>
-            </DatePopover>
-          ) : null}
-        </DateFilterWrap>
+        <DateRangeFilter value={{ startDate, endDate }} onChange={setDateRange} />
       </SearchFilter>
       <Toolbar>
         <DragHint><GripVertical size={15} aria-hidden="true" /> Cadastre motoboys em Usuários. Arraste pelo ícone para reorganizar ou mover pedidos entre rotas.</DragHint>
@@ -469,37 +362,4 @@ function localDateKey(value: string | undefined) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : dateKey(date);
-}
-
-function getPresetDateRange(preset: Exclude<DatePreset, "custom">) {
-  const today = new Date();
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const start = new Date(end);
-
-  if (preset === "last7") {
-    start.setDate(start.getDate() - 6);
-  } else if (preset === "yesterday") {
-    start.setDate(start.getDate() - 1);
-    end.setDate(end.getDate() - 1);
-  } else if (preset === "thisMonth") {
-    start.setDate(1);
-  }
-
-  return { startDate: dateKey(start), endDate: dateKey(end) };
-}
-
-function dateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function dateFromKey(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatDateRange(startDate: string, endDate: string) {
-  return `${dateFormatter.format(dateFromKey(startDate))} a ${dateFormatter.format(dateFromKey(endDate))}`;
 }
