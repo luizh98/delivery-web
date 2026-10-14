@@ -354,11 +354,27 @@ export const FlagBadge = styled("span", {
 });
 
 export const ProductImage = styled("span", {
+  position: "relative",
   height: "6rem",
   borderRadius: "0.375rem",
   backgroundColor: "var(--color-surface-muted)",
   backgroundPosition: "center",
   backgroundSize: "cover",
+});
+
+export const VideoBadge = styled("span", {
+  position: "absolute",
+  bottom: "0.375rem",
+  left: "0.375rem",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.25rem",
+  padding: "0.25rem 0.375rem",
+  borderRadius: "0.25rem",
+  background: "#000",
+  color: "#fff",
+  fontSize: "0.6875rem",
+  fontWeight: 600,
 });
 
 export const DesktopCart = styled("aside", {
