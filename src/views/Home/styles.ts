@@ -2,11 +2,26 @@ import { styled } from "styles";
 
 export const Hero = styled("header", {
   width: "100%",
+  background: "transparent",
+});
+
+export const MenuPanel = styled("div", {
+  position: "relative",
+  width: "calc(100% - 1rem)",
+  maxWidth: "72rem",
+  margin: "-2rem auto 0",
+  borderRadius: "1.5rem 1.5rem 0 0",
   background: "var(--color-surface)",
+  boxShadow: "0 8px 32px rgb(0 0 0 / 0.08)",
+
+  "@sm": {
+    width: "calc(100% - 2rem)",
+    marginTop: "-3rem",
+  },
 });
 
 export const HeroBanner = styled("div", {
-  height: "clamp(10rem, 28vw, 18rem)",
+  height: "clamp(7rem, 14vw, 11rem)",
   backgroundColor: "var(--color-surface-muted)",
   backgroundPosition: "center",
   backgroundSize: "cover",
@@ -18,7 +33,7 @@ export const HeroBody = styled("div", {
   maxWidth: "72rem",
   gap: "0.5rem",
   margin: "0 auto",
-  padding: "1rem",
+  padding: "1.25rem 1rem 0.5rem",
 
   "@sm": {
     paddingLeft: "1.5rem",
@@ -45,7 +60,7 @@ export const ClosedStoreNotice = styled("p", {
 
 export const HeroTitle = styled("h1", {
   overflowWrap: "anywhere",
-  fontSize: "clamp(1.75rem, 5vw, 2.5rem)",
+  fontSize: "clamp(1.375rem, 5vw, 2rem)",
   fontWeight: 800,
   lineHeight: 1.1,
   letterSpacing: "-0.025em",
@@ -59,7 +74,7 @@ export const HeroTitleRow = styled("div", {
 
 export const HeroText = styled("p", {
   maxWidth: "42rem",
-  fontSize: "1rem",
+  fontSize: "0.875rem",
   lineHeight: 1.5,
   color: "var(--color-muted)",
 });
@@ -112,6 +127,7 @@ export const TrackingShortcut = styled("button", {
   border: "1px solid var(--color-primary)",
   borderRadius: "0.625rem",
   padding: "0.625rem 0.875rem",
+  minHeight: "2.75rem",
   fontSize: "0.875rem",
   fontWeight: 700,
   whiteSpace: "nowrap",
@@ -142,8 +158,8 @@ export const TrackingShortcut = styled("button", {
 
 export const WhatsAppShortcut = styled("a", {
   display: "inline-flex",
-  width: "2rem",
-  height: "2rem",
+  width: "2.75rem",
+  height: "2.75rem",
   flexShrink: 0,
   alignItems: "center",
   justifyContent: "center",
@@ -167,23 +183,76 @@ export const WhatsAppShortcut = styled("a", {
   },
 });
 
-export const CategoryBar = styled("div", {
+export const MenuNavigation = styled("div", {
   position: "sticky",
   top: 0,
   zIndex: 10,
-  overflowX: "auto",
-  margin: "0 -1rem 0 0",
-  borderTop: "1px solid var(--color-border)",
-  borderBottom: "1px solid var(--color-border)",
-  background: "color-mix(in srgb, var(--color-background) 95%, transparent)",
-  padding: "0.75rem 1rem",
-  backdropFilter: "blur(8px)",
+  display: "grid",
+  gap: "0.5rem",
+  padding: "0.75rem 0",
+  background: "var(--color-surface)",
+});
 
-  "@sm": {
-    margin: "0 0 0 0",
-    border: "1px solid var(--color-border)",
-    borderRadius: "0.375rem",
+export const SearchField = styled("label", {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.625rem",
+  minHeight: "2.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.75rem",
+  padding: "0 0.75rem",
+  background: "var(--color-surface-muted)",
+  color: "var(--color-muted)",
+  "&:focus-within": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
   },
+  svg: { flexShrink: 0 },
+});
+
+export const SearchInput = styled("input", {
+  width: "100%",
+  minWidth: 0,
+  minHeight: "2.75rem",
+  background: "transparent",
+  color: "var(--color-foreground)",
+  fontSize: "1rem",
+  outline: "none",
+  "&::placeholder": { color: "var(--color-muted)" },
+});
+
+export const SearchResultText = styled("p", {
+  padding: "0.5rem 0",
+  fontSize: "0.875rem",
+  color: "var(--color-muted)",
+});
+
+export const CategoryNavigation = styled("div", {
+  display: "flex",
+  alignItems: "start",
+  gap: "0.5rem",
+  minWidth: 0,
+});
+
+export const CategorySelect = styled("select", {
+  width: "6.5rem",
+  minHeight: "2.75rem",
+  flexShrink: 0,
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.75rem",
+  padding: "0.5rem",
+  background: "var(--color-surface)",
+  fontSize: "0.8125rem",
+  color: "var(--color-foreground)",
+  "&:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "2px" },
+});
+
+export const CategoryBar = styled("div", {
+  flex: 1,
+  minWidth: 0,
+  overflowX: "auto",
+  scrollbarWidth: "thin",
+  scrollbarColor: "var(--color-border) transparent",
 });
 
 export const CategoryList = styled("div", {
@@ -193,10 +262,13 @@ export const CategoryList = styled("div", {
 });
 
 export const CategoryButton = styled("button", {
-  borderRadius: "0.375rem",
+  minHeight: "2.75rem",
+  whiteSpace: "nowrap",
+  borderRadius: "0.75rem",
   padding: "0.5rem 1rem",
   fontSize: "0.875rem",
   fontWeight: 600,
+  "&:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "-2px" },
 
   variants: {
     active: {
@@ -233,7 +305,7 @@ export const SystemCredit = styled("p", {
 });
 
 export const CategorySection = styled("section", {
-  scrollMarginTop: "6rem",
+  scrollMarginTop: "8.5rem",
   outline: "none",
 
   "&:not(:first-of-type)": {
@@ -267,9 +339,9 @@ export const Empty = styled("div", {
 
 export const ProductCard = styled("button", {
   display: "grid",
-  gridTemplateColumns: "1fr 96px",
+  gridTemplateColumns: "minmax(0, 1fr) 96px",
   gap: "0.75rem",
-  borderRadius: "0.375rem",
+  borderRadius: "0.75rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-surface)",
   padding: "0.75rem",
@@ -279,6 +351,7 @@ export const ProductCard = styled("button", {
   "&:hover": {
     borderColor: "var(--color-primary)",
   },
+  "&:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "2px" },
 });
 
 export const ProductInfo = styled("span", {
@@ -288,6 +361,7 @@ export const ProductInfo = styled("span", {
 });
 
 export const ProductName = styled("span", {
+  overflowWrap: "anywhere",
   fontSize: "1rem",
   fontWeight: 600,
   lineHeight: 1.25,
@@ -356,7 +430,7 @@ export const FlagBadge = styled("span", {
 export const ProductImage = styled("span", {
   position: "relative",
   height: "6rem",
-  borderRadius: "0.375rem",
+  borderRadius: "0.625rem",
   backgroundColor: "var(--color-surface-muted)",
   backgroundPosition: "center",
   backgroundSize: "cover",
@@ -387,20 +461,18 @@ export const DesktopCart = styled("aside", {
 
 export const MobileCart = styled("div", {
   position: "fixed",
-  insetInline: 0,
-  bottom: 0,
+  insetInline: "0.75rem",
+  bottom: "max(0.75rem, env(safe-area-inset-bottom))",
   zIndex: 20,
-  borderTop: "1px solid var(--color-primary)",
+  borderRadius: "1rem",
   background: "var(--color-primary)",
-  padding: "0.75rem",
-  boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+  padding: "0.375rem 0.75rem",
+  boxShadow: "0 8px 24px rgb(0 0 0 / 0.18)",
 
   "@lg": {
     insetInline: "auto 1.5rem",
     bottom: "1.5rem",
-    width: "22rem",
-    border: "1px solid var(--color-border)",
-    borderRadius: "0.375rem",
+    width: "20rem",
   },
 });
 

@@ -2,17 +2,11 @@ import { styled } from "styles";
 
 export const CarouselSection = styled("section", {
   minWidth: 0,
-  marginTop: "1rem",
+  marginTop: "0.5rem",
   marginBottom: "1rem",
-  border: "1px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border))",
   borderRadius: "1rem",
-  background: "linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 13%, var(--color-surface)), var(--color-surface) 70%)",
-  padding: "1rem",
-  boxShadow: "0 8px 24px color-mix(in srgb, var(--color-primary) 9%, transparent)",
-
-  "@sm": {
-    padding: "1.25rem",
-  },
+  background: "var(--color-surface-muted)",
+  padding: "0.75rem",
 });
 
 export const CarouselHeader = styled("div", {
@@ -48,20 +42,21 @@ export const CarouselTrack = styled("div", {
   minWidth: 0,
   gap: "0.75rem",
   overflowX: "auto",
-  scrollbarWidth: "none",
+  scrollbarWidth: "thin",
+  scrollbarColor: "var(--color-border) transparent",
+  scrollSnapType: "x mandatory",
+  paddingBottom: "0.5rem",
   overscrollBehaviorX: "contain",
   userSelect: "none",
 
-  "&::-webkit-scrollbar": {
-    display: "none",
-  },
 });
 
 export const CarouselCard = styled("button", {
   display: "grid",
   flex: "0 0 100%",
+  scrollSnapAlign: "start",
   minWidth: 0,
-  gridTemplateColumns: "6.5rem minmax(0, 1fr)",
+  gridTemplateColumns: "5rem minmax(0, 1fr)",
   alignItems: "stretch",
   gap: "0.75rem",
   border: "1px solid var(--color-border)",
@@ -79,23 +74,21 @@ export const CarouselCard = styled("button", {
     outlineOffset: "-2px",
   },
   "@sm": {
-    gridTemplateColumns: "11rem minmax(0, 1fr)",
-    gap: "1.25rem",
-    padding: "0.875rem",
+    flexBasis: "calc((100% - 0.75rem) / 2)",
+  },
+  "@lg": {
+    flexBasis: "calc((100% - 1.5rem) / 3)",
   },
 });
 
 export const CarouselImage = styled("span", {
   position: "relative",
-  minHeight: "7rem",
+  minHeight: "6rem",
   borderRadius: "0.5rem",
   backgroundColor: "var(--color-surface-muted)",
   backgroundPosition: "center",
   backgroundSize: "cover",
 
-  "@sm": {
-    minHeight: "9rem",
-  },
 });
 
 export const CarouselInfo = styled("span", {
@@ -107,7 +100,7 @@ export const CarouselInfo = styled("span", {
 
 export const CarouselName = styled("span", {
   overflowWrap: "anywhere",
-  fontSize: "clamp(1rem, 3vw, 1.25rem)",
+  fontSize: "1rem",
   fontWeight: 750,
   lineHeight: 1.2,
 });

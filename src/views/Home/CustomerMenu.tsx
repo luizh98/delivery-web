@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Clock3,
   Play,
+  Search,
   ShoppingBag,
   ShoppingCart,
   UserRound,
@@ -34,10 +35,13 @@ import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import type { CustomerMenuProps } from "./types";
 import type { BusinessHour, Product } from "@/types/api";
 import { MostOrderedCarousel } from "./MostOrderedCarousel";
+import { productMatchesSearch } from "./menuSearch";
 import {
   CategoryBar,
   CategoryButton,
   CategoryList,
+  CategoryNavigation,
+  CategorySelect,
   CategoryProducts,
   CategorySection,
   CategoryTitle,
@@ -55,6 +59,11 @@ import {
   HeroText,
   HeroTitle,
   HeroTitleRow,
+  MenuPanel,
+  MenuNavigation,
+  SearchField,
+  SearchInput,
+  SearchResultText,
   MobileCart,
   MobileSummary,
   MobileSummaryLabel,
@@ -162,6 +171,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       ),
     )?.id ?? "";
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
+  const [searchQuery, setSearchQuery] = useState("");
   const categoryBarRef = useRef<HTMLDivElement | null>(null);
   const categoryButtonRefs = useRef<
     Record<string, HTMLButtonElement | null>
@@ -199,13 +209,13 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       .filter((category) => category.active)
       .forEach((category) => groups.set(category.id, []));
     menu.products.forEach((product) => {
-      if (product.active) {
+      if (product.active && productMatchesSearch(product, searchQuery)) {
         groups.get(product.categoryId)?.push(product);
       }
     });
 
     return groups;
-  }, [menu.categories, menu.products]);
+  }, [menu.categories, menu.products, searchQuery]);
 
   const visibleCategories = useMemo(
     () =>
@@ -215,6 +225,10 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           (productsByCategory.get(category.id)?.length ?? 0) > 0,
       ),
     [menu.categories, productsByCategory],
+  );
+  const resultCount = Array.from(productsByCategory.values()).reduce(
+    (total, products) => total + products.length,
+    0,
   );
   const carouselProducts = useMemo(
     () => menu.products.filter(
@@ -384,7 +398,6 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
 
   return (
     <>
-      <Hero>
         <HeroBanner
           style={{
             backgroundImage: restaurantConfig?.bannerUrl
@@ -392,6 +405,8 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
               : "linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))",
           }}
         />
+      <MenuPanel>
+      <Hero>
         <HeroBody>        
           <HeroTitleRow>
             <HeroTitle>{restaurantConfig?.name ?? "Delivery"}</HeroTitle>
@@ -459,8 +474,19 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       </Hero>
 
       <PageShell bottomPad flushTop>
-      <MostOrderedCarousel products={carouselProducts} />
+      <MenuNavigation>
+        <SearchField>
+          <Search size={20} aria-hidden="true" />
+          <SearchInput
+            type="search"
+            aria-label="Buscar no cardápio"
+            placeholder="Buscar no cardápio"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </SearchField>
       {visibleCategories.length > 0 ? (
+        <CategoryNavigation>
         <CategoryBar ref={categoryBarRef}>
           <CategoryList>
             {visibleCategories.map((category) => (
@@ -470,6 +496,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                   categoryButtonRefs.current[category.id] = element;
                 }}
                 active={activeCategoryId === category.id}
+                aria-current={activeCategoryId === category.id ? "true" : undefined}
                 onClick={() => handleCategoryClick(category.id)}
               >
                 {category.name}
@@ -477,13 +504,32 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             ))}
           </CategoryList>
         </CategoryBar>
+        <CategorySelect
+          aria-label="Todas as categorias"
+          value=""
+          onChange={(event) => handleCategoryClick(event.target.value)}
+        >
+          <option value="" disabled>Categorias</option>
+          {visibleCategories.map((category) => (
+            <option key={category.id} value={category.id}>{category.name}</option>
+          ))}
+        </CategorySelect>
+        </CategoryNavigation>
       ) : null}
+      </MenuNavigation>
+      {searchQuery.trim() ? (
+        <SearchResultText role="status">
+          {resultCount} {resultCount === 1 ? "produto encontrado" : "produtos encontrados"}
+        </SearchResultText>
+      ) : <MostOrderedCarousel products={carouselProducts} />}
 
       <ContentGrid>
         <ProductList>
           {visibleCategories.length === 0 ? (
             <Empty>
-              Nenhum produto cadastrado para este tenant.
+              {searchQuery.trim()
+                ? "Nenhum produto encontrado. Tente outro nome ou ingrediente."
+                : "O cardápio está sendo atualizado. Volte em breve."}
             </Empty>
           ) : null}
 
@@ -585,6 +631,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         </MobileSummary>
       </MobileCart>
       </PageShell>
+      </MenuPanel>
     </>
   );
 }
