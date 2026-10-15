@@ -42,10 +42,8 @@ export const CarouselTrack = styled("div", {
   minWidth: 0,
   gap: "0.75rem",
   overflowX: "auto",
-  scrollbarWidth: "thin",
-  scrollbarColor: "var(--color-border) transparent",
-  scrollSnapType: "x mandatory",
-  paddingBottom: "0.5rem",
+  scrollbarWidth: "none",
+  "&::-webkit-scrollbar": { display: "none" },
   overscrollBehaviorX: "contain",
   userSelect: "none",
 
@@ -54,7 +52,6 @@ export const CarouselTrack = styled("div", {
 export const CarouselCard = styled("button", {
   display: "grid",
   flex: "0 0 100%",
-  scrollSnapAlign: "start",
   minWidth: 0,
   gridTemplateColumns: "5rem minmax(0, 1fr)",
   alignItems: "stretch",
@@ -72,12 +69,6 @@ export const CarouselCard = styled("button", {
   "&:focus-visible": {
     outline: "2px solid var(--color-primary)",
     outlineOffset: "-2px",
-  },
-  "@sm": {
-    flexBasis: "calc((100% - 0.75rem) / 2)",
-  },
-  "@lg": {
-    flexBasis: "calc((100% - 1.5rem) / 3)",
   },
 });
 

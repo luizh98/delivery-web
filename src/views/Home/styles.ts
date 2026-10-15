@@ -7,7 +7,7 @@ export const Hero = styled("header", {
 
 export const MenuPanel = styled("div", {
   position: "relative",
-  width: "calc(100% - 1rem)",
+  width: "100%",
   maxWidth: "72rem",
   margin: "-2rem auto 0",
   borderRadius: "1.5rem 1.5rem 0 0",
@@ -227,32 +227,12 @@ export const SearchResultText = styled("p", {
   color: "var(--color-muted)",
 });
 
-export const CategoryNavigation = styled("div", {
-  display: "flex",
-  alignItems: "start",
-  gap: "0.5rem",
-  minWidth: 0,
-});
-
-export const CategorySelect = styled("select", {
-  width: "6.5rem",
-  minHeight: "2.75rem",
-  flexShrink: 0,
-  border: "1px solid var(--color-border)",
-  borderRadius: "0.75rem",
-  padding: "0.5rem",
-  background: "var(--color-surface)",
-  fontSize: "0.8125rem",
-  color: "var(--color-foreground)",
-  "&:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "2px" },
-});
-
 export const CategoryBar = styled("div", {
   flex: 1,
   minWidth: 0,
   overflowX: "auto",
-  scrollbarWidth: "thin",
-  scrollbarColor: "var(--color-border) transparent",
+  scrollbarWidth: "none",
+  "&::-webkit-scrollbar": { display: "none" },
 });
 
 export const CategoryList = styled("div", {

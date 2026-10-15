@@ -40,8 +40,6 @@ import {
   CategoryBar,
   CategoryButton,
   CategoryList,
-  CategoryNavigation,
-  CategorySelect,
   CategoryProducts,
   CategorySection,
   CategoryTitle,
@@ -486,7 +484,6 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
           />
         </SearchField>
       {visibleCategories.length > 0 ? (
-        <CategoryNavigation>
         <CategoryBar ref={categoryBarRef}>
           <CategoryList>
             {visibleCategories.map((category) => (
@@ -504,17 +501,6 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
             ))}
           </CategoryList>
         </CategoryBar>
-        <CategorySelect
-          aria-label="Todas as categorias"
-          value=""
-          onChange={(event) => handleCategoryClick(event.target.value)}
-        >
-          <option value="" disabled>Categorias</option>
-          {visibleCategories.map((category) => (
-            <option key={category.id} value={category.id}>{category.name}</option>
-          ))}
-        </CategorySelect>
-        </CategoryNavigation>
       ) : null}
       </MenuNavigation>
       {searchQuery.trim() ? (
