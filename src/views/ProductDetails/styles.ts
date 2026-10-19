@@ -1,26 +1,6 @@
 import { styled } from "styles";
 
-export const OverlayCloseButton = styled("button", {
-  position: "absolute",
-  top: "1rem",
-  left: "1rem",
-  zIndex: 2,
-  display: "grid",
-  width: "2.75rem",
-  height: "2.75rem",
-  placeItems: "center",
-  border: "1px solid rgb(255 255 255 / 0.35)",
-  borderRadius: "9999px",
-  background: "rgb(0 0 0 / 0.58)",
-  color: "#ffffff",
-  backdropFilter: "blur(6px)",
-
-  "&:hover": {
-    background: "rgb(0 0 0 / 0.75)",
-  },
-});
-
-export const ZoomButton = styled("button", {
+export const ShareButton = styled("button", {
   position: "absolute",
   right: "1rem",
   top: "1rem",
@@ -37,6 +17,11 @@ export const ZoomButton = styled("button", {
 
   "&:hover": {
     background: "rgb(0 0 0 / 0.75)",
+  },
+
+  "&:focus-visible": {
+    outline: "3px solid #ffffff",
+    outlineOffset: "2px",
   },
 });
 
@@ -94,56 +79,6 @@ export const ProductImage = styled("div", {
     minHeight: "100%",
     aspectRatio: "auto",
   },
-});
-
-export const ImageOverlay = styled("dialog", {
-  position: "fixed",
-  inset: 0,
-  zIndex: 100,
-  width: "100%",
-  maxWidth: "100%",
-  height: "100dvh",
-  maxHeight: "100dvh",
-  margin: 0,
-  padding: 0,
-  border: 0,
-  background: "#000",
-  color: "#fff",
-  "&::backdrop": { background: "#000" },
-});
-
-export const ImageOverlayContent = styled("div", {
-  display: "grid",
-  width: "100%",
-  height: "calc(100% - 5rem - env(safe-area-inset-bottom))",
-  gridTemplateRows: "minmax(0, 1fr) auto",
-  maxWidth: "64rem",
-  margin: "0 auto",
-  paddingTop: "4.5rem",
-  "@md": { gridTemplateColumns: "minmax(0, 3fr) minmax(16rem, 2fr)", gridTemplateRows: "minmax(0, 1fr)", gap: "2rem", padding: "4.5rem 2rem 1rem" },
-});
-
-export const ImageOverlayHeader = styled("div", {
-  display: "grid",
-  width: "100%",
-  maxWidth: "64rem",
-  gap: "0.25rem",
-  padding: "0.75rem 1rem",
-  maxHeight: "25dvh",
-  overflowY: "auto",
-  overflowWrap: "anywhere",
-  "@md": { alignSelf: "center", maxHeight: "100%" },
-});
-
-export const ImageOverlayTitle = styled("h2", {
-  color: "#ffffff",
-  fontSize: "1.25rem",
-  fontWeight: 700,
-});
-
-export const ImageOverlayDescription = styled("p", {
-  color: "#d1d5db",
-  fontSize: "0.875rem",
 });
 
 export const ProductContent = styled("div", {
@@ -352,21 +287,6 @@ export const MediaNotice = styled("p", {
   background: "#000",
   color: "#fff",
   fontSize: "0.875rem",
-});
-
-export const MediaAction = styled("div", {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "1rem",
-  width: "100%",
-  maxWidth: "64rem",
-  height: "calc(5rem + env(safe-area-inset-bottom))",
-  margin: "0 auto",
-  padding: "0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom))",
-  borderTop: "1px solid #333",
-  background: "#000",
-  fontWeight: 700,
 });
 
 export const QuantityControl = styled("div", {

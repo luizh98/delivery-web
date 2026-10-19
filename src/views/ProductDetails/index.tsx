@@ -3,10 +3,8 @@
 import {
   Minus,
   Plus,
-  Maximize2,
+  Share2,
   ShoppingCart,
-  X,
-  ZoomIn,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -35,11 +33,6 @@ import {
   FlagBadge,
   FlagBadges,
   ImageArea,
-  ImageOverlay,
-  ImageOverlayContent,
-  ImageOverlayDescription,
-  ImageOverlayHeader,
-  ImageOverlayTitle,
   Muted,
   OptionControl,
   OptionGroupError,
@@ -47,12 +40,10 @@ import {
   OptionGroup,
   OptionGroupTitle,
   OptionPrice,
-  OverlayCloseButton,
   ProductContent,
   ProductBackButton,
   ProductDescription,
   ProductHeader,
-  MediaAction,
   ProductLayout,
   ProductPrice,
   ProductTitle,
@@ -60,7 +51,7 @@ import {
   QuantityControl,
   QuantityRow,
   QuantityValue,
-  ZoomButton,
+  ShareButton,
 } from "./styles";
 import type { ProductDetailsProps } from "./types";
 import { ProductMedia } from "./ProductMedia";
@@ -78,9 +69,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   >({});
   const [quantity, setQuantity] = useState(1);
   const [observations, setObservations] = useState("");
-  const [imageExpanded, setImageExpanded] = useState(false);
-  const mediaDialog = useRef<HTMLDialogElement>(null);
-  const zoomButton = useRef<HTMLButtonElement>(null);
   const [invalidGroupIds, setInvalidGroupIds] = useState<string[]>([]);
   const [pendingUpsell] = useState<PendingUpsellOffer | null>(() => {
     if (typeof window === "undefined") {
@@ -113,22 +101,18 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     tracking.viewContent(product);
   }, [product, tracking]);
 
-  useEffect(() => {
-    if (!imageExpanded) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    const trigger = zoomButton.current;
-
-    mediaDialog.current?.showModal();
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      trigger?.focus({ preventScroll: true });
-    };
-  }, [imageExpanded]);
+  function shareProduct() {
+    const url = new URL(
+      `/products/${encodeURIComponent(product.id)}`,
+      window.location.origin,
+    );
+    const text = `${product.name}\n${url.href}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
 
   function returnToMenu() {
     sessionStorage.setItem(PRODUCT_FOCUS_STORAGE_KEY, product.id);
@@ -177,7 +161,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     setInvalidGroupIds(invalidRequiredGroupIds);
 
     if (invalidRequiredGroupIds.length > 0) {
-      setImageExpanded(false);
       window.requestAnimationFrame(() => {
         const group = document.getElementById(`option-${invalidRequiredGroupIds[0]}`);
         group?.focus({ preventScroll: true });
@@ -288,20 +271,18 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     <PageShell>
       <ProductLayout>
         <ImageArea>
-          <ProductMedia key={product.id} product={product} playing={!imageExpanded} />
+          <ProductMedia key={product.id} product={product} />
           <ProductBackButton>
             <BackButton onClick={returnToMenu} />
           </ProductBackButton>
-          {product.imageUrl ? (
-            <ZoomButton
-              ref={zoomButton}
-              type="button"
-              onClick={() => setImageExpanded(true)}
-              aria-label={product.videoUrl ? "Ampliar vídeo do produto" : "Ampliar foto do produto"}
-            >
-              {product.videoUrl ? <Maximize2 size={20} /> : <ZoomIn size={20} />}
-            </ZoomButton>
-          ) : null}
+          <ShareButton
+            type="button"
+            onClick={shareProduct}
+            aria-label="Compartilhar produto no WhatsApp"
+            title="Compartilhar no WhatsApp"
+          >
+            <Share2 size={20} aria-hidden="true" />
+          </ShareButton>
         </ImageArea>
 
         <ProductContent>
@@ -424,36 +405,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           </QuantityRow>
         </ProductContent>
       </ProductLayout>
-
-      {imageExpanded && product.imageUrl ? (
-        <ImageOverlay ref={mediaDialog} aria-labelledby="expanded-product-title" onCancel={() => setImageExpanded(false)} onClose={() => setImageExpanded(false)}>
-          <OverlayCloseButton
-            type="button"
-            onClick={() => setImageExpanded(false)}
-            aria-label="Fechar mídia ampliada"
-            autoFocus
-          >
-            <X size={20} />
-          </OverlayCloseButton>
-          <ImageOverlayContent>
-            <ProductMedia product={product} expanded />
-            <ImageOverlayHeader>
-              <ImageOverlayTitle id="expanded-product-title">{product.name}</ImageOverlayTitle>
-              <ImageOverlayDescription>
-                {product.description || "Sem descrição."}
-              </ImageOverlayDescription>
-              {upsellError ? <p role="alert" style={{ color: "#fca5a5" }}>{upsellError}</p> : null}
-            </ImageOverlayHeader>
-          </ImageOverlayContent>
-          <MediaAction>
-            <span>{money((productSalePrice(product) + Object.values(selectedOptions).flat().reduce((total, option) => total + option.priceCents, 0)) * quantity)}</span>
-            <Button type="button" onClick={addProduct} disabled={adding}>
-              <ShoppingCart size={16} />
-              {adding ? "Validando..." : "Adicionar"}
-            </Button>
-          </MediaAction>
-        </ImageOverlay>
-      ) : null}
     </PageShell>
   );
 }
