@@ -37,8 +37,13 @@ export function formatClosedStoreMessage(
     minute: "2-digit",
     timeZone: OPERATIONS_TIME_ZONE,
   });
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const openingDay =
-    dateKey(nextOpening) === dateKey(now) ? "hoje" : weekday;
+    dateKey(nextOpening) === dateKey(now)
+      ? "hoje"
+      : dateKey(nextOpening) === dateKey(tomorrow)
+        ? "amanhã"
+        : weekday;
 
   return `Loja fechada, abre ${openingDay} às ${time}`;
 }

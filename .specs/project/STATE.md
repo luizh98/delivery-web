@@ -1,5 +1,12 @@
 # State
 
+## Próxima abertura da loja — 2026-10-19
+
+- Mensagem compartilhada pelo cardápio/carrinho distingue hoje, amanhã e dia da semana em São Paulo.
+- API passa a respeitar feriados ao calcular nextOpeningAt. Regressão original reproduzida nos dois repositórios.
+- Configuração real da dev-terraco-canecao: domingo fechado; segunda a sábado 05:30–23:45. Testes com domingo fixo, sem alterar dados ou relógio do ambiente.
+- Especificação e evidências: `.specs/features/store-next-opening/`.
+
 ## Paginação do desempenho — 2026-10-14
 
 - Ranking ativo de itens e opcionais com 10 registros por página, Anterior/Próxima e reinício ao trocar tipo ou período.
