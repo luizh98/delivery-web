@@ -338,6 +338,11 @@ export const ProductCategoryFilterLabel = styled("label", {
 
   "@sm": {
     width: "14rem",
+
+    select: {
+      minWidth: 0,
+      width: "100%",
+    },
   },
 });
 

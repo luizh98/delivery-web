@@ -381,6 +381,7 @@ export function ProductManager({
   const [productGroupSearch, setProductGroupSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
+  const [productStatusFilter, setProductStatusFilter] = useState("");
   const [savedGroupsOpen, setSavedGroupsOpen] = useState(false);
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -872,8 +873,10 @@ export function ProductManager({
       product.name.toLowerCase().includes(normalizedProductSearch);
     const matchesCategory =
       !productCategoryFilter || product.categoryId === productCategoryFilter;
+    const matchesStatus =
+      !productStatusFilter || product.active === (productStatusFilter === "active");
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -1300,6 +1303,17 @@ export function ProductManager({
                   {category.name}
                 </option>
               ))}
+            </Select>
+          </ProductCategoryFilterLabel>
+          <ProductCategoryFilterLabel>
+            <span>Filtrar status</span>
+            <Select
+              value={productStatusFilter}
+              onChange={(event) => setProductStatusFilter(event.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
             </Select>
           </ProductCategoryFilterLabel>
         </ProductToolbar>
