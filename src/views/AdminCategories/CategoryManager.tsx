@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
-import { Field, Input } from "@/components/Field";
+import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { ProductCategory } from "@/types/api";
@@ -82,6 +82,7 @@ export function CategoryManager({
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [error, setError] = useState("");
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
@@ -91,7 +92,8 @@ export function CategoryManager({
   });
   const isEditing = Boolean(editingCategoryId);
   const filteredCategories = categories.filter((category) =>
-    categoryMatchesSearch(category, search.trim().toLowerCase()),
+    categoryMatchesSearch(category, search.trim().toLowerCase()) &&
+    (!statusFilter || category.active === (statusFilter === "active")),
   );
 
   function commitCategories(nextCategories: ProductCategory[]) {
@@ -240,7 +242,7 @@ export function CategoryManager({
           <div>
             <SectionTitle>Categorias cadastradas</SectionTitle>
             <SectionHelp>
-              {categories.length} categoria(s) disponível(is)
+              {filteredCategories.length} de {categories.length} categoria(s)
             </SectionHelp>
           </div>
 
@@ -257,6 +259,17 @@ export function CategoryManager({
               />
             </SearchWrap>
           </SearchLabel>
+
+          <Field label="Filtrar status">
+            <Select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
+            </Select>
+          </Field>
 
           {categories.length === 0 ? (
             <Empty>
