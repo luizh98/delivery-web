@@ -6,6 +6,7 @@ import { CustomerAuthProvider } from "@/components/CustomerAuthProvider";
 import { MarketingConsentBanner } from "@/components/MarketingConsentBanner";
 import { MarketingConsentProvider } from "@/components/MarketingConsentProvider";
 import { TrackingProvider } from "@/components/TrackingProvider";
+import { StoreConnectionBoundary } from "@/components/StoreConnectionBoundary";
 import { getCurrentTenantSlug, getRestaurantConfig } from "@/services/api/server";
 import { cx } from "@/utils/classNames";
 import "@daypicker/react/style.css";
@@ -70,6 +71,7 @@ export default async function RootLayout({
     >
       <body>
          <ThemeProvider theme={restaurantConfig?.theme}>
+           <StoreConnectionBoundary available={restaurantConfig !== null} tenantSlug={tenantSlug}>
            <CustomerAuthProvider>
              <MarketingConsentProvider>
                <TrackingProvider
@@ -84,6 +86,7 @@ export default async function RootLayout({
                </TrackingProvider>
              </MarketingConsentProvider>
            </CustomerAuthProvider>
+           </StoreConnectionBoundary>
          </ThemeProvider>
       </body>
     </html>

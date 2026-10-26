@@ -67,6 +67,7 @@ async function backendFetch<T>(path: string, init?: RequestInit) {
 
 async function fetchRestaurantConfig(tenantSlug: string) {
   const response = await fetch(`${backendBaseUrl()}/api/public/restaurant/config`, {
+    signal: AbortSignal.timeout(8000),
     headers: {
       Accept: "application/json",
       "X-Tenant-Slug": tenantSlug,
