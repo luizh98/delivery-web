@@ -5,7 +5,7 @@ Especificação canônica: repositório delivery-api, `.specs/features/whatsapp-
 ## Contrato e critérios
 
 - COEX-01: aceitar evento oficial de coexistência, inclusive com apenas waba_id; manter evento distinto de FINISH e validar origem Facebook exata e IDs numéricos. Cancelamento, erro e outros tipos de migração não concluem conexão. Verificação: whatsappEmbeddedSignup.test.mjs.
-- COEX-07: manter botão principal para cadastro padrão e adicionar Conectar mantendo aplicativo com featureType=whatsapp_business_app_onboarding e sessionInfoVersion=3, reutilizando Configuration ID v4. Bloquear ação durante conexão ou sem SDK/configuração/celular salvo. Mostrar estado de coexistência e instrução para desconectar pelo WhatsApp Business. Verificação: TypeScript, lint e build.
+- COEX-07 (simplificado por solicitação do usuário em 26/10): um único botão Conectar WhatsApp com featureType=whatsapp_business_app_onboarding e sessionInfoVersion=3, reutilizando Configuration ID v4. A escolha entre cadastro padrão e conta Business existente ocorre na Meta; FINISH e FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING continuam distintos. Bloquear ação durante conexão ou sem SDK/configuração/celular salvo. Mostrar estado de coexistência e instrução para desconectar pelo WhatsApp Business. Verificação: parser dos dois eventos, TypeScript e lint.
 - Nenhum segredo Meta no browser; não ativar avisos automaticamente nem alterar contrato do consentimento/pagamento. Conversas continuam no aplicativo e não são armazenadas pelo FlyFoods.
 
 ## Entrega

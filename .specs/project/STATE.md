@@ -2,7 +2,7 @@
 
 ## Coexistência WhatsApp — 2026-10-26
 
-- Admin oferece Conectar mantendo aplicativo, aceita conclusão de coexistência sem phone_number_id, mantém fluxo padrão e orienta sobre uso/revogação no WhatsApp Business.
+- Admin usa um único Conectar WhatsApp para habilitar escolha na Meta entre número novo e conta Business existente; aceita conclusão de coexistência sem phone_number_id e mantém FINISH padrão e orientação sobre uso/revogação no WhatsApp Business.
 - Registro tlc-spec-driven: `.specs/features/whatsapp-coexistence/spec.md`; requisitos completos no repositório delivery-api.
 - 81 testes, TypeScript e lint aprovados na base staging atualizada; build aprovado com o mesmo código. API: 63 testes WhatsApp/Meta e build passaram; falha preexistente de impressão confirmada na base remota limpa. Usuário autorizou staging; encerrar no push e manter homologação real como pendência externa.
 

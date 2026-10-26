@@ -8,7 +8,7 @@ Callback público de staging: `https://dev-terraco-canecao.flyfoods.com.br/api/m
 
 O SDK recebe Configuration ID de configuração v4 e retorna código de autorização. Eventos só são aceitos de origens Facebook exatas; código e evento de conclusão podem chegar em qualquer ordem. CANCEL/ERROR não alteram a conexão; outros tipos de migração exigem suporte.
 
-Em **Meu número já usa WhatsApp Business → Conectar mantendo aplicativo**, o SDK envia `featureType: whatsapp_business_app_onboarding` e `sessionInfoVersion: 3`. O frontend aceita `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING`, inclusive sem `phone_number_id`; o backend resolve o número salvo do restaurante dentro da WABA autorizada e confirma coexistência na Graph. O botão principal mantém o cadastro padrão.
+O botão único **Conectar WhatsApp** envia `featureType: whatsapp_business_app_onboarding` e `sessionInfoVersion: 3`, habilitando na Meta a escolha entre cadastrar um número e conectar o WhatsApp Business existente. O frontend aceita `FINISH` para cadastro padrão e `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING` para coexistência, inclusive sem `phone_number_id`; nesse caso, o backend resolve o número salvo do restaurante dentro da WABA autorizada e confirma coexistência na Graph.
 
 O usuário precisa manter o WhatsApp Business atualizado e aberto durante a conexão; WhatsApp comum não é compatível. A Meta determina elegibilidade. O backend inicia sincronização de contatos e histórico exigida pelo onboarding e reconhece webhooks sem armazenar conversas. O admin identifica coexistência ativa e orienta como revogar a conexão pelo aplicativo. A autorização local pode ser removida pelo botão Desconectar.
 
