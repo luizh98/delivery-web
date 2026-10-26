@@ -94,6 +94,7 @@ export type RestaurantConfigResponse = {
 	  wabaId?: string;
 	  displayPhone?: string;
 	  registered?: boolean;
+	  coexistence?: boolean;
 	  templateStatus?: Record<string, string> | null;
 	  status?: string;
 	  ready?: boolean;

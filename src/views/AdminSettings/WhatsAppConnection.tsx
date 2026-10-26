@@ -11,7 +11,7 @@ import { WhatsAppMetaTemplateTest } from "./WhatsAppMetaTemplateTest";
 import { connectionErrorMessage, loadMetaSDK, parseMetaSignupMessage, templateStatusLabel, type MetaSDK, type MetaSignupMessage } from "./whatsappEmbeddedSignup";
 import { ConnectionActions, ConnectionSteps, ConnectionSurface, ErrorText, Muted } from "./styles";
 
-type FinishedSignup = Extract<MetaSignupMessage, { event: "FINISH" }>;
+type FinishedSignup = Extract<MetaSignupMessage, { wabaId: string }>;
 type ActiveSignup = { code?: string; finished?: FinishedSignup; attempt: Promise<{ attemptId: string }>; submitting: boolean };
 
 export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connection: WhatsAppConnectionResponse) => void; phoneSaved: boolean }) {
@@ -89,13 +89,13 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       if (!signup || signup.submitting) return;
       const message = parseMetaSignupMessage(event.origin, event.data);
       if (!message) return;
-      if (message.event === "FINISH") { signup.finished = message; void finish(signup); }
+      if ("wabaId" in message) { signup.finished = message; void finish(signup); }
       else {
         active.current = null;
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         setBusy(false);
         setNotice(message.event === "CANCEL" ? "Conexão cancelada. Você pode tentar novamente quando quiser." : "");
-        if (message.event !== "CANCEL") setError(message.event === "UNSUPPORTED" ? "Esse número precisa de um fluxo de coexistência ou migração. Fale com o suporte da plataforma antes de continuar." : "A Meta não concluiu a autorização. Tente novamente.");
+        if (message.event !== "CANCEL") setError(message.event === "UNSUPPORTED" ? "Esse tipo de migração precisa de suporte da plataforma antes de continuar." : "A Meta não concluiu a autorização. Tente novamente.");
       }
     };
     window.addEventListener("message", listener);
@@ -113,7 +113,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
     setNotice("Tentativa cancelada. Feche a janela da Meta, se estiver aberta, e tente novamente.");
   }
 
-  function connect() {
+  function connect(coexistence = false) {
     if (!sdk || !connection?.provider.enabled || active.current || !phoneSaved) return;
     setError(""); setNotice("Conclua a autorização na janela da Meta."); setAuthorizing(true); setBusy(true);
     const signup: ActiveSignup = { attempt: clientApi<{ attemptId: string }>("admin/whatsapp/signup", { method: "POST" }), submitting: false };
@@ -132,7 +132,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
         const code = response.authResponse?.code;
         if (code) { signup.code = code; void finishRef.current?.(signup); }
         else { active.current = null; setBusy(false); setNotice("Conexão cancelada. Sua configuração atual foi preservada."); if (timeoutRef.current) clearTimeout(timeoutRef.current); }
-      }, { config_id: connection.provider.configId, response_type: "code", override_default_response_type: true, extras: { setup: {} } });
+      }, { config_id: connection.provider.configId, response_type: "code", override_default_response_type: true, extras: coexistence ? { setup: {}, featureType: "whatsapp_business_app_onboarding", sessionInfoVersion: "3" } : { setup: {} } });
     } catch {
       active.current = null; setBusy(false); setNotice("");
       setError("Não foi possível abrir a Meta. Permita pop-ups e tente novamente.");
@@ -169,7 +169,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       </ConnectionSteps> : null}
       {connection?.pending ? <Muted>Autorização salva. Clique em Atualizar status para retomar a preparação do número e das mensagens.</Muted> : null}
       <ConnectionActions>
-        <Button type="button" onClick={connect} disabled={busy || !sdk || !connection?.provider.enabled || !phoneSaved} aria-describedby={!connection?.provider.enabled ? "whatsapp-provider-help" : undefined}><Link2 size={18} aria-hidden="true" />{busy ? authorizing ? "Aguardando autorização na Meta…" : "Preparando WhatsApp…" : connected ? "Conectar novamente" : "Conectar WhatsApp"}</Button>
+        <Button type="button" onClick={() => connect()} disabled={busy || !sdk || !connection?.provider.enabled || !phoneSaved} aria-describedby={!connection?.provider.enabled ? "whatsapp-provider-help" : undefined}><Link2 size={18} aria-hidden="true" />{busy ? authorizing ? "Aguardando autorização na Meta…" : "Preparando WhatsApp…" : connected ? "Conectar novamente" : "Conectar WhatsApp"}</Button>
         {busy && authorizing ? <Button type="button" variant="outline" onClick={cancelSignup}>Cancelar conexão</Button> : null}
         {(embedded || connection?.pending) ? <Button type="button" variant="outline" disabled={busy || !connection?.provider.enabled} onClick={() => void updateConnection("POST")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
         {(connected || connection?.pending) ? <Button type="button" variant="dangerText" disabled={busy} onClick={() => void updateConnection("DELETE")}><Unplug size={16} aria-hidden="true" /> Desconectar</Button> : null}
@@ -178,7 +178,8 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
           setError(""); setLoading(true); setReload((n) => n + 1);
         }}>{connection?.provider.enabled ? "Recarregar página" : "Carregar novamente"}</Button> : null}
       </ConnectionActions>
-      {!connected ? <details><summary>Meu número já usa WhatsApp Business</summary><Muted>Manter o aplicativo e conectar a API no mesmo número exige coexistência, que ainda não está disponível aqui. Fale com o suporte para configurar seu caso.</Muted></details> : null}
+      {integration?.coexistence ? <Muted>Coexistência ativa: continue atendendo pelo WhatsApp Business no celular. Para revogar a conexão na Meta, use Configurações → Conta → Plataforma comercial no aplicativo.</Muted> : null}
+      <details><summary>Meu número já usa WhatsApp Business</summary><Muted>Conecte o mesmo número e mantenha o atendimento no celular. Exige WhatsApp Business atualizado e elegibilidade na Meta; WhatsApp comum não é compatível. Mantenha o aplicativo aberto durante a conexão. O FlyFoods não armazena seu histórico de conversas.</Muted><Button type="button" variant="outline" onClick={() => connect(true)} disabled={busy || !sdk || !connection?.provider.enabled || !phoneSaved}><Link2 size={18} aria-hidden="true" />Conectar mantendo aplicativo</Button></details>
       {embedded ? <Muted>A Meta decide a aprovação das mensagens. Configure a cobrança na sua conta e envie avisos apenas a clientes que autorizaram o contato.</Muted> : null}
     </>}
     {connection?.provider.testEnabled ? <><WhatsAppMetaTest /><WhatsAppMetaTemplateTest /></> : null}
