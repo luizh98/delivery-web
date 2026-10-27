@@ -7,6 +7,7 @@ import { useConfirmation } from "@/components/ConfirmationProvider";
 import { clientApi } from "@/services/api/client";
 import type { WhatsAppConnectionResponse } from "@/types/api";
 import { WhatsAppMetaTest } from "./WhatsAppMetaTest";
+import { WhatsAppMessages } from "./WhatsAppMessages";
 import { WhatsAppMetaTemplateTest } from "./WhatsAppMetaTemplateTest";
 import { connectionErrorMessage, loadMetaSDK, parseMetaSignupMessage, templateStatusLabel, type MetaSDK, type MetaSignupMessage } from "./whatsappEmbeddedSignup";
 import { ConnectionActions, ConnectionSteps, ConnectionSurface, ErrorText, Muted } from "./styles";
@@ -182,6 +183,9 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       <Muted>Na Meta, cadastre um número ou conecte seu WhatsApp Business existente para manter o atendimento no celular. Coexistência exige aplicativo Business atualizado e elegibilidade na Meta; WhatsApp comum não é compatível. Mantenha o aplicativo aberto durante a conexão. O FlyFoods não armazena seu histórico de conversas.</Muted>
       {embedded ? <Muted>A Meta decide a aprovação das mensagens. Configure a cobrança na sua conta e envie avisos apenas a clientes que autorizaram o contato.</Muted> : null}
     </>}
+    {connection ? <WhatsAppMessages connectionRevision={JSON.stringify([connected, integration?.templates, integration?.templateStatus])} onUpdated={() => {
+      void clientApi<WhatsAppConnectionResponse>("admin/whatsapp/connection").then((result) => { setConnection(result); changeRef.current(result); }).catch((failure) => setError(connectionErrorMessage(failure)));
+    }} /> : null}
     {connection?.provider.testEnabled ? <><WhatsAppMetaTest /><WhatsAppMetaTemplateTest /></> : null}
     {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
     {error ? <ErrorText role="alert">{error}</ErrorText> : null}
