@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/Button";
 import { StoreLoadEvents } from "@/services/storeLoadEvents";
 import { ConnectionRoot, ConnectionContent, ConnectionIcon, ConnectionTitle, ConnectionText } from "./styles";
+import { clearRetries, getRetryDelay, registerRetry, subscribeRetryDelay } from "./retry";
 
 export function StoreConnectionBoundary({
   available,
@@ -21,15 +22,21 @@ export function StoreConnectionBoundary({
   const events = useMemo(() => new StoreLoadEvents(tenantSlug), [tenantSlug]);
   const recorded = useRef(false);
   const [retrying, setRetrying] = useState(false);
+  const remaining = useSyncExternalStore(
+    useCallback((onChange: () => void) => failed ? subscribeRetryDelay(onChange) : () => {}, [failed]),
+    useCallback(() => failed ? getRetryDelay(tenantSlug) : 0, [failed, tenantSlug]),
+    () => 0,
+  );
 
   useEffect(() => {
+    if (available) clearRetries(tenantSlug);
     if (failed && !recorded.current) {
       events.recordFailure();
       recorded.current = true;
     }
     if (!failed) recorded.current = false;
     return events.start();
-  }, [events, failed]);
+  }, [available, events, failed, tenantSlug]);
 
   if (!failed) return children;
 
@@ -43,15 +50,16 @@ export function StoreConnectionBoundary({
         </ConnectionText>
         <Button
           type="button"
-          disabled={retrying}
+          disabled={retrying || remaining > 0}
           aria-busy={retrying}
           onClick={() => {
+            if (!registerRetry(tenantSlug)) return;
             setRetrying(true);
             window.location.reload();
           }}
         >
           <RefreshCw size={18} aria-hidden="true" />
-          {retrying ? "Tentando novamente…" : "Tentar novamente"}
+          {retrying ? "Tentando novamente…" : remaining > 0 ? `Tentar novamente em ${remaining}s` : "Tentar novamente"}
         </Button>
       </ConnectionContent>
     </ConnectionRoot>
