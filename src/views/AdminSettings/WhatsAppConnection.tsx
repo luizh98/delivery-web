@@ -6,9 +6,7 @@ import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { clientApi } from "@/services/api/client";
 import type { WhatsAppConnectionResponse } from "@/types/api";
-import { WhatsAppMetaTest } from "./WhatsAppMetaTest";
 import { WhatsAppMessages } from "./WhatsAppMessages";
-import { WhatsAppMetaTemplateTest } from "./WhatsAppMetaTemplateTest";
 import { connectionErrorMessage, loadMetaSDK, parseMetaSignupMessage, type MetaSDK, type MetaSignupMessage } from "./whatsappEmbeddedSignup";
 import { ConnectionActions, ConnectionSurface, ErrorText, Muted } from "./styles";
 
@@ -185,7 +183,6 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       {embedded ? <Muted>A Meta decide a aprovação das mensagens. Configure a cobrança na sua conta e envie avisos apenas a clientes que autorizaram o contato.</Muted> : null}
       </details>
     </>}
-    {connection?.provider.testEnabled ? <details><summary>Testes de desenvolvimento</summary><WhatsAppMetaTest /><WhatsAppMetaTemplateTest /></details> : null}
     {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
     {error ? <ErrorText role="alert">{error}</ErrorText> : null}
   </ConnectionSurface>;
