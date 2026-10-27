@@ -1,24 +1,26 @@
 import { styled } from "styles";
 
 export const MessagePanel = styled("section", {
-  display: "grid", gap: "1rem", minWidth: 0, borderTop: "1px solid var(--color-border)", paddingTop: "1.5rem",
-  "& h3": { fontSize: "1.125rem", fontWeight: 600 },
+  display: "grid", gap: "0.75rem", minWidth: 0,
   "& h4": { fontSize: "1rem", fontWeight: 600 },
-  "& #whatsapp-message-editor": { display: "grid", gap: "1rem", minWidth: 0 },
+  "& [data-message-editor]": { display: "grid", gap: "1rem", minWidth: 0, padding: "0.5rem 0 1.25rem" },
   "& textarea": { lineHeight: 1.65, resize: "vertical", minHeight: "16rem", caretColor: "var(--color-primary)", scrollMarginTop: "5rem" },
   "& textarea::selection": { background: "var(--color-primary)", color: "var(--color-primary-foreground)" },
 });
 
 export const MessageList = styled("ul", {
   listStyle: "none", padding: 0, margin: 0,
-  "& li": { borderBottom: "1px solid var(--color-border)" },
-  "& button": { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", width: "100%", textAlign: "left", padding: "1rem 0", color: "var(--color-foreground)", cursor: "pointer", border: 0, background: "transparent" },
-  "& button > span:first-child": { display: "grid", gap: "0.375rem" },
-  "& button > span:last-child": { display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.875rem", flexShrink: 0 },
-  "& small": { color: "var(--color-muted)", fontSize: "0.8125rem", lineHeight: 1.5 },
-  "& button:hover, & button[aria-expanded=true]": { color: "var(--color-primary)" },
-  "& button:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "3px" },
-  "& button:disabled": { opacity: 0.6, cursor: "wait" },
+  "& > li": { borderBottom: "1px solid var(--color-border)" },
+  "& > li > button, & [data-connection-row]": { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "0.5rem 1rem", width: "100%", textAlign: "left", padding: "0.875rem 0", color: "var(--color-foreground)", fontSize: "0.875rem" },
+  "& > li > button": { cursor: "pointer", border: 0, background: "transparent" },
+  "& > li > button > span:first-child, & [data-connection-row] > span, & [data-connection-row] > a": { display: "inline-flex", alignItems: "center", gap: "0.5rem" },
+  "& > li > button > span:first-child > svg": { flexShrink: 0 },
+  "& [data-message-actions]": { display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.5rem 1rem", marginLeft: "auto" },
+  "& [data-message-actions] > span": { display: "inline-flex", alignItems: "center", gap: "0.375rem", flexShrink: 0 },
+  "& [data-message-actions] > small, & [data-connection-row] > small": { color: "var(--color-muted)", fontSize: "0.8125rem", lineHeight: 1.5 },
+  "& > li > button:hover, & > li > button[aria-expanded=true]": { color: "var(--color-primary)" },
+  "& > li > button:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "3px" },
+  "& > li > button:disabled": { opacity: 0.6, cursor: "wait" },
 });
 
 export const MessageToolbar = styled("div", {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, GripVertical, Pencil, RefreshCw, RotateCcw, Save, Send } from "lucide-react";
+import { CheckCircle2, ChevronUp, Clock3, ExternalLink, Eye, EyeOff, GripVertical, Pencil, RotateCcw, Save, Send } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { Button } from "@/components/Button";
 import { Field, Select, Textarea } from "@/components/Field";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { clientApi } from "@/services/api/client";
+import type { WhatsAppConnectionResponse } from "@/types/api";
 import { connectionErrorMessage } from "./whatsappEmbeddedSignup";
 import { messageReviewStatus, messageStages, messageValidation, previewWhatsAppMessage, type MessageMode, type MessageStage, type WhatsAppMessagesResponse } from "./whatsappMessageEditor";
 import { ConnectionActions, ErrorText, Muted } from "./styles";
@@ -16,7 +17,7 @@ import { MessageBody, MessageList, MessagePanel, MessagePreview, MessageToolbar,
 
 const schema = z.object({ body: z.string().max(8192, "Rascunho muito longo.") });
 
-export function WhatsAppMessages({ connectionRevision, onUpdated }: { connectionRevision: string; onUpdated: () => void }) {
+export function WhatsAppMessages({ integration, connectionRevision, onUpdated }: { integration: WhatsAppConnectionResponse["integration"]; connectionRevision: string; onUpdated: () => void }) {
   const [data, setData] = useState<WhatsAppMessagesResponse | null>(null);
   const [stage, setStage] = useState<MessageStage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,8 +61,9 @@ export function WhatsAppMessages({ connectionRevision, onUpdated }: { connection
   }, [isDirty, requestConfirmation]);
 
   async function edit(next: MessageStage) {
-    if (!data || busy || next === stage) return;
+    if (!data || busy) return;
     if (isDirty && !await requestConfirmation({ message: "Há alterações não salvas nesta mensagem. Deseja descartá-las?", confirmLabel: "Descartar alterações" })) return;
+    if (next === stage) { setStage(null); reset({ body: "" }); setError(""); setNotice(""); return; }
     setStage(next); reset({ body: data.messages[next].draft }); setShowPreview(false); setError(""); setNotice("");
     selection.current = { start: data.messages[next].draft.length, end: data.messages[next].draft.length };
   }
@@ -80,7 +82,7 @@ export function WhatsAppMessages({ connectionRevision, onUpdated }: { connection
     selection.current = { start: element.selectionStart, end: element.selectionEnd };
   }
 
-  async function save(action: "draft" | "submit" | "refresh") {
+  async function save(action: "draft" | "submit") {
     if (!stage || !data || busy) return;
     setError(""); setNotice("");
     const validation = messageValidation(body, data.parameters);
@@ -89,8 +91,8 @@ export function WhatsAppMessages({ connectionRevision, onUpdated }: { connection
     try {
       const result = await clientApi<WhatsAppMessagesResponse>(`admin/whatsapp/messages/${stage}`, { method: action === "draft" ? "PUT" : "POST", body: JSON.stringify({ body, revision: data.revision, action }) });
       setData(result);
-      if (action !== "refresh") reset({ body: result.messages[stage].draft });
-      setNotice(action === "draft" ? "Rascunho salvo. A mensagem em uso não foi alterada." : action === "submit" ? "Mensagem enviada para análise. A versão aprovada continua em uso até a nova aprovação." : "Status atualizado. Versões aprovadas são ativadas automaticamente.");
+      reset({ body: result.messages[stage].draft });
+      setNotice(action === "draft" ? "Rascunho salvo. A mensagem em uso não foi alterada." : "Mensagem enviada para análise. A versão aprovada continua em uso até a nova aprovação.");
       if (action !== "draft") onUpdated();
     } catch (failure) { setError(connectionErrorMessage(failure)); }
     finally { setBusy(false); }
@@ -101,22 +103,8 @@ export function WhatsAppMessages({ connectionRevision, onUpdated }: { connection
   const pending = editor && ["PENDING", "SUBMITTING", "SUBMISSION_UNCERTAIN"].includes(editor.candidate?.status ?? "");
   const selected = messageStages.find((item) => item.key === stage);
 
-  return <MessagePanel aria-labelledby="whatsapp-messages-title" aria-busy={loading || busy}>
-    <div><h3 id="whatsapp-messages-title">Mensagens dos pedidos</h3><Muted>Personalize o texto e escolha os dados de cada aviso. Alterações precisam da aprovação da Meta.</Muted></div>
-    {loading ? <Muted role="status">Carregando mensagens…</Muted> : null}
-    {data ? <>
-      <MessageList aria-label="Mensagens de WhatsApp">
-        {messageStages.map((item) => <li key={item.key}>
-          <button type="button" onClick={() => void edit(item.key)} disabled={busy} aria-expanded={stage === item.key} aria-controls="whatsapp-message-editor">
-            <span><strong>{item.label}</strong><small>{data.activeStatuses?.[item.key] === "APPROVED" ? "Versão aprovada em uso" : messageReviewStatus(data.activeStatuses?.[item.key])}{data.messages[item.key].candidate ? ` · Nova versão: ${messageReviewStatus(data.messages[item.key].candidate?.status)}` : ""}</small></span>
-            <span><Pencil size={16} aria-hidden="true" /> Editar</span>
-          </button>
-        </li>)}
-      </MessageList>
-      {stage && editor ? <div id="whatsapp-message-editor">
-        <MessageToolbar><h4>{selected?.label}</h4><span>{[...body].length}/1024 caracteres</span></MessageToolbar>
-        <Muted>{selected?.description}</Muted>
-        <Muted>O editor começa com uma sugestão. Salvar rascunho não muda a versão em uso.</Muted>
+  const editorContent = stage && editor && data ? <div id={`whatsapp-message-editor-${stage}`} data-message-editor>
+        <MessageToolbar><span>{selected?.description}</span><span>{[...body].length}/1024 caracteres</span></MessageToolbar>
         <Field label="Mensagem" error={errors.body?.message}>
           <Textarea {...register("body")} id={`whatsapp-message-${stage}`} aria-label={`Mensagem: ${selected?.label}`} aria-describedby="whatsapp-message-help" rows={12} disabled={busy}
             onSelect={(event) => { selection.current = { start: event.currentTarget.selectionStart, end: event.currentTarget.selectionEnd }; }}
@@ -145,17 +133,37 @@ export function WhatsAppMessages({ connectionRevision, onUpdated }: { connection
           {validation ? <ErrorText role="status">{validation}</ErrorText> : <MessageBody>{previewWhatsAppMessage(body, data.parameters, mode)}</MessageBody>}
           <Muted>Quebras ficam no texto fixo. Dados como a lista de itens são enviados em uma linha, conforme limite dos parâmetros.</Muted>
         </MessagePreview> : null}
-        {editor.candidate ? <Muted>Nova versão: {messageReviewStatus(editor.candidate.status)}. {data.activeStatuses?.[stage] === "APPROVED" ? "A versão aprovada continua em uso." : "Nenhuma versão aprovada está disponível para esta etapa."}</Muted> : null}
         {validation && !showPreview ? <Muted>{validation}</Muted> : null}
         {!data.connected ? <Muted>Conecte o WhatsApp pela Meta para salvar e enviar mensagens para aprovação. Você já pode editar e visualizar a sugestão.</Muted> : null}
         <ConnectionActions>
           <Button type="button" variant="outline" disabled={busy || !data.connected || !isDirty} onClick={() => void handleSubmit(() => save("draft"))()}><Save size={16} aria-hidden="true" /> Salvar rascunho</Button>
           <Button type="button" disabled={busy || !data.connected || !!validation || !!pending || editor.active?.body === body.trim()} onClick={() => void handleSubmit(() => save("submit"))()}><Send size={16} aria-hidden="true" /> {busy ? "Aguarde…" : "Enviar para aprovação"}</Button>
-          {editor.candidate ? <Button type="button" variant="ghost" disabled={busy || !data.connected} onClick={() => void save("refresh")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
         </ConnectionActions>
-      </div> : null}
-    </> : null}
-    {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
+        {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
+      </div> : null;
+
+  return <MessagePanel aria-label="Configuração das mensagens do WhatsApp" aria-busy={loading || busy}>
+    <MessageList aria-label="Preparação do WhatsApp e mensagens">
+      <li><div data-connection-row>
+        <span>{integration.registered ? <CheckCircle2 size={18} aria-hidden="true" /> : <Clock3 size={18} aria-hidden="true" />} Número do restaurante</span>
+        <small>{integration.status === "revoked" ? "Conecte novamente" : integration.registered ? "Registrado" : "Registro pendente"}</small>
+      </div></li>
+      {messageStages.map((item) => {
+        const activeStatus = data?.activeStatuses?.[item.key] ?? integration.templateStatus?.[item.key];
+        const candidate = data?.messages[item.key].candidate;
+        const approved = activeStatus === "APPROVED";
+        const status = candidate ? `${messageReviewStatus(candidate.status)}${approved ? " · atual em uso" : ""}` : messageReviewStatus(activeStatus);
+        return <li key={item.key}>
+          <button type="button" onClick={() => void edit(item.key)} disabled={busy || !data} aria-expanded={stage === item.key} aria-controls={`whatsapp-message-editor-${item.key}`}>
+            <span>{approved && !candidate ? <CheckCircle2 size={18} aria-hidden="true" /> : <Clock3 size={18} aria-hidden="true" />} {item.label}</span>
+            <span data-message-actions><small>{status}</small><span>{stage === item.key ? <ChevronUp size={16} aria-hidden="true" /> : <Pencil size={16} aria-hidden="true" />}{stage === item.key ? "Fechar" : "Editar"}</span></span>
+          </button>
+          {stage === item.key ? editorContent : null}
+        </li>;
+      })}
+      <li><div data-connection-row><span><ExternalLink size={18} aria-hidden="true" /> Cobrança do WhatsApp</span><a href="https://business.facebook.com/wa/manage/" target="_blank" rel="noopener noreferrer">Configurar na Meta <ExternalLink size={14} aria-hidden="true" /></a></div></li>
+    </MessageList>
+    {loading ? <Muted role="status">Carregando mensagens…</Muted> : null}
     {error ? <><ErrorText role="alert">{error}</ErrorText><Button type="button" variant="ghost" disabled={busy} onClick={() => { setReload((value) => value + 1); }}>Recarregar configuração</Button></> : null}
   </MessagePanel>;
 }
