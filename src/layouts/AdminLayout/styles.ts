@@ -136,11 +136,20 @@ export const Nav = styled("nav", {
 
 export const Brand = styled("a", {
   display: "inline-flex",
+  flexShrink: 0,
   alignItems: "center",
-  color: "var(--color-foreground)",
-  fontSize: "1.25rem",
-  fontWeight: 800,
-  letterSpacing: "-0.025em",
+
+  "& > img": {
+    display: "block",
+    width: "auto",
+    height: "2.5rem",
+  },
+
+  "@lg": {
+    "& > img": {
+      height: "3.25rem",
+    },
+  },
 });
 
 export const NavLink = styled("a", {
