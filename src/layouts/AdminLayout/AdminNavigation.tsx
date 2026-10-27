@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -267,7 +268,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
       <DesktopNavbar>
         <DesktopNavbarBrand>
           <Brand as={Link} href="/admin">
-            FlyFoods
+            <Image src="/flyfoods-logo.webp" alt="FlyFoods" width={320} height={243} loading="eager" />
           </Brand>
           <MenuButton
             type="button"
@@ -312,7 +313,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
 
       <MobileHeader>
         <Brand as={Link} href="/admin">
-          FlyFoods
+          <Image src="/flyfoods-logo.webp" alt="FlyFoods" width={320} height={243} loading="eager" />
         </Brand>
         <MenuButton
           type="button"
@@ -343,7 +344,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
           >
             <DrawerHeader>
               <Brand as={Link} href="/admin" onClick={() => closeMenu(false)}>
-                FlyFoods
+                <Image src="/flyfoods-logo.webp" alt="FlyFoods" width={320} height={243} />
               </Brand>
               <CloseButton
                 ref={closeButtonRef}
