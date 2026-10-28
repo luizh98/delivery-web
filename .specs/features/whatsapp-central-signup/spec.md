@@ -20,3 +20,16 @@ Testes Node para validações e ciclo de vida; TypeScript/lint/build; navegador 
 ## Fora de escopo
 
 Wildcard Meta, domínio novo, mudanças de produção, inbox/histórico, nova autenticação e substituição do Embedded Signup.
+
+## Rastreabilidade
+
+| Requisito | Evidência | Estado |
+| --- | --- | --- |
+| WCS-01 | SDK ausente no painel local; central real carregou SDK em staging | Verificado |
+| WCS-02 | Testes origem/janela/nonce/replay; dois tenants e attemptId na API simulada | Verificado com fixtures |
+| WCS-03 | Testes de abort, fechamento e timeout; cancelamento no navegador | Verificado |
+| WCS-04 | Cadastro padrão e coexistência WABA-only, eventos em ambas ordens | Verificado com Meta simulada |
+| WCS-05 | Configuração vazia retorna fluxo direto; somente staging configurada/publicada | Verificado |
+| WCS-06 | Origem inválida e abertura direta bloqueadas; URL limpa e código transitório | Verificado |
+
+Autorização real de conta Meta não foi executada. Ver `validation.md` para limites.
