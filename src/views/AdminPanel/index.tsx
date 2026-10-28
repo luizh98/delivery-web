@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AdminAttention } from "./Attention";
 import {
   ClipboardList,
   Bike,
@@ -54,6 +56,9 @@ export function AdminPanelView() {
           );
         })}
       </LinksGrid>
+      <Suspense fallback={<p role="status">Carregando pontos de atenção…</p>}>
+        <AdminAttention />
+      </Suspense>
     </Root>
   );
 }
