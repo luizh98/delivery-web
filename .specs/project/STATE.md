@@ -1,5 +1,12 @@
 # State
 
+## Domínios dedicados de integração — 2026-10-28
+
+- Usuário autorizou adoção em staging e produção; corrigiu host de staging para `dev-integration.flyfoods.com.br`. Produção: `integration.flyfoods.com.br`.
+- DNS wildcard A já aponta ambos ao Easypanel; registros existentes preservados. Rotas HTTPS explícitas para web staging:3000 e web produção:80. Variáveis de origem/domínio configuradas nos serviços; PORT=80 explícito em produção preserva porta atual.
+- Promoção da central para main preparada por cherry-picks dos quatro commits de staging. Árvore resultante idêntica à staging já validada; 13 testes focados WhatsApp passaram. Nenhuma mudança em API ou dependências.
+- Meta exige cadastro dos dois hosts na lista JSSDK; solicitado ao usuário. Não automatizar autorização de conta ou concluir vínculo real. Documentação atualizada em `docs/meta-tech-provider.md` e `.specs/quick/032-whatsapp-integration-domains/`.
+
 ## Conexão WhatsApp centralizada — 2026-10-28
 
 - Implementação autorizada somente para staging com tlc-spec-driven. Painéis abrem central no host já autorizado `dev-terraco-canecao.flyfoods.com.br/integrations/whatsapp`; nonce em fragmento, origem/janela verificadas, conclusão pela sessão admin e tentativa one-shot originais. API não alterada.

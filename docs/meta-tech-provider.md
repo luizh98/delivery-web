@@ -5,15 +5,19 @@
 Configuração runtime opcional no **web**, sem alteração de credenciais da API:
 
 ```
-WHATSAPP_SIGNUP_ORIGIN=https://dev-terraco-canecao.flyfoods.com.br
+WHATSAPP_SIGNUP_ORIGIN=https://dev-integration.flyfoods.com.br
 WHATSAPP_SIGNUP_TENANT_DOMAIN=flyfoods.com.br
 ```
 
-Na staging, os painéis abrem `/integrations/whatsapp` nesse domínio já autorizado para o JSSDK. Usuário clica **Continuar na Meta** na janela central; cadastro padrão e coexistência continuam disponíveis. O domínio permitido no painel Meta é o da central, não cada restaurante. Mantenha endereços já usados durante a transição.
+Na staging, os painéis abrem `https://dev-integration.flyfoods.com.br/integrations/whatsapp`. Em produção, configurar `WHATSAPP_SIGNUP_ORIGIN=https://integration.flyfoods.com.br`, mantendo `WHATSAPP_SIGNUP_TENANT_DOMAIN=flyfoods.com.br`. Usuário clica **Continuar na Meta** na janela central; cadastro padrão e coexistência continuam disponíveis.
+
+Na Meta, cadastrar os dois hosts HTTPS em **Domínios permitidos para o SDK JavaScript**, preservando entradas antigas durante a transição. Se o fluxo exigir URI OAuth, usar a URL completa `/integrations/whatsapp` do ambiente correspondente. Não tratar carregamento do SDK como validação de retorno OAuth.
+
+Rotas Easypanel: `dev-integration.flyfoods.com.br` → `delivery-app-staging/delivery-web:3000`; `integration.flyfoods.com.br` → `delivery-app/delivery-web:80`. Produção mantém `PORT=80` explicitamente para preservar a porta já usada pelo serviço. DNS wildcard existente atende ambos; não substituir registros da zona.
 
 Não abra a página central manualmente: ela exige janela de origem e nonce aleatório por tentativa. Código OAuth volta por postMessage validando origem exata, janela e nonce, sem URL/storage. O painel original conclui pela sessão admin e tentativa de uso único existentes, preservando tenant e proteção same-origin. Nenhum JWT ou token persistente é transferido à central.
 
-Variáveis ausentes preservam conexão direta anterior. Configuração inválida bloqueia a nova conexão. Domínios personalizados fora de `WHATSAPP_SIGNUP_TENANT_DOMAIN` não são aceitos. Publicação em produção exige configuração própria e autorização do domínio central escolhido na Meta.
+Variáveis ausentes preservam conexão direta anterior. Configuração inválida bloqueia a nova conexão. Domínios personalizados fora de `WHATSAPP_SIGNUP_TENANT_DOMAIN` não são aceitos. Cada ambiente executa SDK na sua própria central; o painel que iniciou a tentativa continua responsável pela sessão, tenant e API de conclusão. Não compartilhar cookies administrativos nem transportar tokens persistentes entre hosts.
 
 ## Fluxo existente
 
