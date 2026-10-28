@@ -38,10 +38,21 @@ test("signup accepts official origins and validates identities before completion
   assert.equal(parseMetaSignupMessage("https://www.facebook.com", "invalid JSON"), null);
 });
 
-test("cancel, error and coexistence cannot become a standard completion", () => {
+test("coexistence accepts the WABA-only completion and preserves its event", () => {
+  const event = "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING";
+  assert.deepEqual(parseMetaSignupMessage("https://www.facebook.com", { ...completed, event, data: { waba_id: "456" } }), { event, wabaId: "456", phoneNumberId: "", businessId: "" });
+  assert.deepEqual(parseMetaSignupMessage("https://business.facebook.com", { ...completed, event }), { event, wabaId: "456", phoneNumberId: "123", businessId: "789" });
+  assert.equal(parseMetaSignupMessage("https://www.facebook.com", { ...completed, data: { waba_id: "456" } }), null);
+  for (const data of [{ waba_id: "bad" }, { waba_id: "456", phone_number_id: "bad" }, { waba_id: "456", phone_number_id: null }]) {
+    assert.equal(parseMetaSignupMessage("https://www.facebook.com", { ...completed, event, data }), null);
+  }
+  assert.equal(parseMetaSignupMessage("https://attacker.test", { ...completed, event }), null);
+});
+
+test("cancel, error and unsupported migrations cannot become a completion", () => {
   assert.deepEqual(parseMetaSignupMessage("https://www.facebook.com", { type: "WA_EMBEDDED_SIGNUP", event: "CANCEL" }), { event: "CANCEL" });
   assert.deepEqual(parseMetaSignupMessage("https://www.facebook.com", { type: "WA_EMBEDDED_SIGNUP", event: "ERROR" }), { event: "ERROR" });
-  for (const event of ["FINISH_ONLY_WABA", "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING", "FINISH_OBO_MIGRATION"]) {
+  for (const event of ["FINISH_ONLY_WABA", "FINISH_OBO_MIGRATION"]) {
     assert.deepEqual(parseMetaSignupMessage("https://www.facebook.com", { ...completed, event }), { event: "UNSUPPORTED" });
   }
 });

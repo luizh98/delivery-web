@@ -47,15 +47,6 @@ export const ConnectionActions = styled("div", {
   "@bp2": { "& button": { width: "100%" } },
 });
 
-export const ConnectionSteps = styled("ul", {
-  listStyle: "none",
-  margin: 0,
-  padding: 0,
-  "& li": { display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem 1rem", padding: "0.75rem 0", borderBottom: "1px solid var(--color-border)", fontSize: "0.875rem" },
-  "& li span:first-child, & a": { display: "inline-flex", alignItems: "center", gap: "0.5rem" },
-  "& li span:last-child": { color: "var(--color-muted)" },
-});
-
 export const AdvancedWhatsAppSettings = styled("details", {
   paddingTop: "0.5rem",
   "& > summary": { cursor: "pointer", padding: "0.5rem 0", minHeight: "2.75rem", fontSize: "0.875rem", fontWeight: 600 },

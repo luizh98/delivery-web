@@ -1,5 +1,5 @@
 export type MetaSignupMessage =
-  | { event: "FINISH"; wabaId: string; phoneNumberId: string; businessId: string }
+  | { event: "FINISH" | "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING"; wabaId: string; phoneNumberId: string; businessId: string }
   | { event: "CANCEL" | "ERROR" | "UNSUPPORTED" };
 
 const allowedOrigins = new Set([
@@ -17,18 +17,21 @@ export function parseMetaSignupMessage(origin: string, value: unknown): MetaSign
   }
   if (!message || typeof message !== "object" || !("type" in message) || message.type !== "WA_EMBEDDED_SIGNUP" || !("event" in message)) return null;
   if (message.event === "CANCEL" || message.event === "ERROR") return { event: message.event };
-  if (typeof message.event === "string" && message.event.startsWith("FINISH") && message.event !== "FINISH") return { event: "UNSUPPORTED" };
-  if (message.event !== "FINISH" || !("data" in message) || !message.data || typeof message.data !== "object") return null;
+  const coexistence = message.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING";
+  if (typeof message.event === "string" && message.event.startsWith("FINISH") && message.event !== "FINISH" && !coexistence) return { event: "UNSUPPORTED" };
+  if ((message.event !== "FINISH" && message.event !== "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING") || !("data" in message) || !message.data || typeof message.data !== "object") return null;
   const data = message.data;
-  if (!("waba_id" in data) || typeof data.waba_id !== "string" || !/^\d{1,30}$/.test(data.waba_id) || !("phone_number_id" in data) || typeof data.phone_number_id !== "string" || !/^\d{1,30}$/.test(data.phone_number_id)) return null;
+  if (!("waba_id" in data) || typeof data.waba_id !== "string" || !/^\d{1,30}$/.test(data.waba_id)) return null;
+  const phoneNumberId = "phone_number_id" in data ? data.phone_number_id : "";
+  if (typeof phoneNumberId !== "string" || (phoneNumberId !== "" && !/^\d{1,30}$/.test(phoneNumberId)) || (!coexistence && !phoneNumberId)) return null;
   const businessId = "business_id" in data && typeof data.business_id === "string" ? data.business_id : "";
   if (businessId && !/^\d{1,30}$/.test(businessId)) return null;
-  return { event: "FINISH", wabaId: data.waba_id, phoneNumberId: data.phone_number_id, businessId };
+  return { event: message.event, wabaId: data.waba_id, phoneNumberId, businessId };
 }
 
 export type MetaSDK = {
   init: (options: { appId: string; version: string; xfbml: boolean; autoLogAppEvents: boolean }) => void;
-  login: (callback: (response: { authResponse?: { code?: string } }) => void, options: { config_id: string; response_type: "code"; override_default_response_type: boolean; extras: { setup: Record<string, never> } }) => void;
+  login: (callback: (response: { authResponse?: { code?: string } }) => void, options: { config_id: string; response_type: "code"; override_default_response_type: boolean; extras: { setup: Record<string, never>; featureType?: "whatsapp_business_app_onboarding"; sessionInfoVersion?: "3" } }) => void;
 };
 
 declare global {
