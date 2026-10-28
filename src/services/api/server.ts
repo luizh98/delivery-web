@@ -183,6 +183,16 @@ export async function getAdminProducts() {
   return (await backendFetch<Product[]>("admin/products")) ?? [];
 }
 
+export async function getAdminAttention() {
+  const query = new URLSearchParams();
+  ["RECEIVED", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY"].forEach((status) => query.append("status", status));
+  const [products, orders] = await Promise.all([
+    backendFetch<Product[]>("admin/products"),
+    backendFetch<OrderResponse[]>(`admin/orders?${query}`),
+  ]);
+  return { products, orders, now: Date.now() };
+}
+
 export async function getAdminProductOptionGroups() {
   return (await backendFetch<ProductOptionGroupTemplate[]>("admin/product-option-groups")) ?? [];
 }
