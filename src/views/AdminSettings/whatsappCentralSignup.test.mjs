@@ -67,3 +67,28 @@ test("relay binds origin, popup and nonce; ignores forgery and replay; abort cle
     assert.throws(() => openCentralSignup(config.origin, provider, new AbortController().signal), /pop-ups/);
   } finally { controller.abort(); globalThis.window = oldWindow; }
 });
+
+test("closing or expiring the central window never completes authorization", async () => {
+  const previous = { window: globalThis.window, setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout, setInterval: globalThis.setInterval, clearInterval: globalThis.clearInterval };
+  let timeout, interval;
+  const listeners = new Set();
+  const popup = { closed: false, close() {}, postMessage() {} };
+  globalThis.setTimeout = callback => { timeout = callback; return 1; };
+  globalThis.setInterval = callback => { interval = callback; return 2; };
+  globalThis.clearTimeout = () => {};
+  globalThis.clearInterval = () => {};
+  globalThis.window = { location: { origin: "https://tenant.flyfoods.com.br" }, open: () => popup, addEventListener(_, fn) { listeners.add(fn); }, removeEventListener(_, fn) { listeners.delete(fn); } };
+  try {
+    const closed = openCentralSignup(config.origin, provider, new AbortController().signal);
+    popup.closed = true;
+    interval();
+    assert.deepEqual(await closed, { event: "CANCEL" });
+    assert.equal(listeners.size, 0);
+    popup.closed = false;
+    const expired = openCentralSignup(config.origin, provider, new AbortController().signal);
+    const rejected = assert.rejects(expired, /expirou/);
+    timeout();
+    await rejected;
+    assert.equal(listeners.size, 0);
+  } finally { Object.assign(globalThis, previous); }
+});
