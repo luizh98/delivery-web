@@ -111,7 +111,6 @@ test("driver pickup defaults off and restores tenant opt-in", () => {
   assert.ok(on.includes("Motoboy pode retirar pedidos em preparo"));
   assert.ok(on.includes("confere o pedido físico"));
 });
-
 test("automatic motoboy assignment is off by default and belongs to delivery organization", () => {
   const html = renderSettings();
   const section = html.slice(html.indexOf('<details id="delivery"')).split("</details>")[0];

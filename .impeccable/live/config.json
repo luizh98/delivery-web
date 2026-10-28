@@ -1,0 +1,10 @@
+{
+  "files": [
+    "src/app/(product)/layout.tsx",
+    "src/app/(landing)/layout.tsx",
+    "src/app/(legal)/layout.tsx"
+  ],
+  "insertBefore": "</body>",
+  "commentSyntax": "jsx",
+  "cspChecked": true
+}

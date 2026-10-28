@@ -25,7 +25,6 @@
 - Quick task: `.specs/quick/025-tracking-next-status/`. Base atualizada: `origin/staging` em `6d45cc5`; checkout principal preservado.
 - Validação: 45 testes, TypeScript, lint alterado e build Webpack aprovados; navegador 390/1280 px sem overflow. Turbopack local limitado pela junção de node_modules; deploy usa instalação própria.
 - Publicação autorizada exclusivamente em staging, com deploy automático no Easypanel.
-
 ## WhatsApp admin configuration — 2026-10-05
 
 - Conta Meta cadastrável em Configurações > Pedidos e alertas > WhatsApp dos pedidos: ID, token, três templates e versão Graph. Mantidos seis accordions e único Salvar alterações.
@@ -40,6 +39,12 @@
 - Checkbox por restaurante em Configurações → Pedidos, default false: `whatsappNotificationsEnabled`. Schema, payload parcial e tipo de API atualizados.
 - Plano canônico no repositório irmão `delivery-api/.specs/features/whatsapp-order-status/`; backend UAzapi e fila implementados.
 - 28 testes, TypeScript e lint dos arquivos alterados passaram. Lint global mantém três erros preexistentes em LazyAdminDashboard/AdminPrinter. Sem publicação nesta tarefa.
+
+## Desconto no produto — 2026-10-06
+
+- Desconto opcional por porcentagem inteira ou preço final. Cadastro com prévia; cardápio/carrossel/detalhe usam paleta da tenant. API preserva preço original e calcula preço efetivo; carrinho, combos e pedidos aplicam desconto sem afetar adicionais.
+- Especificação e evidências: `.specs/features/product-discounts/`. API no repositório irmão `delivery-api`.
+- Go: 196 testes; web: 31 testes; TypeScript, build e lint dos arquivos alterados aprovados. Lint geral mantém erros anteriores em Dashboard/Impressora. Browser validado com backend de teste em memória.
 
 ## Active Work
 

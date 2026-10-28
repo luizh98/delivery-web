@@ -54,7 +54,6 @@ export const AdvancedWhatsAppSettings = styled("details", {
   "&[open] > summary": { marginBottom: "0.75rem" },
   "& > div": { display: "grid", gap: "1rem" },
 });
-
 export const SaveBar = styled("div", {
   position: "sticky",
   bottom: 0,
