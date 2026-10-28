@@ -4,7 +4,8 @@ Ferramentas aprovadas pelo usuário: Git/Node, Playwright, Easypanel. Execução
 
 - [x] T1 — Protocolo e configuração runtime: helper/testes, rota config, `.env.example`. Quatro testes Node, TypeScript e lint passaram.
 - [x] T2 — Página central e integração no painel: 104 testes, TypeScript, lint, build Webpack e detector passaram. Navegador: duas origens, dois tenants via headers de fixture, coexistência e cadastro padrão em ordens diferentes; cancelamento e abertura direta; desktop/mobile sem overflow.
-- [ ] T3 — Configurar staging, documentar resultado e publicar. Preservar produção; push termina publicação; se smoke staging, esperar 60 segundos e testar diretamente, sem acompanhar deploy. Remover worktree após preservar commits.
+- [x] T3a — Configuração runtime de staging e documentação prontas; produção preservada.
+- [ ] T3b — Push em staging; smoke direto após 60 segundos, sem acompanhar deploy; remover worktree com commits preservados.
 
 ## Arquivos previstos
 

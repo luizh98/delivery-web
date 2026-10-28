@@ -1,5 +1,22 @@
 # Conexão WhatsApp no admin
 
+## Domínio central para múltiplos tenants
+
+Configuração runtime opcional no **web**, sem alteração de credenciais da API:
+
+```
+WHATSAPP_SIGNUP_ORIGIN=https://dev-terraco-canecao.flyfoods.com.br
+WHATSAPP_SIGNUP_TENANT_DOMAIN=flyfoods.com.br
+```
+
+Na staging, os painéis abrem `/integrations/whatsapp` nesse domínio já autorizado para o JSSDK. Usuário clica **Continuar na Meta** na janela central; cadastro padrão e coexistência continuam disponíveis. O domínio permitido no painel Meta é o da central, não cada restaurante. Mantenha endereços já usados durante a transição.
+
+Não abra a página central manualmente: ela exige janela de origem e nonce aleatório por tentativa. Código OAuth volta por postMessage validando origem exata, janela e nonce, sem URL/storage. O painel original conclui pela sessão admin e tentativa de uso único existentes, preservando tenant e proteção same-origin. Nenhum JWT ou token persistente é transferido à central.
+
+Variáveis ausentes preservam conexão direta anterior. Configuração inválida bloqueia a nova conexão. Domínios personalizados fora de `WHATSAPP_SIGNUP_TENANT_DOMAIN` não são aceitos. Publicação em produção exige configuração própria e autorização do domínio central escolhido na Meta.
+
+## Fluxo existente
+
 Configurações → Pedidos e alertas → WhatsApp dos pedidos oferece conexão via Meta, status dos modelos, atualização e desconexão. Salve primeiro o celular do restaurante. O cadastro manual permanece em Configuração avançada.
 
 Configuração do provider e segredos ficam no backend. Nenhum App Secret, token ou PIN deve ser enviado ao navegador. Consulte `delivery-api/docs/meta-tech-provider.md` para o checklist Meta. App ID de staging: `2686155311811975`; App Secret e Configuration ID foram encontrados cadastrados em staging em 26/10/2026.
