@@ -1,5 +1,9 @@
 # Conexão WhatsApp centralizada — staging
 
+## Evolução de escopo — 2026-10-28
+
+Após validação inicial em staging, usuário autorizou adotar domínios dedicados nos dois ambientes: `dev-integration.flyfoods.com.br` para staging e `integration.flyfoods.com.br` para produção. API e sessão de conclusão permanecem no ambiente original. Esta decisão substitui restrição inicial de publicação somente em staging e uso do host de restaurante como central.
+
 ## Objetivo
 
 Permitir conexão Meta a partir de vários subdomínios sem cadastrar cada tenant no JSSDK. Domínio central inicial: https://dev-terraco-canecao.flyfoods.com.br, já autorizado pelo usuário na Meta.
