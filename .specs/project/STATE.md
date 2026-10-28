@@ -1,5 +1,13 @@
 # State
 
+## Conexão WhatsApp centralizada — 2026-10-28
+
+- Implementação autorizada somente para staging com tlc-spec-driven. Painéis abrem central no host já autorizado `dev-terraco-canecao.flyfoods.com.br/integrations/whatsapp`; nonce em fragmento, origem/janela verificadas, conclusão pela sessão admin e tentativa one-shot originais. API não alterada.
+- Runtime no web staging: `WHATSAPP_SIGNUP_ORIGIN=https://dev-terraco-canecao.flyfoods.com.br`, `WHATSAPP_SIGNUP_TENANT_DOMAIN=flyfoods.com.br`. Sem configuração mantém SDK direto; central sem opener é bloqueada. Produção não configurada/publicada.
+- 104 testes da suíte passaram, depois cinco testes focados incluindo fechamento/timeout; TypeScript, lint, build Webpack, detector e diff check passaram. Navegador local com API/Meta simuladas confirmou dois tenants, ambos fluxos, ordem inversa de eventos, cancelamento e desktop/mobile.
+- Commits funcionais: a27ce27 e 129c39d. Publicação em staging e smoke direto após 60 segundos ainda pendentes neste registro; sem acompanhamento de build/deploy. Autorização real Meta depende do titular.
+- Spec, desenho, tarefas e evidências textuais em `.specs/features/whatsapp-central-signup/`.
+
 ## Coexistência WhatsApp — 2026-10-26
 
 - Admin usa um único Conectar WhatsApp para habilitar escolha na Meta entre número novo e conta Business existente; aceita conclusão de coexistência sem phone_number_id e mantém FINISH padrão e orientação sobre uso/revogação no WhatsApp Business.
