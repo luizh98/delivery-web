@@ -111,6 +111,7 @@ export type WhatsAppConnectionResponse = {
   provider: { enabled: boolean; testEnabled?: boolean; appId: string; configId: string; apiVersion: string };
   integration: NonNullable<RestaurantConfigResponse["whatsappIntegration"]>;
   pending: boolean;
+  reconnectRequired?: boolean;
   notificationsEnabled: boolean;
 };
 
