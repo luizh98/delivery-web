@@ -115,7 +115,7 @@ export const StepButton = styled("button", {
       true: {
         borderColor: "var(--color-primary)",
         background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
       false: {
         background: "var(--color-background)",

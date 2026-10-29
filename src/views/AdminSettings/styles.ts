@@ -414,7 +414,7 @@ export const ThemePreviewCategory = styled("span", {
   padding: "0.375rem 0.625rem",
   fontSize: "0.625rem",
   fontWeight: 700,
-  color: "#ffffff",
+  color: "var(--preview-primary-foreground)",
 });
 
 export const ThemePreviewProduct = styled("div", {
@@ -459,7 +459,7 @@ export const ThemePreviewCart = styled("div", {
   padding: "0.625rem",
   fontSize: "0.6875rem",
   fontWeight: 700,
-  color: "#ffffff",
+  color: "var(--preview-primary-foreground)",
   textAlign: "center",
 });
 

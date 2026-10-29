@@ -132,7 +132,7 @@ export const CardHeader = styled("header", {
   gap: "0.75rem",
 
   svg: {
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 });
 

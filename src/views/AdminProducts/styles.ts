@@ -640,7 +640,7 @@ export const ProductActions = styled("div", {
 
 export const Price = styled("p", {
   fontWeight: 700,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const OptionBuilder = styled("section", {

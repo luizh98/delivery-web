@@ -54,7 +54,7 @@ export const StatusIcon = styled("div", {
     tone: {
       active: {
         background: "color-mix(in srgb, var(--color-primary) 14%, transparent)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
       completed: {
         background: "#dcfce7",
@@ -137,11 +137,11 @@ export const TimelineMarker = styled("span", {
       completed: {
         borderColor: "var(--color-primary)",
         background: "var(--color-primary)",
-        color: "var(--color-surface)",
+        color: "var(--color-primary-foreground)",
       },
       current: {
         borderColor: "var(--color-primary)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
         boxShadow: "0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent)",
         animation: "order-tracking-current-pulse 1.6s ease-in-out infinite",
         willChange: "transform, box-shadow",
@@ -181,7 +181,7 @@ export const TimelineContent = styled("div", {
         color: "var(--color-foreground)",
       },
       current: {
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
       upcoming: {
         color: "var(--color-muted)",

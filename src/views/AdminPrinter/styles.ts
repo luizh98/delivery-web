@@ -71,7 +71,7 @@ export const DownloadLink = styled("a", {
       true: {
         borderColor: "var(--color-primary)",
         background: "var(--color-primary)",
-        color: "#ffffff",
+        color: "var(--color-primary-foreground)",
 
         "&:hover": {
           opacity: 0.9,
@@ -105,7 +105,7 @@ export const StepNumber = styled("span", {
   justifyContent: "center",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
   fontSize: "0.8125rem",
   fontWeight: 700,
 });

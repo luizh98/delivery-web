@@ -115,7 +115,7 @@ export const ProductDescription = styled("p", {
 export const ProductPrice = styled("p", {
   fontSize: "1.125rem",
   fontWeight: 700,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const FlagBadges = styled("div", {

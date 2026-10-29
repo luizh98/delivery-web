@@ -146,11 +146,11 @@ export const TrackingShortcut = styled("button", {
     tone: {
       primary: {
         background: "var(--color-primary)",
-        color: "#ffffff",
+        color: "var(--color-primary-foreground)",
       },
       secondary: {
         background: "var(--color-surface)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
     },
   },
@@ -254,7 +254,7 @@ export const CategoryButton = styled("button", {
     active: {
       true: {
         background: "var(--color-primary)",
-        color: "#ffffff",
+        color: "var(--color-primary-foreground)",
       },
       false: {
         background: "var(--color-surface)",
@@ -361,7 +361,7 @@ export const ProductPrice = styled("span", {
   paddingTop: "0.25rem",
   fontSize: "1rem",
   fontWeight: 700,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const FlagBadges = styled("span", {
@@ -464,7 +464,7 @@ export const MobileSummary = styled("button", {
   justifyContent: "space-between",
   background: "transparent",
   padding: "0.25rem",
-  color: "#ffffff",
+  color: "var(--color-primary-foreground)",
   textAlign: "left",
   transition: "transform 180ms ease, opacity 180ms ease",
 
@@ -496,7 +496,7 @@ export const MobileSummaryLabel = styled("span", {
 
 export const MobileTotal = styled("span", {
   fontWeight: 700,
-  color: "#ffffff",
+  color: "var(--color-primary-foreground)",
 });
 
 export const MobileCartBody = styled("div", {
@@ -574,7 +574,7 @@ export const ContinueShoppingButton = styled("button", {
   margin: "1rem 0",
   borderRadius: "0.375rem",
   border: "1px solid var(--color-primary)",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
   fontSize: "0.875rem",
   fontWeight: 600,
 
@@ -715,7 +715,7 @@ export const CartRemovalActions = styled("div", {
 export const CartItemTotal = styled("p", {
   fontSize: "0.875rem",
   fontWeight: 700,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const CheckoutForm = styled("form", {
@@ -798,7 +798,7 @@ export const TotalGrand = styled("span", {
 });
 
 export const TotalStrong = styled("strong", {
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const CheckoutError = styled("p", {

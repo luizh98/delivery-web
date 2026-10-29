@@ -173,7 +173,7 @@ export const Status = styled("span", {
     active: {
       true: {
         background: "color-mix(in srgb, var(--color-primary) 14%, transparent)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
       false: {
         background: "var(--color-surface)",

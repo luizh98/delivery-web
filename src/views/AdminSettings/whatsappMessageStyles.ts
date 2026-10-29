@@ -18,7 +18,7 @@ export const MessageList = styled("ul", {
   "& [data-message-actions]": { display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.5rem 1rem", marginLeft: "auto" },
   "& [data-message-actions] > span": { display: "inline-flex", alignItems: "center", gap: "0.375rem", flexShrink: 0 },
   "& [data-message-actions] > small, & [data-connection-row] > small": { color: "var(--color-muted)", fontSize: "0.8125rem", lineHeight: 1.5 },
-  "& > li > button:hover, & > li > button[aria-expanded=true]": { color: "var(--color-primary)" },
+  "& > li > button:hover, & > li > button[aria-expanded=true]": { color: "var(--color-primary-text)" },
   "& > li > button:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "3px" },
   "& > li > button:disabled": { opacity: 0.6, cursor: "wait" },
 });
@@ -32,7 +32,7 @@ export const MessageToolbar = styled("div", {
 export const ParameterList = styled("div", {
   display: "flex", flexWrap: "wrap", gap: "0.5rem",
   "& button": { display: "inline-flex", alignItems: "center", gap: "0.25rem", minHeight: "2.75rem", padding: "0.5rem 0.75rem", border: "1px solid var(--color-border)", borderRadius: "999px", background: "var(--color-background)", color: "var(--color-foreground)", fontSize: "0.8125rem", cursor: "grab" },
-  "& button:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)" },
+  "& button:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary-text)" },
   "& button:active": { cursor: "grabbing" },
   "& button:focus-visible": { outline: "2px solid var(--color-primary)", outlineOffset: "2px" },
   "& button:disabled": { opacity: 0.6, cursor: "wait" },

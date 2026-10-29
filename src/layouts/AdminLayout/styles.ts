@@ -177,7 +177,7 @@ export const NavLink = styled("a", {
 
   "&[data-active='true']": {
     background: "color-mix(in srgb, var(--color-primary) 14%, var(--color-surface))",
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
     fontWeight: 700,
   },
 

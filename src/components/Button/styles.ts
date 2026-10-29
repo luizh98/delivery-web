@@ -20,7 +20,7 @@ export const ButtonRoot = styled("button", {
     variant: {
       primary: {
         background: "var(--color-primary)",
-        color: "#ffffff",
+        color: "var(--color-primary-foreground)",
         boxShadow: "0 1px 2px rgb(0 0 0 / 0.05), 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent)",
         border: "1px solid var(--color-primary)",
 
@@ -44,7 +44,7 @@ export const ButtonRoot = styled("button", {
       },
       secondary: {
         background: "var(--color-secondary)",
-        color: "#ffffff",
+        color: "var(--color-secondary-foreground)",
 
         "&:hover": {
           opacity: 0.9,
