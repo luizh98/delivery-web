@@ -41,3 +41,11 @@ export function previewWhatsAppMessage(body: string, parameters: MessageParamete
 export function messageReviewStatus(status?: string) {
   return ({ APPROVED: "Aprovada", PENDING: "Em análise pela Meta", SUBMITTING: "Envio em andamento", SUBMISSION_FAILED: "Falha ao enviar — tente novamente", SUBMISSION_UNCERTAIN: "Confirmação pendente — atualize o status", NOT_FOUND: "Não encontrada na Meta — envie novamente", REJECTED: "Não aprovada — ajuste o texto", PAUSED: "Pausada na Meta", DISABLED: "Desativada na Meta" } as Record<string, string>)[status ?? ""] ?? "Status pendente";
 }
+
+export function messageSubmissionNotice(editor: MessageEditor) {
+  if (!editor.candidate && editor.active?.status === "APPROVED") return "Esta mensagem já está aprovada e em uso. Altere o texto para enviar uma nova versão para aprovação.";
+  if (editor.candidate?.status === "PENDING") return editor.active?.status === "APPROVED"
+    ? "Mensagem enviada para análise. A versão aprovada continua em uso até a nova aprovação."
+    : "Mensagem enviada para análise pela Meta.";
+  return `Status da mensagem: ${messageReviewStatus(editor.candidate?.status ?? editor.active?.status)}.`;
+}

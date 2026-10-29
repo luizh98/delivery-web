@@ -11,7 +11,7 @@ import { useConfirmation } from "@/components/ConfirmationProvider";
 import { clientApi } from "@/services/api/client";
 import type { WhatsAppConnectionResponse } from "@/types/api";
 import { connectionErrorMessage } from "./whatsappEmbeddedSignup";
-import { messageReviewStatus, messageStages, messageValidation, previewWhatsAppMessage, type MessageMode, type MessageStage, type WhatsAppMessagesResponse } from "./whatsappMessageEditor";
+import { messageReviewStatus, messageStages, messageSubmissionNotice, messageValidation, previewWhatsAppMessage, type MessageMode, type MessageStage, type WhatsAppMessagesResponse } from "./whatsappMessageEditor";
 import { ConnectionActions, ErrorText, Muted } from "./styles";
 import { MessageBody, MessageList, MessagePanel, MessagePreview, MessageToolbar, ParameterList } from "./whatsappMessageStyles";
 
@@ -93,7 +93,7 @@ export function WhatsAppMessages({ integration, connectionRevision, onUpdated }:
       const result = await clientApi<WhatsAppMessagesResponse>(`admin/whatsapp/messages/${stage}`, { method: action === "draft" ? "PUT" : "POST", body: JSON.stringify({ body, revision: data.revision, action }) });
       setData(result);
       reset({ body: result.messages[stage].draft });
-      setNotice(action === "draft" ? "Rascunho salvo. A mensagem em uso não foi alterada." : "Mensagem enviada para análise. A versão aprovada continua em uso até a nova aprovação.");
+      setNotice(action === "draft" ? "Rascunho salvo. A mensagem em uso não foi alterada." : messageSubmissionNotice(result.messages[stage]));
       if (action !== "draft") onUpdated();
     } catch (failure) { setError(connectionErrorMessage(failure)); }
     finally { setBusy(false); }
@@ -102,6 +102,7 @@ export function WhatsAppMessages({ integration, connectionRevision, onUpdated }:
   const editor = stage && data?.messages[stage];
   const validation = data ? messageValidation(body, data.parameters) : "";
   const pending = editor && ["PENDING", "SUBMITTING", "SUBMISSION_UNCERTAIN"].includes(editor.candidate?.status ?? "");
+  const unchanged = editor && editor.active?.body === body.trim();
   const selected = messageStages.find((item) => item.key === stage);
 
   const editorContent = stage && editor && data ? <div id={`whatsapp-message-editor-${stage}`} data-message-editor>
@@ -138,8 +139,9 @@ export function WhatsAppMessages({ integration, connectionRevision, onUpdated }:
         {!data.connected ? <Muted>Conecte o WhatsApp pela Meta para salvar e enviar mensagens para aprovação. Você já pode editar e visualizar a sugestão.</Muted> : null}
         <ConnectionActions>
           <Button type="button" variant="outline" disabled={busy || !data.connected || !isDirty} onClick={() => void handleSubmit(() => save("draft"))()}><Save size={16} aria-hidden="true" /> Salvar rascunho</Button>
-          <Button type="button" disabled={busy || !data.connected || !!validation || !!pending || editor.active?.body === body.trim()} onClick={() => void handleSubmit(() => save("submit"))()}><Send size={16} aria-hidden="true" /> {busy ? "Aguarde…" : "Enviar para aprovação"}</Button>
+          <Button type="button" disabled={busy || !data.connected || !!validation || !!pending || !!unchanged} onClick={() => void handleSubmit(() => save("submit"))()}><Send size={16} aria-hidden="true" /> {busy ? "Aguarde…" : "Enviar para aprovação"}</Button>
         </ConnectionActions>
+        {unchanged && !pending ? <Muted>Este texto já está em uso. Altere a mensagem para enviar uma nova versão para aprovação.</Muted> : null}
         {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
       </div> : null;
 
