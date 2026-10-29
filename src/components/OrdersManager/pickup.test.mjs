@@ -25,7 +25,7 @@ test("pickup labels and progression retain READY and skip dispatch", () => {
     assert.equal(module.exports.next({ status: current, deliveryType: "PICKUP" }), next);
   }
   assert.equal(statusLabel("READY", "PICKUP"), "Pronto para retirada");
-  assert.equal(statusLabel("COMPLETED", "PICKUP"), "Retirado");
+  assert.equal(statusLabel("COMPLETED", "PICKUP"), "Concluido");
   assert.equal(statusLabel("READY", "DELIVERY"), "Pronto");
   assert.equal(statusLabel("OUT_FOR_DELIVERY", "DELIVERY"), "Saiu para entrega");
   assert.equal(module.exports.next({ status: "READY", deliveryType: "DELIVERY" }), "OUT_FOR_DELIVERY");
