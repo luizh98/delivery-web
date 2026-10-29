@@ -87,6 +87,7 @@ const settingsBaseSchema = z.object({
   whatsappApiVersion: z.string(),
   whatsappProductionTemplate: z.string(),
   whatsappDeliveryTemplate: z.string(),
+  whatsappPickupTemplate: z.string(),
   whatsappCompletedTemplate: z.string(),
   automaticOrderStatus: z.enum(["CONFIRMED", "PREPARING", "READY"]),
   overdueOrderAlertEnabled: z.boolean(),
@@ -309,6 +310,7 @@ export function SettingsForm({
       whatsappAccessToken: "",
       whatsappApiVersion: initialConfig?.whatsappIntegration?.apiVersion ?? "v25.0",
       whatsappProductionTemplate: initialConfig?.whatsappIntegration?.templates?.production ?? "pedido_producao",
+      whatsappPickupTemplate: initialConfig?.whatsappIntegration?.templates?.pickup ?? "",
       whatsappDeliveryTemplate: initialConfig?.whatsappIntegration?.templates?.delivery ?? "pedido_entrega",
       whatsappCompletedTemplate: initialConfig?.whatsappIntegration?.templates?.completed ?? "pedido_concluido",
       automaticOrderStatus: initialConfig?.automaticOrderStatus ?? "CONFIRMED",
@@ -448,7 +450,7 @@ export function SettingsForm({
     const deliveryChanged = changed("deliveryEnabled", "pricingMode", "maxDistanceKm", "pricePerKmReais", "deliveryFeeRanges", "freeDeliveryMinimumOrderReais", "freeDeliveryDays");
     const organizationChanged = changed("automaticMotoboyAssignment", "motoboyPickupEnabled", "deliveryOrganizationStrategy", "deliveryMaxOrdersPerRoute", "deliveryWaitToleranceMinutes", "deliveryMaxDistanceKm");
     const pixelChanged = changed("metaPixelId", "metaPixelEnabled");
-    const whatsappChanged = changed("whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappCompletedTemplate");
+    const whatsappChanged = changed("whatsappPhoneNumberId", "whatsappAccessToken", "whatsappApiVersion", "whatsappProductionTemplate", "whatsappDeliveryTemplate", "whatsappPickupTemplate", "whatsappCompletedTemplate");
     if (whatsappChanged || (values.whatsappNotificationsEnabled && !currentConfig?.whatsappIntegration?.tokenConfigured)) {
       const result = whatsappSettingsSchema.safeParse({ ...values, tokenConfigured: currentConfig?.whatsappIntegration?.tokenConfigured ?? false });
       if (!result.success) {
@@ -505,7 +507,7 @@ export function SettingsForm({
           accessToken: values.whatsappAccessToken.trim(),
           apiVersion: values.whatsappApiVersion.trim(),
           language: "pt_BR",
-          templates: { production: values.whatsappProductionTemplate.trim(), delivery: values.whatsappDeliveryTemplate.trim(), completed: values.whatsappCompletedTemplate.trim() },
+          templates: { pickup: values.whatsappPickupTemplate.trim(), production: values.whatsappProductionTemplate.trim(), delivery: values.whatsappDeliveryTemplate.trim(), completed: values.whatsappCompletedTemplate.trim() },
         }} : {}),
         ...(dirty.automaticOrderStatus ? { automaticOrderStatus: values.automaticOrderStatus } : {}),
         ...(dirty.overdueOrderAlertEnabled ? { overdueOrderAlertEnabled: values.overdueOrderAlertEnabled } : {}),
@@ -830,6 +832,7 @@ export function SettingsForm({
               form.resetField("whatsappAccessToken", { defaultValue: "" });
               form.resetField("whatsappApiVersion", { defaultValue: connection.integration.apiVersion || "v25.0" });
               form.resetField("whatsappProductionTemplate", { defaultValue: connection.integration.templates?.production || "pedido_producao" });
+              form.resetField("whatsappPickupTemplate", { defaultValue: connection.integration.templates?.pickup || "" });
               form.resetField("whatsappDeliveryTemplate", { defaultValue: connection.integration.templates?.delivery || "pedido_entrega" });
               form.resetField("whatsappCompletedTemplate", { defaultValue: connection.integration.templates?.completed || "pedido_concluido" });
             }} />
@@ -859,6 +862,10 @@ export function SettingsForm({
               <Muted id="whatsapp-production-help">Um único aviso. Parâmetros: número do pedido e detalhes.</Muted>
             </Field>
             <GridTwo>
+              <Field label="Pronto para retirada" error={form.formState.errors.whatsappPickupTemplate?.message}>
+                <Input autoComplete="off" spellCheck={false} {...form.register("whatsappPickupTemplate")} />
+                <Muted>Informe o nome do template aprovado na Meta para retirada. Deixe vazio para manter sem aviso.</Muted>
+              </Field>
               <Field label="Saiu para entrega" error={form.formState.errors.whatsappDeliveryTemplate?.message}>
                 <Input autoComplete="off" spellCheck={false} aria-describedby="whatsapp-delivery-help" aria-invalid={!!form.formState.errors.whatsappDeliveryTemplate} {...form.register("whatsappDeliveryTemplate")} />
                 <Muted id="whatsapp-delivery-help">Parâmetro: número do pedido.</Muted>

@@ -33,7 +33,7 @@ export async function AdminAttention() {
           {stalled ? stalled.length ? (
             <List>{stalled.map(({ order, hours }) => (
               <Row key={order.id}>
-                <div><strong>Pedido #{order.orderNumber ?? order.id}</strong><Detail>{order.customer.name} · {statusLabel(order.status)}</Detail></div>
+                <div><strong>Pedido #{order.orderNumber ?? order.id}</strong><Detail>{order.customer.name} · {statusLabel(order.status, order.deliveryType)}</Detail></div>
                 <Duration>{hours}h no status</Duration>
               </Row>
             ))}</List>

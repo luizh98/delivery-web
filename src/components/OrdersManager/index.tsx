@@ -307,7 +307,7 @@ export function OrdersManager({
   }, [endDate, orders, search, startDate]);
   const filteredOrders = useMemo(
     () => matchingOrders.filter((order) => statusFilter
-      ? order.status === statusFilter
+      ? getOrderFilterStatus(order) === statusFilter
       : order.status !== "CANCELED"),
     [matchingOrders, statusFilter],
   );
@@ -542,7 +542,7 @@ export function OrdersManager({
                 {status === "OUT_FOR_DELIVERY" ? "Entrega" : statusLabel(status)}
               </StatusFilterLabel>
               <StatusCount>
-                {matchingOrders.filter((order) => order.status === status).length}
+                {matchingOrders.filter((order) => getOrderFilterStatus(order) === status).length}
               </StatusCount>
             </StatusFilter>
           );
@@ -604,7 +604,7 @@ export function OrdersManager({
                     <Hash size={16} aria-hidden="true" />
                     <strong>Pedido #{order.orderNumber ?? order.id.slice(-6).toUpperCase()}</strong>
                   </DetailRow>
-                  <StatusBadge>{statusLabel(order.status)}</StatusBadge>
+                  <StatusBadge>{statusLabel(order.status, order.deliveryType)}</StatusBadge>
                 </OrderHeader>
                 <DetailRow>
                   <UserRound size={16} aria-hidden="true" />
@@ -669,10 +669,10 @@ export function OrdersManager({
                     }
                     disabled={order.status === "CANCELED"}
                   >
-                    <option value={order.status}>{statusLabel(order.status)}</option>
-                    {nextStatuses.filter((status) => status !== order.status).map((status) => (
+                    <option value={order.status}>{statusLabel(order.status, order.deliveryType)}</option>
+                    {nextStatuses.filter((status) => status !== order.status && (status !== "OUT_FOR_DELIVERY" || order.deliveryType === "DELIVERY")).map((status) => (
                       <option key={status} value={status}>
-                        {statusLabel(status)}
+                        {statusLabel(status, order.deliveryType)}
                       </option>
                     ))}
                   </Select>
@@ -726,7 +726,7 @@ export function OrdersManager({
                 <Title id="order-details-title">
                   Pedido #{detailsOrder.orderNumber ?? detailsOrder.id.slice(-6).toUpperCase()}
                 </Title>
-                <Subtitle>{statusLabel(detailsOrder.status)}</Subtitle>
+                <Subtitle>{statusLabel(detailsOrder.status, detailsOrder.deliveryType)}</Subtitle>
                 <Subtitle>Data do pedido: {formatOrderDate(detailsOrder)}</Subtitle>
                 {detailsOrder.statusHistory.filter((entry) => entry.status === "OUT_FOR_DELIVERY" && entry.changedByName).slice(-1).map((entry) => (
                   <Subtitle key={entry.changedAt}>Retirado por {entry.changedByName} · {new Date(entry.changedAt).toLocaleString("pt-BR")}</Subtitle>
@@ -911,7 +911,9 @@ export function OrdersManager({
                   }}
                 >
                   {detailsNextStatus
-                    ? nextStatusLabels[detailsNextStatus]
+                    ? detailsOrder.deliveryType === "PICKUP" && (detailsNextStatus === "READY" || detailsNextStatus === "COMPLETED")
+                      ? statusLabel(detailsNextStatus, detailsOrder.deliveryType)
+                      : detailsOrder.deliveryType === "TABLE" && detailsNextStatus === "READY" ? "Pronto para servir" : nextStatusLabels[detailsNextStatus]
                     : detailsOrder.status === "CANCELED" ? "Pedido cancelado" : "Pedido concluído"}
                 </Button>
               </ButtonRow>
@@ -989,6 +991,10 @@ function hasCashChange(order: OrderResponse) {
   return order.paymentMethod === "CASH"
     && order.changeForCents != null
     && order.changeForCents > 0;
+}
+
+function getOrderFilterStatus(order: OrderResponse): OrderStatus {
+  return order.deliveryType === "PICKUP" && order.status === "OUT_FOR_DELIVERY" ? "READY" : order.status;
 }
 
 function getNextOrderStatus(order: OrderResponse): OrderStatus | null {

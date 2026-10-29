@@ -88,7 +88,7 @@ export type RestaurantConfigResponse = {
     phoneNumberId: string;
     apiVersion: string;
     language: string;
-    templates: { production?: string; delivery?: string; completed?: string } | null;
+    templates: { production?: string; delivery?: string; pickup?: string; completed?: string } | null;
     tokenConfigured: boolean;
 	  source?: "manual" | "embedded_signup" | "disconnected";
 	  wabaId?: string;

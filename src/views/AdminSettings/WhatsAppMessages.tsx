@@ -64,6 +64,7 @@ export function WhatsAppMessages({ integration, connectionRevision, onUpdated }:
     if (!data || busy) return;
     if (isDirty && !await requestConfirmation({ message: "Há alterações não salvas nesta mensagem. Deseja descartá-las?", confirmLabel: "Descartar alterações" })) return;
     if (next === stage) { setStage(null); reset({ body: "" }); setError(""); setNotice(""); return; }
+    setMode(next === "pickup" ? "pickup" : "delivery");
     setStage(next); reset({ body: data.messages[next].draft }); setShowPreview(false); setError(""); setNotice("");
     selection.current = { start: data.messages[next].draft.length, end: data.messages[next].draft.length };
   }

@@ -86,3 +86,14 @@ test("filled markers stay still and current marker supports reduced motion", () 
     assert.equal(marker(state).match(/<span class="([^"]+)"/)[1].split(" ").includes(pulseClass), false);
   }
 });
+
+test("legacy pickup dispatch shows ready step with its original timestamp", () => {
+  const value = order("OUT_FOR_DELIVERY", "PICKUP");
+  value.statusHistory.push({ status: "OUT_FOR_DELIVERY", changedAt: "2026-10-13T12:05:00Z" });
+  const nodes = timeline(value);
+  const markers = nodes.filter((node) => node.type === "TimelineMarker");
+  assert.equal(markers[3].props.state, "current");
+  assert.equal(nodes.filter((node) => node.type === "TimelineTime").length, 3);
+  value.status = "CANCELED";
+  assert.equal(timeline(value).some((node) => node.type === "TimelineMarker" && node.props.state === "current"), false);
+});

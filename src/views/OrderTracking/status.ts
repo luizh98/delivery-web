@@ -27,6 +27,7 @@ const PICKUP_STEPS: TrackingStep[] = [
 ];
 
 export function getTrackingSteps(deliveryType: DeliveryType) {
+  if (deliveryType === "TABLE") return PICKUP_STEPS.map((step) => ({ ...step, label: step.status === "READY" ? "Pronto para servir" : step.status === "COMPLETED" ? "Concluído" : step.label }));
   return deliveryType === "DELIVERY" ? DELIVERY_STEPS : PICKUP_STEPS;
 }
 
@@ -34,6 +35,7 @@ export function getTrackingStatus(
   status: OrderStatus,
   deliveryType: DeliveryType,
 ): OrderStatus {
+  if (deliveryType === "PICKUP" && status === "OUT_FOR_DELIVERY") return "READY";
   return deliveryType === "DELIVERY" && status === "READY" ? "PREPARING" : status;
 }
 
@@ -58,6 +60,7 @@ export function getStatusPresentation(
         description: "Cozinha está preparando seu pedido.",
       };
     case "READY":
+      if (deliveryType === "TABLE") return { title: "Pronto para servir", description: "Seu pedido está pronto para ser servido na mesa." };
       return deliveryType === "DELIVERY"
         ? {
             title: "Pedido pronto",
@@ -73,6 +76,7 @@ export function getStatusPresentation(
         description: "Seu pedido está a caminho.",
       };
     case "COMPLETED":
+      if (deliveryType === "TABLE") return { title: "Pedido concluído", description: "Bom apetite!" };
       return deliveryType === "DELIVERY"
         ? {
             title: "Pedido entregue",

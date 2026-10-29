@@ -1,4 +1,4 @@
-export type MessageStage = "production" | "delivery" | "completed";
+export type MessageStage = "production" | "delivery" | "pickup" | "completed";
 export type MessageMode = "delivery" | "pickup" | "table";
 export type MessageVersion = { name: string; body: string; keys: string[]; status: string };
 export type MessageEditor = { draft: string; active?: MessageVersion; candidate?: MessageVersion };
@@ -15,6 +15,7 @@ export type WhatsAppMessagesResponse = {
 export const messageStages: { key: MessageStage; label: string; description: string }[] = [
   { key: "production", label: "Confirmado e em preparo", description: "Quando o pedido é recebido, confirmado ou entra automaticamente em preparo." },
   { key: "delivery", label: "Saiu para entrega", description: "Quando o entregador sai com um pedido de entrega." },
+  { key: "pickup", label: "Pronto para retirada", description: "Quando um pedido de retirada fica pronto no restaurante." },
   { key: "completed", label: "Concluído e avaliação", description: "Ao concluir o pedido. O cliente pode responder com sua nota." },
 ];
 

@@ -9,6 +9,7 @@ export const whatsappSettingsSchema = z.object({
   whatsappProductionTemplate: templateName,
   whatsappDeliveryTemplate: templateName,
   whatsappCompletedTemplate: templateName,
+  whatsappPickupTemplate: z.union([templateName, z.literal("")]).optional(),
   tokenConfigured: z.boolean(),
 }).superRefine((values, context) => {
   if (!values.whatsappAccessToken && !values.tokenConfigured) {
