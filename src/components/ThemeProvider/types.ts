@@ -6,6 +6,9 @@ export type ThemeVars = CSSProperties & {
   "--tenant-secondary": string;
   "--color-primary": string;
   "--color-secondary": string;
+  "--color-primary-foreground": string;
+  "--color-secondary-foreground": string;
+  "--color-primary-text": string;
 };
 
 export type ThemeProviderProps = {

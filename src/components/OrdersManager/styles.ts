@@ -67,7 +67,7 @@ export const StatusFilter = styled("button", {
 
   svg: {
     flexShrink: 0,
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 
   "&:hover": {
@@ -250,7 +250,7 @@ export const DetailRow = styled("div", {
 
   svg: {
     flexShrink: 0,
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 });
 
@@ -270,7 +270,7 @@ export const StatusBadge = styled("span", {
   padding: "0.25rem 0.5rem",
   fontSize: "0.75rem",
   fontWeight: 600,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const ReceivedTime = styled("p", {
@@ -279,7 +279,7 @@ export const ReceivedTime = styled("p", {
   gap: "0.3rem",
   fontSize: "0.8rem",
   fontWeight: 600,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 
   variants: {
     overdue: {
@@ -415,7 +415,7 @@ export const ModalSectionTitle = styled("h3", {
   color: "var(--color-foreground)",
 
   svg: {
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 });
 
@@ -439,7 +439,7 @@ export const ModalInfo = styled("div", {
   fontSize: "0.875rem",
 
   "> svg": {
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 });
 
@@ -455,7 +455,7 @@ export const MapsLink = styled("a", {
   gap: "0.3rem",
   fontSize: "0.8rem",
   fontWeight: 700,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 
   "&:hover": {
     textDecoration: "underline",
@@ -480,7 +480,7 @@ export const TotalRow = styled("div", {
         marginTop: "0.25rem",
         paddingTop: "0.65rem",
         fontSize: "1rem",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
     },
   },

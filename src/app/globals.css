@@ -7,8 +7,11 @@
   --surface-muted: #eef1f4;
   --border: #d9dee5;
   --muted: #64707d;
-  --tenant-primary: #0f766e;
-  --tenant-secondary: #f59e0b;
+  --tenant-primary: #f95c09;
+  --tenant-secondary: #202321;
+  --color-primary-foreground: #202321;
+  --color-secondary-foreground: #ffffff;
+  --color-primary-text: #b83e05;
   --success: #16a34a;
   --success-hover: #15803d;
   --overdue-neon: #ef233c;

@@ -34,7 +34,7 @@ export const AccountLink = styled("button", {
   border: 0,
   background: "transparent",
   padding: 0,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
   font: "inherit",
   fontSize: "0.875rem",
   fontWeight: 700,

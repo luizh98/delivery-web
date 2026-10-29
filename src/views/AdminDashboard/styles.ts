@@ -33,7 +33,7 @@ export const MetricTop = styled("span", {
 });
 export const MetricIcon = styled("span", {
   display: "grid", placeItems: "center", width: "1.9rem", height: "1.9rem",
-  borderRadius: "0.4rem", color: "var(--color-primary)",
+  borderRadius: "0.4rem", color: "var(--color-primary-text)",
   background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
 });
 export const MetricLabel = styled("span", { minWidth: 0, fontSize: "0.75rem", color: "var(--color-muted)" });
@@ -208,4 +208,4 @@ export const LinkCard = styled("a", {
   border: "1px solid var(--color-border)", background: "var(--color-surface)", padding: "0.875rem", fontWeight: 600,
   "&:hover": { borderColor: "var(--color-primary)" },
 });
-export const LinkIcon = styled("span", { color: "var(--color-primary)" });
+export const LinkIcon = styled("span", { color: "var(--color-primary-text)" });

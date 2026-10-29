@@ -207,7 +207,7 @@ export const InfoCard = styled("div", {
 
   svg: {
     marginTop: "0.1rem",
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 
   "&[data-wide]": {

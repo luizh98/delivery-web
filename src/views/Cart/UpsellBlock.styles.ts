@@ -17,7 +17,7 @@ export const Title = styled("h2", {
   fontSize: "1rem",
   fontWeight: 700,
 
-  svg: { flexShrink: 0, color: "var(--color-primary)" },
+  svg: { flexShrink: 0, color: "var(--color-primary-text)" },
 });
 
 export const Track = styled("div", {
@@ -77,7 +77,7 @@ export const AddButton = styled("button", {
   border: "1px solid var(--color-primary)",
   borderRadius: "50%",
   background: "var(--color-primary)",
-  color: "#ffffff",
+  color: "var(--color-primary-foreground)",
   boxShadow: "0 2px 8px rgb(0 0 0 / 0.22)",
   cursor: "pointer",
 
@@ -127,7 +127,7 @@ export const OriginalPrice = styled("span", {
 });
 
 export const OfferPrice = styled("strong", {
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
   fontSize: "0.95rem",
 });
 

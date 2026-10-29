@@ -8,7 +8,7 @@ export const PriceRow = styled("span", {
   fontVariantNumeric: "tabular-nums",
   lineHeight: 1.5,
   "&[data-discounted]": {
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 });
 
@@ -32,7 +32,7 @@ export const DiscountBadge = styled("span", {
   borderRadius: "0.375rem",
   padding: "0.1875rem 0.4375rem",
   background: "color-mix(in srgb, var(--color-primary) 13%, var(--color-surface))",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
   fontSize: "inherit",
   fontWeight: 800,
   whiteSpace: "nowrap",

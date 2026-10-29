@@ -87,7 +87,7 @@ export const StatusBadge = styled("span", {
     tone: {
       active: {
         background: "color-mix(in srgb, var(--color-primary) 14%, transparent)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
       completed: {
         background: "#dcfce7",
@@ -151,7 +151,7 @@ export const CardAction = styled("button", {
   borderRadius: "0.5rem",
   background: "transparent",
   padding: "0.625rem",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
   cursor: "pointer",
   fontSize: "0.875rem",
   fontWeight: 700,
@@ -198,7 +198,7 @@ export const StateIcon = styled("span", {
   placeItems: "center",
   borderRadius: "9999px",
   background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const StateTitle = styled("h2", {

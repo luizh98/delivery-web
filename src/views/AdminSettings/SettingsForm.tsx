@@ -19,6 +19,7 @@ import {
   normalizeBrazilianMobile,
 } from "@/utils/customerInput";
 import { centsToReais, reaisToCents } from "@/utils/format";
+import { DEFAULT_THEME, themeForeground } from "@/utils/theme";
 import { OperatingHoursEditor } from "./OperatingHoursEditor";
 import { whatsappSettingsSchema } from "./whatsappSettings";
 import { WhatsAppConnection } from "./WhatsAppConnection";
@@ -340,8 +341,8 @@ export function SettingsForm({
         initialConfig?.deliverySettings?.freeDeliveryMinimumOrderCents ?? 0,
       ),
       freeDeliveryDays: initialConfig?.deliverySettings?.freeDeliveryDays ?? [],
-      primaryColor: initialConfig?.theme?.primaryColor ?? "#0f766e",
-      secondaryColor: initialConfig?.theme?.secondaryColor ?? "#f59e0b",
+      primaryColor: initialConfig?.theme?.primaryColor || DEFAULT_THEME.primaryColor,
+      secondaryColor: initialConfig?.theme?.secondaryColor || DEFAULT_THEME.secondaryColor,
       metaPixelId: initialConfig?.integrations?.metaPixel?.pixelId ?? "",
       metaPixelEnabled: initialConfig?.integrations?.metaPixel?.enabled ?? false,
       street: initialConfig?.address?.street ?? "",
@@ -769,6 +770,7 @@ export function SettingsForm({
               style={{
                 "--preview-primary": primaryColor,
                 "--preview-secondary": secondaryColor,
+                "--preview-primary-foreground": themeForeground(primaryColor),
               } as CSSProperties}
             >
               <ThemePreviewBanner

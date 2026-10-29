@@ -26,7 +26,7 @@ export const CarouselHeading = styled("div", {
 
   svg: {
     flexShrink: 0,
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 });
 
@@ -109,5 +109,5 @@ export const CarouselDescription = styled("span", {
 export const CarouselPrice = styled("span", {
   fontSize: "1rem",
   fontWeight: 800,
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });

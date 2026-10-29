@@ -59,7 +59,7 @@ export const StepItem = styled("li", {
     active: {
       true: {
         background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
-        color: "var(--color-primary)",
+        color: "var(--color-primary-text)",
       },
       false: {
         color: "var(--color-muted)",
@@ -81,7 +81,7 @@ export const StepNumber = styled("span", {
     active: {
       true: {
         background: "var(--color-primary)",
-        color: "var(--color-surface)",
+        color: "var(--color-primary-foreground)",
       },
       false: {},
     },
@@ -175,7 +175,7 @@ export const AddressSuggestion = styled("button", {
   svg: {
     flexShrink: 0,
     marginTop: "0.125rem",
-    color: "var(--color-primary)",
+    color: "var(--color-primary-text)",
   },
 
   "&:hover": {
@@ -241,7 +241,7 @@ export const AddressSummaryIcon = styled("span", {
   placeItems: "center",
   borderRadius: "9999px",
   background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 });
 
 export const AddressSummaryContent = styled("div", {
@@ -267,7 +267,7 @@ export const AddressSummaryEditButton = styled("button", {
   height: "2rem",
   placeItems: "center",
   borderRadius: "9999px",
-  color: "var(--color-primary)",
+  color: "var(--color-primary-text)",
 
   "&:hover": {
     background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
