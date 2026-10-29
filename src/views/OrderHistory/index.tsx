@@ -17,12 +17,14 @@ import { PageShell } from "@/components/PageShell";
 import { clientApi } from "@/services/api/client";
 import type {
   CustomerOrderHistoryResponse,
+  MenuResponse,
   OrderHistoryPageResponse,
   OrderStatus,
   PublicOrderTrackingResponse,
 } from "@/types/api";
 import { money } from "@/utils/format";
 import { getStatusPresentation } from "@/views/OrderTracking/status";
+import { buildRepeatOrderCartItems } from "./cartItems";
 import {
   CardAction,
   CardActions,
@@ -88,6 +90,7 @@ export function OrderHistoryView() {
   const [orders, setOrders] = useState<LoadedOrderHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [repeatingOrder, setRepeatingOrder] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
 
   const loadOrders = useCallback(async () => {
@@ -157,20 +160,17 @@ export function OrderHistoryView() {
     router.push("/");
   }
 
-  function repeatOrder(order: CustomerOrderHistoryResponse) {
-    addItems(
-      order.items.map((item) => ({
-        lineId: crypto.randomUUID(),
-        productId: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-        unitPriceCents: item.unitPriceCents,
-        observations: item.observations,
-        options: item.options,
-        totalCents: item.totalCents,
-      })),
-    );
-    router.push("/cart");
+  async function repeatOrder(order: CustomerOrderHistoryResponse) {
+    if (repeatingOrder) return;
+    setRepeatingOrder(true);
+    try {
+      addItems(await buildRepeatOrderCartItems(order, () =>
+        clientApi<MenuResponse>("public/menu", { cache: "no-store" }),
+      ));
+      router.push("/cart");
+    } finally {
+      setRepeatingOrder(false);
+    }
   }
 
   if (loading && orders.length === 0) {
@@ -307,7 +307,7 @@ export function OrderHistoryView() {
                       <ChevronRight size={18} aria-hidden="true" />
                     </CardAction>
                     {order.status === "COMPLETED" && "items" in order ? (
-                      <Button type="button" onClick={() => repeatOrder(order)}>
+                      <Button type="button" disabled={repeatingOrder} onClick={() => void repeatOrder(order)}>
                         <ShoppingCart size={18} aria-hidden="true" />
                         Pedir novamente
                       </Button>
