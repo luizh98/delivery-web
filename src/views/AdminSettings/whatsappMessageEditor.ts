@@ -1,4 +1,4 @@
-export type MessageStage = "production" | "delivery" | "completed";
+export type MessageStage = "production" | "delivery" | "pickup" | "completed";
 export type MessageMode = "delivery" | "pickup" | "table";
 export type MessageVersion = { name: string; body: string; keys: string[]; status: string };
 export type MessageEditor = { draft: string; active?: MessageVersion; candidate?: MessageVersion };
@@ -15,6 +15,7 @@ export type WhatsAppMessagesResponse = {
 export const messageStages: { key: MessageStage; label: string; description: string }[] = [
   { key: "production", label: "Confirmado e em preparo", description: "Quando o pedido é recebido, confirmado ou entra automaticamente em preparo." },
   { key: "delivery", label: "Saiu para entrega", description: "Quando o entregador sai com um pedido de entrega." },
+  { key: "pickup", label: "Pronto para retirada", description: "Quando um pedido de retirada fica pronto no restaurante." },
   { key: "completed", label: "Concluído e avaliação", description: "Ao concluir o pedido. O cliente pode responder com sua nota." },
 ];
 
@@ -39,4 +40,12 @@ export function previewWhatsAppMessage(body: string, parameters: MessageParamete
 
 export function messageReviewStatus(status?: string) {
   return ({ APPROVED: "Aprovada", PENDING: "Em análise pela Meta", SUBMITTING: "Envio em andamento", SUBMISSION_FAILED: "Falha ao enviar — tente novamente", SUBMISSION_UNCERTAIN: "Confirmação pendente — atualize o status", NOT_FOUND: "Não encontrada na Meta — envie novamente", REJECTED: "Não aprovada — ajuste o texto", PAUSED: "Pausada na Meta", DISABLED: "Desativada na Meta" } as Record<string, string>)[status ?? ""] ?? "Status pendente";
+}
+
+export function messageSubmissionNotice(editor: MessageEditor) {
+  if (!editor.candidate && editor.active?.status === "APPROVED") return "Esta mensagem já está aprovada e em uso. Altere o texto para enviar uma nova versão para aprovação.";
+  if (editor.candidate?.status === "PENDING") return editor.active?.status === "APPROVED"
+    ? "Mensagem enviada para análise. A versão aprovada continua em uso até a nova aprovação."
+    : "Mensagem enviada para análise pela Meta.";
+  return `Status da mensagem: ${messageReviewStatus(editor.candidate?.status ?? editor.active?.status)}.`;
 }

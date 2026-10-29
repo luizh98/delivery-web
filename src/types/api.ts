@@ -88,7 +88,7 @@ export type RestaurantConfigResponse = {
     phoneNumberId: string;
     apiVersion: string;
     language: string;
-    templates: { production?: string; delivery?: string; completed?: string } | null;
+    templates: { production?: string; delivery?: string; pickup?: string; completed?: string } | null;
     tokenConfigured: boolean;
 	  source?: "manual" | "embedded_signup" | "disconnected";
 	  wabaId?: string;
@@ -111,6 +111,7 @@ export type WhatsAppConnectionResponse = {
   provider: { enabled: boolean; testEnabled?: boolean; appId: string; configId: string; apiVersion: string };
   integration: NonNullable<RestaurantConfigResponse["whatsappIntegration"]>;
   pending: boolean;
+  reconnectRequired?: boolean;
   notificationsEnabled: boolean;
 };
 

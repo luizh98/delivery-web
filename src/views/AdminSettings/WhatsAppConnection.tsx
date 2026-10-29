@@ -180,7 +180,10 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       setConnection(result); changeRef.current(result);
       setMessageRefresh((value) => value + 1);
       setNotice(method === "DELETE" ? "WhatsApp desconectado. Para revogar também o acesso na Meta, use as configurações da sua conta." : "Status atualizado.");
-    } catch (failure) { setError(connectionErrorMessage(failure)); }
+    } catch (failure) {
+      setError(connectionErrorMessage(failure));
+      try { setConnection(await clientApi<WhatsAppConnectionResponse>("admin/whatsapp/connection")); } catch { /* Keep the original error visible. */ }
+    }
     finally { setBusy(false); }
   }
 
@@ -199,11 +202,11 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
       {connection ? <WhatsAppMessages integration={connection.integration} connectionRevision={JSON.stringify([connected, integration?.templates, integration?.templateStatus, messageRefresh])} onUpdated={() => {
         void clientApi<WhatsAppConnectionResponse>("admin/whatsapp/connection").then((result) => { setConnection(result); changeRef.current(result); }).catch((failure) => setError(connectionErrorMessage(failure)));
       }} /> : null}
-      {connection?.pending ? <Muted>Autorização salva. Clique em Atualizar status para retomar a preparação do número e das mensagens.</Muted> : null}
+      {connection?.reconnectRequired ? <Muted role="status">O prazo de 24 horas da Meta para sincronizar o WhatsApp Business expirou. Atualizar o status não renova esse prazo. Fale com o suporte antes de remover ou reconectar o número no WhatsApp Business.</Muted> : connection?.pending ? <Muted>Autorização salva. Clique em Atualizar status para retomar a preparação do número e das mensagens.</Muted> : null}
       <ConnectionActions>
-        <Button type="button" onClick={connect} disabled={busy || (!sdk && !centralOrigin) || !connection?.provider.enabled || !phoneSaved} aria-describedby={!connection?.provider.enabled ? "whatsapp-provider-help" : undefined}><Link2 size={18} aria-hidden="true" />{busy ? authorizing ? "Aguardando autorização na Meta…" : "Preparando WhatsApp…" : connected ? "Conectar novamente" : "Conectar WhatsApp"}</Button>
+        <Button type="button" onClick={connect} disabled={busy || (!sdk && !centralOrigin) || !connection?.provider.enabled || !phoneSaved} aria-describedby={!connection?.provider.enabled ? "whatsapp-provider-help" : undefined}><Link2 size={18} aria-hidden="true" />{busy ? authorizing ? "Aguardando autorização na Meta…" : "Preparando WhatsApp…" : connected || connection?.reconnectRequired ? "Conectar novamente" : "Conectar WhatsApp"}</Button>
         {busy && authorizing ? <Button type="button" variant="outline" onClick={cancelSignup}>Cancelar conexão</Button> : null}
-        {(embedded || connection?.pending) ? <Button type="button" variant="outline" disabled={busy || !connection?.provider.enabled} onClick={() => void updateConnection("POST")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
+        {(embedded || connection?.pending) ? <Button type="button" variant="outline" disabled={busy || !connection?.provider.enabled || connection?.reconnectRequired} onClick={() => void updateConnection("POST")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
         {(connected || connection?.pending) ? <Button type="button" variant="dangerText" disabled={busy} onClick={() => void updateConnection("DELETE")}><Unplug size={16} aria-hidden="true" /> Desconectar</Button> : null}
         {(!connection || (connection.provider.enabled && !sdk && !centralOrigin)) && error ? <Button type="button" variant="outline" onClick={() => {
           if (connection?.provider.enabled && !sdk && !centralOrigin) { window.location.reload(); return; }

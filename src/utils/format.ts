@@ -13,7 +13,11 @@ export function reaisToCents(reais: number) {
   return Math.round(reais * 100);
 }
 
-export function statusLabel(status: string) {
+export function statusLabel(status: string, deliveryType?: string) {
+  if (deliveryType === "PICKUP") {
+    if (status === "READY" || status === "OUT_FOR_DELIVERY") return "Pronto para retirada";
+  }
+  if (deliveryType === "TABLE" && status === "READY") return "Pronto para servir";
   const labels: Record<string, string> = {
     RECEIVED: "Recebido",
     CONFIRMED: "Confirmado",

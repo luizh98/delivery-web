@@ -70,7 +70,8 @@ function formatTime(value?: string) {
 
 function historyTime(order: PublicOrderTrackingResponse, status: string) {
   for (let index = order.statusHistory.length - 1; index >= 0; index -= 1) {
-    if (order.statusHistory[index].status === status) {
+    const historyStatus = order.statusHistory[index].status;
+    if (historyStatus === status || (order.deliveryType === "PICKUP" && historyStatus === "OUT_FOR_DELIVERY" && status === "READY")) {
       return order.statusHistory[index].changedAt;
     }
   }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { messageValidation, previewWhatsAppMessage, messageReviewStatus } from "./whatsappMessageEditor.ts";
+import { messageValidation, previewWhatsAppMessage, messageReviewStatus, messageSubmissionNotice } from "./whatsappMessageEditor.ts";
 
 const parameters = [
   { key: "nome_cliente", label: "Nome", delivery: "Ana", pickup: "Ana", table: "Ana" },
@@ -27,4 +27,15 @@ test("review states distinguish uncertainty, rejection and approval", () => {
   assert.match(messageReviewStatus("SUBMISSION_UNCERTAIN"), /pendente/);
   assert.match(messageReviewStatus("REJECTED"), /Não aprovada/);
   assert.equal(messageReviewStatus("APPROVED"), "Aprovada");
+});
+
+test("submission notice reflects reused approval instead of claiming a new review", () => {
+  const active = { name: "approved", body: "Pedido confirmado!", keys: [], status: "APPROVED" };
+  const approved = messageSubmissionNotice({ draft: active.body, active });
+  assert.match(approved, /já está aprovada e em uso/);
+  assert.doesNotMatch(approved, /enviada para análise/);
+  const candidate = { ...active, name: "next", status: "PENDING" };
+  assert.match(messageSubmissionNotice({ draft: active.body, active, candidate }), /enviada para análise.*aprovada continua em uso/);
+  assert.equal(messageSubmissionNotice({ draft: active.body, candidate }), "Mensagem enviada para análise pela Meta.");
+  assert.match(messageSubmissionNotice({ draft: active.body, active, candidate: { ...candidate, status: "REJECTED" } }), /Não aprovada/);
 });
