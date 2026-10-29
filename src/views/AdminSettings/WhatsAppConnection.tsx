@@ -82,7 +82,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
         if (!mounted.current) return;
         setConnection(result);
         changeRef.current(result);
-        setNotice("WhatsApp conectado. Confira a aprovação das mensagens e a cobrança antes de ativar os avisos.");
+        setNotice("WhatsApp conectado. Avisos dos pedidos ativados automaticamente. O envio depende da aprovação das mensagens e da cobrança na Meta.");
       } catch (failure) {
         if (mounted.current) setError(connectionErrorMessage(failure));
         // A partial server-side setup can be resumed by Atualizar status.

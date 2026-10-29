@@ -840,7 +840,7 @@ export function SettingsForm({
               <input type="checkbox" defaultChecked={initialConfig?.whatsappNotificationsEnabled ?? false} disabled={currentConfig?.whatsappIntegration?.source === "disconnected" || (currentConfig?.whatsappIntegration?.source === "embedded_signup" && !currentConfig.whatsappIntegration.ready)} {...form.register("whatsappNotificationsEnabled")} />
               <span>Enviar status dos pedidos por WhatsApp</span>
             </StatusToggle>
-            <Muted>Ative após conferir a cobrança na Meta e obter autorização dos clientes. Salve essa opção no botão Salvar alterações.</Muted>
+            <Muted>Ao conectar o WhatsApp, os avisos são ativados automaticamente. O envio depende da aprovação das mensagens e da cobrança na Meta. Envie apenas a clientes que autorizaram o contato. Para alterar esta opção, use Salvar alterações.</Muted>
             <AdvancedWhatsAppSettings open={Object.keys(form.formState.errors).some((field) => field.startsWith("whatsapp") && field !== "whatsappNotificationsEnabled" && field !== "whatsapp") || undefined}>
             <summary>Configuração avançada · cadastro manual</summary>
             <div>
