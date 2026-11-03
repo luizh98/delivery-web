@@ -44,7 +44,7 @@ function render(routes = [], enabled = true, orders = [order]) {
 
 test("pickup starts with physical check and one primary action", () => {
   const html = render();
-  for (const text of ["Para retirar · 1", "Em entrega · 0", "Retirar e sair para entrega", "Ler QR Code", "confira pedido físico"]) assert.ok(html.includes(text), text);
+  for (const text of ["Para retirar · 1", "Em entrega · 0", "Retirar e sair para entrega", "Ler QR Codes", "confira pedido físico"]) assert.ok(html.includes(text), text);
   assert.ok(!html.includes("Confirmar entrega"));
   assert.match(html, /aria-pressed="true"[^>]*>Para retirar/);
 });
