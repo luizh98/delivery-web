@@ -30,6 +30,11 @@ export const ToastRoot = styled("div", {
 
   variants: {
     variant: {
+      warning: {
+        borderColor: "#fcd34d",
+        background: "#fffbeb",
+        color: "#78350f",
+      },
       error: {
         borderColor: "#fecaca",
         background: "#fef2f2",
@@ -52,6 +57,9 @@ export const IconWrap = styled("span", {
 
   variants: {
     variant: {
+      warning: {
+        color: "#b45309",
+      },
       error: {
         color: "#dc2626",
       },

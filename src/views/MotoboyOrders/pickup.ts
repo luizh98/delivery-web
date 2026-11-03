@@ -1,7 +1,7 @@
 import { ApiError, clientApi } from "@/services/api/client";
 import type { OrderResponse } from "@/types/api";
 
-export type PickupResult = { success: boolean; message: string };
+export type PickupResult = { success: boolean; message: string; variant: "success" | "warning" };
 
 export function pickupOrderId(code: string) {
   const match = /^flyfoods:pickup:v1:([A-Za-z0-9_-]{1,64}):[A-Za-z0-9_-]{43}$/.exec(code);
@@ -29,9 +29,9 @@ export async function confirmPickup(orderId: string, qrCode: string | undefined,
         : error instanceof ApiError && error.status === 403
           ? "Retirada indisponível. Verifique sua permissão com o restaurante."
           : "Não foi possível confirmar o resultado da retirada. Confira seus pedidos e tente novamente; repetir não duplica a saída.";
-    return { success: false, message: `${message} ${updated ? "Lista atualizada." : "Lista não atualizada. Toque em Atualizar para conferir."}` };
+    return { success: false, variant: "warning", message: `${message} ${updated ? "Lista atualizada." : "Lista não atualizada. Toque em Atualizar para conferir."}` };
   }
   const updated = await reload();
   const label = order.orderNumber ?? order.id.slice(-6).toUpperCase();
-  return { success: true, message: `Pedido #${label}: saída confirmada.${updated ? "" : " Não foi possível atualizar a lista. Toque em Atualizar para conferir."}` };
+  return { success: true, variant: updated ? "success" : "warning", message: `Pedido #${label}: saída confirmada.${updated ? "" : " Não foi possível atualizar a lista. Toque em Atualizar para conferir."}` };
 }

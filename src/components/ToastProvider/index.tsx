@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { createPortal } from "react-dom";
 import {
   createContext,
   useCallback,
@@ -19,16 +20,18 @@ type Toast = {
   variant: ToastVariant;
 };
 
-type ToastVariant = "success" | "error";
+type ToastVariant = "success" | "error" | "warning";
 
 type ToastContextValue = {
   showToast: (message: string, variant?: ToastVariant) => void;
+  setToastHost: (host: HTMLElement | null) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toastHost, setToastHost] = useState<HTMLElement | null>(null);
   const timeouts = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
   const dismissToast = useCallback((id: number) => {
@@ -61,35 +64,38 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ showToast }), [showToast]);
+  const value = useMemo(() => ({ showToast, setToastHost }), [showToast]);
+
+  const viewport = (
+    <Viewport aria-live="polite" aria-atomic="true">
+      {toasts.map((toast) => (
+        <ToastRoot key={toast.id} variant={toast.variant}>
+          <IconWrap variant={toast.variant}>
+            {toast.variant === "error" ? <AlertCircle size={18} /> : toast.variant === "warning" ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
+          </IconWrap>
+          <p>{toast.message}</p>
+        </ToastRoot>
+      ))}
+    </Viewport>
+  );
 
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <Viewport
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {toasts.map((toast) => (
-          <ToastRoot
-            key={toast.id}
-            variant={toast.variant}
-          >
-            {toast.variant === "error" ? (
-              <IconWrap variant="error">
-                <AlertCircle size={18} />
-              </IconWrap>
-            ) : (
-              <IconWrap variant="success">
-                <CheckCircle2 size={18} />
-              </IconWrap>
-            )}
-            <p>{toast.message}</p>
-          </ToastRoot>
-        ))}
-      </Viewport>
+      {toastHost ? createPortal(viewport, toastHost) : viewport}
     </ToastContext.Provider>
   );
+}
+
+// Native dialogs are above the page's z-index stack; host the shared toast inside them.
+export function ToastHost() {
+  const { setToastHost } = useToast();
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setToastHost(host.current);
+    return () => setToastHost(null);
+  }, [setToastHost]);
+  return <div ref={host} style={{ display: "contents" }} />;
 }
 
 export function useToast() {

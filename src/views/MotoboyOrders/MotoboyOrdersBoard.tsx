@@ -140,12 +140,12 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
     });
     if (!confirmed) return;
     const result = await performPickup(order.id);
-    showToast(result.message, result.success ? "success" : "error");
+    showToast(result.message, result.variant);
   }
 
   async function scanPickup(code: string): Promise<PickupResult> {
     const id = pickupOrderId(code);
-    if (!id) return { success: false, message: "QR Code inválido. Leia o código de retirada no cupom do pedido." };
+    if (!id) return { success: false, variant: "warning", message: "QR Code inválido. Leia o código de retirada no cupom do pedido." };
     return performPickup(id, code);
   }
 
