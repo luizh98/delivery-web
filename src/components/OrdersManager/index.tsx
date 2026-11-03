@@ -35,6 +35,7 @@ import { useToast } from "@/components/ToastProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
 import { isAutomaticConnectorEnabled } from "@/services/printing/connector";
+import { splitPickupQr } from "@/services/printing/pickupQr";
 import { money, statusLabel } from "@/utils/format";
 import { getOrderOverdueMinutes } from "@/utils/orders/overdue";
 import type {
@@ -104,7 +105,7 @@ async function getPrintContent(order: OrderResponse, destination: "RECEIPT" | "K
   return response.text();
 }
 
-function renderPrintContent(printWindow: Window, content: string) {
+async function renderPrintContent(printWindow: Window, content: string) {
   const printBody = printWindow.document.createElement("pre");
 
   printWindow.document.title = "Impressão do pedido";
@@ -115,7 +116,20 @@ function renderPrintContent(printWindow: Window, content: string) {
   printBody.style.margin = "0";
   printBody.style.whiteSpace = "pre-wrap";
   printBody.style.fontFamily = "monospace";
-  printBody.textContent = content;
+  printBody.style.width = "42ch";
+  printBody.style.maxWidth = "100%";
+  printBody.style.overflowWrap = "anywhere";
+  const { text, qrCode } = splitPickupQr(content);
+  printBody.textContent = text;
+  if (qrCode) {
+    const { default: QRCode } = await import("qrcode");
+    const image = printWindow.document.createElement("img");
+    image.alt = "QR Code para retirada pelo motoboy";
+    image.src = await QRCode.toDataURL(qrCode, { width: 240, margin: 4, errorCorrectionLevel: "M" });
+    image.style.cssText = "display:block;width:36mm;max-width:100%;height:auto;margin:0 auto;break-inside:avoid";
+    printBody.append(image);
+    await image.decode();
+  }
 }
 
 function claimAutomaticPrint(orderId: string) {
@@ -172,7 +186,7 @@ async function printOrderDirectly(order: OrderResponse, destination: "RECEIPT" |
       throw new Error("Janela de impressão indisponível.");
     }
 
-    renderPrintContent(printWindow, content);
+    await renderPrintContent(printWindow, content);
     const cleanup = () => printFrame?.remove();
     printWindow.addEventListener("afterprint", cleanup, { once: true });
     window.setTimeout(cleanup, 60_000);
@@ -472,7 +486,7 @@ export function OrdersManager({
 
     try {
       const content = await getPrintContent(order, printDestination);
-      renderPrintContent(printWindow, content);
+      await renderPrintContent(printWindow, content);
       printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
       printWindow.focus();
       printWindow.print();
