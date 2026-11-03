@@ -14,8 +14,8 @@ import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { RestaurantConfigResponse } from "@/types/api";
 import {
-  formatBrazilianMobileInput,
-  isValidBrazilianMobile,
+  formatBrazilianPhoneInput,
+  isValidBrazilianPhone,
   normalizeBrazilianMobile,
 } from "@/utils/customerInput";
 import { centsToReais, reaisToCents } from "@/utils/format";
@@ -76,8 +76,8 @@ const settingsBaseSchema = z.object({
     "Informe pelo menos 2 caracteres no nome.",
   ),
   whatsapp: z.string().refine(
-    (value) => !value.trim() || isValidBrazilianMobile(value),
-    "Informe um celular válido com DDD.",
+    (value) => !value.trim() || isValidBrazilianPhone(value),
+    "Informe um telefone fixo ou celular válido com DDD.",
   ),
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
@@ -301,7 +301,7 @@ export function SettingsForm({
     resolver: zodResolver(settingsBaseSchema),
     defaultValues: {
       name: initialConfig?.name ?? "",
-      whatsapp: formatBrazilianMobileInput(initialConfig?.whatsapp ?? ""),
+      whatsapp: formatBrazilianPhoneInput(initialConfig?.whatsapp ?? ""),
       menuDescription: initialConfig?.menuDescription ??
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
@@ -637,14 +637,15 @@ export function SettingsForm({
           <Field label="Nome" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} />
           </Field>
-          <Field label="Celular" error={form.formState.errors.whatsapp?.message}>
+          <Field label="Telefone / celular" error={form.formState.errors.whatsapp?.message}>
             <Input
               inputMode="numeric"
               autoComplete="tel"
+              placeholder="(19) 3681-6150 ou (19) 99876-5432"
               maxLength={17}
               {...form.register("whatsapp")}
               onInput={(event) => {
-                event.currentTarget.value = formatBrazilianMobileInput(
+                event.currentTarget.value = formatBrazilianPhoneInput(
                   event.currentTarget.value,
                 );
               }}
@@ -850,7 +851,7 @@ export function SettingsForm({
             <GridTwo>
               <Field label="ID do número na Meta" error={form.formState.errors.whatsappPhoneNumberId?.message}>
                 <Input inputMode="numeric" autoComplete="off" placeholder="Ex.: 123456789012345" aria-describedby="whatsapp-number-help" aria-invalid={!!form.formState.errors.whatsappPhoneNumberId} {...form.register("whatsappPhoneNumberId")} />
-                <Muted id="whatsapp-number-help">É o Phone Number ID, não o telefone. Use o número cadastrado em Restaurante → Celular.</Muted>
+                <Muted id="whatsapp-number-help">É o Phone Number ID, não o telefone. Use o número cadastrado em Restaurante → Telefone / celular.</Muted>
               </Field>
               <Field label={currentConfig?.whatsappIntegration?.tokenConfigured ? "Substituir token de acesso" : "Token de acesso"} error={form.formState.errors.whatsappAccessToken?.message}>
                 <Input type="password" autoComplete="new-password" spellCheck={false} placeholder={currentConfig?.whatsappIntegration?.tokenConfigured ? "Deixe vazio para manter" : "Cole o token da Meta"} aria-describedby="whatsapp-token-help" aria-invalid={!!form.formState.errors.whatsappAccessToken} {...form.register("whatsappAccessToken")} />

@@ -29,6 +29,20 @@ export function isValidBrazilianMobile(value: string) {
   return /^[1-9]\d9\d{8}$/.test(normalizeBrazilianMobile(value));
 }
 
+export function formatBrazilianPhoneInput(value: string) {
+  const digits = normalizeBrazilianMobile(value);
+  if (digits.length > 10) return formatBrazilianMobileInput(value);
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+}
+
+export function isValidBrazilianPhone(value: string) {
+  return /^[1-9]\d\d{8}$/.test(normalizeBrazilianMobile(value))
+    || isValidBrazilianMobile(value);
+}
+
 export function formatBrazilianDateInput(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
 
