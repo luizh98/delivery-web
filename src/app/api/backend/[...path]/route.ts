@@ -49,6 +49,15 @@ async function forward(request: NextRequest, context: RouteParams) {
 
   const tenantSlug = resolveTenantFromHeaders(request.headers);
   headers.set("X-Tenant-Slug", tenantSlug);
+  if (adminRoute) {
+    let adminPage = request.headers.get("x-admin-page");
+    if (!adminPage) {
+      try { adminPage = new URL(request.headers.get("referer") ?? "").pathname; } catch { /* Direct API calls may have no page. */ }
+    }
+    if (adminPage?.startsWith("/admin") && adminPage.length <= 300 && !/[?#\r\n]/.test(adminPage)) {
+      headers.set("X-Admin-Page", adminPage);
+    }
+  }
   if (contentType) {
     headers.set("Content-Type", contentType);
   }

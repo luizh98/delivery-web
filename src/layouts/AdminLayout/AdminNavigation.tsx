@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  History,
   Bike,
   CookingPot,
   LineChart,
@@ -63,6 +64,7 @@ const navItems = [
   { href: "/admin/deliveries", label: "Entregas", motoboyLabel: "Pedidos", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },
   { href: "/admin/users", label: "Usuários", icon: UserCog, adminOnly: true },
+  { href: "/admin/logs", label: "Logs", icon: History, adminOnly: true },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
   { href: "/admin/catalog/upsell", label: "Campanhas", icon: Sparkles },
   { href: "/admin/marketing/promotions", label: "Marketing", icon: Megaphone },
@@ -200,7 +202,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const isAdmin = admin.roles.includes("ADMIN");
-  const isMotoboy = admin.roles.includes("ENTREGADOR");
+  const isMotoboy = admin.roles.includes("ENTREGADOR") && !isAdmin;
 
   function openMobileMenu(event: ReactMouseEvent<HTMLButtonElement>) {
     menuButtonRef.current = event.currentTarget;
