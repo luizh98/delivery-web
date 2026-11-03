@@ -35,7 +35,6 @@ import { useToast } from "@/components/ToastProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
 import { isAutomaticConnectorEnabled } from "@/services/printing/connector";
-import { getSelectedPrinter, printTextWithQz } from "@/services/printing/qz";
 import { money, statusLabel } from "@/utils/format";
 import { getOrderOverdueMinutes } from "@/utils/orders/overdue";
 import type {
@@ -160,12 +159,6 @@ async function printOrderDirectly(order: OrderResponse, destination: "RECEIPT" |
 
   try {
     const content = await getPrintContent(order, destination);
-    const selectedPrinter = getSelectedPrinter();
-    if (selectedPrinter) {
-      await printTextWithQz(content, selectedPrinter);
-      return;
-    }
-
     printFrame = document.createElement("iframe");
     printFrame.setAttribute("aria-hidden", "true");
     printFrame.style.position = "fixed";
@@ -465,18 +458,6 @@ export function OrdersManager({
       }
     } catch {
       showToast("Não foi possível enviar pedido para a impressora.", "error");
-      return;
-    }
-
-    const selectedPrinter = getSelectedPrinter();
-    if (selectedPrinter) {
-      try {
-        const content = await getPrintContent(order, printDestination);
-        await printTextWithQz(content, selectedPrinter);
-        showToast("Pedido enviado para a impressora");
-      } catch {
-        showToast("Não foi possível imprimir via QZ Tray.", "error");
-      }
       return;
     }
 
