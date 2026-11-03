@@ -18,6 +18,7 @@ test("pickup confirmation survives reload failure and explains stale list", asyn
   const { confirmPickup } = load(async (...args) => { calls.push(args); return { id: "123", orderNumber: "B-7002" }; });
   const result = await confirmPickup("123", code, async () => false);
   assert.equal(result.success, true);
+  assert.equal(result.variant, "warning");
   assert.match(result.message, /B-7002: saída confirmada/);
   assert.match(result.message, /Não foi possível atualizar a lista/);
   assert.equal(calls.length, 1);
@@ -30,6 +31,7 @@ test("conflict only claims refreshed list when reload actually succeeds", async 
   for (const updated of [true, false]) {
     const result = await confirmPickup("123", code, async () => updated);
     assert.equal(result.success, false);
+    assert.equal(result.variant, "warning");
     assert.match(result.message, /já retirado por outro entregador/);
     assert.equal(result.message.includes("Lista atualizada."), updated);
     assert.equal(result.message.includes("Lista não atualizada."), !updated);
@@ -40,6 +42,7 @@ test("lost response explains uncertainty and preserves explicit safe retry", asy
   const { confirmPickup } = load(async () => { throw new Error("offline"); });
   const result = await confirmPickup("123", undefined, async () => false);
   assert.equal(result.success, false);
+  assert.equal(result.variant, "warning");
   assert.match(result.message, /Não foi possível confirmar o resultado/);
   assert.match(result.message, /repetir não duplica/);
   assert.doesNotMatch(result.message, /Lista atualizada\./);
@@ -49,8 +52,16 @@ test("notification recovery distinguishes recorded pickup from a pending departu
   const { confirmPickup } = load(async () => { throw new ApiError(500, JSON.stringify({ code: "pickup_notification_pending" })); });
   const result = await confirmPickup("123", code, async () => true);
   assert.equal(result.success, false);
+  assert.equal(result.variant, "warning");
   assert.match(result.message, /Retirada registrada, mas aviso de saída pendente/);
   assert.match(result.message, /novamente para recuperar o aviso/);
+});
+
+test("fully confirmed pickup uses the shared success toast variant", async () => {
+  const { confirmPickup } = load(async () => ({ id: "123", orderNumber: "B-7002" }));
+  const result = await confirmPickup("123", code, async () => true);
+  assert.equal(result.success, true);
+  assert.equal(result.variant, "success");
 });
 
 test("continuous reader resolves each signed payload to its order; arbitrary URLs are rejected", () => {

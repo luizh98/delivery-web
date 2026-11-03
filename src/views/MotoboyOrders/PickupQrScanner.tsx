@@ -3,12 +3,14 @@
 import { Camera, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
+import { ToastHost, useToast } from "@/components/ToastProvider";
 import { ScannerDialog, ScannerVideo, Subtitle } from "./styles";
 import type { PickupResult } from "./pickup";
 
 type Props = { onScan: (value: string) => Promise<PickupResult>; onClose: () => void };
 
 export function PickupQrScanner({ onScan, onClose }: Props) {
+  const { showToast } = useToast();
   const dialog = useRef<HTMLDialogElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const scan = useRef(onScan);
@@ -51,9 +53,16 @@ export function PickupQrScanner({ onScan, onClose }: Props) {
           setBusy(true);
           setFeedback(null);
           void scan.current(lastCode).then((response) => {
-            if (!disposed) setFeedback(response);
+            if (!disposed) {
+              setFeedback(response);
+              showToast(response.message, response.variant);
+            }
           }).catch(() => {
-            if (!disposed) setFeedback({ success: false, message: "Não foi possível confirmar o resultado. Confira seus pedidos e tente novamente." });
+            if (!disposed) {
+              const response: PickupResult = { success: false, variant: "warning", message: "Não foi possível confirmar o resultado. Confira seus pedidos e tente novamente." };
+              setFeedback(response);
+              showToast(response.message, response.variant);
+            }
           }).finally(() => {
             processing = false;
             if (!disposed) setBusy(false);
@@ -77,14 +86,15 @@ export function PickupQrScanner({ onScan, onClose }: Props) {
         if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
       });
     };
-  }, [onClose]);
+  }, [onClose, showToast]);
 
   return (
     <ScannerDialog ref={dialog} onCancel={(event) => { event.preventDefault(); onClose(); }} aria-labelledby="pickup-qr-title" aria-describedby="pickup-qr-help">
+      <ToastHost />
       <h2 id="pickup-qr-title"><Camera size={20} aria-hidden="true" /> Ler QR Codes</h2>
       <Subtitle id="pickup-qr-help">Leia os cupons, um de cada vez. Cada leitura confirma a retirada e a saída do pedido. A câmera permanece aberta para o próximo.</Subtitle>
       {error ? <p role="alert">{error}</p> : <ScannerVideo ref={video} autoPlay muted playsInline aria-label="Câmera para leitura do QR Code" />}
-      {busy ? <p role="status">Confirmando retirada… Aguarde antes de ler o próximo cupom.</p> : feedback ? <p role={feedback.success ? "status" : "alert"}>{feedback.message}{feedback.success ? " Aponte para o próximo cupom." : ""}</p> : !error ? <Subtitle role="status">Posicione o código inteiro na câmera, com boa iluminação.</Subtitle> : null}
+      {busy ? <p role="status">Confirmando retirada… Aguarde antes de ler o próximo cupom.</p> : !error ? <Subtitle role="status">Aponte para o próximo cupom. O resultado aparece na notificação.</Subtitle> : null}
       {feedback && !feedback.success && !busy ? <Button type="button" variant="outline" onClick={() => retry.current()}>Tentar este código novamente</Button> : null}
       <Button type="button" variant="outline" onClick={onClose} autoFocus><X size={16} aria-hidden="true" /> Fechar leitor</Button>
     </ScannerDialog>
