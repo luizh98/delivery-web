@@ -1,4 +1,5 @@
 import qz from "qz-tray";
+import { pickupPrintData } from "./pickupQr";
 
 const selectedPrinterKey = "delivery:qz-default-printer";
 const browserPrintPreference = "__browser__";
@@ -123,6 +124,6 @@ export async function printTextWithQz(content: string, printer = getSelectedPrin
     format: "plain",
     // Elgin i9 usa ESC/POS Cp1252 para acentos portugueses. Avanço evita
     // corte no fim; guilhotina separa cada pedido enviado pelo QZ Tray.
-    data: `${escPosCodePageCp1252}${content}\n${escPosFeedLines}${escPosFullCut}`,
+    data: `${escPosCodePageCp1252}${pickupPrintData(content)}\n${escPosFeedLines}${escPosFullCut}`,
   }]);
 }

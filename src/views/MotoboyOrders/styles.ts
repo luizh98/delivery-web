@@ -15,3 +15,11 @@ export const OrderTitle = styled("p", { display: "flex", alignItems: "center", g
 export const Address = styled("p", { display: "flex", alignItems: "start", gap: "0.35rem", marginTop: "0.3rem", fontSize: "0.875rem", lineHeight: 1.45, overflowWrap: "anywhere" });
 export const OrderMeta = styled("p", { marginTop: "0.2rem", fontSize: "0.75rem", color: "var(--color-muted)" });
 export const OrderActions = styled("div", { display: "flex", flexWrap: "wrap", gap: "0.5rem", "& button": { minHeight: "2.75rem" } });
+
+export const ScannerDialog = styled("dialog", {
+  margin: "auto", width: "calc(100% - 2rem)", maxWidth: "28rem", maxHeight: "calc(100dvh - 2rem)", overflowY: "auto",
+  padding: "1rem", border: "1px solid var(--color-border)", borderRadius: "0.5rem", background: "var(--color-surface)", color: "var(--color-foreground)",
+  "&[open]": { display: "grid", gap: "1rem" }, "&::backdrop": { background: "rgb(0 0 0 / 0.55)" },
+  "& h2": { display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700 },
+});
+export const ScannerVideo = styled("video", { width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "0.375rem", background: "var(--color-background)" });

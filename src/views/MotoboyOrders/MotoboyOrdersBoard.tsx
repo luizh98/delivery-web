@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Bike, CheckCircle2, ExternalLink, MapPin, PackageCheck, RefreshCw, UserRound } from "lucide-react";
+import { ArrowDown, ArrowUp, Bike, CheckCircle2, ExternalLink, MapPin, PackageCheck, QrCode, RefreshCw, UserRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
@@ -8,6 +8,7 @@ import { useToast } from "@/components/ToastProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { ApiError, clientApi } from "@/services/api/client";
 import type { DeliveryRouteResponse, OrderResponse } from "@/types/api";
+import { PickupQrScanner } from "./PickupQrScanner";
 import {
   Address,
   Empty,
@@ -78,6 +79,8 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(false);
+  const [scanningOrder, setScanningOrder] = useState<OrderResponse | null>(null);
+  const closeScanner = useCallback(() => setScanningOrder(null), []);
   const reloadVersion = useRef(0);
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
@@ -115,8 +118,8 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
     };
   }, [reload]);
 
-  async function pickupOrder(order: OrderResponse) {
-    const confirmed = await requestConfirmation({
+  async function pickupOrder(order: OrderResponse, qrCode?: string) {
+    const confirmed = qrCode !== undefined || await requestConfirmation({
       message: `Você conferiu o pedido #${order.orderNumber ?? order.id.slice(-6).toUpperCase()}, está com ele e vai sair para entrega?`,
       confirmLabel: "Confirmar saída",
     });
@@ -124,13 +127,15 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
     setLoadingId(order.id);
     ++reloadVersion.current;
     try {
-      await clientApi(`admin/motoboy/orders/${order.id}/pickup`, { method: "PATCH" });
+      await clientApi(`admin/motoboy/orders/${order.id}/pickup`, { method: "PATCH", ...(qrCode !== undefined ? { body: JSON.stringify({ qrCode }) } : {}) });
       await reload(true);
       setView("delivery");
       showToast("Saída confirmada. Pedido em entrega.");
     } catch (error) {
       showToast(error instanceof ApiError && error.status === 409
         ? "Pedido alterado ou já retirado por outro entregador. Lista atualizada."
+        : error instanceof ApiError && error.status === 400
+          ? "QR Code inválido para este pedido. Leia o código no cupom correto."
         : error instanceof ApiError && error.status === 403
           ? "Retirada indisponível. Verifique sua permissão com o restaurante."
           : "Não foi possível confirmar a saída. Atualize antes de tentar novamente.", "error");
@@ -204,7 +209,10 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
             <RouteCard key={order.id}>
               <OrderDetails order={order} />
               <OrderMeta>{order.status === "READY" ? "Pronto — confira antes de retirar" : "Em preparo — confira pedido físico"}</OrderMeta>
-              <Button type="button" disabled={loadingId !== null || refreshError} onClick={() => void pickupOrder(order)}><Bike size={16} aria-hidden="true" /> {loadingId === order.id ? "Confirmando saída…" : "Retirar e sair para entrega"}</Button>
+              <OrderActions>
+                <Button type="button" disabled={loadingId !== null || refreshError} onClick={() => void pickupOrder(order)}><Bike size={16} aria-hidden="true" /> {loadingId === order.id ? "Confirmando saída…" : "Retirar e sair para entrega"}</Button>
+                <Button type="button" variant="outline" disabled={loadingId !== null || refreshError} onClick={() => setScanningOrder(order)}><QrCode size={16} aria-hidden="true" /> Ler QR Code</Button>
+              </OrderActions>
             </RouteCard>
           ))}
         </PickupList>
@@ -239,6 +247,7 @@ export function MotoboyOrdersBoard({ initialRoutes, initialPickup }: Props) {
           })}
         </RouteCard>
       ))}
+      {scanningOrder ? <PickupQrScanner orderLabel={scanningOrder.orderNumber ?? scanningOrder.id.slice(-6).toUpperCase()} onClose={closeScanner} onScan={(value) => { const order = scanningOrder; closeScanner(); void pickupOrder(order, value); }} /> : null}
     </Root>
   );
 }
