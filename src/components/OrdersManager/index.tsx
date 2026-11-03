@@ -117,6 +117,9 @@ async function renderPrintContent(printWindow: Window, content: string) {
   printBody.style.margin = "0";
   printBody.style.whiteSpace = "pre-wrap";
   printBody.style.fontFamily = "monospace";
+  printBody.style.width = "42ch";
+  printBody.style.maxWidth = "100%";
+  printBody.style.overflowWrap = "anywhere";
   const { text, qrCode } = splitPickupQr(content);
   printBody.textContent = text;
   if (qrCode) {
@@ -124,8 +127,8 @@ async function renderPrintContent(printWindow: Window, content: string) {
     const image = printWindow.document.createElement("img");
     image.alt = "QR Code para retirada pelo motoboy";
     image.src = await QRCode.toDataURL(qrCode, { width: 240, margin: 4, errorCorrectionLevel: "M" });
-    image.style.cssText = "display:block;width:36mm;height:36mm;margin:0 auto;break-inside:avoid";
-    printWindow.document.body.append(image);
+    image.style.cssText = "display:block;width:36mm;max-width:100%;height:auto;margin:0 auto;break-inside:avoid";
+    printBody.append(image);
     await image.decode();
   }
 }
