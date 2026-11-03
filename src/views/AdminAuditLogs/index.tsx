@@ -45,10 +45,10 @@ export function AdminAuditLogsView() {
   return (
     <Root>
       <Header>
-        <div><Title>Logs</Title><Muted>Alterações feitas pela equipe. Registros mais recentes primeiro.</Muted></div>
-        <Button type="button" variant="secondary" disabled={loading} onClick={() => load(request.filters)}><RefreshCw size={16} aria-hidden="true" />Atualizar</Button>
+        <div><Title>Histórico de alterações</Title><Muted>Veja o que sua equipe alterou, quando e quais valores mudaram. Alterações mais recentes primeiro.</Muted></div>
+        <Button type="button" variant="primary" disabled={loading} onClick={() => load(request.filters)}><RefreshCw size={16} aria-hidden="true" />Atualizar</Button>
       </Header>
-      <Filters onSubmit={handleSubmit(applyFilters)} aria-label="Filtros dos logs">
+      <Filters onSubmit={handleSubmit(applyFilters)} aria-label="Filtros do histórico de alterações">
         <Field label="Usuário"><Input {...register("actor")} maxLength={120} placeholder="Nome, e-mail ou ID" /></Field>
         <Field label="Ação"><Select {...register("action")}><option value="">Todas as ações</option>{Object.entries(auditActions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
         <Field label="Recurso"><Select {...register("collection")}><option value="">Todos os recursos</option>{Object.entries(auditCollections).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
@@ -56,10 +56,10 @@ export function AdminAuditLogsView() {
         <Field label="Data inicial"><Input type="date" {...register("from")} /></Field>
         <Field label="Data final" error={errors.to?.message}><Input type="date" {...register("to")} aria-invalid={!!errors.to} /></Field>
         <Field label="Situação"><Select {...register("status")}><option value="">Todas as situações</option>{Object.entries(auditStatuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-        <Actions><Button type="submit" disabled={loading}><Filter size={16} aria-hidden="true" />Filtrar</Button><Button type="button" variant="secondary" disabled={loading} onClick={() => { reset(emptyFilters); load(emptyFilters); }}>Limpar</Button></Actions>
+        <Actions><Button type="submit" disabled={loading}><Filter size={16} aria-hidden="true" />Filtrar</Button><Button type="button" variant="outline" disabled={loading} onClick={() => { reset(emptyFilters); load(emptyFilters); }}>Limpar</Button></Actions>
       </Filters>
       <div aria-live="polite" aria-busy={loading}>
-        {loading ? <Notice role="status">Carregando logs...</Notice> : error ? <Notice role="alert">Não foi possível carregar os logs. Tente novamente em Atualizar.</Notice> : data?.items.length === 0 ? <Notice>Nenhum log encontrado. Altere os filtros ou aguarde novas alterações da equipe.</Notice> : (
+        {loading ? <Notice role="status">Carregando histórico de alterações...</Notice> : error ? <Notice role="alert">Não foi possível carregar o histórico de alterações. Tente novamente em Atualizar.</Notice> : data?.items.length === 0 ? <Notice>Nenhuma alteração encontrada. Altere os filtros ou aguarde novas alterações da equipe.</Notice> : (
           <List>
             {data?.items.map((entry) => {
               const changes = entry.changes ?? [];
@@ -92,7 +92,7 @@ export function AdminAuditLogsView() {
           </List>
         )}
       </div>
-      {data && !loading && !error && data.totalElements > 0 ? <Pagination aria-label="Paginação dos logs"><span>{data.totalElements} registros · Página {data.page + 1} de {data.totalPages}</span><Actions><Button type="button" variant="secondary" disabled={data.page === 0} onClick={() => load(request.filters, data.page - 1)}><ArrowLeft size={16} aria-hidden="true" />Anterior</Button><Button type="button" variant="secondary" disabled={data.page + 1 >= data.totalPages} onClick={() => load(request.filters, data.page + 1)}>Próxima<ArrowRight size={16} aria-hidden="true" /></Button></Actions></Pagination> : null}
+      {data && !loading && !error && data.totalElements > 0 ? <Pagination aria-label="Paginação do histórico de alterações"><span>{data.totalElements} registros · Página {data.page + 1} de {data.totalPages}</span><Actions><Button type="button" variant="outline" disabled={data.page === 0} onClick={() => load(request.filters, data.page - 1)}><ArrowLeft size={16} aria-hidden="true" />Anterior</Button><Button type="button" variant="outline" disabled={data.page + 1 >= data.totalPages} onClick={() => load(request.filters, data.page + 1)}>Próxima<ArrowRight size={16} aria-hidden="true" /></Button></Actions></Pagination> : null}
     </Root>
   );
 }
