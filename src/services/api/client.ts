@@ -13,6 +13,9 @@ export async function clientApi<T>(
   init?: RequestInit,
 ): Promise<T> {
   const headers = new Headers(init?.headers);
+  if (path.replace(/^\/+/, "").startsWith("admin/") && typeof window !== "undefined") {
+    headers.set("X-Admin-Page", window.location.pathname);
+  }
   if (!(init?.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
