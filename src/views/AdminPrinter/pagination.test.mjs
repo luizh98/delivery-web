@@ -13,6 +13,7 @@ test("printer history paginates ten jobs, preserves reprinting and resets after 
     createdAt: new Date(Date.UTC(2026, 9, 5, 12, 0, -index)).toISOString(),
   }));
   const reprinted = [];
+  const browserPreferences = new Map();
   const require = createRequire(import.meta.url);
   const compiled = { exports: {} };
   const source = ts.transpileModule(readFileSync(new URL("./index.tsx", import.meta.url), "utf8"), {
@@ -31,6 +32,8 @@ test("printer history paginates ten jobs, preserves reprinting and resets after 
       };
       if (name === "@/components/ToastProvider") return { useToast: () => ({ showToast: () => {} }) };
       if (name === "@/services/printing/connector") return {
+        isBrowserPrintEnabled: (destination) => browserPreferences.get(destination) === true,
+        setBrowserPrintEnabled: (destination, enabled) => browserPreferences.set(destination, enabled),
         getPrintOverview: async () => ({ devices: [], printers: [], destinations: [] }),
         getPrintJobs: async () => ({ jobs }), reprintJob: async (id) => { reprinted.push(id); },
       };
@@ -55,6 +58,13 @@ test("printer history paginates ten jobs, preserves reprinting and resets after 
   async function refresh() { button("Atualizar").props.onClick(); await tick(); }
 
   await refresh();
+  const browserCheckbox = () => render().find((node) => node.type === "InlineField" && text(node).includes("Permitir impressão de recibo")).props.children[0];
+  assert.equal(browserCheckbox().props.checked, false);
+  browserCheckbox().props.onChange({ target: { checked: true } });
+  assert.equal(browserPreferences.get("RECEIPT"), true);
+  assert.equal(browserCheckbox().props.checked, true);
+  browserCheckbox().props.onChange({ target: { checked: false } });
+  assert.equal(browserPreferences.get("RECEIPT"), false);
   assert.deepEqual(rows().map((node) => node.key), jobs.slice(0, 10).map((job) => job.id));
   assert.equal(button("Anterior").props.disabled, true);
   button("Próxima").props.onClick();
