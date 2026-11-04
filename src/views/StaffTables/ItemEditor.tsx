@@ -45,7 +45,7 @@ export function ItemEditor({ item, editing, onSave, onClose }: { item: DraftItem
       <Stack><Field label="Observação para a cozinha"><Textarea maxLength={1000} placeholder="Ex.: sem cebola, carne bem passada" {...form.register("observations")} /></Field>
         <Field label="Quantidade" error={form.formState.errors.quantity?.message}><Actions>
           <Button type="button" variant="outline" aria-label="Diminuir quantidade" disabled={values.quantity <= 1} onClick={() => form.setValue("quantity", Math.max(1, values.quantity - 1))}><Minus size={18} /></Button>
-          <Input type="number" min={1} max={999} inputMode="numeric" {...form.register("quantity", { valueAsNumber: true, required: "Informe a quantidade.", min: { value: 1, message: "Mínimo: 1." }, max: { value: 999, message: "Máximo: 999." } })} />
+          <Input aria-label="Quantidade" type="number" min={1} max={999} inputMode="numeric" {...form.register("quantity", { valueAsNumber: true, required: "Informe a quantidade.", min: { value: 1, message: "Mínimo: 1." }, max: { value: 999, message: "Máximo: 999." } })} />
           <Button type="button" variant="outline" aria-label="Aumentar quantidade" disabled={values.quantity >= 999} onClick={() => form.setValue("quantity", Math.min(999, values.quantity + 1))}><Plus size={18} /></Button>
         </Actions></Field>
       </Stack>
