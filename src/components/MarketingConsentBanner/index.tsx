@@ -18,7 +18,7 @@ export function MarketingConsentBanner() {
     setMarketingConsent,
   } = useMarketingConsent();
 
-  if (pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/admin") || pathname === "/salao") {
     return null;
   }
 

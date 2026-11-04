@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowDown,
   ArrowUp,
+  Armchair,
   ChevronDown,
   CopyPlus,
   ImagePlus,
@@ -11,6 +12,7 @@ import {
   Save,
   Search,
   Trash2,
+  Truck,
   Video,
   X,
 } from "lucide-react";
@@ -25,6 +27,7 @@ import { useToast } from "@/components/ToastProvider";
 import { ApiError, clientApi } from "@/services/api/client";
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { isProductDiscountValid, productSalePrice } from "@/utils/productPricing";
+import { productAvailability, productAvailabilityLabels, productMatchesChannel } from "@/utils/productAvailability";
 import type {
   Product,
   ProductCategory,
@@ -45,6 +48,7 @@ import {
 import type { ProductManagerProps } from "./types";
 import {
   AvailableTemplateCard,
+  AvailabilityBadge,
   BuilderTitle,
   CardTitle,
   CheckboxBackground,
@@ -101,6 +105,7 @@ import {
 } from "./styles";
 
 const productSchema = z.object({
+  availability: z.enum(["ALL", "DELIVERY", "TABLE"]),
   categoryId: z.string().min(1, "Selecione uma categoria."),
   name: z.string().min(2, "Informe o nome."),
   description: z.string().optional(),
@@ -190,6 +195,7 @@ const flagTones: Record<ProductFlagStyle, ProductFlagTone> = {
 };
 
 const defaultProductForm = (categoryId = ""): ProductForm => ({
+  availability: "ALL",
   categoryId,
   name: "",
   description: "",
@@ -209,6 +215,7 @@ function productToForm(product: Product): ProductForm {
   const salePrice = productSalePrice(product);
   const discounted = salePrice < product.priceCents;
   return {
+    availability: productAvailability(product),
     categoryId: product.categoryId,
     name: product.name,
     description: product.description ?? "",
@@ -382,6 +389,7 @@ export function ProductManager({
   const [productSearch, setProductSearch] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
   const [productStatusFilter, setProductStatusFilter] = useState("");
+  const [productChannelFilter, setProductChannelFilter] = useState<"" | "DELIVERY" | "TABLE">("");
   const [savedGroupsOpen, setSavedGroupsOpen] = useState(false);
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -773,6 +781,7 @@ export function ProductManager({
 
     try {
       const productPayload = {
+        availability: values.availability,
         categoryId: values.categoryId,
         name: values.name,
         description: values.description,
@@ -876,7 +885,8 @@ export function ProductManager({
     const matchesStatus =
       !productStatusFilter || product.active === (productStatusFilter === "active");
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    const matchesChannel = !productChannelFilter || productMatchesChannel(product, productChannelFilter);
+    return matchesSearch && matchesCategory && matchesStatus && matchesChannel;
   });
 
   return (
@@ -971,6 +981,15 @@ export function ProductManager({
               </Button>
             ) : null}
           </SectionHeader>
+
+          <Field label="Disponível em" error={form.formState.errors.availability?.message}>
+            <Select {...form.register("availability")}>
+              <option value="ALL">Delivery e salão</option>
+              <option value="DELIVERY">Somente delivery</option>
+              <option value="TABLE">Somente salão</option>
+            </Select>
+          </Field>
+          <Muted>Delivery inclui entrega e retirada. Salão inclui pedidos na mesa pelo funcionário ou QR Code.</Muted>
 
           <GridTwo>
             <Field label="Categoria" error={form.formState.errors.categoryId?.message}>
@@ -1316,6 +1335,14 @@ export function ProductManager({
               <option value="inactive">Inativo</option>
             </Select>
           </ProductCategoryFilterLabel>
+          <ProductCategoryFilterLabel>
+            <span>Filtrar disponibilidade</span>
+            <Select value={productChannelFilter} onChange={(event) => setProductChannelFilter(event.target.value as "" | "DELIVERY" | "TABLE")}>
+              <option value="">Todos os canais</option>
+              <option value="DELIVERY">Disponível no delivery</option>
+              <option value="TABLE">Disponível no salão</option>
+            </Select>
+          </ProductCategoryFilterLabel>
         </ProductToolbar>
         <ProductCount>
           {filteredProducts.length} de {products.length} produto(s)
@@ -1347,6 +1374,11 @@ export function ProductManager({
                   </ProductCategoryText>
                   <Description>{product.description}</Description>
                   <ProductMeta>
+                    <AvailabilityBadge>
+                      {productAvailability(product) !== "TABLE" ? <Truck size={14} aria-hidden="true" /> : null}
+                      {productAvailability(product) !== "DELIVERY" ? <Armchair size={14} aria-hidden="true" /> : null}
+                      {productAvailabilityLabels[productAvailability(product)]}
+                    </AvailabilityBadge>
                     <span>{visibleOptionGroupsCount(product)} grupo(s) de opcionais</span>
                     <StatusBadge active={product.active}>
                       {product.active ? "Ativo" : "Inativo"}

@@ -29,7 +29,7 @@ import {
 import { Field, Input } from "@/components/Field";
 import { PageShell } from "@/components/PageShell";
 import { useTracking } from "@/components/TrackingProvider";
-import { clientApi } from "@/services/api/client";
+import { ApiError, clientApi } from "@/services/api/client";
 import type {
   Address,
   DeliveryQuoteResponse,
@@ -43,6 +43,7 @@ import {
 } from "@/utils/customerInput";
 import { money, reaisToCents } from "@/utils/format";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
+import { tableMenuPath } from "@/utils/productAvailability";
 import {
   CartCard,
   CartCount,
@@ -162,7 +163,7 @@ const checkoutSchema = z
 type CartViewProps = {
   restaurantConfig: RestaurantConfigResponse | null;
   initialStep?: 1 | 2;
-  table?: { number: string; token: string };
+  table?: { number: string; token: string; participationId?: string };
 };
 
 function formatAddressLines(address?: Address | null) {
@@ -457,6 +458,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
           customerPhone: normalizeBrazilianMobile(values.customerPhone),
           deliveryType: isTableOrder ? "TABLE" : values.deliveryType,
           tableToken: isTableOrder ? table?.token : undefined,
+          tableParticipationId: isTableOrder ? table?.participationId : undefined,
           deliveryAddress:
             values.deliveryType === "DELIVERY"
               ? {
@@ -500,8 +502,15 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
         itemIds: order.items.map((item) => item.productId),
       });
       router.replace(`/orders/${encodeURIComponent(order.trackingCode)}`);
-    } catch {
-      setCheckoutError("Não foi possível enviar o pedido.");
+    } catch (cause) {
+      let message = "Não foi possível enviar o pedido.";
+      if (cause instanceof ApiError) {
+        try {
+          const response = JSON.parse(cause.message) as { code?: string; message?: string };
+          if (response.code === "product_channel_unavailable" && response.message) message = response.message;
+        } catch { /* Keep the fallback for non-JSON failures. */ }
+      }
+      setCheckoutError(message);
     } finally {
       setSubmitting(false);
     }
@@ -520,7 +529,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
         <CartPageHeader>
           <CartPageTitleRow>
             <BackButton
-              onClick={() => (step === 2 ? setStep(1) : router.push("/"))}
+              onClick={() => (step === 2 ? setStep(1) : router.push(tableMenuPath(table?.token)))}
             />
             <CartPageTitle>Seu pedido</CartPageTitle>
             <CartCount>{items.length} item(ns)</CartCount>
@@ -548,7 +557,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
         <CartCard>
           {step === 1 ? (
             <>
-              <ContinueShoppingButton type="button" onClick={() => router.push("/")}>
+              <ContinueShoppingButton type="button" onClick={() => router.push(tableMenuPath(table?.token))}>
                 <Plus size={16} />
                 Adicionar mais itens
               </ContinueShoppingButton>
@@ -618,7 +627,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                 ))}
               </CartList>
 
-              <UpsellBlock />
+              <UpsellBlock tableToken={table?.token} />
 
               <TotalsBox>
                 <TotalRow>

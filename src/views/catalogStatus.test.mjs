@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import ts from "typescript";
+import { productMatchesChannel } from "../utils/productAvailability.ts";
 
 const productsFile = "AdminProducts/ProductManager.tsx";
 const categoriesFile = "AdminCategories/CategoryManager.tsx";
@@ -31,10 +32,11 @@ function declaration(file, name) {
   return code;
 }
 
-const filterProducts = new Function(
-  "sortedProducts", "normalizedProductSearch", "productCategoryFilter", "productStatusFilter",
+const evaluateProducts = new Function(
+  "sortedProducts", "normalizedProductSearch", "productCategoryFilter", "productStatusFilter", "productChannelFilter", "productMatchesChannel",
   `return ${declaration(productsFile, "filteredProducts")}`,
 );
+const filterProducts = (items, search, category, status, channel = "") => evaluateProducts(items, search, category, status, channel, productMatchesChannel);
 const filterCategories = new Function(
   "categories", "search", "statusFilter",
   `${ts.transpile(declaration(categoriesFile, "categoryMatchesSearch"))}
@@ -77,4 +79,10 @@ test("status combines with product search and category, and category search", ()
   assert.deepEqual(filterCategories(items, "inexistente", "inactive"), []);
   assert.deepEqual(filterProducts([], "", "", ""), []);
   assert.deepEqual(filterCategories([], "", ""), []);
+});
+
+test("availability combines with existing filters and keeps shared products", () => {
+  const scoped = items.map((item, index) => ({ ...item, availability: ["ALL", "TABLE", "DELIVERY", "TABLE"][index] }));
+  assert.deepEqual(ids(filterProducts(scoped, "", "", "", "DELIVERY")), ["1", "3"]);
+  assert.deepEqual(ids(filterProducts(scoped, "pizza", "food", "inactive", "TABLE")), ["2"]);
 });

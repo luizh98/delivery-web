@@ -155,7 +155,10 @@ export type ProductOptionGroupTemplate = {
   items: ProductOptionItem[];
 };
 
+export type ProductAvailability = "ALL" | "DELIVERY" | "TABLE";
+
 export type Product = {
+  availability?: ProductAvailability;
   id: string;
   categoryId: string;
   name: string;
@@ -227,6 +230,7 @@ export type DeliveryQuoteResponse = {
 };
 
 export type OrderResponse = {
+	 tableItemCancellations?: { item: OrderItem; reason: string; canceledAt: string; canceledBy: string }[];
   id: string;
   orderNumber?: string;
   trackingCode?: string;
@@ -262,6 +266,16 @@ export type OrderResponse = {
   tableNumber?: string;
   tableSessionId?: string;
 };
+
+export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations">;
+export type StaffTable = {
+  id: string;
+  number: string;
+  active: boolean;
+  session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string } | null;
+  requests: { id: string; type: "SERVICE" | "CLOSURE" | "PAYMENT"; status: "PENDING" | "ASSIGNED"; assignedBy?: string }[];
+};
+export type StaffTableConsumption = { session: StaffTable["session"]; orders: StaffTableOrder[] };
 
 export type MotoboyResponse = {
   id: string;

@@ -28,6 +28,7 @@ import type {
 } from "@/types/api";
 import { money } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
+import { tableMenuPath } from "@/utils/productAvailability";
 import { activeProductFlags } from "@/utils/productFlags";
 import {
   FlagBadge,
@@ -59,7 +60,7 @@ import { ProductMedia } from "./ProductMedia";
 const PRODUCT_FOCUS_STORAGE_KEY = "delivery:return-focus-product-id";
 const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
 
-export function ProductDetails({ product }: ProductDetailsProps) {
+export function ProductDetails({ product, tableToken }: ProductDetailsProps) {
   const router = useRouter();
   const { addItem, items } = useCart();
   const tracking = useTracking();
@@ -116,7 +117,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
   function returnToMenu() {
     sessionStorage.setItem(PRODUCT_FOCUS_STORAGE_KEY, product.id);
-    router.push("/");
+    router.push(tableMenuPath(tableToken));
   }
 
   function toggleOption(group: ProductOptionGroup, option: ProductOptionItem) {
@@ -196,7 +197,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
       if (pendingUpsell) {
         const validation = await clientApi<UpsellOfferValidationResponse>(
-          "public/cart/upsell-offers/validate",
+          `public/cart/upsell-offers/validate?channel=${tableToken ? "TABLE" : "DELIVERY"}`,
           {
             method: "POST",
             body: JSON.stringify({
@@ -249,7 +250,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       });
       if (pendingUpsell) {
         sessionStorage.removeItem(PENDING_UPSELL_STORAGE_KEY);
-        void clientApi<void>("public/cart/upsell-events", {
+        void clientApi<void>(`public/cart/upsell-events?channel=${tableToken ? "TABLE" : "DELIVERY"}`, {
           method: "POST",
           body: JSON.stringify({
             campaignId: pendingUpsell.campaignId,

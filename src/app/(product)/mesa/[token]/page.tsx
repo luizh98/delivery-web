@@ -17,7 +17,7 @@ export default async function TableMenuPage({ params }: TableMenuPageProps) {
     <CartView
       restaurantConfig={restaurantConfig}
       initialStep={1}
-      table={{ number: table.number, token }}
+      table={{ number: table.number, token, participationId: table.session?.participationId }}
     />
   );
 }

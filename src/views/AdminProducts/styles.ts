@@ -599,6 +599,12 @@ export const ProductMeta = styled("p", {
   color: "var(--color-muted)",
 });
 
+export const AvailabilityBadge = styled("span", {
+  display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.25rem 0.5rem",
+  border: "1px solid var(--color-border)", borderRadius: "0.375rem",
+  background: "var(--color-surface-muted)", color: "var(--color-foreground)", fontSize: "0.75rem", fontWeight: 600,
+});
+
 export const ProductCategory = styled("p", {
   fontSize: "0.75rem",
   fontWeight: 600,
