@@ -342,6 +342,11 @@ export function OrdersManager({
     let syncVersion = 0;
     let liveUpdates = new Map<string, OrderResponse>();
     const unsubscribe = subscribeToOrderEvents((order) => {
+      const previousOrder = liveUpdates.get(order.id) ?? initialOrders.find((entry) => entry.id === order.id);
+      const previousCancellations = previousOrder?.tableItemCancellations?.length ?? 0;
+      if ((order.tableItemCancellations?.length ?? 0) > previousCancellations || (order.deliveryType === "TABLE" && order.status === "CANCELED" && previousOrder?.status !== "CANCELED")) {
+        showToast(`Mesa ${order.tableNumber}: item cancelado. Confira o aviso de cancelamento antes de preparar.`, "error");
+      }
       liveUpdates.set(order.id, order);
       const isNewOrder = !knownOrderIdsRef.current.has(order.id);
       knownOrderIdsRef.current.add(order.id);
@@ -382,7 +387,7 @@ export function OrdersManager({
       active = false;
       unsubscribe();
     };
-  }, [automaticOrderConfirmation, printDestination, showToast, subscribeToOrderEvents, visibleStatuses]);
+  }, [automaticOrderConfirmation, initialOrders, printDestination, showToast, subscribeToOrderEvents, visibleStatuses]);
 
   useEffect(() => {
     if (!detailsOrderId) {
@@ -653,6 +658,14 @@ export function OrdersManager({
                   </ReceivedTime>
                   <CardTotal>{money(order.totals.totalCents)}</CardTotal>
                 </CardFooter>
+                {order.tableItemCancellations?.length ? (
+                  <div role="status">
+                    <strong>Cancelamento no salão — não preparar:</strong>
+                    {order.tableItemCancellations.map((entry, index) => (
+                      <p key={index}>{entry.item.quantity}× {entry.item.name} · {entry.reason}</p>
+                    ))}
+                  </div>
+                ) : null}
               </OrderInfo>
 
               <ActionsPanel>

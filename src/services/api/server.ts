@@ -21,6 +21,7 @@ import type {
   PublicTableResponse,
   RestaurantConfigResponse,
   TableResponse,
+  StaffTable,
   UpsellCampaign,
 } from "@/types/api";
 
@@ -144,6 +145,10 @@ export async function getAdminDeliveryRoutes() {
 
 export async function getAdminTables() {
   return (await backendFetch<TableResponse[]>("admin/tables")) ?? [];
+}
+
+export async function getStaffTables() {
+  return backendFetch<StaffTable[]>("admin/table-operations");
 }
 
 export async function getPublicTable(token: string) {

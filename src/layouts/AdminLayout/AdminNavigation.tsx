@@ -60,6 +60,7 @@ const navItems = [
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/table-orders", label: "Pedidos mesa", icon: ClipboardList },
   { href: "/admin/tables", label: "Mesas", icon: Armchair },
+  { href: "/salao", label: "Atendimento de mesas", icon: Armchair, adminOnly: true },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
   { href: "/admin/deliveries", label: "Entregas", motoboyLabel: "Pedidos", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },

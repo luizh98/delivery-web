@@ -20,7 +20,7 @@ const compiled = ts.transpileModule(`const subscribe = ${subscription}; cleanup 
   compilerOptions: { target: ts.ScriptTarget.ES2020 },
 }).outputText;
 
-function listen({ automaticOrderConfirmation = true, connector = false, knownIds = [], visibleStatuses, fetchOrders = async () => [] } = {}) {
+function listen({ automaticOrderConfirmation = true, connector = false, knownIds = [], initialOrders = [], visibleStatuses, fetchOrders = async () => [], onToast = () => assert.fail("unexpected printing error") } = {}) {
   let receive;
 	let connect;
   const printed = [];
@@ -28,6 +28,7 @@ function listen({ automaticOrderConfirmation = true, connector = false, knownIds
   const context = {
     cleanup: undefined,
     automaticOrderConfirmation, visibleStatuses, printDestination: "KITCHEN",
+    initialOrders,
     knownOrderIdsRef: { current: new Set(knownIds) },
 		subscribeToOrderEvents(callback, onConnect) { receive = callback; connect = onConnect; return () => {}; },
 		setOrders(update) { orders = typeof update === "function" ? update(orders) : update; },
@@ -36,7 +37,7 @@ function listen({ automaticOrderConfirmation = true, connector = false, knownIds
 		orderStatuses: ["RECEIVED", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"],
     isAutomaticConnectorEnabled: async () => connector,
     printOrderDirectly: async (...args) => printed.push(args),
-    showToast() { assert.fail("unexpected printing error"); },
+    showToast: onToast,
   };
   runInNewContext(compiled, context);
   return { receive, printed, connect: () => connect(), cleanup: () => context.cleanup(), orders: () => orders };
@@ -54,6 +55,21 @@ test("new orders print at every automatic destination, including outside visible
     assert.equal(listener.printed[0][1], "KITCHEN");
     assert.equal(listener.printed[0][2], true);
   }
+});
+
+test("table cancellations alert kitchen once per adjustment even when the ticket leaves its filter", () => {
+  const alerts = [];
+  const original = { id: "table-order", deliveryType: "TABLE", tableNumber: "12", status: "PREPARING" };
+  const listener = listen({ automaticOrderConfirmation: false, knownIds: [original.id], initialOrders: [original], visibleStatuses: ["PREPARING"], onToast: (...args) => alerts.push(args) });
+  const adjusted = { ...original, tableItemCancellations: [{ reason: "Cliente desistiu" }] };
+  listener.receive(adjusted);
+  listener.receive(adjusted);
+  assert.equal(alerts.length, 1);
+  assert.match(alerts[0][0], /Mesa 12/);
+  listener.receive({ ...adjusted, status: "CANCELED" });
+  assert.equal(alerts.length, 2);
+  assert.equal(listener.orders().length, 0);
+  assert.equal(listener.printed.length, 0);
 });
 
 test("connector, existing orders and disabled browser confirmation suppress fallback printing", async () => {
