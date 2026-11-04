@@ -173,20 +173,23 @@ export const TableCard = styled("article", {
   border: "1px solid var(--color-border)",
   background: "var(--color-background)",
   padding: "0.75rem",
+});
 
+export const TableIdentity = styled("div", {
+  display: "flex",
+  minWidth: 0,
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.5rem",
 });
 
 export const TableName = styled("h3", {
+  minWidth: 0,
+  maxWidth: "100%",
   overflowWrap: "anywhere",
   fontSize: "1rem",
   fontWeight: 600,
-});
-
-export const Meta = styled("p", {
-  marginTop: "0.5rem",
-  overflowWrap: "anywhere",
-  fontSize: "0.75rem",
-  color: "var(--color-muted)",
 });
 
 export const Status = styled("span", {
@@ -194,7 +197,6 @@ export const Status = styled("span", {
   width: "fit-content",
   alignItems: "center",
   gap: "0.375rem",
-  marginTop: "0.25rem",
   borderRadius: "999px",
   padding: "0.125rem 0.5rem",
   fontSize: "0.75rem",

@@ -10,7 +10,7 @@ import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
-import { clientApi } from "@/services/api/client";
+import { ApiError, clientApi } from "@/services/api/client";
 import type { TableAccessResponse, TableResponse } from "@/types/api";
 import {
   Actions,
@@ -22,7 +22,6 @@ import {
   LinkInput,
   LinkResult,
   List,
-  Meta,
   PaneGrid,
   QrCodeImage,
   QrCodePreview,
@@ -34,6 +33,7 @@ import {
   Status,
   Subtitle,
   TableCard,
+  TableIdentity,
   TableName,
   Title,
 } from "./styles";
@@ -201,8 +201,10 @@ export function TableManager({ initialTables }: TableManagerProps) {
       const access = await clientApi<TableAccessResponse>(`admin/tables/${table.id}/access`);
       setTableLink(await createTableLink({ ...table, token: access.token }));
       showToast(`QR Code da mesa ${table.number} carregado.`);
-    } catch {
-      const message = "Não foi possível recuperar o QR Code. Se esta mesa for antiga, gere um novo QR Code uma vez para habilitar a visualização futura.";
+    } catch (error) {
+      const message = error instanceof ApiError && error.status === 409
+        ? "Esta mesa precisa de um novo QR Code. Use Gerar e baixar QR. O código anterior deixará de funcionar."
+        : "Não foi possível carregar o QR Code. Tente novamente.";
       setError(message);
       showToast(message, "error");
     } finally {
@@ -304,7 +306,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
             <LinkResult aria-live="polite">
               <div>
                 <SectionTitle>Link da mesa {tableLink.tableNumber}</SectionTitle>
-                <SectionHelp>Guarde, imprima ou baixe agora: ele só é mostrado ao criar ou regenerar.</SectionHelp>
+                <SectionHelp>Baixe o QR Code ou copie o link para usar nesta mesa.</SectionHelp>
               </div>
               <QrCodePreview>
                 <QrCodeImage alt={`QR Code da mesa ${tableLink.tableNumber}`} src={tableLink.qrCodeDataUrl} />
@@ -338,14 +340,13 @@ export function TableManager({ initialTables }: TableManagerProps) {
 
                 return (
                   <TableCard key={table.id}>
-                    <div>
+                    <TableIdentity>
                       <TableName>Mesa {table.number}</TableName>
                       <Status active={table.active}>
                         {table.active ? <CheckCircle2 size={14} aria-hidden="true" /> : <Power size={14} aria-hidden="true" />}
                         {table.active ? "Ativa" : "Inativa"}
                       </Status>
-                      <Meta>{hasCurrentLink ? "QR Code carregado nesta sessão." : "Mesas antigas precisam gerar novo QR uma vez para habilitar visualização futura."}</Meta>
-                    </div>
+                    </TableIdentity>
                     <CardActions>
                       {hasCurrentLink && tableLink ? (
                         <Button type="button" variant="outline" onClick={() => copyLink(tableLink)}>
