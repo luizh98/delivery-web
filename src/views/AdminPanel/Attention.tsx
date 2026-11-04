@@ -4,6 +4,7 @@ import { getAdminAttention } from "@/services/api/server";
 import { statusLabel } from "@/utils/format";
 import { SectionSubtitle, SectionTitle } from "@/views/AdminDashboard/styles";
 import { stalledOrderHours } from "./stalledOrders";
+import { AttentionAction } from "./AttentionAction";
 import { Action, Count, Detail, Duration, Grid, Group, Heading, List, Message, Root, Row } from "./Attention.styles";
 
 export async function AdminAttention() {
@@ -23,7 +24,7 @@ export async function AdminAttention() {
           <Heading id="inactive-title"><PackageX size={18} aria-hidden="true" />Produtos desativados {inactive && <Count>{inactive.length}</Count>}</Heading>
           <Detail>Produtos que não estão disponíveis no cardápio.</Detail>
           {inactive ? inactive.length ? (
-            <List>{inactive.map((product) => <Row key={product.id}><span>{product.name}</span><Duration>Desativado</Duration></Row>)}</List>
+            <List>{inactive.map((product) => <Row key={product.id}><div className="min-w-0 flex-1"><span>{product.name}</span><Detail>Desativado</Detail></div><AttentionAction kind="product" id={product.id} name={product.name} /></Row>)}</List>
           ) : <Message>Nenhum produto desativado.</Message> : <Message role="status">Não foi possível carregar os produtos. Recarregue a página para tentar novamente.</Message>}
           <Action as={Link} href="/admin/catalog/products">Gerenciar produtos<ArrowRight size={16} aria-hidden="true" /></Action>
         </Group>
@@ -33,8 +34,8 @@ export async function AdminAttention() {
           {stalled ? stalled.length ? (
             <List>{stalled.map(({ order, hours }) => (
               <Row key={order.id}>
-                <div><strong>Pedido #{order.orderNumber ?? order.id}</strong><Detail>{order.customer.name} · {statusLabel(order.status, order.deliveryType)}</Detail></div>
-                <Duration>{hours}h no status</Duration>
+                <div className="min-w-0 flex-1"><strong>Pedido #{order.orderNumber ?? order.id}</strong><Detail>{order.customer.name} · {statusLabel(order.status, order.deliveryType)}</Detail><Duration>{hours}h no status</Duration></div>
+                <AttentionAction kind="order" id={order.id} name={order.orderNumber ?? order.id} />
               </Row>
             ))}</List>
           ) : <Message>Nenhum pedido parado há mais de 24h.</Message> : <Message role="status">Não foi possível carregar os pedidos. Recarregue a página para tentar novamente.</Message>}
