@@ -120,7 +120,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
     setRefreshing(true);
     try {
       await Promise.all([refresh(), selectedId ? loadConsumption(selectedId) : Promise.resolve()]);
-      const nextMenu = await clientApi<MenuResponse>("public/menu");
+      const nextMenu = await clientApi<MenuResponse>("public/menu?channel=TABLE");
       setMenu(nextMenu);
     } catch { showToast("Não foi possível atualizar o cardápio. Tente novamente.", "error"); }
     finally { setRefreshing(false); }

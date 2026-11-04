@@ -15,6 +15,7 @@ import type {
   UpsellSuggestion,
 } from "@/types/api";
 import { money } from "@/utils/format";
+import { productPath } from "@/utils/productAvailability";
 import {
   Card,
   AddButton,
@@ -33,7 +34,8 @@ import {
   Track,
 } from "./UpsellBlock.styles";
 
-export function UpsellBlock() {
+export function UpsellBlock({ tableToken }: { tableToken?: string }) {
+  const channel = tableToken ? "TABLE" : "DELIVERY";
   const router = useRouter();
   const { items, addItem, applyPromotionAdjustment } = useCart();
   const [response, setResponse] = useState<CartUpsellResponse | null>(null);
@@ -69,7 +71,7 @@ export function UpsellBlock() {
     const timeout = window.setTimeout(async () => {
       try {
         const result = await clientApi<CartUpsellResponse>(
-          "public/cart/upsell-suggestions",
+          `public/cart/upsell-suggestions?channel=${channel}`,
           {
             method: "POST",
             signal: controller.signal,
@@ -113,7 +115,7 @@ export function UpsellBlock() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [applyPromotionAdjustment, cartItems, items]);
+  }, [applyPromotionAdjustment, cartItems, channel, items]);
 
   async function addSuggestion(suggestion: UpsellSuggestion) {
     if (!response?.campaignId) return;
@@ -123,14 +125,14 @@ export function UpsellBlock() {
         productId: suggestion.productId,
       };
       sessionStorage.setItem(PENDING_UPSELL_STORAGE_KEY, JSON.stringify(pending));
-      router.push(`/products/${suggestion.productId}`);
+      router.push(productPath(suggestion.productId, tableToken));
       return;
     }
 
     setAddingProductId(suggestion.productId);
     try {
       const validation = await clientApi<UpsellOfferValidationResponse>(
-        "public/cart/upsell-offers/validate",
+        `public/cart/upsell-offers/validate?channel=${channel}`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -156,7 +158,7 @@ export function UpsellBlock() {
         options: [],
         totalCents: validation.offerPriceCents,
       });
-      void clientApi<void>("public/cart/upsell-events", {
+      void clientApi<void>(`public/cart/upsell-events?channel=${channel}`, {
         method: "POST",
         body: JSON.stringify({
           campaignId: validation.campaignId,

@@ -120,9 +120,9 @@ export async function getPublicOrderTracking(trackingCode: string) {
   );
 }
 
-export async function getMenu() {
+export async function getMenu(channel: "DELIVERY" | "TABLE" = "DELIVERY") {
   return (
-    (await backendFetch<MenuResponse>("public/menu")) ?? {
+    (await backendFetch<MenuResponse>(`public/menu?channel=${channel}`)) ?? {
       categories: [],
       products: [],
     }

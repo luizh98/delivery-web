@@ -10,6 +10,6 @@ export default async function SalonPage() {
   const admin = await getAdminUser();
   if (!admin) redirect("/admin/login");
   if (!admin.roles.some((role) => role === "ADMIN" || role === "WAITER")) redirect("/admin");
-  const [tables, menu, config] = await Promise.all([getStaffTables(), getMenu(), getRestaurantConfig()]);
+  const [tables, menu, config] = await Promise.all([getStaffTables(), getMenu("TABLE"), getRestaurantConfig()]);
   return <ToastProvider><ConfirmationProvider><StaffTables initialTables={tables} initialMenu={menu} admin={admin} restaurantName={config?.name || admin.tenantSlug} /></ConfirmationProvider></ToastProvider>;
 }

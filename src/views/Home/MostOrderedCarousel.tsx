@@ -5,6 +5,7 @@ import { VideoBadge } from "./styles";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/api";
+import { productPath } from "@/utils/productAvailability";
 import { ProductPrice } from "@/components/ProductPrice";
 import {
   CarouselCard,
@@ -35,7 +36,7 @@ function slideStep(slides: HTMLButtonElement[]) {
   return slides[1].getBoundingClientRect().left - slides[0].getBoundingClientRect().left;
 }
 
-export function MostOrderedCarousel({ products }: { products: Product[] }) {
+export function MostOrderedCarousel({ products, tableToken }: { products: Product[]; tableToken?: string }) {
   const router = useRouter();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
@@ -251,7 +252,7 @@ export function MostOrderedCarousel({ products }: { products: Product[] }) {
             aria-hidden={products.length > 1 && (index === 0 || index === carouselProducts.length - 1)}
             tabIndex={products.length > 1 && (index === 0 || index === carouselProducts.length - 1) ? -1 : 0}
             type="button"
-            onClick={() => router.push(`/products/${encodeURIComponent(product.id)}`)}
+            onClick={() => router.push(productPath(product.id, tableToken))}
           >
             <CarouselImage
               style={{

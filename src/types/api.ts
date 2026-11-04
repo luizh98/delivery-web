@@ -155,7 +155,10 @@ export type ProductOptionGroupTemplate = {
   items: ProductOptionItem[];
 };
 
+export type ProductAvailability = "ALL" | "DELIVERY" | "TABLE";
+
 export type Product = {
+  availability?: ProductAvailability;
   id: string;
   categoryId: string;
   name: string;

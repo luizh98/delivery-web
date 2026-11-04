@@ -36,6 +36,7 @@ import type { CustomerMenuProps } from "./types";
 import type { BusinessHour, Product } from "@/types/api";
 import { MostOrderedCarousel } from "./MostOrderedCarousel";
 import { productMatchesSearch } from "./menuSearch";
+import { productPath } from "@/utils/productAvailability";
 import {
   CategoryBar,
   CategoryButton,
@@ -156,7 +157,7 @@ function formatTodayBusinessHours(
     : "Horário não informado";
 }
 
-export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
+export function CustomerMenu({ restaurantConfig, menu, table }: CustomerMenuProps) {
   const router = useRouter();
   const { items: cart, subtotalCents } = useCart();
   const { customer } = useCustomerAuth();
@@ -407,7 +408,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       <Hero>
         <HeroBody>        
           <HeroTitleRow>
-            <HeroTitle>{restaurantConfig?.name ?? "Delivery"}</HeroTitle>
+            <HeroTitle>{table ? `Mesa ${table.number} · ` : ""}{restaurantConfig?.name ?? "Delivery"}</HeroTitle>
             {whatsappHref ? (
               <WhatsAppShortcut
                 href={whatsappHref}
@@ -507,7 +508,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
         <SearchResultText role="status">
           {resultCount} {resultCount === 1 ? "produto encontrado" : "produtos encontrados"}
         </SearchResultText>
-      ) : <MostOrderedCarousel products={carouselProducts} />}
+      ) : <MostOrderedCarousel products={carouselProducts} tableToken={table?.token} />}
 
       <ContentGrid>
         <ProductList>
@@ -543,7 +544,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
                       }}
                       onClick={() =>
                         router.push(
-                          `/products/${encodeURIComponent(product.id)}`,
+                          productPath(product.id, table?.token),
                         )
                       }
                     >
@@ -590,7 +591,7 @@ export function CustomerMenu({ restaurantConfig, menu }: CustomerMenuProps) {
       <MobileCart>
         <MobileSummary
           type="button"
-          onClick={() => router.push("/cart")}
+          onClick={() => router.push(table ? `/mesa/${encodeURIComponent(table.token)}` : "/cart")}
           aria-label={
             showCartFeedback
               ? "Item adicionado ao pedido. Abrir página do pedido"
