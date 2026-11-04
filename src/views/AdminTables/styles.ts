@@ -2,7 +2,21 @@ import { styled } from "styles";
 
 export const Root = styled("div", {
   display: "grid",
+  minWidth: 0,
   gap: "1rem",
+
+  "& button": {
+    minWidth: 0,
+    minHeight: "2.75rem",
+    height: "auto",
+    padding: "0.625rem 0.75rem",
+    "& svg": { flexShrink: 0 },
+  },
+
+  "& button:focus-visible, & input:focus-visible": {
+    outline: "2px solid var(--color-primary)",
+    outlineOffset: "2px",
+  },
 });
 
 export const Title = styled("h1", {
@@ -16,22 +30,25 @@ export const Subtitle = styled("p", {
 });
 
 export const ErrorText = styled("p", {
+  overflowWrap: "anywhere",
   fontSize: "0.875rem",
   color: "#dc2626",
 });
 
 export const PaneGrid = styled("div", {
   display: "grid",
+  minWidth: 0,
   alignItems: "start",
-  gap: "1rem",
+  gap: "1.5rem",
 
   "@lg": {
-    gridTemplateColumns: "minmax(18rem, 0.8fr) minmax(0, 1.2fr)",
+    gridTemplateColumns: "minmax(16rem, 20rem) minmax(0, 1fr)",
   },
 });
 
 export const Section = styled("section", {
   display: "grid",
+  minWidth: 0,
   gap: "0.75rem",
 });
 
@@ -41,21 +58,32 @@ export const SectionHeader = styled("div", {
   alignItems: "flex-start",
   justifyContent: "space-between",
   gap: "0.5rem",
+
+  "& > div": {
+    flex: "1 1 12rem",
+    minWidth: 0,
+  },
 });
 
 export const SectionTitle = styled("h2", {
+  overflowWrap: "anywhere",
   fontSize: "0.875rem",
   fontWeight: 600,
 });
 
 export const SectionHelp = styled("p", {
+  overflowWrap: "anywhere",
   fontSize: "0.75rem",
   color: "var(--color-muted)",
 });
 
 export const Form = styled("form", {
   display: "grid",
+  minWidth: 0,
   gap: "0.75rem",
+
+  "& label, & input": { minWidth: 0 },
+  "& input:not([type='checkbox'])": { width: "100%", fontSize: "1rem" },
 });
 
 export const CheckboxLabel = styled("label", {
@@ -77,16 +105,20 @@ export const CheckboxLabel = styled("label", {
 
 export const Actions = styled("div", {
   display: "flex",
+  minWidth: 0,
   flexWrap: "wrap",
   justifyContent: "flex-end",
   gap: "0.5rem",
   borderTop: "1px solid var(--color-border)",
   paddingTop: "0.75rem",
+
+  "& > button": { flex: "1 1 9rem" },
 });
 
 export const LinkResult = styled("section", {
   display: "grid",
-  gap: "0.5rem",
+  minWidth: 0,
+  gap: "0.75rem",
   borderRadius: "0.375rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-background)",
@@ -95,22 +127,20 @@ export const LinkResult = styled("section", {
 
 export const LinkInput = styled("input", {
   minWidth: 0,
+  width: "100%",
   borderRadius: "0.25rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-surface)",
   padding: "0.625rem 0.75rem",
   color: "var(--color-foreground)",
   fontFamily: "monospace",
-  fontSize: "0.75rem",
+  fontSize: "1rem",
 });
 
 export const QrCodePreview = styled("div", {
   display: "grid",
+  minWidth: 0,
   justifyItems: "center",
-  borderRadius: "0.375rem",
-  border: "1px solid var(--color-border)",
-  background: "var(--color-surface)",
-  padding: "0.75rem",
 });
 
 export const QrCodeImage = styled("img", {
@@ -131,29 +161,30 @@ export const Empty = styled("div", {
 
 export const List = styled("div", {
   display: "grid",
-  gap: "0.5rem",
+  minWidth: 0,
+  gap: "0.75rem",
 });
 
 export const TableCard = styled("article", {
   display: "grid",
+  minWidth: 0,
   gap: "0.75rem",
   borderRadius: "0.375rem",
   border: "1px solid var(--color-border)",
   background: "var(--color-background)",
   padding: "0.75rem",
 
-  "@sm": {
-    gridTemplateColumns: "minmax(0, 1fr) auto",
-    alignItems: "center",
-  },
 });
 
 export const TableName = styled("h3", {
+  overflowWrap: "anywhere",
   fontSize: "1rem",
   fontWeight: 600,
 });
 
 export const Meta = styled("p", {
+  marginTop: "0.5rem",
+  overflowWrap: "anywhere",
   fontSize: "0.75rem",
   color: "var(--color-muted)",
 });
@@ -185,6 +216,11 @@ export const Status = styled("span", {
 
 export const CardActions = styled("div", {
   display: "flex",
+  minWidth: 0,
   flexWrap: "wrap",
   gap: "0.5rem",
+  borderTop: "1px solid var(--color-border)",
+  paddingTop: "0.75rem",
+
+  "& > button": { flex: "1 1 9rem" },
 });
