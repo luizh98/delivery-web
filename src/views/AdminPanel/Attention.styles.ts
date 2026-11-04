@@ -17,7 +17,7 @@ export const Count = styled("span", {
 });
 export const List = styled("ul", { marginTop: "0.75rem" });
 export const Row = styled("li", {
-  display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.75rem",
+  display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
   padding: "0.75rem 0", borderBottom: "1px solid var(--color-border)",
   fontSize: "0.875rem", overflowWrap: "anywhere",
 });

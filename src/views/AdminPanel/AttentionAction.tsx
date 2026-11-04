@@ -1,0 +1,78 @@
+"use client";
+
+import { useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Power } from "lucide-react";
+import { Button } from "@/components/Button";
+import { useConfirmation } from "@/components/ConfirmationProvider";
+import { useToast } from "@/components/ToastProvider";
+import { ApiError, clientApi } from "@/services/api/client";
+import type { Product } from "@/types/api";
+
+type Props = { id: string; name: string; kind: "product" | "order" };
+
+export function AttentionAction({ id, name, kind }: Props) {
+  const router = useRouter();
+  const { requestConfirmation } = useConfirmation();
+  const { showToast } = useToast();
+  const [pending, startTransition] = useTransition();
+  const busy = useRef(false);
+  const product = kind === "product";
+
+  function handleClick() {
+    if (busy.current) return;
+    busy.current = true;
+    startTransition(async () => {
+      try {
+        if (!product && !await requestConfirmation({
+          message: `Concluir o pedido #${name}? Confirme apenas se ele já foi finalizado.`,
+          confirmLabel: "Concluir pedido",
+          variant: "primary",
+        })) return;
+
+        if (product) {
+          // Read current fields before PUT so an old panel does not resend stale catalog data.
+          const products = await clientApi<Product[]>("admin/products");
+          const current = products.find((item) => item.id === id);
+          if (!current) {
+            showToast("Produto não encontrado. Atualize a página e tente novamente.", "error");
+            router.refresh();
+            return;
+          }
+          if (!current.active) await clientApi(`admin/products/${encodeURIComponent(id)}`, {
+            method: "PUT",
+            body: JSON.stringify({ ...current, active: true }),
+          });
+        } else {
+          await clientApi(`admin/orders/${encodeURIComponent(id)}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({ status: "COMPLETED" }),
+          });
+        }
+        showToast(product ? "Produto ativado com sucesso." : "Pedido concluído com sucesso.");
+        router.refresh();
+      } catch (error) {
+        let message = product
+          ? "Não foi possível ativar o produto. Tente novamente."
+          : "Não foi possível concluir o pedido. Atualize a página e tente novamente.";
+        if (product && error instanceof ApiError && error.status === 400) {
+          try {
+            const response = JSON.parse(error.message);
+            if (typeof response.message === "string") message = response.message;
+          } catch { /* Keep the fallback for invalid API responses. */ }
+        }
+        showToast(message, "error");
+      } finally {
+        busy.current = false;
+      }
+    });
+  }
+
+  const Icon = product ? Power : CheckCircle2;
+  return (
+    <Button type="button" variant="outline" className="shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] disabled:cursor-wait" disabled={pending} aria-busy={pending} aria-label={product ? `Ativar ${name}` : `Concluir pedido #${name}`} onClick={handleClick}>
+      <Icon size={16} aria-hidden="true" />
+      {pending ? "Salvando…" : product ? "Ativar" : "Concluir"}
+    </Button>
+  );
+}
