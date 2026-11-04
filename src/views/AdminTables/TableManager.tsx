@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Copy, Download, Pencil, Plus, Power, QrCode, RefreshCw, Save, X } from "lucide-react";
+import { CheckCircle2, Copy, Download, Pencil, Plus, Power, RefreshCw, Save } from "lucide-react";
 import QRCode from "qrcode";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
@@ -91,6 +91,10 @@ export function TableManager({ initialTables }: TableManagerProps) {
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [pendingTableId, setPendingTableId] = useState<string | null>(null);
   const [tableLink, setTableLink] = useState<TableLink | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<{ message: string; canRetry: boolean } | null>(null);
+  const qrRequest = useRef(0);
+  const editorRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState("");
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
@@ -99,9 +103,15 @@ export function TableManager({ initialTables }: TableManagerProps) {
     defaultValues: defaultTableForm(),
   });
   const isEditing = Boolean(editingTableId);
+  const editingTable = tables.find((table) => table.id === editingTableId);
+  const isBusy = form.formState.isSubmitting || Boolean(pendingTableId);
 
   function resetForm() {
+    qrRequest.current += 1;
     setEditingTableId(null);
+    setTableLink(null);
+    setQrLoading(false);
+    setQrError(null);
     setError("");
     form.reset(defaultTableForm());
   }
@@ -110,6 +120,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
     setEditingTableId(table.id);
     setError("");
     form.reset(tableToForm(table));
+    void loadTableQrCode(table);
+    editorRef.current?.scrollIntoView({ block: "start" });
   }
 
   function updateTable(savedTable: TableResponse) {
@@ -140,6 +152,9 @@ export function TableManager({ initialTables }: TableManagerProps) {
   }
 
   async function submit(values: TableForm) {
+    qrRequest.current += 1;
+    setQrLoading(true);
+    setQrError(null);
     setError("");
 
     try {
@@ -155,14 +170,15 @@ export function TableManager({ initialTables }: TableManagerProps) {
         },
       );
       updateTable(table);
+      setEditingTableId(table.id);
       if (table.token) {
         setTableLink(await createTableLink(table));
+      } else if (tableLink?.tableId === table.id) {
+        setTableLink({ ...tableLink, tableNumber: table.number });
       } else {
-        setTableLink((currentLink) => currentLink?.tableId === table.id
-          ? { ...currentLink, tableNumber: table.number }
-          : currentLink);
+        await loadTableQrCode(table);
       }
-      resetForm();
+      form.reset(tableToForm(table));
       showToast(editingTableId ? "Mesa atualizada." : "Mesa criada. Baixe ou copie o QR Code abaixo.");
     } catch {
       const message = editingTableId
@@ -170,6 +186,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
         : "Não foi possível criar a mesa. Verifique o número e tente novamente.";
       setError(message);
       showToast(message, "error");
+    } finally {
+      setQrLoading(false);
     }
   }
 
@@ -193,31 +211,32 @@ export function TableManager({ initialTables }: TableManagerProps) {
     }
   }
 
-  async function viewTableQrCode(table: TableResponse) {
-    setError("");
-    setPendingTableId(table.id);
+  async function loadTableQrCode(table: TableResponse) {
+    const requestId = ++qrRequest.current;
+    setTableLink(null);
+    setQrError(null);
+    setQrLoading(true);
 
     try {
       const access = await clientApi<TableAccessResponse>(`admin/tables/${table.id}/access`);
-      setTableLink(await createTableLink({ ...table, token: access.token }));
-      showToast(`QR Code da mesa ${table.number} carregado.`);
+      const link = await createTableLink({ ...table, token: access.token });
+      if (requestId === qrRequest.current) setTableLink(link);
     } catch (error) {
-      const message = error instanceof ApiError && error.status === 409
-        ? "Esta mesa precisa de um novo QR Code. Use Gerar e baixar QR. O código anterior deixará de funcionar."
+      if (requestId !== qrRequest.current) return;
+      const unavailable = error instanceof ApiError && error.status === 409;
+      const message = unavailable
+        ? "Esta mesa precisa de um novo QR Code. Gere um novo abaixo; o código anterior deixará de funcionar."
         : "Não foi possível carregar o QR Code. Tente novamente.";
-      setError(message);
-      showToast(message, "error");
+      setQrError({ message, canRetry: !unavailable });
     } finally {
-      setPendingTableId(null);
+      if (requestId === qrRequest.current) setQrLoading(false);
     }
   }
 
-  async function regenerateLink(table: TableResponse, downloadAfterGeneration = false) {
+  async function regenerateLink(table: TableResponse) {
     const confirmed = await requestConfirmation({
-      message: downloadAfterGeneration
-        ? `Gerar e baixar novo QR Code da mesa ${table.number}? O QR Code e link anteriores deixarão de funcionar.`
-        : `Regenerar o link da mesa ${table.number}? O link anterior deixará de funcionar.`,
-      confirmLabel: downloadAfterGeneration ? "Gerar e baixar" : "Regenerar link",
+      message: `Gerar novo QR Code da mesa ${table.number}? O QR Code e link anteriores deixarão de funcionar.`,
+      confirmLabel: "Gerar novo QR",
       variant: "danger",
     });
 
@@ -227,6 +246,10 @@ export function TableManager({ initialTables }: TableManagerProps) {
 
     setError("");
     setPendingTableId(table.id);
+    qrRequest.current += 1;
+    setQrLoading(true);
+    setTableLink(null);
+    setQrError(null);
 
     try {
       const updatedTable = await clientApi<TableResponse>(`admin/tables/${table.id}`, {
@@ -242,17 +265,14 @@ export function TableManager({ initialTables }: TableManagerProps) {
       const nextTableLink = await createTableLink(updatedTable);
       setTableLink(nextTableLink);
 
-      if (downloadAfterGeneration) {
-        downloadQrCode(nextTableLink);
-      } else {
-        showToast("Novo link gerado. Baixe ou copie o QR Code abaixo.");
-      }
+      showToast("Novo QR Code gerado. Baixe o código atualizado abaixo.");
     } catch {
-      const message = "Não foi possível regenerar o link da mesa. Tente novamente.";
-      setError(message);
+      const message = "Não foi possível gerar o novo QR Code. Tente novamente.";
+      setQrError({ message, canRetry: true });
       showToast(message, "error");
     } finally {
       setPendingTableId(null);
+      setQrLoading(false);
     }
   }
 
@@ -266,32 +286,34 @@ export function TableManager({ initialTables }: TableManagerProps) {
       {error ? <ErrorText role="alert">{error}</ErrorText> : null}
 
       <PaneGrid>
-        <Section>
+        <Section ref={editorRef}>
           <SectionHeader>
             <div>
-              <SectionTitle>{isEditing ? "Editar mesa" : "Adicionar mesa"}</SectionTitle>
+              <SectionTitle>{isEditing ? `Editar mesa ${editingTable?.number ?? ""}` : "Adicionar mesa"}</SectionTitle>
               <SectionHelp>
-                Uma mesa nova começa ativa e recebe um link exclusivo para pedidos.
+                {isEditing
+                  ? "Altere os dados e acesse o QR Code desta mesa abaixo."
+                  : "Uma mesa nova começa ativa e recebe um link exclusivo para pedidos."}
               </SectionHelp>
             </div>
             {isEditing ? (
-              <Button type="button" variant="ghost" onClick={resetForm}>
-                <X size={16} aria-hidden="true" /> Cancelar
+              <Button type="button" variant="ghost" onClick={resetForm} disabled={isBusy}>
+                <Plus size={16} aria-hidden="true" /> Nova mesa
               </Button>
             ) : null}
           </SectionHeader>
 
-          <Form onSubmit={form.handleSubmit(submit)}>
+          <Form onSubmit={(event) => void form.handleSubmit(submit)(event)}>
             <Field label="Número da mesa" error={form.formState.errors.number?.message}>
-              <Input autoComplete="off" inputMode="numeric" {...form.register("number")} />
+              <Input autoComplete="off" inputMode="numeric" disabled={isBusy} {...form.register("number")} />
             </Field>
             {isEditing ? (
               <CheckboxLabel>
-                <input type="checkbox" {...form.register("active")} /> Mesa ativa
+                <input type="checkbox" disabled={isBusy} {...form.register("active")} /> Mesa ativa
               </CheckboxLabel>
             ) : null}
             <Actions>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={isBusy}>
                 {isEditing ? <Save size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
                 {form.formState.isSubmitting
                   ? "Salvando..."
@@ -302,22 +324,42 @@ export function TableManager({ initialTables }: TableManagerProps) {
             </Actions>
           </Form>
 
-          {tableLink ? (
-            <LinkResult aria-live="polite">
+          {editingTable ? (
+            <LinkResult aria-live="polite" aria-busy={qrLoading}>
               <div>
-                <SectionTitle>Link da mesa {tableLink.tableNumber}</SectionTitle>
+                <SectionTitle>Link da mesa {editingTable.number}</SectionTitle>
                 <SectionHelp>Baixe o QR Code ou copie o link para usar nesta mesa.</SectionHelp>
               </div>
-              <QrCodePreview>
-                <QrCodeImage alt={`QR Code da mesa ${tableLink.tableNumber}`} src={tableLink.qrCodeDataUrl} />
-              </QrCodePreview>
-              <LinkInput aria-label={`Link da mesa ${tableLink.tableNumber}`} readOnly value={tableLink.url} />
+              {qrLoading ? <SectionHelp role="status">Carregando QR Code...</SectionHelp> : null}
+              {qrError ? (
+                <div>
+                  <ErrorText role="alert">{qrError.message}</ErrorText>
+                  {qrError.canRetry ? (
+                    <Button type="button" variant="outline" onClick={() => loadTableQrCode(editingTable)} disabled={isBusy}>
+                      <RefreshCw size={16} aria-hidden="true" /> Tentar novamente
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+              {tableLink && tableLink.tableId === editingTable.id ? (
+                <>
+                  <QrCodePreview>
+                    <QrCodeImage alt={`QR Code da mesa ${tableLink.tableNumber}`} src={tableLink.qrCodeDataUrl} />
+                  </QrCodePreview>
+                  <LinkInput aria-label={`Link da mesa ${tableLink.tableNumber}`} readOnly value={tableLink.url} />
+                  <Actions>
+                    <Button type="button" onClick={() => downloadQrCode(tableLink)} disabled={isBusy}>
+                      <Download size={16} aria-hidden="true" /> Baixar QR Code
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => copyLink(tableLink)} disabled={isBusy}>
+                      <Copy size={16} aria-hidden="true" /> Copiar link
+                    </Button>
+                  </Actions>
+                </>
+              ) : null}
               <Actions>
-                <Button type="button" onClick={() => downloadQrCode(tableLink)}>
-                  <Download size={16} aria-hidden="true" /> Baixar QR Code
-                </Button>
-                <Button type="button" variant="outline" onClick={() => copyLink(tableLink)}>
-                  <Copy size={16} aria-hidden="true" /> Copiar link
+                <Button type="button" variant="dangerGhost" onClick={() => regenerateLink(editingTable)} disabled={isBusy || qrLoading}>
+                  <RefreshCw size={16} aria-hidden="true" /> {pendingTableId === editingTable.id ? "Gerando..." : "Gerar novo QR"}
                 </Button>
               </Actions>
             </LinkResult>
@@ -335,11 +377,10 @@ export function TableManager({ initialTables }: TableManagerProps) {
           ) : (
             <List>
               {tables.map((table) => {
-                const hasCurrentLink = tableLink?.tableId === table.id;
                 const isPending = pendingTableId === table.id;
 
                 return (
-                  <TableCard key={table.id}>
+                  <TableCard key={table.id} data-selected={editingTableId === table.id}>
                     <TableIdentity>
                       <TableName>Mesa {table.number}</TableName>
                       <Status active={table.active}>
@@ -348,23 +389,11 @@ export function TableManager({ initialTables }: TableManagerProps) {
                       </Status>
                     </TableIdentity>
                     <CardActions>
-                      {hasCurrentLink && tableLink ? (
-                        <Button type="button" variant="outline" onClick={() => copyLink(tableLink)}>
-                          <Copy size={16} aria-hidden="true" /> Copiar link
-                        </Button>
-                      ) : null}
-                      <Button type="button" variant="outline" onClick={() => startEditing(table)} disabled={isPending}>
+                      <Button type="button" variant="outline" onClick={() => startEditing(table)} disabled={isBusy}>
                         <Pencil size={16} aria-hidden="true" /> Editar
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => viewTableQrCode(table)} disabled={isPending}>
-                        <QrCode size={16} aria-hidden="true" /> {isPending ? "Carregando..." : "Ver QR Code"}
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={() => toggleTable(table)} disabled={isPending}>
-                        <Power size={16} aria-hidden="true" /> {table.active ? "Desativar" : "Ativar"}
-                      </Button>
-                      <Button type="button" variant="dangerGhost" onClick={() => regenerateLink(table, true)} disabled={isPending}>
-                        {isPending ? <RefreshCw size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
-                        {isPending ? "Gerando..." : "Gerar e baixar QR"}
+                      <Button type="button" variant="ghost" onClick={() => toggleTable(table)} disabled={isBusy}>
+                        <Power size={16} aria-hidden="true" /> {isPending ? "Salvando..." : table.active ? "Desativar" : "Ativar"}
                       </Button>
                     </CardActions>
                   </TableCard>

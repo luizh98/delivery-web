@@ -49,6 +49,7 @@ export const PaneGrid = styled("div", {
 export const Section = styled("section", {
   display: "grid",
   minWidth: 0,
+  scrollMarginTop: "5rem",
   gap: "0.75rem",
 });
 
@@ -173,6 +174,11 @@ export const TableCard = styled("article", {
   border: "1px solid var(--color-border)",
   background: "var(--color-background)",
   padding: "0.75rem",
+
+  "&[data-selected='true']": {
+    borderColor: "var(--color-primary)",
+    background: "var(--color-surface)",
+  },
 });
 
 export const TableIdentity = styled("div", {
