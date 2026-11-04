@@ -4,6 +4,7 @@ import { Link2, RefreshCw, Unplug } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
+import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { WhatsAppConnectionResponse } from "@/types/api";
 import { WhatsAppMessages } from "./WhatsAppMessages";
@@ -31,6 +32,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useRef(false);
   const { requestConfirmation } = useConfirmation();
+  const { showToast } = useToast();
 
   useEffect(() => { changeRef.current = onChange; }, [onChange]);
 
@@ -84,7 +86,12 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
         changeRef.current(result);
         setNotice("WhatsApp conectado. Avisos dos pedidos ativados automaticamente. O envio depende da aprovação das mensagens e da cobrança na Meta.");
       } catch (failure) {
-        if (mounted.current) setError(connectionErrorMessage(failure));
+        if (mounted.current) {
+          const message = connectionErrorMessage(failure);
+          setNotice("");
+          setError(message);
+          showToast(message, "error");
+        }
         // A partial server-side setup can be resumed by Atualizar status.
         if (mounted.current) {
           try { setConnection(await clientApi<WhatsAppConnectionResponse>("admin/whatsapp/connection")); } catch { /* Keep visible recovery controls. */ }
@@ -112,7 +119,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
     // The SDK callback and message event can arrive in either order.
     finishRef.current = finish;
     return () => { window.removeEventListener("message", listener); finishRef.current = null; };
-  }, []);
+  }, [showToast]);
 
   const finishRef = useRef<((signup: ActiveSignup) => Promise<void>) | null>(null);
 
