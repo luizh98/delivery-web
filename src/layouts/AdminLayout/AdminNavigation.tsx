@@ -65,7 +65,6 @@ const navItems = [
   { href: "/admin/deliveries", label: "Entregas", motoboyLabel: "Pedidos", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },
   { href: "/admin/users", label: "Usuários", icon: UserCog, adminOnly: true },
-  { href: "/admin/logs", label: "Histórico de alterações", icon: History, adminOnly: true },
   { href: "/admin/catalog/products", label: "Produtos", icon: Tags },
   { href: "/admin/catalog/upsell", label: "Campanhas", icon: Sparkles },
   { href: "/admin/marketing/promotions", label: "Marketing", icon: Megaphone },
