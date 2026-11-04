@@ -9,6 +9,12 @@ export type DraftItem = {
   options: { groupId: string; itemId: string }[];
 };
 
+export function normalizeTablePhone(value: string) {
+  let phone = value.replace(/\D/g, "");
+  if (phone.startsWith("55") && (value.trim().startsWith("+") || phone.length > 11)) phone = phone.slice(2);
+  return /^\d{10,11}$/.test(phone) ? phone : "";
+}
+
 export function draftItemTotal(item: DraftItem) {
   const extra = item.options.reduce((total, option) => total + (item.product.optionGroups
     ?.find((group) => group.id === option.groupId)?.items.find((entry) => entry.id === option.itemId)?.priceCents ?? 0), 0);

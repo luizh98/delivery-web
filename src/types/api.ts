@@ -267,7 +267,7 @@ export type OrderResponse = {
   tableSessionId?: string;
 };
 
-export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations">;
+export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations"> & { customerPhone?: string };
 export type StaffTable = {
   id: string;
   number: string;

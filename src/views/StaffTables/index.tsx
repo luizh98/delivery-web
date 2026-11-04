@@ -12,7 +12,7 @@ import { ApiError, authApi, clientApi } from "@/services/api/client";
 import type { CurrentUserResponse, MenuResponse, Product, StaffTable, StaffTableConsumption, StaffTableOrder } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
-import { draftItemTotal, staffApiMessage, type DraftItem } from "./draft";
+import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
 import { Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
@@ -22,6 +22,20 @@ const emptyDraft = (sessionId = ""): Draft => ({ items: [], sessionId, notes: ""
 const requestLabel = { SERVICE: "Chamou atendimento", CLOSURE: "Pediu a conta", PAYMENT: "Pediu pagamento" };
 const tableStatus = (table: StaffTable) => table.session?.status === "CLOSING" ? "Fechando conta" : table.session ? "Em consumo" : "Livre";
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function PhoneDialog({ onConfirm, onClose }: { onConfirm: (phone: string) => void; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const form = useForm({ defaultValues: { phone: "" } });
+  useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
+  return <Dialog ref={dialog} onCancel={onClose} aria-labelledby="phone-title">
+    <form onSubmit={form.handleSubmit(({ phone }) => onConfirm(normalizeTablePhone(phone)))}>
+      <Row><Heading id="phone-title">Contato da mesa</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
+      <Muted>Informe telefone ou celular da pessoa responsável pela mesa para contato, caso ela saia.</Muted>
+      <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
+      <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar</Button><Button type="submit"><Send size={18} />Salvar contato e enviar</Button></Actions>
+    </form>
+  </Dialog>;
+}
 
 function ReasonDialog({ action, onConfirm, onClose }: { action: CancelAction; onConfirm: (reason: string) => Promise<void>; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -54,6 +68,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
   const [mobilePane, setMobilePane] = useState<"catalog" | "ticket">("catalog");
   const [editor, setEditor] = useState<{ item: DraftItem; editing: boolean } | null>(null);
   const [cancelAction, setCancelAction] = useState<CancelAction | null>(null);
+  const [askingPhone, setAskingPhone] = useState(false);
   const [error, setError] = useState(initialTables === null ? "Não foi possível carregar as mesas. Toque em Atualizar para tentar novamente." : "");
   const [consumptionError, setConsumptionError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,6 +85,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
   const draftTotal = draft.items.reduce((sum, item) => sum + draftItemTotal(item), 0);
   const hasDrafts = Object.values(drafts).some((value) => value.items.length > 0);
   const consumptionTotal = consumption?.orders.filter((order) => order.status !== "CANCELED").reduce((sum, order) => sum + order.totals.totalCents, 0) ?? 0;
+  const tablePhone = consumption?.orders.find((order) => order.customerPhone)?.customerPhone ?? "";
 
   const loadConsumption = useCallback(async (id: string, signal?: AbortSignal) => {
     const version = ++consumptionVersion.current;
@@ -126,12 +142,13 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
     finally { setRefreshing(false); }
   }
 
-  async function sendRound() {
+  async function sendRound(contactPhone = tablePhone) {
     if (submitting.current || !selected || !consumption || consumptionError) return;
     if (!pendingSubmission.current && (!draft.items.length || consumption.session?.status === "CLOSING")) return;
+    if (!pendingSubmission.current && !normalizeTablePhone(contactPhone)) { setAskingPhone(true); return; }
     submitting.current = true; setBusy(true);
     if (!pendingSubmission.current) {
-      pendingSubmission.current = { tableId: selectedId, body: JSON.stringify({ submissionId: crypto.randomUUID(), sessionId: draft.sessionId, notes: draft.notes, expectedTotalCents: draftTotal, items: draft.items.map((item) => ({ productId: item.product.id, quantity: item.quantity, observations: item.observations, options: item.options })) }) };
+      pendingSubmission.current = { tableId: selectedId, body: JSON.stringify({ submissionId: crypto.randomUUID(), sessionId: draft.sessionId, customerPhone: normalizeTablePhone(contactPhone), notes: draft.notes, expectedTotalCents: draftTotal, items: draft.items.map((item) => ({ productId: item.product.id, quantity: item.quantity, observations: item.observations, options: item.options })) }) };
     }
     try {
       const submission = pendingSubmission.current;
@@ -224,6 +241,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
         <ProductList>{products.map((product) => <ProductButton key={product.id} disabled={!canLaunch} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><span><strong>{product.name}</strong><Muted>{money(productSalePrice(product))}{product.optionGroups?.some((group) => !group.deleted) ? " · Ver opções" : ""}</Muted></span><Plus size={20} aria-hidden="true" /></ProductButton>)}</ProductList>
         {!products.length ? <Empty><Search size={24} aria-hidden="true" />Nenhum produto encontrado. Tente outro nome ou categoria.</Empty> : null}
       </Panel><Panel aria-label={`Comanda da mesa ${selected.number}`}>
+        {tablePhone ? <Muted>Contato da mesa: <a href={`tel:${tablePhone}`}>{tablePhone}</a></Muted> : null}
         <Tabs><Button variant={tab === "draft" ? "primary" : "ghost"} aria-pressed={tab === "draft"} onClick={() => setTab("draft")}>Rodada ({draftCount})</Button><Button variant={tab === "consumption" ? "primary" : "ghost"} aria-pressed={tab === "consumption"} onClick={() => setTab("consumption")}><ReceiptText size={16} />Consumo</Button></Tabs>
         {tab === "draft" ? <Stack><div><Heading>Nova rodada · Mesa {selected.number}</Heading><Muted>Os itens abaixo ainda não foram enviados.</Muted></div>
           {draft.sessionId && consumption?.session?.id !== draft.sessionId ? <ErrorBox role="alert">Esta rodada pertence a uma comanda encerrada. Descarte os itens e comece uma nova rodada.</ErrorBox> : null}
@@ -257,5 +275,6 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
     </Stack>}
     {editor ? <ItemEditor key={editor.item.id} item={editor.item} editing={editor.editing} onClose={() => setEditor(null)} onSave={(item) => { updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: editor.editing ? draft.items.map((entry) => entry.id === item.id ? item : entry) : [...draft.items, item] }); setEditor(null); showToast(editor.editing ? "Item atualizado na rodada." : `${item.product.name} adicionado à rodada.`); }} /> : null}
     {cancelAction ? <ReasonDialog action={cancelAction} onClose={() => setCancelAction(null)} onConfirm={cancelSent} /> : null}
+    {askingPhone ? <PhoneDialog onClose={() => setAskingPhone(false)} onConfirm={(phone) => { setAskingPhone(false); void sendRound(phone); }} /> : null}
   </Root>;
 }
