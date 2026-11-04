@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Power } from "lucide-react";
 import { Button } from "@/components/Button";
@@ -15,57 +15,60 @@ export function AttentionAction({ id, name, kind }: Props) {
   const router = useRouter();
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
-  const [pending, startTransition] = useTransition();
+  const [refreshing, startTransition] = useTransition();
+  const [saving, setSaving] = useState(false);
+  const pending = saving || refreshing;
   const busy = useRef(false);
   const product = kind === "product";
 
-  function handleClick() {
+  async function handleClick() {
     if (busy.current) return;
     busy.current = true;
-    startTransition(async () => {
-      try {
-        if (!product && !await requestConfirmation({
-          message: `Concluir o pedido #${name}? Confirme apenas se ele já foi finalizado.`,
-          confirmLabel: "Concluir pedido",
-          variant: "primary",
-        })) return;
+    try {
+      // Confirmation must commit immediately; awaiting it inside a transition hides its dialog.
+      if (!product && !await requestConfirmation({
+        message: `Concluir o pedido #${name}? Confirme apenas se ele já foi finalizado.`,
+        confirmLabel: "Concluir pedido",
+        variant: "primary",
+      })) return;
 
-        if (product) {
-          // Read current fields before PUT so an old panel does not resend stale catalog data.
-          const products = await clientApi<Product[]>("admin/products");
-          const current = products.find((item) => item.id === id);
-          if (!current) {
-            showToast("Produto não encontrado. Atualize a página e tente novamente.", "error");
-            router.refresh();
-            return;
-          }
-          if (!current.active) await clientApi(`admin/products/${encodeURIComponent(id)}`, {
-            method: "PUT",
-            body: JSON.stringify({ ...current, active: true }),
-          });
-        } else {
-          await clientApi(`admin/orders/${encodeURIComponent(id)}/status`, {
-            method: "PATCH",
-            body: JSON.stringify({ status: "COMPLETED" }),
-          });
+      setSaving(true);
+      if (product) {
+        // Read current fields before PUT so an old panel does not resend stale catalog data.
+        const products = await clientApi<Product[]>("admin/products");
+        const current = products.find((item) => item.id === id);
+        if (!current) {
+          showToast("Produto não encontrado. Atualize a página e tente novamente.", "error");
+          startTransition(() => router.refresh());
+          return;
         }
-        showToast(product ? "Produto ativado com sucesso." : "Pedido concluído com sucesso.");
-        router.refresh();
-      } catch (error) {
-        let message = product
-          ? "Não foi possível ativar o produto. Tente novamente."
-          : "Não foi possível concluir o pedido. Atualize a página e tente novamente.";
-        if (product && error instanceof ApiError && error.status === 400) {
-          try {
-            const response = JSON.parse(error.message);
-            if (typeof response.message === "string") message = response.message;
-          } catch { /* Keep the fallback for invalid API responses. */ }
-        }
-        showToast(message, "error");
-      } finally {
-        busy.current = false;
+        if (!current.active) await clientApi(`admin/products/${encodeURIComponent(id)}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...current, active: true }),
+        });
+      } else {
+        await clientApi(`admin/orders/${encodeURIComponent(id)}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "COMPLETED" }),
+        });
       }
-    });
+      showToast(product ? "Produto ativado com sucesso." : "Pedido concluído com sucesso.");
+      startTransition(() => router.refresh());
+    } catch (error) {
+      let message = product
+        ? "Não foi possível ativar o produto. Tente novamente."
+        : "Não foi possível concluir o pedido. Atualize a página e tente novamente.";
+      if (product && error instanceof ApiError && error.status === 400) {
+        try {
+          const response = JSON.parse(error.message);
+          if (typeof response.message === "string") message = response.message;
+        } catch { /* Keep the fallback for invalid API responses. */ }
+      }
+      showToast(message, "error");
+    } finally {
+      busy.current = false;
+      setSaving(false);
+    }
   }
 
   const Icon = product ? Power : CheckCircle2;

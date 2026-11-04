@@ -16,24 +16,46 @@ function setup(kind, api, confirm = true) {
   const confirmations = [];
   let refreshes = 0;
   let task;
+  let inTransition = false;
+  const deferredUpdates = [];
   const busy = { current: false };
   class ApiError extends Error { constructor(status, message) { super(message); this.status = status; } }
   const compiled = { exports: {} };
   runInNewContext(source, {
     module: compiled, exports: compiled.exports, JSON, encodeURIComponent,
     require: (name) => {
-      if (name === "react") return { useRef: () => busy, useTransition: () => [false, (fn) => { task = fn(); }] };
+      if (name === "react") return {
+        useRef: () => busy,
+        useState: (initial) => [initial, () => {}],
+        useTransition: () => [false, (fn) => {
+          inTransition = true;
+          try { task = fn(); } finally { inTransition = false; }
+        }],
+      };
       if (name === "next/navigation") return { useRouter: () => ({ refresh: () => refreshes++ }) };
-      if (name === "@/components/ConfirmationProvider") return { useConfirmation: () => ({ requestConfirmation: async (value) => { confirmations.push(value); return confirm; } }) };
+      if (name === "@/components/ConfirmationProvider") return { useConfirmation: () => ({ requestConfirmation: async (value) => { if (inTransition) deferredUpdates.push("confirmation"); confirmations.push(value); return confirm; } }) };
       if (name === "@/components/ToastProvider") return { useToast: () => ({ showToast: (...args) => toasts.push(args) }) };
-      if (name === "@/services/api/client") return { ApiError, clientApi: async (...args) => { requests.push(args); return api(...args); } };
+      if (name === "@/services/api/client") return { ApiError, clientApi: async (...args) => { if (inTransition) deferredUpdates.push("request"); requests.push(args); return api(...args); } };
       if (name === "react/jsx-runtime") return require(name);
       return new Proxy({}, { get: (_, key) => key });
     },
   });
   const button = compiled.exports.AttentionAction({ id: "item", name: "123", kind });
-  return { requests, toasts, confirmations, ApiError, button, click: () => { button.props.onClick(); return task; }, refreshes: () => refreshes };
+  return { requests, toasts, confirmations, deferredUpdates, ApiError, button, click: () => button.props.onClick() ?? task, refreshes: () => refreshes };
 }
+
+test("confirmation renders outside the transition that would wait for its answer", async () => {
+  const state = setup("order", () => ({}));
+  await state.click();
+  assert.deepEqual(state.deferredUpdates, [], "a transition awaiting confirmation prevents its dialog from committing");
+});
+
+test("activation starts independently of other pending action transitions", async () => {
+  const state = setup("product", () => [{ id: "item", active: false }]);
+  await state.click();
+  assert.deepEqual(state.deferredUpdates, []);
+  assert.equal(state.requests.length, 2);
+});
 
 test("activation preserves current catalog data and prevents duplicate submissions", async () => {
   const current = { id: "item", active: false, name: "Nome atualizado", priceCents: 2300, imageUrl: "/photo", videoUrl: "/video", optionGroups: [{ deleted: true, items: [{ active: false }] }] };
