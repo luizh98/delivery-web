@@ -45,9 +45,28 @@ function setup(kind, api, confirm = true) {
 }
 
 test("confirmation renders outside the transition that would wait for its answer", async () => {
-  const state = setup("order", () => ({}));
-  await state.click();
-  assert.deepEqual(state.deferredUpdates, [], "a transition awaiting confirmation prevents its dialog from committing");
+  for (const kind of ["product", "order"]) {
+    const state = setup(kind, () => [{ id: "item", active: false }]);
+    await state.click();
+    assert.equal(state.confirmations.length, 1);
+    assert.deepEqual(state.deferredUpdates, [], "a transition awaiting confirmation prevents its dialog from committing");
+  }
+});
+
+test("activation waits for confirmation and cancellation performs no requests", async () => {
+  let answer;
+  const state = setup("product", () => ({}), new Promise((resolve) => { answer = resolve; }));
+  const pending = state.click();
+  state.click();
+  assert.equal(state.confirmations.length, 1);
+  assert.equal(state.confirmations[0].confirmLabel, "Ativar produto");
+  assert.match(state.confirmations[0].message, /123/);
+  assert.equal(state.requests.length, 0);
+  answer(false);
+  await pending;
+  assert.equal(state.requests.length, 0);
+  assert.equal(state.toasts.length, 0);
+  assert.equal(state.refreshes(), 0);
 });
 
 test("activation starts independently of other pending action transitions", async () => {
@@ -63,6 +82,7 @@ test("activation preserves current catalog data and prevents duplicate submissio
   const state = setup("product", (path) => path === "admin/products" ? new Promise((done) => { resolve = done; }) : {});
   const pending = state.click();
   state.click();
+  await new Promise((resolve) => setImmediate(resolve));
   assert.equal(state.requests.length, 1);
   resolve([current]);
   await pending;
@@ -70,7 +90,7 @@ test("activation preserves current catalog data and prevents duplicate submissio
   assert.equal(path, "admin/products/item");
   assert.equal(options.method, "PUT");
   assert.deepEqual(JSON.parse(options.body), { ...current, active: true });
-  assert.equal(state.confirmations.length, 0);
+  assert.equal(state.confirmations.length, 1);
   assert.equal(state.refreshes(), 1);
 });
 
