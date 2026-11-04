@@ -20,7 +20,7 @@ const compiled = ts.transpileModule(`const subscribe = ${subscription}; cleanup 
   compilerOptions: { target: ts.ScriptTarget.ES2020 },
 }).outputText;
 
-function listen({ automaticOrderConfirmation = true, connector = false, knownIds = [], visibleStatuses, fetchOrders = async () => [] } = {}) {
+function listen({ automaticOrderConfirmation = true, browser = false, connector = false, lookupError = false, knownIds = [], visibleStatuses, fetchOrders = async () => [] } = {}) {
   let receive;
 	let connect;
   const printed = [];
@@ -34,9 +34,13 @@ function listen({ automaticOrderConfirmation = true, connector = false, knownIds
 		clientApi: fetchOrders,
     URLSearchParams,
 		orderStatuses: ["RECEIVED", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"],
-    isAutomaticConnectorEnabled: async () => connector,
+    shouldAutomaticallyPrintInBrowser: async () => {
+      if (!browser) return false;
+      if (lookupError) throw new Error("offline");
+      return !connector;
+    },
     printOrderDirectly: async (...args) => printed.push(args),
-    showToast() { assert.fail("unexpected printing error"); },
+    showToast() { if (!lookupError) assert.fail("unexpected printing error"); },
   };
   runInNewContext(compiled, context);
   return { receive, printed, connect: () => connect(), cleanup: () => context.cleanup(), orders: () => orders };
@@ -44,7 +48,7 @@ function listen({ automaticOrderConfirmation = true, connector = false, knownIds
 
 test("new orders print at every automatic destination, including outside visible statuses", async () => {
   for (const status of ["CONFIRMED", "PREPARING", "READY"]) {
-    const listener = listen({ visibleStatuses: ["PREPARING"] });
+    const listener = listen({ browser: true, visibleStatuses: ["PREPARING"] });
     const order = { id: status, status };
     listener.receive(order);
     listener.receive({ ...order, status: "READY" });
@@ -57,7 +61,7 @@ test("new orders print at every automatic destination, including outside visible
 });
 
 test("connector, existing orders and disabled browser confirmation suppress fallback printing", async () => {
-  for (const options of [{ connector: true }, { knownIds: ["order"] }, { automaticOrderConfirmation: false }]) {
+  for (const options of [{}, { browser: true, connector: true }, { browser: true, knownIds: ["order"] }, { browser: true, automaticOrderConfirmation: false }, { browser: true, lookupError: true }]) {
     const listener = listen(options);
     listener.receive({ id: "order", status: "PREPARING" });
     await new Promise(setImmediate);

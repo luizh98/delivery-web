@@ -51,7 +51,7 @@ export type PrintOverview = {
   destinations: PrintDestinationConfig[];
 };
 
-let automaticDestinations: Promise<PrintDestination[]> | null = null;
+const browserPrintKey = "delivery:browser-print:";
 
 type PairingCode = {
   code: string;
@@ -65,15 +65,25 @@ export function getPrintOverview() {
 }
 
 export function isAutomaticConnectorEnabled(destination: "RECEIPT" | "KITCHEN") {
-  automaticDestinations ??= clientApi<{ destinations: PrintDestination[] }>("/admin/printing/automatic-destinations")
-    .then((response) => response.destinations);
-  return automaticDestinations
-    .then((configured) => configured.includes(destination))
-    .catch(() => false);
+  return clientApi<{ destinations: PrintDestination[] }>("/admin/printing/automatic-destinations")
+    .then((response) => response.destinations.includes(destination));
 }
 
-export function invalidateAutomaticConnectorEnabled() {
-  automaticDestinations = null;
+export function isBrowserPrintEnabled(destination: "RECEIPT" | "KITCHEN") {
+  try {
+    return window.localStorage.getItem(browserPrintKey + destination) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function setBrowserPrintEnabled(destination: "RECEIPT" | "KITCHEN", enabled: boolean) {
+  window.localStorage.setItem(browserPrintKey + destination, String(enabled));
+}
+
+export async function shouldAutomaticallyPrintInBrowser(destination: "RECEIPT" | "KITCHEN") {
+  if (!isBrowserPrintEnabled(destination)) return false;
+  return !(await isAutomaticConnectorEnabled(destination));
 }
 
 export function createPrintPairingCode() {
@@ -84,9 +94,6 @@ export function savePrintDestination(destination: PrintDestination, value: Omit<
   return clientApi<PrintDestinationConfig>(`/admin/printing/destinations/${destination}`, {
     method: "PUT",
     body: JSON.stringify(value),
-  }).then((result) => {
-    invalidateAutomaticConnectorEnabled();
-    return result;
   });
 }
 

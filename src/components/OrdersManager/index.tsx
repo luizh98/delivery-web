@@ -34,7 +34,7 @@ import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { clientApi } from "@/services/api/client";
-import { isAutomaticConnectorEnabled } from "@/services/printing/connector";
+import { isBrowserPrintEnabled, shouldAutomaticallyPrintInBrowser } from "@/services/printing/connector";
 import { splitPickupQr } from "@/services/printing/pickupQr";
 import { money, statusLabel } from "@/utils/format";
 import { getOrderOverdueMinutes } from "@/utils/orders/overdue";
@@ -112,10 +112,15 @@ async function renderPrintContent(printWindow: Window, content: string) {
   printWindow.document.documentElement.lang = "pt-BR";
   printWindow.document.body.replaceChildren(printBody);
   printWindow.document.body.style.margin = "0";
-  printWindow.document.body.style.padding = "1rem";
+  printWindow.document.body.style.padding = "0";
+  const printStyle = printWindow.document.createElement("style");
+  printStyle.textContent = "@page { margin: 4mm; } body { width: 72mm; margin: 0; } pre { font: 8pt/1.2 'Courier New', monospace; }";
+  printWindow.document.head.append(printStyle);
   printBody.style.margin = "0";
   printBody.style.whiteSpace = "pre-wrap";
-  printBody.style.fontFamily = "monospace";
+  printBody.style.fontFamily = "'Courier New', monospace";
+  printBody.style.fontSize = "8pt";
+  printBody.style.lineHeight = "1.2";
   printBody.style.width = "42ch";
   printBody.style.maxWidth = "100%";
   printBody.style.overflowWrap = "anywhere";
@@ -351,8 +356,8 @@ export function OrdersManager({
         : items.filter((item) => item.id !== order.id));
 
       if (automaticOrderConfirmation && isNewOrder) {
-        void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
-          if (!enabled) {
+        void shouldAutomaticallyPrintInBrowser(printDestination).then((enabled) => {
+          if (enabled) {
             return printOrderDirectly(order, printDestination, true);
           }
           return undefined;
@@ -429,8 +434,8 @@ export function OrdersManager({
       setOrders((items) => items.map((item) => (item.id === updated.id ? updated : item)));
       showToast("Pedido atualizado com sucesso");
       if (status === "CONFIRMED") {
-        void isAutomaticConnectorEnabled(printDestination).then((enabled) => {
-          if (!enabled) {
+        void shouldAutomaticallyPrintInBrowser(printDestination).then((enabled) => {
+          if (enabled) {
             return printOrderDirectly(updated, printDestination, true);
           }
           return undefined;
@@ -472,6 +477,11 @@ export function OrdersManager({
       }
     } catch {
       showToast("Não foi possível enviar pedido para a impressora.", "error");
+      return;
+    }
+
+    if (!isBrowserPrintEnabled(printDestination)) {
+      showToast("Configure uma impressora em Impressoras para imprimir este pedido.", "error");
       return;
     }
 

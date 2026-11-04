@@ -10,6 +10,8 @@ import {
   createPrintTest,
   getPrintJobs,
   getPrintOverview,
+  isBrowserPrintEnabled,
+  setBrowserPrintEnabled,
   type PrintDestination,
   type PrintDestinationConfig,
   type PrintJob,
@@ -91,10 +93,22 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
   const [pairingAttempt, setPairingAttempt] = useState<{ startedAt: number; activeDeviceIds: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [browserPrinting, setBrowserPrinting] = useState({ RECEIPT: false, KITCHEN: false });
+
+  function changeBrowserPrinting(destination: ConfigurableDestination, enabled: boolean) {
+    try {
+      setBrowserPrintEnabled(destination, enabled);
+      setBrowserPrinting((current) => ({ ...current, [destination]: enabled }));
+      showToast("Preferência de impressão salva neste navegador");
+    } catch {
+      showToast("Não foi possível salvar preferência neste navegador.", "error");
+    }
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
+      setBrowserPrinting({ RECEIPT: isBrowserPrintEnabled("RECEIPT"), KITCHEN: isBrowserPrintEnabled("KITCHEN") });
       const [nextOverview, nextJobs] = await Promise.all([getPrintOverview(), getPrintJobs()]);
       setOverview(nextOverview);
       setJobs(nextJobs.jobs ?? []);
@@ -116,7 +130,10 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
     }
   }, [showToast]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void refresh(), 0);
+    return () => window.clearTimeout(timer);
+  }, [refresh]);
 
   useEffect(() => {
     if (!pairingAttempt || !pairingCode) return;
@@ -306,6 +323,11 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
             </DestinationCard>;
           })}
         </DestinationGrid>
+      </Panel>
+
+      <Panel>
+        <PanelHeader><PanelTitle>Impressão neste navegador</PanelTitle><PanelDescription>Desativada por padrão. Permite abrir a janela de impressão quando o destino não tiver impressão automática pelo conector. O botão Imprimir sempre prioriza a impressora configurada. Esta preferência vale apenas neste navegador e nesta loja.</PanelDescription></PanelHeader>
+        {destinations.map((destination) => <InlineField key={destination.id}><input type="checkbox" checked={browserPrinting[destination.id]} onChange={(event) => changeBrowserPrinting(destination.id, event.target.checked)} />Permitir impressão de {destination.label.toLowerCase()} neste navegador</InlineField>)}
       </Panel>
 
       <Panel>
