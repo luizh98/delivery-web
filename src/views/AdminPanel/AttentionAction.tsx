@@ -26,9 +26,11 @@ export function AttentionAction({ id, name, kind }: Props) {
     busy.current = true;
     try {
       // Confirmation must commit immediately; awaiting it inside a transition hides its dialog.
-      if (!product && !await requestConfirmation({
-        message: `Concluir o pedido #${name}? Confirme apenas se ele já foi finalizado.`,
-        confirmLabel: "Concluir pedido",
+      if (!await requestConfirmation({
+        message: product
+          ? `Ativar o produto "${name}" e disponibilizá-lo no cardápio?`
+          : `Concluir o pedido #${name}? Confirme apenas se ele já foi finalizado.`,
+        confirmLabel: product ? "Ativar produto" : "Concluir pedido",
         variant: "primary",
       })) return;
 
