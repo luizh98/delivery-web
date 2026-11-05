@@ -16,7 +16,7 @@ import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } 
 import { ItemEditor } from "./ItemEditor";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
-import { Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
+import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
 type Draft = { items: DraftItem[]; sessionId: string; notes: string };
 type CancelAction = { order: StaffTableOrder; itemIndex?: number } | { closeTable: true };
@@ -188,6 +188,17 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     finally { submitting.current = false; setBusy(false); }
   }
 
+  async function requestBill() {
+    if (await requestConfirmation({ message: "Pedir a conta bloqueará novos lançamentos até a comanda ser reaberta. Continuar?", confirmLabel: "Pedir fechamento", variant: "primary" })) {
+      await tableAction("request-bill", "Fechamento solicitado.");
+    }
+  }
+
+  function showAccount() {
+    setTab("consumption"); setMobilePane("ticket");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
   async function cancelSent(reason: string) {
     if (!cancelAction || !selected) return;
     setBusy(true);
@@ -239,12 +250,19 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     </Stack> : <Stack>
       {consumptionError ? <ErrorBox role="alert">{consumptionError}</ErrorBox> : null}
       {uncertainSubmission ? <ErrorBox role="alert">Envio sem confirmação. Use Conferir envio antes de alterar a rodada ou trocar de mesa.</ErrorBox> : null}
+      <AccountPanel aria-label={`Resumo da comanda da mesa ${selected.number}`}>
+        <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Comanda · Mesa {selected.number}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
+        {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
+        <Actions>
+          {isClosing ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}
+          {isAdmin ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => setCancelAction({ closeTable: true })}>Encerrar comanda</Button> : null}
+        </Actions>
+      </AccountPanel>
       {selected.requests?.map((request) => <Panel key={request.id} className={request.status === "PENDING" ? "table-service-pending" : undefined}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}
         {request.status === "PENDING" || request.assignedBy === admin.id || isAdmin ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/resolve`, "Chamado concluído.")}><Check size={16} />Concluir chamado</Button> : null}
       </Actions></Row></Panel>)}
-      {isClosing ? <Panel id="table-closing-notice" role="status"><Row><Stack><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></Stack><Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button></Row></Panel> : null}
-      <MobileSwitch><Button variant={mobilePane === "catalog" ? "primary" : "outline"} aria-pressed={mobilePane === "catalog"} onClick={() => setMobilePane("catalog")}>Cardápio</Button><Button variant={mobilePane === "ticket" ? "primary" : "outline"} aria-pressed={mobilePane === "ticket"} onClick={() => setMobilePane("ticket")}>Rodada e consumo</Button></MobileSwitch>
+      <MobileSwitch><Button variant={mobilePane === "catalog" ? "primary" : "outline"} aria-pressed={mobilePane === "catalog"} onClick={() => setMobilePane("catalog")}>Cardápio</Button><Button variant={mobilePane === "ticket" ? "primary" : "outline"} aria-pressed={mobilePane === "ticket"} onClick={showAccount}>Comanda</Button></MobileSwitch>
       <Workbench data-mobile-pane={mobilePane}><Panel aria-labelledby="catalog-title"><Heading id="catalog-title">Adicionar itens</Heading>
         <Field label="Buscar produto"><Input type="search" placeholder="Digite o nome do produto" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} /></Field>
         <Field label="Categoria"><Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Todas as categorias</option>{menu.categories.filter((category) => category.active).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select></Field>
@@ -253,7 +271,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         {!products.length ? <Empty><Search size={24} aria-hidden="true" />Nenhum produto encontrado. Tente outro nome ou categoria.</Empty> : null}
       </Panel><Panel aria-label={`Comanda da mesa ${selected.number}`}>
         {tablePhone ? <Muted>Contato da mesa: <a href={`tel:${tablePhone}`}>{tablePhone}</a></Muted> : null}
-        <Tabs><Button variant={tab === "draft" ? "primary" : "ghost"} aria-pressed={tab === "draft"} onClick={() => setTab("draft")}>Rodada ({draftCount})</Button><Button variant={tab === "consumption" ? "primary" : "ghost"} aria-pressed={tab === "consumption"} onClick={() => setTab("consumption")}><ReceiptText size={16} />Consumo</Button></Tabs>
+        <Tabs><Button variant={tab === "draft" ? "primary" : "ghost"} aria-pressed={tab === "draft"} onClick={() => setTab("draft")}>Rodada ({draftCount})</Button><Button variant={tab === "consumption" ? "primary" : "ghost"} aria-pressed={tab === "consumption"} onClick={() => setTab("consumption")}><ReceiptText size={16} />Comanda</Button></Tabs>
         {tab === "draft" ? <Stack><div><Heading>Nova rodada · Mesa {selected.number}</Heading><Muted>Os itens abaixo ainda não foram enviados.</Muted></div>
           {draft.sessionId && consumption?.session?.id !== draft.sessionId ? <ErrorBox role="alert">Esta rodada pertence a uma comanda encerrada. Descarte os itens e comece uma nova rodada.</ErrorBox> : null}
           {!draft.items.length ? <Empty><Send size={24} aria-hidden="true" />Escolha produtos no cardápio. Você pode revisar tudo antes de enviar à cozinha.</Empty> : draft.items.map((item) => <ItemRow key={item.id}>
@@ -279,10 +297,9 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
             {isAdmin && order.status !== "CANCELED" && order.status !== "COMPLETED" ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !!consumptionError} onClick={() => setCancelAction({ order })}><Trash2 size={16} />Cancelar rodada</Button> : null}
           </ItemRow>)}
           {!isAdmin ? <Muted>Precisa corrigir algo já enviado? Peça ao administrador para cancelar o item com motivo e lance a correção em uma nova rodada.</Muted> : null}
-          {consumption?.session ? <Actions>{consumption.session.status === "OPEN" ? <Button variant="outline" disabled={busy || uncertainSubmission || !!consumptionError} onClick={async () => { if (await requestConfirmation({ message: "Pedir a conta bloqueará novos lançamentos até a comanda ser reaberta. Continuar?", confirmLabel: "Pedir a conta", variant: "primary" })) await tableAction("request-bill", "Conta solicitada."); }}><ReceiptText size={16} />Pedir a conta</Button> : null}{isAdmin ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !!consumptionError} onClick={() => setCancelAction({ closeTable: true })}>Encerrar comanda</Button> : null}</Actions> : null}
         </Stack>}
       </Panel></Workbench>
-      {mobilePane === "catalog" ? <MobileBar><Button onClick={() => { setTab("draft"); setMobilePane("ticket"); window.scrollTo({ top: 0, behavior: "instant" }); }}><ReceiptText size={18} />Ver rodada · {draftCount} {draftCount === 1 ? "item" : "itens"} · {money(draftTotal)}</Button></MobileBar> : null}
+      <MobileBar><Button variant="outline" onClick={() => { setTab("draft"); setMobilePane("ticket"); window.scrollTo({ top: 0, behavior: "instant" }); }}><Send size={18} aria-hidden="true" />Rodada · {draftCount}</Button><Button onClick={showAccount}><ReceiptText size={18} aria-hidden="true" />Comanda{consumption ? ` · ${money(consumptionTotal)}` : ""}</Button></MobileBar>
     </Stack>}
     {editor ? <ItemEditor key={editor.item.id} item={editor.item} editing={editor.editing} onClose={() => setEditor(null)} onSave={(item) => { updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: editor.editing ? draft.items.map((entry) => entry.id === item.id ? item : entry) : [...draft.items, item] }); setEditor(null); showToast(editor.editing ? "Item atualizado na rodada." : `${item.product.name} adicionado à rodada.`); }} /> : null}
     {cancelAction ? <ReasonDialog action={cancelAction} onClose={() => setCancelAction(null)} onConfirm={cancelSent} /> : null}

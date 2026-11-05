@@ -6,8 +6,8 @@ import ts from "typescript";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
-function renderClosing({ pending = null } = {}) {
-  const session = { id: "visit", status: "CLOSING" };
+function renderClosing({ pending = null, status = "CLOSING", isAdmin = false } = {}) {
+  const session = { id: "visit", status };
   const product = { id: "burger", name: "X-burger", priceCents: 2990, active: true, optionGroups: [] };
   const draft = { sessionId: "visit", notes: "", items: [{ id: "line", product, quantity: 1, observations: "", options: [] }] };
   const state = new Map([[3, { session, orders: [] }], [4, { table: draft }]]);
@@ -44,7 +44,7 @@ function renderClosing({ pending = null } = {}) {
   const tree = loaded.exports.StaffTables({
     initialTables: [{ id: "table", number: "01", active: true, session, requests: [] }],
     initialMenu: { categories: [], products: [product] },
-    initialTableId: "table", admin: { id: "waiter", roles: ["WAITER"] }, restaurantName: "Teste",
+    initialTableId: "table", admin: { id: "waiter", roles: [isAdmin ? "ADMIN" : "WAITER"] }, restaurantName: "Teste",
   });
   function descendants(node) {
     if (!node || typeof node !== "object") return [];
@@ -99,4 +99,17 @@ test("closing visit still allows checking an uncertain prior submission with the
   const posts = view.requests.filter(([, init]) => init?.method === "POST");
   assert.equal(posts.length, 1);
   assert.equal(posts[0][1].body, pending.body);
+});
+
+test("waiter can request closing directly in the summary; only admin sees final closure", () => {
+  for (const isAdmin of [false, true]) {
+    const { nodes } = renderClosing({ status: "OPEN", isAdmin });
+    const summary = nodes.find((node) => node.type === "AccountPanel");
+    assert.ok(summary);
+    const text = JSON.stringify(summary);
+    assert.ok(text.includes("Pedir fechamento"));
+    assert.equal(text.includes("Encerrar comanda"), isAdmin);
+    const workbench = nodes.find((node) => node.type === "Workbench");
+    assert.ok(!JSON.stringify(workbench).includes("Encerrar comanda"));
+  }
 });
