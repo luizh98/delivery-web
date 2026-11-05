@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getPublicTable } from "@/services/api/server";
 import { TableOrders } from "@/views/TableOrders";
 
-export const metadata = { title: "Pedidos da mesa" };
+export const metadata = { title: "Comanda" };
 
 export default async function TableOrdersPage({ searchParams }: { searchParams: Promise<{ mesa?: string }> }) {
   const { mesa } = await searchParams;

@@ -55,7 +55,7 @@ export function CustomerMenu({ restaurantConfig, menu, table }: CustomerMenuProp
         <TrackingActions>
           {table ? <TableIdentity><Armchair size={18} aria-hidden="true" />Mesa {table.number}</TableIdentity>
             : <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(customer ? "/account" : "/login")}><UserRound size={16} aria-hidden="true" />{customer?.name.trim() || "Entrar ou criar conta"}</TrackingShortcut>}
-          <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(table ? `/menu/pedidos?mesa=${encodeURIComponent(table.token)}` : "/orders")}><ClipboardList size={16} aria-hidden="true" />Meus pedidos</TrackingShortcut>
+          <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(table ? `/menu/pedidos?mesa=${encodeURIComponent(table.token)}` : "/orders")}><ClipboardList size={16} aria-hidden="true" />{table ? "Comanda" : "Meus pedidos"}</TrackingShortcut>
         </TrackingActions>
         {!table && (closed || hours || minimum > 0) ? <HeroDetailsRow><HeroInfoGrid>
           {closed ? <ClosedStoreNotice role="status"><Clock3 size={14} />{closed}</ClosedStoreNotice>
