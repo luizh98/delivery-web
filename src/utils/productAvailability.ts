@@ -16,7 +16,7 @@ export function productMatchesChannel(product: Pick<Product, "availability">, ch
 }
 
 export function tableMenuPath(tableToken?: string) {
-  return tableToken ? `/?mesa=${encodeURIComponent(tableToken)}` : "/";
+  return tableToken ? `/menu?mesa=${encodeURIComponent(tableToken)}` : "/";
 }
 
 export function productPath(id: string, tableToken?: string) {

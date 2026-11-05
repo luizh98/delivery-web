@@ -118,6 +118,13 @@ export const TrackingActions = styled("div", {
   gap: "0.5rem",
 });
 
+export const TableIdentity = styled("span", {
+  display: "inline-flex", alignItems: "center", gap: "0.5rem",
+  minHeight: "2.75rem", padding: "0.625rem 0.875rem", borderRadius: "0.625rem",
+  background: "var(--color-surface-muted)", color: "var(--color-foreground)",
+  fontSize: "0.875rem", fontWeight: 700,
+});
+
 export const TrackingShortcut = styled("button", {
   display: "inline-flex",
   width: "fit-content",

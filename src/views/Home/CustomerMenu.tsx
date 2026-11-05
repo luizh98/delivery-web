@@ -1,157 +1,31 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import {
-  Check,
-  ChevronRight,
-  ClipboardList,
-  Clock3,
-  Play,
-  Search,
-  ShoppingBag,
-  ShoppingCart,
-  UserRound,
-} from "lucide-react";
+import { Armchair, ClipboardList, Clock3, ShoppingBag, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/components/CartProvider";
+import { useSyncExternalStore } from "react";
 import { useCustomerAuth } from "@/components/CustomerAuthProvider";
-import { PageShell } from "@/components/PageShell";
-import { ProductPrice as DiscountPrice } from "@/components/ProductPrice";
-import { useTracking } from "@/components/TrackingProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-import {
-  isValidBrazilianMobile,
-  normalizeBrazilianMobile,
-} from "@/utils/customerInput";
+import { isValidBrazilianMobile, normalizeBrazilianMobile } from "@/utils/customerInput";
 import { money } from "@/utils/format";
-import { activeProductFlags } from "@/utils/productFlags";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
+import type { BusinessHour } from "@/types/api";
 import type { CustomerMenuProps } from "./types";
-import type { BusinessHour, Product } from "@/types/api";
-import { MostOrderedCarousel } from "./MostOrderedCarousel";
-import { productMatchesSearch } from "./menuSearch";
-import { productPath } from "@/utils/productAvailability";
+import { MenuCatalog } from "./MenuCatalog";
 import {
-  CategoryBar,
-  CategoryButton,
-  CategoryList,
-  CategoryProducts,
-  CategorySection,
-  CategoryTitle,
-  ClosedStoreNotice,
-  ContentGrid,
-  Empty,
-  FlagBadge,
-  FlagBadges,
-  Hero,
-  HeroBanner,
-  HeroBody,
-  HeroDetailsRow,
-  HeroInfoGrid,
-  HeroInfoItem,
-  HeroText,
-  HeroTitle,
-  HeroTitleRow,
-  MenuPanel,
-  MenuNavigation,
-  SearchField,
-  SearchInput,
-  SearchResultText,
-  MobileCart,
-  MobileSummary,
-  MobileSummaryLabel,
-  MobileTotal,
-  ProductCard,
-  ProductDescription,
-  ProductImage,
-  ProductInfo,
-  ProductList,
-  ProductName,
-  ProductPrice,
-  VideoBadge,
-  SystemCredit,
-  TrackingActions,
-  TrackingShortcut,
-  WhatsAppShortcut,
+  ClosedStoreNotice, Hero, HeroBanner, HeroBody, HeroDetailsRow, HeroInfoGrid,
+  HeroInfoItem, HeroText, HeroTitle, HeroTitleRow, MenuPanel, TableIdentity,
+  TrackingActions, TrackingShortcut, WhatsAppShortcut,
 } from "./styles";
 
-const PRODUCT_DESCRIPTION_MAX_LENGTH = 120;
-const PRODUCT_FOCUS_STORAGE_KEY = "delivery:return-focus-product-id";
-const CART_FEEDBACK_STORAGE_KEY = "delivery:show-cart-feedback";
-const CART_FEEDBACK_CHANGE_EVENT = "delivery-cart-feedback-change";
-const CART_FEEDBACK_DURATION_MS = 2_000;
-const WEEK_DAY_VALUES = [
-  "SUNDAY",
-  "MONDAY",
-  "TUESDAY",
-  "WEDNESDAY",
-  "THURSDAY",
-  "FRIDAY",
-  "SATURDAY",
-] as const;
+const WEEK_DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+const subscribeToDay = () => () => {};
+const currentDay = () => WEEK_DAYS[new Date().getDay()];
+const serverDay = () => null;
 
-function subscribeToCurrentDay() {
-  return () => {};
-}
-
-function getCurrentDay() {
-  return WEEK_DAY_VALUES[new Date().getDay()];
-}
-
-function getServerDay() {
-  return null;
-}
-
-function subscribeToCartFeedback(onStoreChange: () => void) {
-  window.addEventListener(CART_FEEDBACK_CHANGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener(CART_FEEDBACK_CHANGE_EVENT, onStoreChange);
-  };
-}
-
-function getCartFeedback() {
-  return sessionStorage.getItem(CART_FEEDBACK_STORAGE_KEY) === "true";
-}
-
-function getServerCartFeedback() {
-  return false;
-}
-
-function summarizeProductDescription(description?: string) {
-  const text = description?.trim() || "Sem descrição.";
-
-  if (text.length <= PRODUCT_DESCRIPTION_MAX_LENGTH) {
-    return text;
-  }
-
-  const excerpt = text.slice(0, PRODUCT_DESCRIPTION_MAX_LENGTH - 3);
-  const lastSpace = excerpt.lastIndexOf(" ");
-  const truncated = lastSpace > 0 ? excerpt.slice(0, lastSpace) : excerpt;
-
-  return `${truncated.trimEnd()}...`;
-}
-
-function formatTodayBusinessHours(
-  hours: BusinessHour[] = [],
-  dayOfWeek: string | null,
-) {
-  if (!dayOfWeek || hours.length === 0) {
-    return null;
-  }
-
-  const hour = hours.find((item) => item.dayOfWeek === dayOfWeek);
-
-  if (!hour || hour.closed) {
-    return "Fechado";
-  }
-
+function todayHours(hours: BusinessHour[] | null | undefined, day: string | null) {
+  if (!day || !hours?.length) return null;
+  const hour = hours.find((item) => item.dayOfWeek === day);
+  if (!hour || hour.closed) return "Fechado";
   return hour.openTime && hour.closeTime
     ? `${hour.openTime.slice(0, 5)} - ${hour.closeTime.slice(0, 5)}`
     : "Horário não informado";
@@ -159,466 +33,37 @@ function formatTodayBusinessHours(
 
 export function CustomerMenu({ restaurantConfig, menu, table }: CustomerMenuProps) {
   const router = useRouter();
-  const { items: cart, subtotalCents } = useCart();
   const { customer } = useCustomerAuth();
-  const tracking = useTracking();
-  const initialCategoryId =
-    menu.categories.find((category) =>
-      category.active &&
-      menu.products.some(
-        (product) => product.active && product.categoryId === category.id,
-      ),
-    )?.id ?? "";
-  const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
-  const [searchQuery, setSearchQuery] = useState("");
-  const categoryBarRef = useRef<HTMLDivElement | null>(null);
-  const categoryButtonRefs = useRef<
-    Record<string, HTMLButtonElement | null>
-  >({});
-  const pendingCategoryIdRef = useRef<string | null>(null);
-  const currentDay = useSyncExternalStore<string | null>(
-    subscribeToCurrentDay,
-    getCurrentDay,
-    getServerDay,
-  );
-  const showCartFeedback = useSyncExternalStore(
-    subscribeToCartFeedback,
-    getCartFeedback,
-    getServerCartFeedback,
-  );
-  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const productRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const todayBusinessHours = formatTodayBusinessHours(
-    restaurantConfig?.businessHours,
-    currentDay,
-  );
-  const minimumOrderCents = restaurantConfig?.minimumOrderCents ?? 0;
-  const whatsapp = normalizeBrazilianMobile(restaurantConfig?.whatsapp ?? "");
-  const whatsappHref = isValidBrazilianMobile(whatsapp)
-    ? `https://wa.me/55${whatsapp}`
-    : null;
-  const closedStoreMessage =
-    restaurantConfig?.open === false
-      ? formatClosedStoreMessage(restaurantConfig.nextOpeningAt)
-      : null;
-  const productsByCategory = useMemo(() => {
-    const groups = new Map<string, Product[]>();
+  const day = useSyncExternalStore<string | null>(subscribeToDay, currentDay, serverDay);
+  const hours = todayHours(restaurantConfig?.businessHours, day);
+  const minimum = restaurantConfig?.minimumOrderCents ?? 0;
+  const phone = normalizeBrazilianMobile(restaurantConfig?.whatsapp ?? "");
+  const closed = restaurantConfig?.open === false
+    ? formatClosedStoreMessage(restaurantConfig.nextOpeningAt) : null;
 
-    menu.categories
-      .filter((category) => category.active)
-      .forEach((category) => groups.set(category.id, []));
-    menu.products.forEach((product) => {
-      if (product.active && productMatchesSearch(product, searchQuery)) {
-        groups.get(product.categoryId)?.push(product);
-      }
-    });
-
-    return groups;
-  }, [menu.categories, menu.products, searchQuery]);
-
-  const visibleCategories = useMemo(
-    () =>
-      menu.categories.filter(
-        (category) =>
-          category.active &&
-          (productsByCategory.get(category.id)?.length ?? 0) > 0,
-      ),
-    [menu.categories, productsByCategory],
-  );
-  const resultCount = Array.from(productsByCategory.values()).reduce(
-    (total, products) => total + products.length,
-    0,
-  );
-  const carouselProducts = useMemo(
-    () => menu.products.filter(
-      (product) => product.active && product.showInCarousel &&
-        productsByCategory.has(product.categoryId),
-    ),
-    [menu.products, productsByCategory],
-  );
-
-  useEffect(() => {
-    tracking.pageView();
-  }, [tracking]);
-
-  useEffect(() => {
-    if (visibleCategories.length === 0) {
-      return;
-    }
-
-    let animationFrame = 0;
-
-    function updateActiveCategory() {
-      const categoryBarBottom =
-        categoryBarRef.current?.getBoundingClientRect().bottom ?? 0;
-      const firstCategorySection =
-        sectionRefs.current[visibleCategories[0].id];
-      const categoryAnchor = Math.max(
-        categoryBarBottom,
-        firstCategorySection
-          ? Number.parseFloat(
-              window.getComputedStyle(firstCategorySection).scrollMarginTop,
-            )
-          : 0,
-      );
-      const pendingCategoryId = pendingCategoryIdRef.current;
-
-      if (pendingCategoryId) {
-        const pendingSectionTop =
-          sectionRefs.current[pendingCategoryId]?.getBoundingClientRect().top;
-
-        if (
-          pendingSectionTop !== undefined &&
-          pendingSectionTop > categoryAnchor
-        ) {
-          return;
-        }
-
-        pendingCategoryIdRef.current = null;
-      }
-
-      let nextCategoryId = visibleCategories[0].id;
-
-      for (let index = 0; index < visibleCategories.length - 1; index += 1) {
-        const categoryProducts =
-          productsByCategory.get(visibleCategories[index].id) ?? [];
-        const lastProduct = categoryProducts[categoryProducts.length - 1];
-        const lastProductTop = lastProduct
-          ? productRefs.current[lastProduct.id]?.getBoundingClientRect().top
-          : undefined;
-
-        if (lastProductTop === undefined || lastProductTop > categoryAnchor) {
-          break;
-        }
-
-        nextCategoryId = visibleCategories[index + 1].id;
-      }
-
-      setActiveCategoryId((currentCategoryId) =>
-        currentCategoryId === nextCategoryId
-          ? currentCategoryId
-          : nextCategoryId,
-      );
-    }
-
-    function scheduleCategoryUpdate() {
-      if (animationFrame) {
-        return;
-      }
-
-      animationFrame = window.requestAnimationFrame(() => {
-        animationFrame = 0;
-        updateActiveCategory();
-      });
-    }
-
-    function cancelPendingCategory() {
-      pendingCategoryIdRef.current = null;
-    }
-
-    scheduleCategoryUpdate();
-    window.addEventListener("scroll", scheduleCategoryUpdate, { passive: true });
-    window.addEventListener("resize", scheduleCategoryUpdate);
-    window.addEventListener("wheel", cancelPendingCategory, { passive: true });
-    window.addEventListener("touchstart", cancelPendingCategory, {
-      passive: true,
-    });
-
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener("scroll", scheduleCategoryUpdate);
-      window.removeEventListener("resize", scheduleCategoryUpdate);
-      window.removeEventListener("wheel", cancelPendingCategory);
-      window.removeEventListener("touchstart", cancelPendingCategory);
-    };
-  }, [productsByCategory, visibleCategories]);
-
-  useEffect(() => {
-    const categoryBar = categoryBarRef.current;
-    const categoryButton = categoryButtonRefs.current[activeCategoryId];
-
-    if (!categoryBar || !categoryButton) {
-      return;
-    }
-
-    const categoryBarBounds = categoryBar.getBoundingClientRect();
-    const categoryButtonBounds = categoryButton.getBoundingClientRect();
-    const targetScrollLeft =
-      categoryBar.scrollLeft +
-      categoryButtonBounds.left -
-      categoryBarBounds.left -
-      (categoryBar.clientWidth - categoryButtonBounds.width) / 2;
-
-    categoryBar.scrollTo({
-      left: targetScrollLeft,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-    });
-  }, [activeCategoryId]);
-
-  useEffect(() => {
-    const productId = sessionStorage.getItem(PRODUCT_FOCUS_STORAGE_KEY);
-
-    if (productId) {
-      sessionStorage.removeItem(PRODUCT_FOCUS_STORAGE_KEY);
-
-      const productCard = productRefs.current[productId];
-
-      productCard?.focus({ preventScroll: true });
-      productCard?.scrollIntoView({ block: "center" });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showCartFeedback) {
-      return;
-    }
-
-    const feedbackTimeout = window.setTimeout(
-      () => {
-        sessionStorage.removeItem(CART_FEEDBACK_STORAGE_KEY);
-        window.dispatchEvent(new Event(CART_FEEDBACK_CHANGE_EVENT));
-      },
-      CART_FEEDBACK_DURATION_MS,
-    );
-
-    return () => window.clearTimeout(feedbackTimeout);
-  }, [showCartFeedback]);
-
-  function handleCategoryClick(categoryId: string) {
-    pendingCategoryIdRef.current = categoryId;
-    setActiveCategoryId(categoryId);
-    const section = sectionRefs.current[categoryId];
-
-    section?.focus({ preventScroll: true });
-    section?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  return (
-    <>
-        <HeroBanner
-          style={{
-            backgroundImage: restaurantConfig?.bannerUrl
-              ? `url(${restaurantConfig.bannerUrl})`
-              : "linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))",
-          }}
-        />
-      <MenuPanel>
-      <Hero>
-        <HeroBody>        
-          <HeroTitleRow>
-            <HeroTitle>{table ? `Mesa ${table.number} · ` : ""}{restaurantConfig?.name ?? "Delivery"}</HeroTitle>
-            {whatsappHref ? (
-              <WhatsAppShortcut
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Conversar com o estabelecimento pelo WhatsApp"
-              >
-                <WhatsAppIcon />
-              </WhatsAppShortcut>
-            ) : null}
-          </HeroTitleRow>
-          <HeroText>
-            {restaurantConfig?.menuDescription?.trim() ||
-              "Escolha seus itens, revise o pedido e envie."}
-          </HeroText>
-          <TrackingActions>
-            <TrackingShortcut
-              type="button"
-              tone="secondary"
-              onClick={() => router.push(customer ? "/account" : "/login")}
-            >
-              <UserRound size={16} aria-hidden="true" />
-              {customer?.name.trim() || "Entrar ou criar conta"}
-            </TrackingShortcut>
-            <TrackingShortcut
-              type="button"
-              tone="secondary"
-              onClick={() => router.push("/orders")}
-            >
-              <ClipboardList size={16} aria-hidden="true" />
-              Meus pedidos
-            </TrackingShortcut>
-          </TrackingActions>
-          {closedStoreMessage ||
-          todayBusinessHours ||
-          minimumOrderCents > 0 ? (
-            <HeroDetailsRow>
-              <HeroInfoGrid>
-                {closedStoreMessage ? (
-                  <ClosedStoreNotice role="status">
-                    <Clock3 size={14} />
-                    {closedStoreMessage}
-                  </ClosedStoreNotice>
-                ) : todayBusinessHours ? (
-                  <HeroInfoItem>
-                    <Clock3 size={14} />
-                    <span>Hoje:</span>
-                    <strong>{todayBusinessHours}</strong>
-                  </HeroInfoItem>
-                ) : null}
-                {minimumOrderCents > 0 ? (
-                  <HeroInfoItem>
-                    <ShoppingBag size={14} />
-                    <span>Pedido mínimo:</span>
-                    <strong>{money(minimumOrderCents)}</strong>
-                  </HeroInfoItem>
-                ) : null}
-              </HeroInfoGrid>
-            </HeroDetailsRow>
-          ) : null}
-        </HeroBody>
-      </Hero>
-
-      <PageShell bottomPad flushTop>
-      <MenuNavigation>
-        <SearchField>
-          <Search size={20} aria-hidden="true" />
-          <SearchInput
-            type="search"
-            aria-label="Buscar no cardápio"
-            placeholder="Buscar no cardápio"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-          />
-        </SearchField>
-      {visibleCategories.length > 0 ? (
-        <CategoryBar ref={categoryBarRef}>
-          <CategoryList>
-            {visibleCategories.map((category) => (
-              <CategoryButton
-                key={category.id}
-                ref={(element: HTMLButtonElement | null) => {
-                  categoryButtonRefs.current[category.id] = element;
-                }}
-                active={activeCategoryId === category.id}
-                aria-current={activeCategoryId === category.id ? "true" : undefined}
-                onClick={() => handleCategoryClick(category.id)}
-              >
-                {category.name}
-              </CategoryButton>
-            ))}
-          </CategoryList>
-        </CategoryBar>
-      ) : null}
-      </MenuNavigation>
-      {searchQuery.trim() ? (
-        <SearchResultText role="status">
-          {resultCount} {resultCount === 1 ? "produto encontrado" : "produtos encontrados"}
-        </SearchResultText>
-      ) : <MostOrderedCarousel products={carouselProducts} tableToken={table?.token} />}
-
-      <ContentGrid>
-        <ProductList>
-          {visibleCategories.length === 0 ? (
-            <Empty>
-              {searchQuery.trim()
-                ? "Nenhum produto encontrado. Tente outro nome ou ingrediente."
-                : "O cardápio está sendo atualizado. Volte em breve."}
-            </Empty>
-          ) : null}
-
-          {visibleCategories.map((category) => (
-            <CategorySection
-              key={category.id}
-              ref={(element: HTMLElement | null) => {
-                sectionRefs.current[category.id] = element;
-              }}
-              tabIndex={-1}
-              aria-labelledby={`category-${category.id}`}
-            >
-              <CategoryTitle id={`category-${category.id}`}>
-                {category.name}
-              </CategoryTitle>
-              <CategoryProducts>
-                {(productsByCategory.get(category.id) ?? []).map((product) => {
-                  const flags = activeProductFlags(product);
-
-                  return (
-                    <ProductCard
-                      key={product.id}
-                      ref={(element: HTMLButtonElement | null) => {
-                        productRefs.current[product.id] = element;
-                      }}
-                      onClick={() =>
-                        router.push(
-                          productPath(product.id, table?.token),
-                        )
-                      }
-                    >
-                      <ProductInfo>
-                        <ProductName>{product.name}</ProductName>
-                        <ProductDescription>
-                          {summarizeProductDescription(product.description)}
-                        </ProductDescription>
-                        {flags.length > 0 ? (
-                          <FlagBadges>
-                            {flags.map((flag) => (
-                              <FlagBadge
-                                key={flag.field}
-                                tone={flag.tone}
-                              >
-                                {flag.label}
-                              </FlagBadge>
-                            ))}
-                          </FlagBadges>
-                        ) : null}
-                        <ProductPrice>
-                          <DiscountPrice product={product} />
-                        </ProductPrice>
-                      </ProductInfo>
-                      <ProductImage
-                        style={{
-                          backgroundImage: product.imageUrl
-                            ? `url(${product.imageUrl})`
-                            : "linear-gradient(135deg, #edf2f7, #dbe4ee)",
-                        }}
-                      >
-                        {product.videoUrl && product.imageUrl ? <VideoBadge><Play size={12} aria-hidden="true" />Vídeo</VideoBadge> : null}
-                      </ProductImage>
-                    </ProductCard>
-                  );
-                })}
-              </CategoryProducts>
-            </CategorySection>
-          ))}
-        </ProductList>
-        <SystemCredit>FlyFoods • 2026</SystemCredit>
-      </ContentGrid>
-
-      <MobileCart>
-        <MobileSummary
-          type="button"
-          onClick={() => router.push(table ? `/mesa/${encodeURIComponent(table.token)}` : "/cart")}
-          aria-label={
-            showCartFeedback
-              ? "Item adicionado ao pedido. Abrir página do pedido"
-              : "Abrir página do pedido"
-          }
-          aria-live="polite"
-          feedback={showCartFeedback}
-        >
-          {showCartFeedback ? (
-            <MobileSummaryLabel>
-              <Check size={18} />
-              Item adicionado ao pedido
-            </MobileSummaryLabel>
-          ) : (
-            <>
-              <MobileSummaryLabel>
-                <ShoppingCart size={18} />
-                Ver pedido ({cart.length})
-                <ChevronRight size={18} aria-hidden="true" />
-              </MobileSummaryLabel>
-              <MobileTotal>{money(subtotalCents)}</MobileTotal>
-            </>
-          )}
-        </MobileSummary>
-      </MobileCart>
-      </PageShell>
-      </MenuPanel>
-    </>
-  );
+  return <>
+    <HeroBanner style={{ backgroundImage: restaurantConfig?.bannerUrl
+      ? `url(${restaurantConfig.bannerUrl})`
+      : "linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))" }} />
+    <MenuPanel>
+      <Hero><HeroBody>
+        <HeroTitleRow>
+          <HeroTitle>{restaurantConfig?.name ?? "Cardápio"}</HeroTitle>
+          {isValidBrazilianMobile(phone) ? <WhatsAppShortcut href={`https://wa.me/55${phone}`} target="_blank" rel="noopener noreferrer" aria-label="Conversar com o estabelecimento pelo WhatsApp"><WhatsAppIcon /></WhatsAppShortcut> : null}
+        </HeroTitleRow>
+        <HeroText>{restaurantConfig?.menuDescription?.trim() || "Escolha seus itens, revise o pedido e envie."}</HeroText>
+        <TrackingActions>
+          {table ? <TableIdentity><Armchair size={18} aria-hidden="true" />Mesa {table.number}</TableIdentity>
+            : <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(customer ? "/account" : "/login")}><UserRound size={16} aria-hidden="true" />{customer?.name.trim() || "Entrar ou criar conta"}</TrackingShortcut>}
+          <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(table ? `/menu/pedidos?mesa=${encodeURIComponent(table.token)}` : "/orders")}><ClipboardList size={16} aria-hidden="true" />Meus pedidos</TrackingShortcut>
+        </TrackingActions>
+        {!table && (closed || hours || minimum > 0) ? <HeroDetailsRow><HeroInfoGrid>
+          {closed ? <ClosedStoreNotice role="status"><Clock3 size={14} />{closed}</ClosedStoreNotice>
+            : hours ? <HeroInfoItem><Clock3 size={14} /><span>Hoje:</span><strong>{hours}</strong></HeroInfoItem> : null}
+          {minimum > 0 ? <HeroInfoItem><ShoppingBag size={14} /><span>Pedido mínimo:</span><strong>{money(minimum)}</strong></HeroInfoItem> : null}
+        </HeroInfoGrid></HeroDetailsRow> : null}
+      </HeroBody></Hero>
+      <MenuCatalog menu={menu} table={table} />
+    </MenuPanel>
+  </>;
 }

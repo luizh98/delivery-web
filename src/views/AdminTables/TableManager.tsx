@@ -67,7 +67,7 @@ function sortTables(tables: TableResponse[]) {
 }
 
 function tableUrl(token: string) {
-  return `/mesa/${token}`;
+  return `/menu?mesa=${encodeURIComponent(token)}`;
 }
 
 async function createTableLink(table: TableResponse): Promise<TableLink> {

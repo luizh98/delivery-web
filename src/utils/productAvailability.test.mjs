@@ -17,6 +17,6 @@ test("channel filters include shared products and exclude opposite exclusivity",
 test("table menu and product links preserve encoded table context", () => {
   assert.equal(tableMenuPath(), "/");
   assert.equal(productPath("burger"), "/products/burger");
-  assert.equal(tableMenuPath("qr+token"), "/?mesa=qr%2Btoken");
+  assert.equal(tableMenuPath("qr+token"), "/menu?mesa=qr%2Btoken");
   assert.equal(productPath("burger", "qr+token"), "/products/burger?mesa=qr%2Btoken");
 });
