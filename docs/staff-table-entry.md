@@ -26,6 +26,8 @@
 
 Pedir conta bloqueia novos lançamentos até reabertura. Encerrar comanda **não registra pagamento**. Cozinha mantém controle de preparo.
 
+Quando a conta está em fechamento, aviso destacado com **Reabrir comanda** permanece visível tanto no catálogo quanto em Rodada e consumo. Tentar adicionar produto ou enviar uma rodada mostra aviso explicando o bloqueio, sem editar itens nem criar pedido. Conferir um envio anterior sem confirmação mantém a retentativa com o mesmo ID.
+
 ## Proteções e limites
 
 - API autoriza papéis e tenant; interface não é a barreira de segurança.

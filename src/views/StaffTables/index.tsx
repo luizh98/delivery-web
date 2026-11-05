@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, BellRing, Check, Copy, LogOut, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, Armchair, BellRing, Check, CircleAlert, Copy, LockKeyhole, LogOut, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,7 @@ import { Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, Mobi
 type Draft = { items: DraftItem[]; sessionId: string; notes: string };
 type CancelAction = { order: StaffTableOrder; itemIndex?: number } | { closeTable: true };
 const emptyDraft = (sessionId = ""): Draft => ({ items: [], sessionId, notes: "" });
+const closingMessage = "Conta em fechamento. Reabra a comanda para lançar novos itens.";
 const requestLabel = tableServiceLabels;
 const tableStatus = (table: StaffTable) => table.session?.status === "CLOSING" ? "Fechando conta" : table.session ? "Em consumo" : "Livre";
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -88,6 +89,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const hasDrafts = Object.values(drafts).some((value) => value.items.length > 0);
   const consumptionTotal = consumption?.orders.filter((order) => order.status !== "CANCELED").reduce((sum, order) => sum + order.totals.totalCents, 0) ?? 0;
   const tablePhone = consumption?.orders.find((order) => order.customerPhone)?.customerPhone ?? "";
+  const isClosing = consumption?.session?.status === "CLOSING";
 
   const loadConsumption = useCallback(async (id: string, signal?: AbortSignal) => {
     const version = ++consumptionVersion.current;
@@ -131,6 +133,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   function updateDraft(next: Draft) { setDrafts((current) => ({ ...current, [selectedId]: next })); }
   function openTable(id: string) { consumptionVersion.current++; setSelectedId(id); setConsumption(null); setConsumptionError(""); setProductSearch(""); setCategoryId(""); setTab("draft"); setMobilePane("catalog"); }
   function addProduct(product: Product) {
+    if (isClosing) { showToast(closingMessage, "warning"); return; }
     const item: DraftItem = { id: crypto.randomUUID(), product, quantity: 1, observations: "", options: [] };
     if (product.optionGroups?.some((group) => !group.deleted)) { setEditor({ editing: false, item }); return; }
     updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: [...draft.items, item] });
@@ -149,7 +152,8 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
 
   async function sendRound(contactPhone = tablePhone) {
     if (submitting.current || !selected || !consumption || consumptionError) return;
-    if (!pendingSubmission.current && (!draft.items.length || consumption.session?.status === "CLOSING")) return;
+    if (!pendingSubmission.current && isClosing) { showToast(closingMessage, "warning"); return; }
+    if (!pendingSubmission.current && !draft.items.length) return;
     if (!pendingSubmission.current && !normalizeTablePhone(contactPhone)) { setAskingPhone(true); return; }
     submitting.current = true; setBusy(true);
     if (!pendingSubmission.current) {
@@ -239,13 +243,13 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}
         {request.status === "PENDING" || request.assignedBy === admin.id || isAdmin ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/resolve`, "Chamado concluído.")}><Check size={16} />Concluir chamado</Button> : null}
       </Actions></Row></Panel>)}
+      {isClosing ? <Panel id="table-closing-notice" role="status"><Row><Stack><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></Stack><Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button></Row></Panel> : null}
       <MobileSwitch><Button variant={mobilePane === "catalog" ? "primary" : "outline"} aria-pressed={mobilePane === "catalog"} onClick={() => setMobilePane("catalog")}>Cardápio</Button><Button variant={mobilePane === "ticket" ? "primary" : "outline"} aria-pressed={mobilePane === "ticket"} onClick={() => setMobilePane("ticket")}>Rodada e consumo</Button></MobileSwitch>
       <Workbench data-mobile-pane={mobilePane}><Panel aria-labelledby="catalog-title"><Heading id="catalog-title">Adicionar itens</Heading>
         <Field label="Buscar produto"><Input type="search" placeholder="Digite o nome do produto" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} /></Field>
         <Field label="Categoria"><Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Todas as categorias</option>{menu.categories.filter((category) => category.active).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select></Field>
         {!consumption && !consumptionError ? <Muted role="status">Carregando comanda…</Muted> : null}
-        {consumption?.session?.status === "CLOSING" ? <Stack><Muted>Conta em fechamento. Reabra a comanda para lançar novos itens.</Muted><Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button></Stack> : null}
-        <ProductList>{products.map((product) => <ProductButton key={product.id} disabled={!canLaunch} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><span><strong>{product.name}</strong><Muted>{money(productSalePrice(product))}{product.optionGroups?.some((group) => !group.deleted) ? " · Ver opções" : ""}</Muted></span><Plus size={20} aria-hidden="true" /></ProductButton>)}</ProductList>
+        <ProductList>{products.map((product) => <ProductButton key={product.id} disabled={!canEdit || (!canLaunch && !isClosing)} aria-disabled={!canLaunch} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><span><strong>{product.name}</strong><Muted>{money(productSalePrice(product))}{product.optionGroups?.some((group) => !group.deleted) ? " · Ver opções" : ""}</Muted></span>{isClosing ? <LockKeyhole size={20} aria-hidden="true" /> : <Plus size={20} aria-hidden="true" />}</ProductButton>)}</ProductList>
         {!products.length ? <Empty><Search size={24} aria-hidden="true" />Nenhum produto encontrado. Tente outro nome ou categoria.</Empty> : null}
       </Panel><Panel aria-label={`Comanda da mesa ${selected.number}`}>
         {tablePhone ? <Muted>Contato da mesa: <a href={`tel:${tablePhone}`}>{tablePhone}</a></Muted> : null}
@@ -261,7 +265,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
               <Button variant="dangerGhost" disabled={!canEdit} onClick={() => updateDraft({ ...draft, items: draft.items.filter((entry) => entry.id !== item.id) })} aria-label={`Excluir ${item.product.name}`}><Trash2 size={16} /></Button></Actions>
           </ItemRow>)}
           {draft.items.length ? <><Field label="Observação da rodada (opcional)"><Textarea maxLength={2000} disabled={!canEdit} value={draft.notes} onChange={(event) => updateDraft({ ...draft, notes: event.target.value })} /></Field><Button variant="dangerGhost" disabled={!canEdit} onClick={async () => { if (await requestConfirmation({ message: "Descartar os itens desta rodada? Os pedidos já enviados serão mantidos.", confirmLabel: "Descartar rodada" })) updateDraft(emptyDraft(consumption?.session?.id)); }}><Trash2 size={16} />Descartar rodada</Button></> : null}
-          <Summary><Row><span>Total da rodada</span><Price>{money(draftTotal)}</Price></Row><Button disabled={busy || (!uncertainSubmission && (!canLaunch || !draft.items.length)) || !!consumptionError} onClick={() => void sendRound()}><Send size={18} />{busy ? "Enviando…" : uncertainSubmission ? "Conferir envio" : `Enviar ${draftCount} ${draftCount === 1 ? "item" : "itens"} à cozinha`}</Button></Summary>
+          <Summary><Row><span>Total da rodada</span><Price>{money(draftTotal)}</Price></Row><Button disabled={busy || (!uncertainSubmission && ((!canLaunch && !isClosing) || !draft.items.length)) || !!consumptionError} aria-disabled={isClosing && !uncertainSubmission} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => void sendRound()}><Send size={18} />{busy ? "Enviando…" : uncertainSubmission ? "Conferir envio" : `Enviar ${draftCount} ${draftCount === 1 ? "item" : "itens"} à cozinha`}</Button></Summary>
         </Stack> : <Stack><Row><Heading>Consumo da mesa</Heading><Price>{money(consumptionTotal)}</Price></Row>
           {!consumption?.orders.length ? <Empty>{consumption ? "Nenhum pedido enviado nesta comanda." : "Carregando consumo…"}</Empty> : consumption.orders.map((order) => <ItemRow key={order.id}>
             <Row><strong>Rodada #{order.orderNumber ?? order.id.slice(-6)}</strong><Badge>{statusLabel(order.status, "TABLE")}</Badge></Row>
