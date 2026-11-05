@@ -30,3 +30,7 @@ FORM: Busca/categorias/produtos/sacola vêm do componente extraído; consumo em 
 BEHAVIOR: Tela de consumo atualiza a cada 5 segundos; alertas usam SSE com fallback 10 segundos. Movimento reduzido remove pulsação. Conta encerrada limpa conteúdo e sessão antiga não acompanha próxima visita.
 
 BUILD PATH: Código existente é autoridade do catálogo por instrução explícita posterior à prévia. Imagem anterior é referência de hierarquia do consumo, não contrato de reprodução pixel a pixel; sem novas imagens de produção.
+
+## Revisão de acesso à Comanda — 05/11/2026
+
+Usuário solicitou trocar Meus pedidos por Comanda no salão, acentos de cor primária na consulta e remoção do atualizar manual. Total e ações precedem pedidos; leituras automáticas sem sobreposição. No salão, resumo/total e ações pedir fechamento/reabrir/encerrar ficam acima das abas; mobile tem acesso direto Comanda. Permissões existentes e catálogo preservados. Requisitos em `.specs/features/comanda-access/spec.md` no workspace pai.

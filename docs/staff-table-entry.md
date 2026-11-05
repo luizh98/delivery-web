@@ -28,6 +28,8 @@ Pedir conta bloqueia novos lançamentos até reabertura. Encerrar comanda **não
 
 Quando a conta está em fechamento, aviso destacado com **Reabrir comanda** permanece visível tanto no catálogo quanto em Rodada e consumo. Tentar adicionar produto ou enviar uma rodada mostra aviso explicando o bloqueio, sem editar itens nem criar pedido. Conferir um envio anterior sem confirmação mantém a retentativa com o mesmo ID.
 
+Resumo **Comanda** com total e ações agora fica acima das abas, disponível ao selecionar mesa: **Pedir fechamento** (ADMIN/WAITER), **Reabrir comanda** quando fechando e **Encerrar comanda** (somente ADMIN). Encerramento conserva confirmação/motivo e não registra pagamento. No celular, aba e barra inferior Comanda abrem consumo diretamente; Rodada abre rascunho. Não é preciso entrar em Consumo para acessar fechamento.
+
 ## Proteções e limites
 
 - API autoriza papéis e tenant; interface não é a barreira de segurança.
