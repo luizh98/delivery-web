@@ -20,7 +20,7 @@ Comanda usa cor primária do tenant no total e acentos suaves nos estados, com t
 
 **Chamar garçom** usa SERVICE (dúvida). **Pedir fechamento** confirma solicitação e usa CLOSURE; bloqueia novos lançamentos até equipe reabrir. Não registra pagamento nem encerra mesa automaticamente. Nome/celular exigidos pela API ficam visíveis no checkout da mesa; retirada, frete e seleção de pagamento ficam restritos ao delivery.
 
-ADMIN recebe banner global; WAITER atende em `/salao`. Chamados pendentes exibem mesa/motivo e pulso suave 2s. Assumir interrompe pulso; concluir remove chamado. Redução de movimento desliga animação e mantém contorno/texto. SSE `table-operation`, reconexão e polling 10s atualizam alertas. Falhas de atualização são informadas.
+ADMIN recebe banner global; WAITER atende em `/hall`, com menu compartilhado com o motoboy e acessos restritos ao atendimento. Chamados pendentes exibem mesa/motivo e pulso suave 2s. Assumir interrompe pulso; concluir remove chamado. Redução de movimento desliga animação e mantém contorno/texto. SSE `table-operation`, reconexão e polling 10s atualizam alertas. Falhas de atualização são informadas.
 
 Comandas individuais e recebimentos financeiros não foram adicionados. Interface identifica mesas existentes.
 

@@ -2,7 +2,9 @@
 
 ## Acesso
 
-`/salao` usa o login existente em `/admin/login`. Usuário com perfil **Garçom (WAITER)** é redirecionado para o salão; administrador encontra **Atendimento de mesas** no menu. Nenhum novo serviço ou banco é necessário em produção: extensão do delivery-web e da API Go existentes.
+`/hall` usa o login existente em `/admin/login`. Usuário com perfil **Garçom (WAITER)** é redirecionado para o atendimento; administrador encontra **Atendimento de mesas** no menu. Endereço anterior removido, sem redirecionamento. Nenhum novo serviço ou banco é necessário em produção: extensão do delivery-web e da API Go existentes.
+
+Página reutiliza `AdminShell` e `AdminNavigation`, os mesmos do motoboy: cabeçalho/sidebar no desktop e menu lateral no celular. WAITER puro vê somente Atendimento de mesas; ADMIN preserva menu completo e ENTREGADOR mantém Pedidos. Navegação e saída pelo menu confirmam descarte quando existem rascunhos ou envio inconclusivo. Hall mantém seu próprio SSE de mesas, sem iniciar SSE geral de pedidos administrativos. Alertas usam `/hall?table=ID`.
 
 ## Fluxo
 
@@ -36,7 +38,7 @@ Resumo **Comanda** com total e ações agora fica acima das abas, disponível ao
 - Servidor verifica disponibilidade, adicionais e preços. Mudança no preço pede revisão.
 - ID de submissão impede pedido duplicado no retry. Envio sem confirmação mantém o mesmo ID e bloqueia edição até conferência.
 - Cancelamento usa versão atual para não sobrescrever atualização concorrente da cozinha.
-- Auditoria inclui autor, tenant, origem `/salao` e diferenças, ocultando credenciais da comanda; cobre gravações indiretas de sessão, sequência e impressão.
+- Auditoria inclui autor, tenant, origem `/hall` e diferenças, ocultando credenciais da comanda; cobre gravações indiretas de sessão, sequência e impressão. Origem antiga não é mais aceita; histórico já salvo permanece preservado.
 - Mesas e consumo atualizam a cada dez segundos, ao voltar à aba e manualmente.
 - Rascunhos por mesa ficam na memória da página; sair/recarregar avisa sobre perda. Sem operação offline ou sincronização de rascunho entre aparelhos.
 - Não existe transação distribuída entre sessão, pedido, impressão e histórico. Falha de impressão de cancelamento é informada para que equipe avise cozinha pessoalmente. Sem impressora configurada, aviso fica no painel da cozinha.
