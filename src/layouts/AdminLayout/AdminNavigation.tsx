@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
@@ -33,6 +33,7 @@ import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { CurrentUserResponse, RestaurantConfigResponse } from "@/types/api";
 import { LogoutButton } from "./LogoutButton";
+import { navigationHome, navigationItemVisible, navigationRole, type NavigationRole } from "./navigation";
 import {
   Brand,
   CloseButton,
@@ -60,7 +61,7 @@ const navItems = [
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/table-orders", label: "Pedidos mesa", icon: ClipboardList },
   { href: "/admin/tables", label: "Mesas", icon: Armchair },
-  { href: "/salao", label: "Atendimento de mesas", icon: Armchair, adminOnly: true },
+  { href: "/hall", label: "Atendimento de mesas", icon: Armchair, adminOnly: true },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },
   { href: "/admin/deliveries", label: "Entregas", motoboyLabel: "Pedidos", icon: Bike },
   { href: "/admin/customers", label: "Clientes", icon: Users },
@@ -77,6 +78,7 @@ type AdminNavigationProps = {
   admin: Pick<CurrentUserResponse, "email" | "roles" | "tenantSlug">;
   restaurantName: string;
   storeOpen: boolean;
+  beforeLeave?: () => Promise<boolean>;
 };
 
 type AccountSummaryProps = {
@@ -84,15 +86,13 @@ type AccountSummaryProps = {
 };
 
 type NavigationItemsProps = {
-  isAdmin: boolean;
-  isMotoboy: boolean;
+  role: NavigationRole;
   isDesktopSidebarExpanded?: boolean;
-  onNavigate?: () => void;
+  onNavigate?: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
 };
 
 function NavigationItems({
-  isAdmin,
-  isMotoboy,
+  role,
   isDesktopSidebarExpanded,
   onNavigate,
 }: NavigationItemsProps) {
@@ -101,10 +101,10 @@ function NavigationItems({
   return (
     <>
       {navItems
-        .filter((item) => isMotoboy ? item.href === "/admin/deliveries" : !item.adminOnly || isAdmin)
+        .filter((item) => navigationItemVisible(item, role))
         .map((item) => {
           const Icon = item.icon;
-          const label = isMotoboy ? item.motoboyLabel ?? item.label : item.label;
+          const label = role === "motoboy" ? item.motoboyLabel ?? item.label : item.label;
           const isActive = item.href === "/admin"
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -196,14 +196,25 @@ function StoreAvailabilityButton({ initialStoreOpen }: { initialStoreOpen: boole
   );
 }
 
-export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavigationProps) {
+export function AdminNavigation({ admin, restaurantName, storeOpen, beforeLeave }: AdminNavigationProps) {
+  const router = useRouter();
   const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
-  const isAdmin = admin.roles.includes("ADMIN");
-  const isMotoboy = admin.roles.includes("ENTREGADOR") && !isAdmin;
+  const role = navigationRole(admin.roles);
+  const isAdmin = role === "admin";
+  const homeHref = navigationHome(role);
+
+  function navigate(event: ReactMouseEvent<HTMLAnchorElement>) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    if (!beforeLeave) { closeMenu(false); return; }
+    event.preventDefault();
+    const href = event.currentTarget.getAttribute("href");
+    if (!href) return;
+    void beforeLeave().then((allowed) => { if (allowed) { closeMenu(false); router.push(href); } });
+  }
 
   function openMobileMenu(event: ReactMouseEvent<HTMLButtonElement>) {
     menuButtonRef.current = event.currentTarget;
@@ -270,7 +281,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
     <>
       <DesktopNavbar>
         <DesktopNavbarBrand>
-          <Brand as={Link} href="/admin">
+          <Brand as={Link} href={homeHref} onClick={navigate}>
             <Image src="/flyfoods-logo.webp" alt="FlyFoods" width={320} height={243} loading="eager" />
           </Brand>
           <MenuButton
@@ -296,7 +307,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
               <Email>{admin.email}</Email>
             </DesktopNavbarIdentity>
           </DesktopNavbarUser>
-          <LogoutButton iconOnly />
+          <LogoutButton iconOnly beforeLeave={beforeLeave} />
         </DesktopNavbarActions>
       </DesktopNavbar>
 
@@ -307,15 +318,15 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
           data-expanded={isDesktopSidebarExpanded}
         >
           <NavigationItems
-            isAdmin={isAdmin}
-            isMotoboy={isMotoboy}
+            role={role}
+            onNavigate={navigate}
             isDesktopSidebarExpanded={isDesktopSidebarExpanded}
           />
         </Nav>
       </Sidebar>
 
       <MobileHeader>
-        <Brand as={Link} href="/admin">
+        <Brand as={Link} href={homeHref} onClick={navigate}>
           <Image src="/flyfoods-logo.webp" alt="FlyFoods" width={320} height={243} loading="eager" />
         </Brand>
         <MenuButton
@@ -346,7 +357,7 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
             onKeyDown={trapDrawerFocus}
           >
             <DrawerHeader>
-              <Brand as={Link} href="/admin" onClick={() => closeMenu(false)}>
+              <Brand as={Link} href={homeHref} onClick={navigate}>
                 <Image src="/flyfoods-logo.webp" alt="FlyFoods" width={320} height={243} />
               </Brand>
               <CloseButton
@@ -360,14 +371,13 @@ export function AdminNavigation({ admin, restaurantName, storeOpen }: AdminNavig
             </DrawerHeader>
             <Nav aria-label="Navegação principal">
               <NavigationItems
-                isAdmin={isAdmin}
-                isMotoboy={isMotoboy}
-                onNavigate={() => closeMenu(false)}
+                role={role}
+                onNavigate={navigate}
               />
             </Nav>
             <SidebarFooter>
               <AccountSummary admin={admin} />
-              <LogoutButton />
+              <LogoutButton beforeLeave={beforeLeave} />
             </SidebarFooter>
           </MobileDrawer>
         </>

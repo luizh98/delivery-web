@@ -1,8 +1,7 @@
 import { styled } from "styles";
 
-export const Root = styled("main", {
-  maxWidth: "90rem", margin: "0 auto", padding: "1rem", paddingBottom: "6rem", display: "grid", gap: "1.5rem",
-  "@md": { padding: "1.5rem 2rem 6rem" },
+export const Root = styled("section", {
+  maxWidth: "90rem", margin: "0 auto", paddingBottom: "6rem", display: "grid", gap: "1.5rem",
   "@lg": { paddingBottom: "3rem" },
   "& :is(button, a, input, textarea, select):focus-visible": { outline: "2px solid var(--color-primary-text)", outlineOffset: "3px" },
   "& input, & textarea": { caretColor: "var(--color-primary-text)" },

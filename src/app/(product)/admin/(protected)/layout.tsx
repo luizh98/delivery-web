@@ -16,7 +16,7 @@ export default async function ProtectedAdminLayout({
   }
 
   if (admin.roles.includes("WAITER") && !admin.roles.includes("ADMIN") && !admin.roles.includes("STANDARD")) {
-    redirect("/salao");
+    redirect("/hall");
   }
 
   const restaurantConfig = await getRestaurantConfig();

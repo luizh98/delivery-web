@@ -54,7 +54,7 @@ async function forward(request: NextRequest, context: RouteParams) {
     if (!adminPage) {
       try { adminPage = new URL(request.headers.get("referer") ?? "").pathname; } catch { /* Direct API calls may have no page. */ }
     }
-    if ((adminPage?.startsWith("/admin") || adminPage === "/salao") && adminPage.length <= 300 && !/[?#\r\n]/.test(adminPage)) {
+    if ((adminPage?.startsWith("/admin") || adminPage === "/hall") && adminPage.length <= 300 && !/[?#\r\n]/.test(adminPage)) {
       headers.set("X-Admin-Page", adminPage);
     }
   }

@@ -6,12 +6,14 @@ import { Button } from "@/components/Button";
 
 type LogoutButtonProps = {
   iconOnly?: boolean;
+  beforeLeave?: () => Promise<boolean>;
 };
 
-export function LogoutButton({ iconOnly = false }: LogoutButtonProps) {
+export function LogoutButton({ iconOnly = false, beforeLeave }: LogoutButtonProps) {
   const router = useRouter();
 
   async function logout() {
+    if (beforeLeave && !await beforeLeave()) return;
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
     router.refresh();

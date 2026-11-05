@@ -47,7 +47,7 @@ export function TableServiceAlerts({ tables, onSelect, disabled = false }: { tab
     <h2 aria-live="polite"><BellRing size={20} aria-hidden="true" />{calls.length} {calls.length === 1 ? "mesa aguardando atendimento" : "chamados aguardando atendimento"}</h2>
     <ul>{calls.map((call) => <li key={call.id}>{onSelect
       ? <button type="button" disabled={disabled} onClick={() => onSelect(call.tableId)}>Mesa {call.tableNumber} · {call.label}</button>
-      : <Link href={`/salao?mesa=${encodeURIComponent(call.tableId)}`}>Mesa {call.tableNumber} · {call.label}</Link>}</li>)}</ul>
+      : <Link href={`/hall?table=${encodeURIComponent(call.tableId)}`}>Mesa {call.tableNumber} · {call.label}</Link>}</li>)}</ul>
     {failed ? <p role="status">Sem atualização dos chamados. Confira a conexão.</p> : null}
   </Banner>;
 }

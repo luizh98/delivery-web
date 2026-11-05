@@ -1,14 +1,13 @@
 "use client";
 
-import { ArrowLeft, Armchair, BellRing, Check, CircleAlert, Copy, LockKeyhole, LogOut, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, Armchair, BellRing, Check, CircleAlert, Copy, LockKeyhole, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/Button";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { useToast } from "@/components/ToastProvider";
-import { ApiError, authApi, clientApi } from "@/services/api/client";
+import { ApiError, clientApi } from "@/services/api/client";
 import type { CurrentUserResponse, MenuResponse, Product, StaffTable, StaffTableConsumption, StaffTableOrder } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
@@ -16,6 +15,7 @@ import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } 
 import { ItemEditor } from "./ItemEditor";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
+import { AdminShell } from "@/layouts/AdminLayout/AdminShell";
 import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
 type Draft = { items: DraftItem[]; sessionId: string; notes: string };
@@ -55,8 +55,7 @@ function ReasonDialog({ action, onConfirm, onClose }: { action: CancelAction; on
   </Dialog>;
 }
 
-export function StaffTables({ initialTables, initialMenu, admin, restaurantName, initialTableId = "" }: { initialTables: StaffTable[] | null; initialMenu: MenuResponse; admin: CurrentUserResponse; restaurantName: string; initialTableId?: string }) {
-  const router = useRouter();
+export function StaffTables({ initialTables, initialMenu, admin, restaurantName, initialTableId = "", storeOpen = true }: { initialTables: StaffTable[] | null; initialMenu: MenuResponse; admin: CurrentUserResponse; restaurantName: string; initialTableId?: string; storeOpen?: boolean }) {
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirmation();
   const [tables, setTables] = useState(initialTables);
@@ -216,10 +215,8 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     finally { setBusy(false); }
   }
 
-  async function leave(destination?: string) {
-    if ((hasDrafts || uncertainSubmission) && !await requestConfirmation({ message: "Há itens ainda não enviados ou um envio sem confirmação. Sair descartará os rascunhos. Deseja sair?", confirmLabel: "Sair", variant: "danger" })) return;
-    if (destination) router.push(destination);
-    else { await authApi("logout", { method: "POST" }); router.push("/admin/login"); router.refresh(); }
+  async function confirmLeave() {
+    return !(hasDrafts || uncertainSubmission) || await requestConfirmation({ message: "Há itens ainda não enviados ou um envio sem confirmação. Sair descartará os rascunhos. Deseja sair?", confirmLabel: "Sair", variant: "danger" });
   }
 
   const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(table.number).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
@@ -227,11 +224,8 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const canEdit = !busy && !uncertainSubmission;
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
 
-  return <Root>
-    <Header><div><Title>Atendimento de mesas</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div><Actions>
-      {isAdmin ? <Button variant="outline" onClick={() => void leave("/admin")}><ArrowLeft size={16} />Admin</Button> : null}
-      <Button variant="ghost" onClick={() => void leave()}><LogOut size={16} />Sair</Button>
-    </Actions></Header>
+  return <AdminShell admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} beforeLeave={confirmLeave}><Root>
+    <Header><div><Title>Atendimento de mesas</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div></Header>
     <TableServiceAlerts tables={tables} onSelect={openTable} disabled={busy || uncertainSubmission} />
     <Row><div><Heading>{selected ? `Mesa ${selected.number}` : "Escolha a mesa"}</Heading><Muted>{selected ? tableStatus(selected) : "Selecione a mesa para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
       {selected ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas</Button> : null}
@@ -304,5 +298,5 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     {editor ? <ItemEditor key={editor.item.id} item={editor.item} editing={editor.editing} onClose={() => setEditor(null)} onSave={(item) => { updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: editor.editing ? draft.items.map((entry) => entry.id === item.id ? item : entry) : [...draft.items, item] }); setEditor(null); showToast(editor.editing ? "Item atualizado na rodada." : `${item.product.name} adicionado à rodada.`); }} /> : null}
     {cancelAction ? <ReasonDialog action={cancelAction} onClose={() => setCancelAction(null)} onConfirm={cancelSent} /> : null}
     {askingPhone ? <PhoneDialog onClose={() => setAskingPhone(false)} onConfirm={(phone) => { setAskingPhone(false); void sendRound(phone); }} /> : null}
-  </Root>;
+  </Root></AdminShell>;
 }
