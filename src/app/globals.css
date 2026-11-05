@@ -106,3 +106,15 @@ button:disabled {
       0 0 2rem 0.5rem color-mix(in srgb, var(--overdue-neon-deep) 38%, transparent);
   }
 }
+@keyframes table-service-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 3px var(--color-primary-text); }
+}
+
+.table-service-pending {
+  animation: table-service-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-service-pending { animation: none; outline: 2px solid var(--color-primary-text); outline-offset: 2px; }
+}

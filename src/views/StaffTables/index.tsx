@@ -14,12 +14,14 @@ import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
+import { TableServiceAlerts } from "@/components/TableServiceAlerts";
+import { tableServiceLabels } from "@/utils/tableService";
 import { Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
 type Draft = { items: DraftItem[]; sessionId: string; notes: string };
 type CancelAction = { order: StaffTableOrder; itemIndex?: number } | { closeTable: true };
 const emptyDraft = (sessionId = ""): Draft => ({ items: [], sessionId, notes: "" });
-const requestLabel = { SERVICE: "Chamou atendimento", CLOSURE: "Pediu a conta", PAYMENT: "Pediu pagamento" };
+const requestLabel = tableServiceLabels;
 const tableStatus = (table: StaffTable) => table.session?.status === "CLOSING" ? "Fechando conta" : table.session ? "Em consumo" : "Livre";
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -52,13 +54,13 @@ function ReasonDialog({ action, onConfirm, onClose }: { action: CancelAction; on
   </Dialog>;
 }
 
-export function StaffTables({ initialTables, initialMenu, admin, restaurantName }: { initialTables: StaffTable[] | null; initialMenu: MenuResponse; admin: CurrentUserResponse; restaurantName: string }) {
+export function StaffTables({ initialTables, initialMenu, admin, restaurantName, initialTableId = "" }: { initialTables: StaffTable[] | null; initialMenu: MenuResponse; admin: CurrentUserResponse; restaurantName: string; initialTableId?: string }) {
   const router = useRouter();
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirmation();
   const [tables, setTables] = useState(initialTables);
   const [menu, setMenu] = useState(initialMenu);
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(initialTableId);
   const [consumption, setConsumption] = useState<StaffTableConsumption | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [tableSearch, setTableSearch] = useState("");
@@ -112,8 +114,11 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
     queueMicrotask(() => { if (selectedId && !controller.signal.aborted) void loadConsumption(selectedId, controller.signal); });
     const timer = window.setInterval(update, 10000);
     const onVisible = () => { if (document.visibilityState === "visible") update(); };
+    const events = new EventSource("/api/backend/admin/table-operations/events");
+    events.addEventListener("table-operation", onVisible);
+    events.addEventListener("open", onVisible);
     document.addEventListener("visibilitychange", onVisible);
-    return () => { controller.abort(); window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
+    return () => { controller.abort(); events.close(); window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, [selectedId, refresh, loadConsumption]);
 
   useEffect(() => {
@@ -212,6 +217,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
       {isAdmin ? <Button variant="outline" onClick={() => void leave("/admin")}><ArrowLeft size={16} />Admin</Button> : null}
       <Button variant="ghost" onClick={() => void leave()}><LogOut size={16} />Sair</Button>
     </Actions></Header>
+    <TableServiceAlerts tables={tables} onSelect={openTable} disabled={busy || uncertainSubmission} />
     <Row><div><Heading>{selected ? `Mesa ${selected.number}` : "Escolha a mesa"}</Heading><Muted>{selected ? tableStatus(selected) : "Selecione a mesa para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
       {selected ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas</Button> : null}
       <Button variant="outline" disabled={refreshing || busy} onClick={() => void manualRefresh()}><RefreshCw size={16} />{refreshing ? "Atualizando…" : "Atualizar"}</Button>
@@ -219,16 +225,17 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName 
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
     {!selected ? <Stack>
       <Field label="Buscar mesa"><Input type="search" inputMode="numeric" placeholder="Número da mesa" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} /></Field>
-      <TableGrid>{tableList.map((table) => <TableButton key={table.id} onClick={() => openTable(table.id)} aria-label={`Mesa ${table.number}, ${tableStatus(table)}`}>
+      <TableGrid>{tableList.map((table) => <TableButton key={table.id} className={table.requests?.some((request) => request.status === "PENDING") ? "table-service-pending" : undefined} onClick={() => openTable(table.id)} aria-label={`Mesa ${table.number}, ${tableStatus(table)}`}>
         <Row><Armchair size={20} aria-hidden="true" /><Badge>{tableStatus(table)}</Badge></Row><strong>Mesa {table.number}</strong>
         {table.requests?.length ? <Badge><BellRing size={16} />{table.requests.length} chamado(s)</Badge> : <Muted>Toque para atender</Muted>}
+        {table.requests?.map((request) => <Muted key={request.id}>{requestLabel[request.type]}{request.status === "ASSIGNED" ? " · Em atendimento" : ""}</Muted>)}
         {drafts[table.id]?.items.length ? <Badge>Rodada não enviada</Badge> : null}
       </TableButton>)}</TableGrid>
       {tables !== null && !tableList.length ? <Empty>{tables.some((table) => table.active) ? "Nenhuma mesa encontrada. Tente outro número." : "Nenhuma mesa ativa. Peça ao administrador para cadastrar ou ativar as mesas."}</Empty> : null}
     </Stack> : <Stack>
       {consumptionError ? <ErrorBox role="alert">{consumptionError}</ErrorBox> : null}
       {uncertainSubmission ? <ErrorBox role="alert">Envio sem confirmação. Use Conferir envio antes de alterar a rodada ou trocar de mesa.</ErrorBox> : null}
-      {selected.requests?.map((request) => <Panel key={request.id}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
+      {selected.requests?.map((request) => <Panel key={request.id} className={request.status === "PENDING" ? "table-service-pending" : undefined}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}
         {request.status === "PENDING" || request.assignedBy === admin.id || isAdmin ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/resolve`, "Chamado concluído.")}><Check size={16} />Concluir chamado</Button> : null}
       </Actions></Row></Panel>)}
