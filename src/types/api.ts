@@ -337,6 +337,12 @@ export type PublicTableResponse = {
 
 export type TableServiceRequestType = "SERVICE" | "CLOSURE" | "PAYMENT";
 
+export type PublicTableConsumption = {
+  session: { id: string; status: "OPEN" | "CLOSING" } | null;
+  orders: Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "createdAt" | "cancellation" | "tableItemCancellations">[];
+  requests: Pick<TableServiceRequestResponse, "id" | "type" | "status">[];
+};
+
 export type TableServiceRequestResponse = {
   id: string;
   tableId: string;

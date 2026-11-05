@@ -501,7 +501,9 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
         valueCents: order.totals.totalCents,
         itemIds: order.items.map((item) => item.productId),
       });
-      router.replace(`/orders/${encodeURIComponent(order.trackingCode)}`);
+      router.replace(isTableOrder && table
+        ? `/menu/pedidos?mesa=${encodeURIComponent(table.token)}`
+        : `/orders/${encodeURIComponent(order.trackingCode)}`);
     } catch (cause) {
       let message = "Não foi possível enviar o pedido.";
       if (cause instanceof ApiError) {
@@ -713,7 +715,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
               </CheckoutSection>
               )}
 
-              {deliveryType === "DELIVERY" ? (
+              {!isTableOrder ? (deliveryType === "DELIVERY" ? (
                 <CheckoutSection>
                   <CheckoutSectionTitle>Endereço de entrega</CheckoutSectionTitle>
                   {savedDeliveryAddress ? (
@@ -779,10 +781,10 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                     </AddressSummaryContent>
                   </AddressSummaryCard>
                 </CheckoutSection>
-              )}
+              )) : null}
 
-              {!isTableOrder ? (<CheckoutSection>
-                <CheckoutSectionTitle>Seus dados</CheckoutSectionTitle>
+              <CheckoutSection>
+                <CheckoutSectionTitle>{isTableOrder ? "Dados para contato" : "Seus dados"}</CheckoutSectionTitle>
                 <Field
                   label="Nome"
                   error={form.formState.errors.customerName?.message}
@@ -805,9 +807,9 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                     }}
                   />
                 </Field>
-              </CheckoutSection>) : null}
+              </CheckoutSection>
 
-              <CheckoutSection>
+              {!isTableOrder ? <CheckoutSection>
                 <CheckoutSectionTitle>Forma de pagamento</CheckoutSectionTitle>
                 <PaymentGrid>
                   {paymentMethods.map((method) => {
@@ -865,7 +867,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                     />
                   </Field>
                 ) : null}
-              </CheckoutSection>
+              </CheckoutSection> : null}
 
               <TotalsBox>
                 {!isTableOrder ? <TotalRow>
@@ -876,7 +878,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                     Desconto <strong>- {money(discountCents)}</strong>
                   </TotalRow>
                 ) : null}
-                <TotalRow>
+                {!isTableOrder ? <TotalRow>
                   Frete{" "}
                   <strong>
                     {currentDeliveryQuoteLoading
@@ -885,7 +887,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                         ? "Grátis"
                         : money(estimatedDeliveryFeeCents)}
                   </strong>
-                </TotalRow>
+                </TotalRow> : null}
                 <TotalGrand>
                   Total <TotalStrong>{money(totalCents)}</TotalStrong>
                 </TotalGrand>
