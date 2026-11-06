@@ -206,17 +206,18 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
   const [deliveryQuoteLoading, setDeliveryQuoteLoading] = useState(false);
   const [deliveryQuoteError, setDeliveryQuoteError] = useState("");
   const isTableOrder = Boolean(table);
+  const checkoutDeliveryType = isTableOrder ? "TABLE" : checkout.deliveryType === "PICKUP" ? "PICKUP" : "DELIVERY";
 
   const form = useForm<CheckoutDraft>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       ...checkout,
-      deliveryType: isTableOrder ? "TABLE" : checkout.deliveryType,
+      deliveryType: checkoutDeliveryType,
       customerPhone: formatBrazilianMobileInput(checkout.customerPhone),
     },
     values: {
       ...checkout,
-      deliveryType: isTableOrder ? "TABLE" : checkout.deliveryType,
+      deliveryType: checkoutDeliveryType,
       customerPhone: formatBrazilianMobileInput(checkout.customerPhone),
     },
   });
@@ -456,11 +457,11 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
         body: JSON.stringify({
           customerName: values.customerName,
           customerPhone: normalizeBrazilianMobile(values.customerPhone),
-          deliveryType: isTableOrder ? "TABLE" : values.deliveryType,
+          deliveryType: isTableOrder ? "TABLE" : values.deliveryType === "PICKUP" ? "PICKUP" : "DELIVERY",
           tableToken: isTableOrder ? table?.token : undefined,
           tableParticipationId: isTableOrder ? table?.participationId : undefined,
           deliveryAddress:
-            values.deliveryType === "DELIVERY"
+            !isTableOrder && values.deliveryType !== "PICKUP"
               ? {
                   street: values.street,
                   number: values.number,

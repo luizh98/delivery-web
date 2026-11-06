@@ -146,6 +146,12 @@ Nenhum.
 
 ---
 
+## Quick Task 033 — 2026-11-06
+
+- Corrigido vazamento de `TABLE` do QR Code para checkout delivery: sacola/cache por mesa e recuperação do estado legado, preservando dados existentes.
+- Verificação: 172 testes web, TypeScript, lint dos arquivos alterados e build. Registro em `.specs/quick/033-isolate-table-cart/`.
+- Publicação autorizada em staging; encerrar no push, sem acompanhar deploy.
+
 ## Deferred Ideas
 
 Nenhuma.

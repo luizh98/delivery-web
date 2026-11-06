@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  Suspense,
   createContext,
   useCallback,
   useContext,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { OrderResponse } from "@/types/api";
 
 const STORAGE_KEY = "delivery-order-v1";
@@ -113,10 +115,6 @@ const EMPTY_SNAPSHOT: CartStorageSnapshot = {
   recentOrders: [],
 };
 
-let memorySnapshot = EMPTY_SNAPSHOT;
-let cachedRaw: string | null = null;
-let cachedSnapshot = EMPTY_SNAPSHOT;
-
 function normalizeTrackingCodes(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
@@ -157,7 +155,7 @@ function normalizeRecentOrders(value: unknown) {
     .slice(0, MAX_RECENT_ORDERS);
 }
 
-function parseSnapshot(raw: string | null): CartStorageSnapshot {
+function parseSnapshot(raw: string | null, deliveryCart: boolean): CartStorageSnapshot {
   if (!raw) {
     return EMPTY_SNAPSHOT;
   }
@@ -199,6 +197,9 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
       checkout: {
         ...EMPTY_CHECKOUT,
         ...stored.checkout,
+        deliveryType: deliveryCart && stored.checkout.deliveryType === "TABLE"
+          ? "DELIVERY"
+          : stored.checkout.deliveryType ?? EMPTY_CHECKOUT.deliveryType,
       },
       lastOrder,
       recentOrderTrackingCodes,
@@ -209,35 +210,45 @@ function parseSnapshot(raw: string | null): CartStorageSnapshot {
   }
 }
 
-function getSnapshot() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+function createCartStore(storageKey: string) {
+  let memorySnapshot = EMPTY_SNAPSHOT;
+  let cachedRaw: string | null = null;
+  let cachedSnapshot = EMPTY_SNAPSHOT;
 
-    if (raw !== cachedRaw) {
-      cachedRaw = raw;
-      cachedSnapshot = parseSnapshot(raw);
-      memorySnapshot = cachedSnapshot;
+  function getSnapshot() {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+
+      if (raw !== cachedRaw) {
+        cachedRaw = raw;
+        cachedSnapshot = parseSnapshot(raw, storageKey === STORAGE_KEY);
+        memorySnapshot = cachedSnapshot;
+      }
+
+      return cachedSnapshot;
+    } catch {
+      return memorySnapshot;
+    }
+  }
+
+  function writeSnapshot(snapshot: CartStorageSnapshot) {
+    memorySnapshot = snapshot;
+    cachedSnapshot = snapshot;
+
+    try {
+      cachedRaw = JSON.stringify(snapshot);
+      window.localStorage.setItem(storageKey, cachedRaw);
+    } catch {
+      cachedRaw = null;
     }
 
-    return cachedSnapshot;
-  } catch {
-    return memorySnapshot;
-  }
-}
-
-function writeSnapshot(snapshot: CartStorageSnapshot) {
-  memorySnapshot = snapshot;
-  cachedSnapshot = snapshot;
-
-  try {
-    cachedRaw = JSON.stringify(snapshot);
-    window.localStorage.setItem(STORAGE_KEY, cachedRaw);
-  } catch {
-    cachedRaw = null;
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   }
 
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+  return { getSnapshot, writeSnapshot };
 }
+
+const cartStores = new Map<string, ReturnType<typeof createCartStore>>();
 
 function subscribe(onStoreChange: () => void) {
   window.addEventListener(CHANGE_EVENT, onStoreChange);
@@ -273,13 +284,31 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <ScopedCartProvider>{children}</ScopedCartProvider>
+    </Suspense>
+  );
+}
+
+function ScopedCartProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const tableToken = useSearchParams().get("mesa");
+  const tableRoute = pathname === "/menu" || pathname.startsWith("/menu/") || pathname.startsWith("/products/");
+  const storageKey = tableRoute && tableToken ? `${STORAGE_KEY}:table:${tableToken}` : STORAGE_KEY;
+  let store = cartStores.get(storageKey);
+  if (!store) {
+    store = createCartStore(storageKey);
+    cartStores.set(storageKey, store);
+  }
+  const { getSnapshot, writeSnapshot } = store;
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_SNAPSHOT);
 
   const updateItems = useCallback(
     (items: CartItem[], lastOrder = snapshot.lastOrder) => {
       writeSnapshot({ ...snapshot, items, lastOrder });
     },
-    [snapshot],
+    [snapshot, writeSnapshot],
   );
 
   const addItem = useCallback(
@@ -292,7 +321,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItems = useCallback((items: CartItem[]) => {
     const current = getSnapshot();
     writeSnapshot({ ...current, items: [...current.items, ...items] });
-  }, []);
+  }, [getSnapshot, writeSnapshot]);
 
   const updateItemQuantity = useCallback(
     (lineId: string, change: number) => {
@@ -373,7 +402,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (checkout: CheckoutDraft) => {
       writeSnapshot({ ...getSnapshot(), checkout });
     },
-    [],
+    [getSnapshot, writeSnapshot],
   );
 
   const completeOrder = useCallback(
@@ -406,7 +435,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           : recentOrders,
       });
     },
-    [],
+    [getSnapshot, writeSnapshot],
   );
 
   return (
