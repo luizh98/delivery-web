@@ -1,8 +1,10 @@
 "use client";
 
-import { Link2, RefreshCw, Unplug } from "lucide-react";
+import { Link2, RefreshCw, Unplug, ScrollText } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
+import { ButtonRoot } from "@/components/Button/styles";
 import { useConfirmation } from "@/components/ConfirmationProvider";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
@@ -215,6 +217,7 @@ export function WhatsAppConnection({ onChange, phoneSaved }: { onChange: (connec
         {busy && authorizing ? <Button type="button" variant="outline" onClick={cancelSignup}>Cancelar conexão</Button> : null}
         {(embedded || connection?.pending) ? <Button type="button" variant="outline" disabled={busy || !connection?.provider.enabled || connection?.reconnectRequired} onClick={() => void updateConnection("POST")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
         {(connected || connection?.pending) ? <Button type="button" variant="dangerText" disabled={busy} onClick={() => void updateConnection("DELETE")}><Unplug size={16} aria-hidden="true" /> Desconectar</Button> : null}
+        <ButtonRoot as={Link} href="/admin/settings/whatsapp-logs" variant="outline"><ScrollText size={16} aria-hidden="true" />Logs do WhatsApp</ButtonRoot>
         {(!connection || (connection.provider.enabled && !sdk && !centralOrigin)) && error ? <Button type="button" variant="outline" onClick={() => {
           if (connection?.provider.enabled && !sdk && !centralOrigin) { window.location.reload(); return; }
           setError(""); setLoading(true); setReload((n) => n + 1);
