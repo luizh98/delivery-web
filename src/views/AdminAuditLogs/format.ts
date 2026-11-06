@@ -32,6 +32,7 @@ export const auditCollections: Record<string, string> = {
   print_printers: "Impressoras",
   whatsapp_signup_sessions: "Conexão WhatsApp",
   whatsapp_notifications: "Notificações WhatsApp",
+  whatsapp_webhook_events: "Retornos WhatsApp da Meta",
 };
 
 const fieldNames: Record<string, string> = {
