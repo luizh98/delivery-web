@@ -56,11 +56,11 @@ export function AdminWhatsAppLogsView() {
     </FiltersForm>
     <Muted>{events ? "Período considera o recebimento do webhook na plataforma." : "Período considera a criação do pedido. Abra um pedido para consultar todas as etapas."}</Muted>
     <div aria-live="polite" aria-busy={loading}>
-      {loading ? <Notice role="status">Carregando logs do WhatsApp…</Notice> : error ? <Notice role="alert">Não foi possível carregar os logs. Tente novamente em Atualizar.</Notice> : events ? webhooks ? <WebhookList page={webhooks} label="Webhooks sem pedido" onPage={page => load(request.filters, page)} /> : null : orders?.items.length ? <List>{orders.items.map(order => <Row key={order.id}>
+      {loading ? <Notice role="status">Carregando logs do WhatsApp…</Notice> : error ? <Notice role="alert">Não foi possível carregar os logs. Tente novamente em Atualizar.</Notice> : events ? webhooks ? <WebhookList page={webhooks} label="Webhooks sem pedido" onPage={page => load(request.filters, page)} /> : null : orders?.items.length ? <List>{orders.items.map(order => <Row key={order.id} data-expanded={selected === order.id}>
         <OrderButton type="button" aria-expanded={selected === order.id} aria-controls={selected === order.id ? `whatsapp-order-${order.id}` : undefined} onClick={() => setSelected(value => value === order.id ? null : order.id)}>
           <RowHeading><strong>Pedido #{orderNumber(order)}</strong><Tag>{orderStatuses[order.status] ?? order.status}</Tag>{selected === order.id ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}</RowHeading>
           <Tag>{logTime(order.createdAt)} · {order.notifications.length} aviso(s)</Tag>
-          {order.notifications.length ? order.notifications.map(notification => <Tag key={notification.id}>{stages[notification.stage] ?? notification.stage}: {notificationStatus(notification)}</Tag>) : <Tag>Nenhum envio registrado</Tag>}
+          {selected !== order.id ? order.notifications.length ? order.notifications.map(notification => <Tag key={notification.id}>{stages[notification.stage] ?? notification.stage}: {notificationStatus(notification)}</Tag>) : <Tag>Nenhum envio registrado</Tag> : null}
         </OrderButton>
         {selected === order.id ? <OrderLogsDetail key={order.id} orderId={order.id} refresh={request.refresh} /> : null}
       </Row>)}</List> : <Notice>Nenhum pedido encontrado neste período. Altere os filtros para consultar outros pedidos.</Notice>}

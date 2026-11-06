@@ -7,6 +7,8 @@ Em Configurações → Pedidos e alertas → WhatsApp dos pedidos, clicar em **L
 - **Conexão e recebimento de webhooks:** mostra autorização salva e avisos ativados/desativados. Não testa configuração na Meta nem confirma que um webhook ausente foi enviado.
 - Atualizar recarrega dados. Consultas são paginadas; webhooks do pedido possuem paginação própria. Histórico permanece acessível após desconexão.
 
+Cada pedido possui contorno próprio. Ao abrir, detalhes ficam no mesmo bloco, com divisórias entre etapas. Tentativas e retornos da Meta aparecem em tabelas de duas colunas, com resultado e horários separados. Resumos das etapas ficam no cabeçalho apenas quando pedido está fechado. IDs longos podem ser consultados em **Dados técnicos da mensagem**; histórico de webhooks ocupa seção final independente dentro do pedido.
+
 `accepted` significa aceite pela Meta, não entrega. `sent`, `delivered`, `read` e `failed` são fatos recebidos por webhook; leitura/entrega confirmadas não são apagadas por eventos tardios. Todas as ocorrências de falha continuam nos detalhes.
 
 Registros anteriores à feature só possuem resultado mais recente e quantidade de tentativas. Interface não reconstrói tentativas antigas nem callbacks que não foram salvos. Novos retornos mostram horário na Meta e recebimento local, códigos numéricos, associação, repetição ou processamento inconclusivo/erro. Assinaturas inválidas e contas desconhecidas não são atribuídas a restaurantes.
