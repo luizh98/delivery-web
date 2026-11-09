@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import {
   type CheckoutDraft,
@@ -24,8 +23,6 @@ import {
   CartPageContent,
   CartPageHeader,
   CartPageText,
-  CartPageTitle,
-  CartPageTitleRow,
 } from "./styles";
 
 type DeliveryAddress = AddressSelection & {
@@ -166,20 +163,12 @@ export function DeliveryAddressPage() {
   return (
     <PageShell>
       <CartPageContent>
-        <CartPageHeader>
-          <CartPageTitleRow>
-            <BackButton
-              aria-label="Voltar ao checkout"
-              onClick={returnToCheckout}
-            />
-            <CartPageTitle>
-              {persistedAddress ? "Alterar endereço" : "Selecionar endereço"}
-            </CartPageTitle>
-          </CartPageTitleRow>
-          <CartPageText>
-            Busque sua rua, revise os dados e salve para continuar.
-          </CartPageText>
-        </CartPageHeader>
+        <CartPageHeader
+          title={persistedAddress ? "Alterar endereço" : "Selecionar endereço"}
+          backLabel="Voltar ao checkout"
+          onBack={returnToCheckout}
+          description="Busque sua rua, revise os dados e salve para continuar."
+        />
 
         <CartCard>
           <AddressPageForm

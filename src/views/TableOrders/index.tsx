@@ -1,15 +1,15 @@
 "use client";
 
 import { ArrowLeft, BellRing, ReceiptText } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
+import { CustomerPageHeader } from "@/components/CustomerPageHeader";
 import { clientApi } from "@/services/api/client";
 import type { PublicTableConsumption, PublicTableResponse } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { tableMenuPath } from "@/utils/productAvailability";
-import { Actions, Back, Dialog, Empty, Footer, Header, HoldProgress, Identity, Item, Meta, Notice, Orders, Root, Round, Row, StateBadge, Total, holdProgressKeyframes } from "./styles";
+import { Actions, Dialog, Empty, Footer, Header, HoldProgress, Identity, Item, Meta, Notice, Orders, Root, Round, Row, StateBadge, Total, holdProgressKeyframes } from "./styles";
 
 export function HoldToCallButton({ disabled, called, onConfirm }: { disabled: boolean; called: boolean; onConfirm: () => void }) {
   const [holding, setHolding] = useState(false);
@@ -99,7 +99,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
   useEffect(() => {
     let disposed = false;
     queueMicrotask(() => { if (!disposed) void load(); });
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 5000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 15_000);
     const onVisible = () => { if (document.visibilityState === "visible") void load(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { disposed = true; window.clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); activeRequest.current?.abort(); activeRequest.current = null; };
@@ -124,8 +124,10 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
   const ended = Boolean(table.session && data && !data.session);
 
   return <Root>
-    <Back as={Link} href={tableMenuPath(token)}><ArrowLeft size={20} aria-hidden="true" />Cardápio</Back>
-    <Header><h1><ReceiptText size={28} aria-hidden="true" /> Comanda</h1><Row><Identity>Mesa {table.number}</Identity>{data?.session ? <StateBadge>{closing ? "Em fechamento" : "Conta aberta"}</StateBadge> : null}</Row><Meta>Consumo e atendimento da sua mesa. Atualização automática.</Meta></Header>
+    <Header>
+      <CustomerPageHeader title="Comanda" description="Consumo e atendimento da sua mesa. Atualização automática." onBack={() => router.push(tableMenuPath(token))} />
+      <Row><Identity>Mesa {table.number}</Identity>{data?.session ? <StateBadge>{closing ? "Em fechamento" : "Conta aberta"}</StateBadge> : null}</Row>
+    </Header>
     {error ? <Notice role="alert">{error}</Notice> : null}
     {notice && !ended && !closing ? <Notice role="status">{notice}</Notice> : null}
     {!data && !error ? <Meta role="status">Carregando pedidos da mesa…</Meta> : null}

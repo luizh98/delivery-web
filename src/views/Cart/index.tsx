@@ -18,7 +18,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
-import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import {
@@ -85,9 +84,6 @@ import {
   AddressSummaryTitle,
   CartPageContent,
   CartPageHeader,
-  CartPageText,
-  CartPageTitle,
-  CartPageTitleRow,
   CartStepAction,
   CheckoutConfirmation,
   CheckoutConfirmationText,
@@ -529,22 +525,16 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
   return (
     <PageShell>
       <CartPageContent>
-        <CartPageHeader>
-          <CartPageTitleRow>
-            <BackButton
-              onClick={() => (step === 2 ? setStep(1) : router.push(tableMenuPath(table?.token)))}
-            />
-            <CartPageTitle>Seu pedido</CartPageTitle>
-            <CartCount>{items.length} item(ns)</CartCount>
-          </CartPageTitleRow>
-          <CartPageText>
-            {step === 1
+        <CartPageHeader
+          title="Seu pedido"
+          onBack={() => (step === 2 ? setStep(1) : router.push(tableMenuPath(table?.token)))}
+          trailing={<CartCount>{items.length} item(ns)</CartCount>}
+          description={step === 1
               ? "Revise os produtos antes de continuar."
               : isTableOrder
                 ? `Confirme seu pedido para Mesa ${table?.number}.`
                 : "Informe entrega, pagamento e confirme o pedido."}
-          </CartPageText>
-        </CartPageHeader>
+        />
 
         <StepIndicator aria-label="Etapas do pedido">
           <StepItem active={step === 1}>

@@ -19,8 +19,7 @@ export const Root = styled("main", {
   display: "grid", gap: "1.5rem", minWidth: 0,
   "& a:focus-visible, & button:focus-visible": { outline: "2px solid var(--color-primary-text)", outlineOffset: "3px" },
 });
-export const Back = styled("a", { display: "inline-flex", gap: "0.5rem", alignItems: "center", minHeight: "2.75rem", width: "fit-content", color: "var(--color-foreground)", fontWeight: 600 });
-export const Header = styled("header", { display: "grid", gap: "0.75rem", "& h1": { display: "flex", alignItems: "center", gap: "0.625rem", fontSize: "1.75rem", fontWeight: 800, letterSpacing: "-0.025em" }, "& h1 > svg": { color: "var(--color-primary)" } });
+export const Header = styled("div", { display: "grid", gap: "0.75rem" });
 export const Identity = styled("span", { display: "inline-flex", alignItems: "center", minHeight: "2.75rem", padding: "0.5rem 0.875rem", borderRadius: "0.625rem", background: "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))", color: "var(--color-foreground)", fontWeight: 700 });
 export const StateBadge = styled("span", { display: "inline-flex", padding: "0.375rem 0.625rem", borderRadius: "0.375rem", background: "color-mix(in srgb, var(--color-primary) 10%, var(--color-surface))", color: "var(--color-foreground)", fontSize: "0.75rem", fontWeight: 600 });
 export const Row = styled("div", { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" });

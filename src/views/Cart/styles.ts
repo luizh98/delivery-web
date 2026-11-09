@@ -1,21 +1,8 @@
 import { styled } from "styles";
+import { CustomerPageHeader } from "@/components/CustomerPageHeader";
 
-export const CartPageHeader = styled("header", {
-  display: "grid",
-  gap: "0.5rem",
+export const CartPageHeader = styled(CustomerPageHeader, {
   marginBottom: "1rem",
-});
-
-export const CartPageTitleRow = styled("div", {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.75rem",
-});
-
-export const CartPageTitle = styled("h1", {
-  minWidth: 0,
-  fontSize: "1.5rem",
-  fontWeight: 700,
 });
 
 export const CartPageText = styled("p", {

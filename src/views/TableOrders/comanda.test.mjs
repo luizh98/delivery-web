@@ -13,6 +13,8 @@ function renderComanda(clientApi = async () => consumption) {
   let stateIndex = 0;
   let load;
   const navigation = [];
+  const effects = [], queued = [], intervals = [], listeners = new Map();
+  const document = { visibilityState: "visible", addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) };
   const loaded = { exports: {} };
   const jsx = (type, props) => ({ type, props });
   const compiled = ts.transpileModule(readFileSync(new URL("./index.tsx", import.meta.url), "utf8"), {
@@ -20,11 +22,13 @@ function renderComanda(clientApi = async () => consumption) {
   }).outputText;
   runInNewContext(compiled, {
     module: loaded, exports: loaded.exports, AbortController, URLSearchParams,
+    document, queueMicrotask: fn => queued.push(fn),
+    window: { setInterval: (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; }, clearInterval: () => { intervals.length = 0; } },
     require(name) {
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (name === "react") return {
         useState: (initial) => [stateIndex++ === 0 ? consumption : initial, () => {}],
-        useRef: (current) => ({ current }), useEffect() {}, useCallback: (callback) => { load = callback; return callback; },
+        useRef: (current) => ({ current }), useEffect: fn => effects.push(fn), useCallback: (callback) => { load = callback; return callback; },
       };
       if (name === "@/services/api/client") return { clientApi };
       if (name === "next/navigation") return { useRouter: () => ({ push: url => navigation.push(url) }) };
@@ -35,7 +39,7 @@ function renderComanda(clientApi = async () => consumption) {
   });
   const tree = loaded.exports.TableOrders({ token: "token", table: { number: "01", session: { id: "visit", participationId: "participation", status: "OPEN" } } });
   const walk = (node) => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...walk(node.props?.children)];
-  return { nodes: walk(tree), load, navigation };
+  return { nodes: walk(tree), load, navigation, intervals, listeners, document, queued, startPolling: () => effects[0]() };
 }
 
 test("Comanda exposes total and closing before order details, without manual refresh", () => {
@@ -44,8 +48,42 @@ test("Comanda exposes total and closing before order details, without manual ref
   const actions = nodes.findIndex((node) => node.props?.["aria-label"] === "Atendimento e fechamento");
   const orders = nodes.findIndex((node) => node.props?.["aria-label"] === "Pedidos da comanda");
   assert.ok(total >= 0 && total < actions && actions < orders);
-  assert.ok(nodes.some((node) => node.type === "h1" && node.props.children.includes(" Comanda")));
+  assert.ok(nodes.some((node) => node.type === "CustomerPageHeader" && node.props.title === "Comanda"));
   assert.ok(!nodes.some((node) => node.type === "Button" && JSON.stringify(node.props.children).includes("Atualizar")));
+});
+
+test("comanda uses shared header and keeps the table when returning to menu", () => {
+  const { nodes, navigation } = renderComanda();
+  const header = nodes.find(node => node.type === "CustomerPageHeader");
+  assert.equal(header.props.description, "Consumo e atendimento da sua mesa. Atualização automática.");
+  header.props.onBack();
+  assert.deepEqual(navigation, ["/menu?mesa=token"]);
+  assert.ok(nodes.some(node => node.type === "Identity"));
+  assert.ok(nodes.some(node => node.type === "StateBadge" && node.props.children === "Conta aberta"));
+});
+
+test("polling runs every 15 seconds only while visible and refreshes immediately on return", async () => {
+  let calls = 0;
+  const fixture = renderComanda(async () => { calls++; return consumption; });
+  const cleanup = fixture.startPolling();
+  fixture.queued[0]();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 1);
+  assert.equal(fixture.intervals.length, 1);
+  assert.equal(fixture.intervals[0].ms, 15_000);
+  fixture.intervals[0].fn();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 2);
+  fixture.document.visibilityState = "hidden";
+  fixture.intervals[0].fn();
+  fixture.listeners.get("visibilitychange")();
+  assert.equal(calls, 2);
+  fixture.document.visibilityState = "visible";
+  fixture.listeners.get("visibilitychange")();
+  assert.equal(calls, 3);
+  cleanup();
+  assert.equal(fixture.intervals.length, 0);
+  assert.equal(fixture.listeners.size, 0);
 });
 
 function mountHold(disabled = false) {
