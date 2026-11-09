@@ -1,5 +1,15 @@
 # Conexão WhatsApp no admin
 
+## Aprovação das mensagens e recuperação
+
+O aplicativo Meta precisa assinar `messages` e `message_template_status_update` no objeto `whatsapp_business_account`. Assinar a WABA no onboarding não substitui a seleção desses campos no aplicativo. Preserve os demais campos e o callback configurados ao atualizar a assinatura.
+
+O callback central de produção é `https://integration.flyfoods.com.br/api/meta/whatsapp/webhook`. A assinatura desse aplicativo é compartilhada: não a substitua pelo callback de staging. Um aplicativo separado de homologação deve usar o callback do próprio ambiente.
+
+Uma nova mensagem em análise mantém a versão anterior aprovada em uso. No editor da mensagem, **Atualizar status** consulta a Meta pelo endpoint existente `POST admin/whatsapp/messages/{stage}` com `action=refresh`, sem criar outro modelo nem salvar ou descartar o texto local. A API promove somente conteúdo aprovado e compatível; modelos rejeitados ou não encontrados permitem novo envio. Abrir ou recarregar a página apenas lê o estado salvo.
+
+Se um evento antigo não chegou, use **Atualizar status** para reconciliar a mensagem. Habilitar o campo no webhook corrige eventos futuros; não garante repetição de aprovações antigas. A gravação de refresh passa pela auditoria existente do backend, com tenant e usuário autenticado.
+
 ## Domínio central para múltiplos tenants
 
 Configuração runtime opcional no **web**, sem alteração de credenciais da API:

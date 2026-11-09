@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronUp, Clock3, ExternalLink, Eye, EyeOff, GripVertical, Pencil, RotateCcw, Save, Send } from "lucide-react";
+import { CheckCircle2, ChevronUp, Clock3, ExternalLink, Eye, EyeOff, GripVertical, Pencil, RefreshCw, RotateCcw, Save, Send } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -83,16 +83,16 @@ export function WhatsAppMessages({ integration, connectionRevision, onUpdated }:
     selection.current = { start: element.selectionStart, end: element.selectionEnd };
   }
 
-  async function save(action: "draft" | "submit") {
+  async function save(action: "draft" | "submit" | "refresh") {
     if (!stage || !data || busy) return;
     setError(""); setNotice("");
     const validation = messageValidation(body, data.parameters);
     if (action === "submit" && validation) { setError(validation); return; }
     setBusy(true);
     try {
-      const result = await clientApi<WhatsAppMessagesResponse>(`admin/whatsapp/messages/${stage}`, { method: action === "draft" ? "PUT" : "POST", body: JSON.stringify({ body, revision: data.revision, action }) });
+      const result = await clientApi<WhatsAppMessagesResponse>(`admin/whatsapp/messages/${stage}`, { method: action === "draft" ? "PUT" : "POST", body: JSON.stringify({ body: action === "refresh" ? undefined : body, revision: data.revision, action }) });
       setData(result);
-      reset({ body: result.messages[stage].draft });
+      if (action !== "refresh") reset({ body: result.messages[stage].draft });
       setNotice(action === "draft" ? "Rascunho salvo. A mensagem em uso não foi alterada." : messageSubmissionNotice(result.messages[stage]));
       if (action !== "draft") onUpdated();
     } catch (failure) { setError(connectionErrorMessage(failure)); }
@@ -139,8 +139,10 @@ export function WhatsAppMessages({ integration, connectionRevision, onUpdated }:
         {!data.connected ? <Muted>Conecte o WhatsApp pela Meta para salvar e enviar mensagens para aprovação. Você já pode editar e visualizar a sugestão.</Muted> : null}
         <ConnectionActions>
           <Button type="button" variant="outline" disabled={busy || !data.connected || !isDirty} onClick={() => void handleSubmit(() => save("draft"))()}><Save size={16} aria-hidden="true" /> Salvar rascunho</Button>
+          {editor.candidate ? <Button type="button" variant="outline" disabled={busy || !data.connected} onClick={() => void save("refresh")}><RefreshCw size={16} aria-hidden="true" /> Atualizar status</Button> : null}
           <Button type="button" disabled={busy || !data.connected || !!validation || !!pending || !!unchanged} onClick={() => void handleSubmit(() => save("submit"))()}><Send size={16} aria-hidden="true" /> {busy ? "Aguarde…" : "Enviar para aprovação"}</Button>
         </ConnectionActions>
+        {pending ? <Muted>Consulte a aprovação em Atualizar status.{editor.active?.status === "APPROVED" ? " A versão aprovada continua em uso enquanto a nova está em análise." : ""}</Muted> : null}
         {unchanged && !pending ? <Muted>Este texto já está em uso. Altere a mensagem para enviar uma nova versão para aprovação.</Muted> : null}
         {notice ? <Muted role="status" aria-live="polite">{notice}</Muted> : null}
       </div> : null;
