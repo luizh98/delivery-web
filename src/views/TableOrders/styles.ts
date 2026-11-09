@@ -1,5 +1,19 @@
 import { styled } from "styles";
 
+export const holdProgressKeyframes = `
+  @keyframes table-service-hold { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+`;
+export const HoldProgress = styled("span", {
+  position: "absolute", inset: "auto 0 0", height: "0.25rem",
+  background: "var(--color-primary)", transformOrigin: "left",
+  animation: "table-service-hold 3s linear both", pointerEvents: "none",
+  "@media (prefers-reduced-motion: reduce)": { animationTimingFunction: "steps(3, end)" },
+});
+export const Footer = styled("div", {
+  display: "flex", justifyContent: "center",
+  "& button": { minHeight: "3rem" },
+});
+
 export const Root = styled("main", {
   width: "100%", maxWidth: "46rem", margin: "0 auto", padding: "1.5rem 1rem 3rem",
   display: "grid", gap: "1.5rem", minWidth: 0,

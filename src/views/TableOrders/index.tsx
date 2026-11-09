@@ -2,13 +2,63 @@
 
 import { ArrowLeft, BellRing, ReceiptText } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { clientApi } from "@/services/api/client";
 import type { PublicTableConsumption, PublicTableResponse } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { tableMenuPath } from "@/utils/productAvailability";
-import { Actions, Back, Dialog, Empty, Header, Identity, Item, Meta, Notice, Orders, Root, Round, Row, StateBadge, Total } from "./styles";
+import { Actions, Back, Dialog, Empty, Footer, Header, HoldProgress, Identity, Item, Meta, Notice, Orders, Root, Round, Row, StateBadge, Total, holdProgressKeyframes } from "./styles";
+
+export function HoldToCallButton({ disabled, called, onConfirm }: { disabled: boolean; called: boolean; onConfirm: () => void }) {
+  const [holding, setHolding] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = useCallback(() => {
+    if (timer.current !== null) clearTimeout(timer.current);
+    timer.current = null;
+    setHolding(false);
+  }, []);
+
+  useEffect(() => {
+    const onVisibility = () => { if (document.visibilityState !== "visible") cancel(); };
+    window.addEventListener("blur", cancel);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancel();
+      window.removeEventListener("blur", cancel);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [cancel, disabled]);
+
+  function start() {
+    if (disabled || timer.current !== null) return;
+    setHolding(true);
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      setHolding(false);
+      onConfirm();
+    }, 3000);
+  }
+
+  return <Button type="button" variant="outline" disabled={disabled}
+    style={{ position: "relative", overflow: "hidden", touchAction: "pan-y", userSelect: "none" }}
+    onPointerDown={(event) => { if (event.isPrimary && event.button === 0) start(); }}
+    onPointerUp={cancel} onPointerLeave={cancel} onPointerCancel={cancel} onBlur={cancel}
+    onContextMenu={(event) => event.preventDefault()}
+    onKeyDown={(event) => {
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        if (!event.repeat) start();
+      }
+    }}
+    onKeyUp={(event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); cancel(); } }}
+    aria-label={called ? "Garçom chamado" : "Segure por 3 segundos para chamar o garçom"}>
+    <style>{holdProgressKeyframes}</style>
+    {holding && !disabled ? <HoldProgress aria-hidden="true" /> : null}
+    <BellRing size={18} aria-hidden="true" />{called ? "Garçom chamado" : holding && !disabled ? "Continue segurando…" : "Segure 3s para chamar garçom"}
+  </Button>;
+}
 
 function CloseConfirmation({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -21,6 +71,7 @@ function CloseConfirmation({ onClose, onConfirm }: { onClose: () => void; onConf
 }
 
 export function TableOrders({ token, table }: { token: string; table: PublicTableResponse }) {
+  const router = useRouter();
   const [data, setData] = useState<PublicTableConsumption | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -81,7 +132,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
     {closing ? <Notice role="status">Fechamento solicitado. Aguarde a equipe para conferir a conta e realizar o pagamento.</Notice> : null}
     {data?.session ? <Total aria-label="Total do consumo"><Row><span>Total da comanda</span><strong>{money(total)}</strong></Row><p>Pagamento com a equipe do restaurante.</p></Total> : null}
     <Actions aria-label="Atendimento e fechamento">
-      <Button variant="outline" disabled={sending || !data || ended || !!servicePending || sentService} onClick={() => void request("SERVICE")}><BellRing size={18} aria-hidden="true" />{servicePending || sentService ? "Garçom chamado" : "Chamar garçom"}</Button>
+      <HoldToCallButton disabled={sending || !data || ended || !!servicePending || sentService} called={!!servicePending || sentService} onConfirm={() => void request("SERVICE")} />
       <Button disabled={sending || !data?.session || closing} onClick={() => setConfirmClose(true)}><ReceiptText size={18} aria-hidden="true" />{closing ? "Fechamento solicitado" : "Pedir fechamento"}</Button>
     </Actions>
     {data?.orders.length ? <>
@@ -93,7 +144,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
         <Row><Meta>{order.status === "CANCELED" ? "Cancelado · não entra no total" : "Subtotal"}</Meta><strong>{money(order.totals.totalCents)}</strong></Row>
       </Round>)}</Orders>
     </> : data ? <Empty><ReceiptText size={56} strokeWidth={1.3} aria-hidden="true" /><h2>{ended ? "Atendimento encerrado" : "Nenhum pedido por aqui"}</h2><Meta>{ended ? "A conta desta visita foi encerrada. Os pedidos anteriores não aparecem mais aqui." : "Os pedidos deste atendimento aparecerão aqui."}</Meta></Empty> : null}
-    <Back as={Link} href={tableMenuPath(token)}>Voltar ao cardápio</Back>
+    <Footer><Button type="button" variant="outline" onClick={() => router.push(tableMenuPath(token))}><ArrowLeft size={18} aria-hidden="true" />Voltar ao cardápio</Button></Footer>
     {confirmClose ? <CloseConfirmation onClose={() => setConfirmClose(false)} onConfirm={() => void request("CLOSURE")} /> : null}
   </Root>;
 }
