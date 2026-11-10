@@ -620,12 +620,12 @@ export function OrdersManager({
                   <UserRound size={16} aria-hidden="true" />
                   <CustomerNameRow>
                     <CustomerName>{order.customer.name}</CustomerName>
-                    <CustomerOrderBadge
+                    {order.deliveryType !== "TABLE" ? <CustomerOrderBadge
                       title={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
                       aria-label={`Este é o ${customerOrderNumber}º pedido de ${order.customer.name}.`}
                     >
                       {customerOrderNumber}º
-                    </CustomerOrderBadge>
+                    </CustomerOrderBadge> : null}
                   </CustomerNameRow>
                 </DetailRow>
                 {whatsappUrl ? (
