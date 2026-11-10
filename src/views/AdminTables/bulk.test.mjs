@@ -12,6 +12,7 @@ function renderBulk(api = async () => ({ created: [{ id: "c1", number: "1", kind
   let resolver;
   let stateIndex = 0;
   const lifecycle = [];
+  const toasts = [];
   const dialog = { showModal: () => lifecycle.push("open"), close: () => lifecycle.push("close") };
   const loaded = { exports: {} }, jsx = (type, props) => ({ type, props });
   const source = ts.transpileModule(readFileSync(new URL("./BulkTableForm.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
@@ -25,12 +26,13 @@ function renderBulk(api = async () => ({ created: [{ id: "c1", number: "1", kind
         return { register: () => ({}), watch: name => values[name], formState: { errors: {}, isSubmitting: submitting }, handleSubmit: fn => () => fn(values) };
       } };
       if (name === "@/services/api/client") return { clientApi: (...args) => { requests.push(args); return api(...args); } };
+      if (name === "@/components/ToastProvider") return { useToast: () => ({ showToast: (...args) => toasts.push(args) }) };
       return new Proxy({}, { get: (_, key) => String(key) });
     },
   });
   const tree = loaded.exports.BulkTableForm({ disabled: false, onComplete: data => updates.push(data) });
   const walk = node => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...walk(node.props?.children)];
-  return { nodes: walk(tree), requests, updates, writes, lifecycle, validate: value => resolver(value, {}, { fields: {}, shouldUseNativeValidation: false }) };
+  return { nodes: walk(tree), requests, updates, writes, lifecycle, toasts, validate: value => resolver(value, {}, { fields: {}, shouldUseNativeValidation: false }) };
 }
 
 test("bulk fields stay hidden until requested and dialog closes by button or Escape", () => {
@@ -65,6 +67,26 @@ test("bulk form sends selected type and range, adds only created records and pre
   assert.deepEqual(JSON.parse(ui.requests[0][1].body), { kind: "COMMAND", start: 1, end: 3 });
   assert.equal(ui.updates[0][0].kind, "COMMAND");
   assert.equal(ui.writes.at(-1).failed[0], "3");
+  assert.deepEqual(ui.lifecycle, ["open"]);
+  assert.equal(ui.toasts.length, 0);
+});
+
+test("successful batch shows success toast and closes even before submission state resets", async () => {
+  const ui = renderBulk(async () => ({ created: [{ id: "c1", number: "1", kind: "COMMAND" }], existing: ["2"], failed: [] }), { submitting: true });
+  await ui.nodes.find(node => node.type === "Form").props.onSubmit();
+  assert.match(ui.toasts[0][0], /Cadastro realizado com sucesso.*1 criado\(s\); 1 já existente/);
+  assert.deepEqual(ui.lifecycle, ["open", "close"]);
+  assert.equal(ui.writes.at(-1), false);
+  assert.equal(ui.updates[0][0].id, "c1");
+});
+
+test("existing-only batch closes with truthful warning instead of creation success", async () => {
+  const ui = renderBulk(async () => ({ created: [], existing: ["1", "2", "3"], failed: [] }));
+  await ui.nodes.find(node => node.type === "Form").props.onSubmit();
+  assert.equal(ui.toasts[0][0], "Todos os números informados já estão cadastrados.");
+  assert.equal(ui.toasts[0][1], "warning");
+  assert.equal(ui.writes.at(-1), false);
+  assert.deepEqual(ui.lifecycle, ["open", "close"]);
 });
 test("bulk form validates range before submitting and explains safe retry on network failure", async () => {
   const ui = renderBulk(async () => { throw new Error("network"); });
@@ -75,6 +97,8 @@ test("bulk form validates range before submitting and explains safe retry on net
   await ui.nodes.find(node => node.type === "Form").props.onSubmit();
   assert.ok(ui.writes.at(-1).includes("números já cadastrados serão preservados"));
   assert.equal(ui.updates.length, 0);
+  assert.deepEqual(ui.lifecycle, ["open"]);
+  assert.equal(ui.toasts.length, 0);
 });
 test("command identity differs from legacy shared table with same number", () => {
   assert.equal(tableLabel({ number: "1" }), "Mesa 1");

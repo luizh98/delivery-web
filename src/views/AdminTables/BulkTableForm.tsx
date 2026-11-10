@@ -7,6 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
 import { Field, Input, Select } from "@/components/Field";
+import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
 import type { TableResponse } from "@/types/api";
 import { Actions, BulkDialog, ErrorText, Form, Section, SectionHeader, SectionHelp, SectionTitle } from "./styles";
@@ -22,6 +23,7 @@ type Values = z.infer<typeof schema>;
 type BulkResult = { created: TableResponse[]; existing: string[]; failed: string[] };
 
 export function BulkTableForm({ disabled, onComplete }: { disabled: boolean; onComplete: (tables: TableResponse[]) => void }) {
+  const { showToast } = useToast();
   const [result, setResult] = useState<BulkResult | null>(null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -45,6 +47,15 @@ export function BulkTableForm({ disabled, onComplete }: { disabled: boolean; onC
     try {
       const next = await clientApi<BulkResult>("admin/tables/bulk", { method: "POST", body: JSON.stringify(values) });
       setResult(next); onComplete(next.created);
+      if (next.failed.length === 0) {
+        if (next.created.length > 0) {
+          showToast(`Cadastro realizado com sucesso. ${next.created.length} criado(s); ${next.existing.length} já existente(s).`);
+        } else {
+          showToast("Todos os números informados já estão cadastrados.", "warning");
+        }
+        dialog.current?.close();
+        setOpen(false);
+      }
     } catch {
       setError("Não foi possível concluir o lote. Repita o intervalo: números já cadastrados serão preservados.");
     }
@@ -54,7 +65,7 @@ export function BulkTableForm({ disabled, onComplete }: { disabled: boolean; onC
     {open ? <BulkDialog ref={dialog} aria-labelledby="bulk-table-title" aria-describedby="bulk-table-help" onCancel={(event) => { event.preventDefault(); close(); }}>
     <Section>
     <SectionHeader><div><SectionTitle id="bulk-table-title">Cadastro em massa</SectionTitle><SectionHelp id="bulk-table-help">Cada número recebe conta e QR próprios. Mesas e comandas têm numeração independente.</SectionHelp></div><Button type="button" variant="ghost" disabled={busy} onClick={close} aria-label="Fechar cadastro em massa"><X size={18} aria-hidden="true" /></Button></SectionHeader>
-    <Form onSubmit={form.handleSubmit(submit)}>
+    <Form onSubmit={(event) => form.handleSubmit(submit)(event)}>
       <Field label="Tipo de atendimento"><Select autoFocus disabled={busy} {...form.register("kind")}><option value="TABLE">Mesa · conta compartilhada</option><option value="COMMAND">Comanda · conta individual</option></Select></Field>
       <Field label="Número inicial" error={form.formState.errors.start?.message}><Input type="number" min={1} max={999999} disabled={busy} {...form.register("start", { valueAsNumber: true })} /></Field>
       <Field label="Número final" error={form.formState.errors.end?.message}><Input type="number" min={1} max={999999} disabled={busy} {...form.register("end", { valueAsNumber: true })} /></Field>
