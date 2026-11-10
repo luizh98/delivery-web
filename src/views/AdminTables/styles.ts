@@ -53,6 +53,20 @@ export const Section = styled("section", {
   gap: "0.75rem",
 });
 
+export const BulkDialog = styled("dialog", {
+  margin: "auto",
+  width: "min(32rem, calc(100% - 1.5rem))",
+  maxHeight: "calc(100dvh - 2rem)",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  padding: "1.25rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.75rem",
+  background: "var(--color-surface)",
+  color: "var(--color-foreground)",
+  "&::backdrop": { background: "rgb(0 0 0 / 45%)" },
+});
+
 export const SectionHeader = styled("div", {
   display: "flex",
   flexWrap: "wrap",

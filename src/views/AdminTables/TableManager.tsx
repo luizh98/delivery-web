@@ -328,6 +328,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
               </Button>
             </Actions>
           </Form>
+          <BulkTableForm disabled={isBusy} onComplete={(created) => setTables((current) => sortTables([...current.filter((table) => !created.some((value) => value.id === table.id)), ...created]))} />
 
           {editingTable ? (
             <LinkResult aria-live="polite" aria-busy={qrLoading}>
@@ -408,7 +409,6 @@ export function TableManager({ initialTables }: TableManagerProps) {
           )}
         </Section>
       </PaneGrid>
-      <BulkTableForm disabled={isBusy} onComplete={(created) => setTables((current) => sortTables([...current.filter((table) => !created.some((value) => value.id === table.id)), ...created]))} />
     </Root>
   );
 }

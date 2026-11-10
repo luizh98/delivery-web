@@ -2,7 +2,7 @@
 
 Em `/admin/tables`, escolha Mesa (conta compartilhada) ou Comanda (conta individual). Cada número tem conta e QR próprios; Mesa 1 e Comanda 1 podem coexistir. Cadastros anteriores continuam como mesas.
 
-Em **Cadastro em massa**, informe tipo, número inicial e final. São permitidos até 500 números por lote. A prévia mostra a quantidade; o resultado informa criados, existentes e falhas. Repetir o intervalo preserva números existentes. Use Editar em cada cadastro para baixar o respectivo QR.
+Clique em **Cadastro em massa**, abaixo de **Criar cadastro**, para abrir o modal. Informe tipo, número inicial e final. São permitidos até 500 números por lote. A prévia mostra a quantidade; o resultado informa criados, existentes e falhas. Feche pelo botão no cabeçalho ou Esc; durante o envio, aguarde a conclusão. Repetir o intervalo preserva números existentes. Use Editar em cada cadastro para baixar o respectivo QR.
 
 Em **Configurações → Pedidos e alertas → Taxa de serviço**, informe percentual entre 0 e 100%, com até duas casas decimais. Zero desativa. Mudança vale para contas abertas depois da alteração; contas já abertas mantêm o percentual inicial.
 
