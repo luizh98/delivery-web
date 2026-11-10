@@ -81,6 +81,7 @@ const settingsBaseSchema = z.object({
   ),
   menuDescription: z.string().optional(),
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
+  serviceFeePercent: z.number().min(0, "Taxa deve estar entre 0 e 100%.").max(100, "Taxa deve estar entre 0 e 100%."),
   automaticOrderConfirmation: z.boolean(),
   whatsappNotificationsEnabled: z.boolean(),
   whatsappPhoneNumberId: z.string(),
@@ -305,6 +306,7 @@ export function SettingsForm({
       menuDescription: initialConfig?.menuDescription ??
         "Escolha seus itens, revise o pedido e envie.",
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
+      serviceFeePercent: (initialConfig?.serviceFeeBasisPoints ?? 0) / 100,
       automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
       whatsappNotificationsEnabled: initialConfig?.whatsappNotificationsEnabled ?? false,
       whatsappPhoneNumberId: initialConfig?.whatsappIntegration?.phoneNumberId ?? "",
@@ -501,6 +503,7 @@ export function SettingsForm({
         ...(dirty.whatsapp ? { whatsapp: normalizeBrazilianMobile(values.whatsapp) } : {}),
         ...(dirty.menuDescription ? { menuDescription: values.menuDescription } : {}),
         ...(dirty.minimumOrderReais ? { minimumOrderCents: reaisToCents(values.minimumOrderReais) } : {}),
+        ...(dirty.serviceFeePercent ? { serviceFeeBasisPoints: Math.round(values.serviceFeePercent * 100) } : {}),
         ...(dirty.automaticOrderConfirmation ? { automaticOrderConfirmation: values.automaticOrderConfirmation } : {}),
         ...(dirty.whatsappNotificationsEnabled ? { whatsappNotificationsEnabled: values.whatsappNotificationsEnabled } : {}),
         ...(whatsappChanged ? { whatsappIntegration: {
@@ -807,7 +810,7 @@ export function SettingsForm({
         <AccordionSummary>
           <AccordionSummaryText>
             <strong>Pedidos e alertas</strong>
-            <span>Pedido mínimo, confirmação automática e notificações.</span>
+            <span>Pedido mínimo, taxa de serviço, confirmação automática e notificações.</span>
           </AccordionSummaryText>
           <AccordionIcon data-accordion-icon>
             <ChevronDown size={18} aria-hidden="true" />
@@ -825,6 +828,13 @@ export function SettingsForm({
               {...form.register("minimumOrderReais", { valueAsNumber: true })}
             />
           </Field>
+          <SettingsGroup aria-labelledby="service-fee-title">
+            <SectionTitle as="h3" id="service-fee-title">Taxa de serviço · mesas e comandas</SectionTitle>
+            <Field label="Taxa de serviço (%)" error={form.formState.errors.serviceFeePercent?.message}>
+              <Input type="number" min="0" max="100" step="0.01" aria-describedby="service-fee-help" {...form.register("serviceFeePercent", { valueAsNumber: true })} />
+            </Field>
+            <Muted id="service-fee-help">Use 0 para desativar. Percentual sobre o consumo após descontos e cancelamentos. Vale para novas contas; contas abertas mantêm a taxa inicial. Delivery e retirada não recebem essa taxa.</Muted>
+          </SettingsGroup>
           <SettingsGroup aria-labelledby="whatsapp-settings-title" css={{ "& input::placeholder": { color: "var(--color-muted)", opacity: 1 } }}>
             <SectionTitle as="h3" id="whatsapp-settings-title">WhatsApp dos pedidos</SectionTitle>
             <Muted>Avisos de preparação, saída para entrega e conclusão pelo número do restaurante.</Muted>

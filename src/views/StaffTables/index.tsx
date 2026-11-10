@@ -87,7 +87,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const draftCount = draft.items.reduce((sum, item) => sum + item.quantity, 0);
   const draftTotal = draft.items.reduce((sum, item) => sum + draftItemTotal(item), 0);
   const hasDrafts = Object.values(drafts).some((value) => value.items.length > 0);
-  const consumptionTotal = consumption?.orders.filter((order) => order.status !== "CANCELED").reduce((sum, order) => sum + order.totals.totalCents, 0) ?? 0;
+  const consumptionTotal = consumption?.totals?.totalCents ?? consumption?.orders.filter((order) => order.status !== "CANCELED").reduce((sum, order) => sum + order.totals.totalCents, 0) ?? 0;
   const tablePhone = consumption?.orders.find((order) => order.customerPhone)?.customerPhone ?? "";
   const isClosing = consumption?.session?.status === "CLOSING";
 
@@ -250,6 +250,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
       {uncertainSubmission ? <ErrorBox role="alert">Envio sem confirmação. Use Conferir envio antes de alterar a rodada ou trocar de mesa.</ErrorBox> : null}
       <AccountPanel aria-label={`Resumo · ${tableLabel(selected)}`}>
         <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Conta · {tableLabel(selected)}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
+        {consumption?.totals ? <div aria-label="Composição da conta"><Row><Muted>Consumo</Muted><Price>{money(consumption.totals.consumptionCents)}</Price></Row><Row><Muted>Taxa de serviço ({(consumption.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</Muted><Price>{money(consumption.totals.serviceFeeCents)}</Price></Row></div> : null}
         {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
         <Actions>
           {isClosing ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}

@@ -12,6 +12,7 @@ import ts from "typescript";
 const require = createRequire(import.meta.url);
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const cache = new Map();
+const formDefaults = [];
 function load(file) {
   if (cache.has(file)) return cache.get(file);
   const compiled = ts.transpileModule(readFileSync(file, "utf8"), {
@@ -21,6 +22,7 @@ function load(file) {
   runInNewContext(compiled, {
     module: loadedModule, exports: loadedModule.exports, URL, console,
     require: (id) => {
+      if (id === "react-hook-form") return { ...require(id), useForm(options) { formDefaults.push(options.defaultValues); return require(id).useForm(options); } };
       if (id === "@/components/AdminOrderSoundNotifier") return { useAdminOrderSound: () => ({ soundEnabled: false, setSoundEnabled() {} }) };
       if (id === "@/components/ToastProvider") return { useToast: () => ({ showToast() {} }) };
       if (id === "@/services/api/client") return { clientApi() { throw new Error("Rendering must not call API"); } };
@@ -40,6 +42,18 @@ export function renderSettings(config = null) {
   const { ConfirmationProvider } = load(path.join(src, "components/ConfirmationProvider/index.tsx"));
   return renderToStaticMarkup(React.createElement(ConfirmationProvider, null, React.createElement(SettingsForm, { initialConfig: config })));
 }
+
+test("service fee defaults disabled and restores saved percentage with account snapshot help", () => {
+  const off = renderSettings();
+  assert.equal(formDefaults.findLast(value => "serviceFeePercent" in value).serviceFeePercent, 0);
+  const saved = renderSettings({ serviceFeeBasisPoints: 1250 });
+  assert.equal(formDefaults.findLast(value => "serviceFeePercent" in value).serviceFeePercent, 12.5);
+  const control = saved.match(/<input[^>]*name="serviceFeePercent"[^>]*>/)?.[0];
+  assert.ok(control);
+  assert.ok(control.includes('min="0"') && control.includes('max="100"') && control.includes('step="0.01"'));
+  assert.match(off, /name="serviceFeePercent"/);
+  assert.ok(saved.includes("contas abertas mantêm a taxa inicial"));
+});
 
 test("WhatsApp configuration stays inside orders and never renders a saved token", () => {
   const html = renderSettings({ whatsappIntegration: { phoneNumberId: "123456789", apiVersion: "v25.0", language: "pt_BR", tokenConfigured: true, templates: { production: "pedido_producao", delivery: "pedido_entrega", completed: "pedido_concluido" }, accessToken: "must-never-render" } });

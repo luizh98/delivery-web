@@ -74,6 +74,7 @@ export type RestaurantConfigResponse = {
   bannerUrl?: string;
   menuDescription?: string;
   minimumOrderCents?: number;
+  serviceFeeBasisPoints?: number;
   whatsapp?: string;
   address?: Address;
   theme?: Theme;
@@ -277,7 +278,8 @@ export type StaffTable = {
   session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string } | null;
   requests: { id: string; type: "SERVICE" | "CLOSURE" | "PAYMENT"; status: "PENDING" | "ASSIGNED"; assignedBy?: string }[];
 };
-export type StaffTableConsumption = { session: StaffTable["session"]; orders: StaffTableOrder[] };
+export type TableConsumptionTotals = { consumptionCents: number; serviceFeeBasisPoints: number; serviceFeeCents: number; totalCents: number };
+export type StaffTableConsumption = { session: StaffTable["session"]; orders: StaffTableOrder[]; totals?: TableConsumptionTotals };
 
 export type MotoboyResponse = {
   id: string;
@@ -343,6 +345,7 @@ export type PublicTableResponse = {
 export type TableServiceRequestType = "SERVICE" | "CLOSURE" | "PAYMENT";
 
 export type PublicTableConsumption = {
+  totals?: TableConsumptionTotals;
   session: { id: string; status: "OPEN" | "CLOSING" } | null;
   orders: Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "createdAt" | "cancellation" | "tableItemCancellations">[];
   requests: Pick<TableServiceRequestResponse, "id" | "type" | "status">[];

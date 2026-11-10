@@ -121,7 +121,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
 
   const closing = data?.session?.status === "CLOSING";
   const servicePending = data?.requests.some((item) => item.type === "SERVICE");
-  const total = data?.orders.reduce((sum, order) => sum + (order.status === "CANCELED" ? 0 : order.totals.totalCents), 0) ?? 0;
+  const total = data?.totals?.totalCents ?? data?.orders.reduce((sum, order) => sum + (order.status === "CANCELED" ? 0 : order.totals.totalCents), 0) ?? 0;
   const ended = Boolean(table.session && data && !data.session);
 
   return <Root>
@@ -133,7 +133,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
     {notice && !ended && !closing ? <Notice role="status">{notice}</Notice> : null}
     {!data && !error ? <Meta role="status">Carregando pedidos da mesa…</Meta> : null}
     {closing ? <Notice role="status">Fechamento solicitado. Aguarde a equipe para conferir a conta e realizar o pagamento.</Notice> : null}
-    {data?.session ? <Total aria-label="Total do consumo"><Row><span>Total da comanda</span><strong>{money(total)}</strong></Row><p>Pagamento com a equipe do restaurante.</p></Total> : null}
+    {data?.session ? <Total aria-label="Total do consumo">{data.totals ? <><Row><span>Consumo</span><strong>{money(data.totals.consumptionCents)}</strong></Row><Row><span>Taxa de serviço ({(data.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</span><strong>{money(data.totals.serviceFeeCents)}</strong></Row></> : null}<Row><span>Total da comanda</span><strong>{money(total)}</strong></Row><p>Pagamento com a equipe do restaurante.</p></Total> : null}
     <Actions aria-label="Atendimento e fechamento">
       <HoldToCallButton disabled={sending || !data || ended || !!servicePending || sentService} called={!!servicePending || sentService} onConfirm={() => void request("SERVICE")} />
       <Button disabled={sending || !data?.session || closing} onClick={() => setConfirmClose(true)}><ReceiptText size={18} aria-hidden="true" />{closing ? "Fechamento solicitado" : "Pedir fechamento"}</Button>

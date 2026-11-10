@@ -6,11 +6,11 @@ import ts from "typescript";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
-function renderClosing({ pending = null, status = "CLOSING", isAdmin = false } = {}) {
+function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, totals } = {}) {
   const session = { id: "visit", status };
   const product = { id: "burger", name: "X-burger", priceCents: 2990, active: true, optionGroups: [] };
   const draft = { sessionId: "visit", notes: "", items: [{ id: "line", product, quantity: 1, observations: "", options: [] }] };
-  const state = new Map([[3, { session, orders: [] }], [4, { table: draft }]]);
+  const state = new Map([[3, { session, orders: [], totals }], [4, { table: draft }]]);
   if (pending) state.set(17, true);
   const notifications = [];
   const writes = [];
@@ -65,6 +65,15 @@ test("closing table product attempt reports warning without editing the round", 
   assert.equal(view.notifications.at(-1)?.variant, "warning");
   assert.equal(view.writes.length, 0);
   assert.equal(view.requests.length, 0);
+});
+
+test("staff account uses server total and shows service fee separately", () => {
+  const view = renderClosing({ totals: { consumptionCents: 2005, serviceFeeBasisPoints: 1000, serviceFeeCents: 201, totalCents: 2206 } });
+  const details = view.nodes.find(node => node.props?.["aria-label"] === "Composição da conta");
+  const text = JSON.stringify(details);
+  for (const value of ["2005", "201", "Taxa de serviço ("]) assert.ok(text.includes(value));
+  const summary = view.nodes.find(node => node.type === "AccountTotal");
+  assert.ok(JSON.stringify(summary).includes("2206"));
 });
 
 test("closing table send attempt reports warning without issuing an order", async () => {

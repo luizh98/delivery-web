@@ -9,7 +9,7 @@ const consumption = {
   orders: [{ id: "order", orderNumber: "1042", status: "PREPARING", items: [{ name: "Produto", quantity: 1, totalCents: 2990 }], totals: { totalCents: 2990 } }],
 };
 
-function renderComanda(clientApi = async () => consumption) {
+function renderComanda(clientApi = async () => consumption, value = consumption) {
   let stateIndex = 0;
   let load;
   const navigation = [];
@@ -28,7 +28,7 @@ function renderComanda(clientApi = async () => consumption) {
       if (name === "@/utils/tableIdentity") return { tableLabel: (table) => `${table.kind === "COMMAND" ? "Comanda" : "Mesa"} ${table.number}` };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (name === "react") return {
-        useState: (initial) => [stateIndex++ === 0 ? consumption : initial, () => {}],
+        useState: (initial) => [stateIndex++ === 0 ? value : initial, () => {}],
         useRef: (current) => ({ current }), useEffect: fn => effects.push(fn), useCallback: (callback) => { load = callback; return callback; },
       };
       if (name === "@/services/api/client") return { clientApi };
@@ -51,6 +51,14 @@ test("Comanda exposes total and closing before order details, without manual ref
   assert.ok(total >= 0 && total < actions && actions < orders);
   assert.ok(nodes.some((node) => node.type === "CustomerPageHeader" && node.props.title === "Comanda"));
   assert.ok(!nodes.some((node) => node.type === "Button" && JSON.stringify(node.props.children).includes("Atualizar")));
+});
+
+test("account summary displays authoritative service fee separately from rounds", () => {
+  const { nodes } = renderComanda(undefined, { ...consumption, totals: { consumptionCents: 2990, serviceFeeBasisPoints: 1250, serviceFeeCents: 374, totalCents: 3364 } });
+  const total = nodes.find(node => node.type === "Total");
+  const text = JSON.stringify(total.props.children);
+  for (const value of ["Consumo", "Taxa de serviço (", "12,5", "2990", "374", "3364"]) assert.ok(text.includes(value), value);
+  assert.ok(!text.includes('"children":"2990"}},{"type":"p"'));
 });
 
 test("comanda uses shared header and keeps the table when returning to menu", () => {
