@@ -1,7 +1,10 @@
 import { styled } from "styles";
 
 export const Root = styled("div", {
-  display: "grid",
+  display: "flex",
+  flexDirection: "column",
+  flex: "1 1 0",
+  minHeight: 0,
   minWidth: 0,
   gap: "1rem",
 
@@ -38,11 +41,16 @@ export const ErrorText = styled("p", {
 export const PaneGrid = styled("div", {
   display: "grid",
   minWidth: 0,
-  alignItems: "start",
+  minHeight: 0,
+  flex: "1 1 0",
+  overflow: "hidden",
+  gridTemplateRows: "auto minmax(0, 1fr)",
+  alignItems: "stretch",
   gap: "1.5rem",
 
   "@lg": {
     gridTemplateColumns: "minmax(16rem, 20rem) minmax(0, 1fr)",
+    gridTemplateRows: "minmax(0, 1fr)",
   },
 });
 
@@ -51,6 +59,20 @@ export const Section = styled("section", {
   minWidth: 0,
   scrollMarginTop: "5rem",
   gap: "0.75rem",
+});
+
+export const EditorSection = styled(Section, {
+  maxHeight: "40dvh",
+  overflowY: "auto",
+  alignContent: "start",
+  scrollbarGutter: "stable",
+  "@lg": { maxHeight: "100%" },
+});
+
+export const RegisteredSection = styled(Section, {
+  minHeight: 0,
+  overflow: "hidden",
+  gridTemplateRows: "auto auto minmax(0, 1fr)",
 });
 
 export const BulkDialog = styled("dialog", {
@@ -177,6 +199,12 @@ export const Empty = styled("div", {
 export const List = styled("div", {
   display: "grid",
   minWidth: 0,
+  minHeight: 0,
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  scrollbarGutter: "stable",
+  alignContent: "start",
+  paddingRight: "0.25rem",
   gap: "0.75rem",
 });
 
@@ -244,5 +272,5 @@ export const CardActions = styled("div", {
   borderTop: "1px solid var(--color-border)",
   paddingTop: "0.75rem",
 
-  "& > button": { flex: "1 1 9rem" },
+  "& > button": { flex: "1 1 6rem" },
 });

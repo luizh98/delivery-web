@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Copy, Download, Pencil, Plus, Power, RefreshCw, Save } from "lucide-react";
+import { CheckCircle2, Copy, Download, Pencil, Plus, Power, RefreshCw, Save, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,6 +19,7 @@ import {
   CardActions,
   CheckboxLabel,
   Empty,
+  EditorSection,
   ErrorText,
   Form,
   LinkInput,
@@ -28,7 +29,7 @@ import {
   QrCodeImage,
   QrCodePreview,
   Root,
-  Section,
+  RegisteredSection,
   SectionHeader,
   SectionHelp,
   SectionTitle,
@@ -100,6 +101,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
   const qrRequest = useRef(0);
   const editorRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState("");
+  const [numberFilter, setNumberFilter] = useState("");
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
   const form = useForm<TableForm>({
@@ -109,6 +111,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
   const isEditing = Boolean(editingTableId);
   const editingTable = tables.find((table) => table.id === editingTableId);
   const isBusy = form.formState.isSubmitting || Boolean(pendingTableId);
+  const filteredTables = tables.filter((table) => table.number.toLocaleLowerCase("pt-BR").includes(numberFilter.trim().toLocaleLowerCase("pt-BR")));
 
   function resetForm() {
     qrRequest.current += 1;
@@ -125,7 +128,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
     setError("");
     form.reset(tableToForm(table));
     void loadTableQrCode(table);
-    editorRef.current?.scrollIntoView({ block: "start" });
+    editorRef.current?.scrollTo({ top: 0 });
   }
 
   function updateTable(savedTable: TableResponse) {
@@ -215,6 +218,31 @@ export function TableManager({ initialTables }: TableManagerProps) {
     }
   }
 
+  async function deleteTable(table: TableResponse) {
+    const confirmed = await requestConfirmation({
+      message: `Excluir ${tableLabel(table)}? O cadastro sairá da listagem e o QR deixará de funcionar. O histórico de consumo será preservado.`,
+      confirmLabel: "Excluir cadastro",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+    setError("");
+    setPendingTableId(table.id);
+    try {
+      await clientApi(`admin/tables/${table.id}`, { method: "DELETE" });
+      setTables((current) => current.filter((value) => value.id !== table.id));
+      if (editingTableId === table.id) resetForm();
+      showToast("Cadastro excluído com sucesso.");
+    } catch (cause) {
+      const message = cause instanceof ApiError && cause.status === 409
+        ? "Encerre o atendimento antes de excluir a mesa ou comanda."
+        : "Não foi possível excluir o cadastro. Tente novamente.";
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      setPendingTableId(null);
+    }
+  }
+
   async function loadTableQrCode(table: TableResponse) {
     const requestId = ++qrRequest.current;
     setTableLink(null);
@@ -281,7 +309,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
   }
 
   return (
-    <Root>
+    <Root data-table-manager>
       <div>
         <Title>Mesas e comandas</Title>
         <Subtitle>Mesas compartilham a conta do grupo. Comandas têm contas individuais, cada uma com QR próprio.</Subtitle>
@@ -290,7 +318,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
       {error ? <ErrorText role="alert">{error}</ErrorText> : null}
 
       <PaneGrid>
-        <Section ref={editorRef}>
+        <EditorSection ref={editorRef}>
           <SectionHeader>
             <div>
               <SectionTitle>{isEditing && editingTable ? `Editar ${tableLabel(editingTable)}` : "Cadastro individual"}</SectionTitle>
@@ -370,19 +398,21 @@ export function TableManager({ initialTables }: TableManagerProps) {
               </Actions>
             </LinkResult>
           ) : null}
-        </Section>
+        </EditorSection>
 
-        <Section>
+        <RegisteredSection>
           <div>
             <SectionTitle>Mesas e comandas cadastradas</SectionTitle>
-            <SectionHelp>{tables.length} cadastro(s).</SectionHelp>
+            <SectionHelp role="status">{filteredTables.length} de {tables.length} cadastro(s).</SectionHelp>
           </div>
+
+          <Field label="Filtrar por número da mesa/comanda"><Input type="search" inputMode="numeric" placeholder="Ex.: 12" value={numberFilter} onChange={(event) => setNumberFilter(event.target.value)} /></Field>
 
           {tables.length === 0 ? (
             <Empty>Nenhuma mesa ou comanda cadastrada. Adicione o primeiro cadastro.</Empty>
-          ) : (
-            <List>
-              {tables.map((table) => {
+          ) : filteredTables.length === 0 ? <Empty>Nenhuma mesa ou comanda encontrada para este número.</Empty> : (
+            <List role="region" aria-label="Lista de mesas e comandas" tabIndex={0}>
+              {filteredTables.map((table) => {
                 const isPending = pendingTableId === table.id;
 
                 return (
@@ -401,13 +431,16 @@ export function TableManager({ initialTables }: TableManagerProps) {
                       <Button type="button" variant="ghost" onClick={() => toggleTable(table)} disabled={isBusy}>
                         <Power size={16} aria-hidden="true" /> {isPending ? "Salvando..." : table.active ? "Desativar" : "Ativar"}
                       </Button>
+                      <Button type="button" variant="dangerGhost" onClick={() => deleteTable(table)} disabled={isBusy}>
+                        <Trash2 size={16} aria-hidden="true" /> Excluir
+                      </Button>
                     </CardActions>
                   </TableCard>
                 );
               })}
             </List>
           )}
-        </Section>
+        </RegisteredSection>
       </PaneGrid>
     </Root>
   );
