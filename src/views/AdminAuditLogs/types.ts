@@ -10,7 +10,7 @@ export type AuditChange = {
 export type AuditLog = {
   id: string;
   createdAt: string;
-  actor: { id: string; name: string; email: string; roles: string[] };
+  actor: { id: string; name: string; email: string; roles: string[] | null };
   action: "CREATE" | "UPDATE" | "DELETE";
   collection: string;
   documentIds: string[];

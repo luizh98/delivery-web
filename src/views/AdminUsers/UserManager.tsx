@@ -51,8 +51,8 @@ const userSchema = z.object({
   role: z.enum(["ADMIN", "STANDARD", "WAITER", "ENTREGADOR"]),
   active: z.boolean(),
 }).refine(
-  (values) => values.role !== "ENTREGADOR" || values.name.length > 0,
-  { message: "Informe o nome do motoboy.", path: ["name"] },
+  (values) => !["ENTREGADOR", "WAITER"].includes(values.role) || values.name.length > 0,
+  { message: "Informe o nome do garçom ou motoboy.", path: ["name"] },
 );
 
 type UserForm = z.infer<typeof userSchema>;
@@ -243,9 +243,9 @@ export function UserManager({
                   <option value="ENTREGADOR">Entregador</option>
                 </Select>
               </Field>
-              {selectedRole === "ENTREGADOR" ? (
+              {selectedRole === "ENTREGADOR" || selectedRole === "WAITER" ? (
                 <>
-                  <Field label="Nome do motoboy" error={form.formState.errors.name?.message}>
+                  <Field label={selectedRole === "WAITER" ? "Nome do garçom" : "Nome do motoboy"} error={form.formState.errors.name?.message}>
                     <Input autoComplete="name" {...form.register("name")} />
                   </Field>
                 </>
@@ -280,11 +280,11 @@ export function UserManager({
                 <Card key={user.id}>
                   <CardHeader>
                     <div>
-                      <CardTitle>{user.role === "ENTREGADOR" ? user.name || user.email : user.email}</CardTitle>
+                      <CardTitle>{user.role === "ENTREGADOR" || user.role === "WAITER" ? user.name || user.email : user.email}</CardTitle>
                       <Muted>
-                        {user.role === "ENTREGADOR" ? `${user.email}${user.phone ? ` · ${user.phone}` : ""}` : user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
+                        {user.role === "ENTREGADOR" || user.role === "WAITER" ? `${user.email}${user.phone ? ` · ${user.phone}` : ""}` : user.id === currentAdminId ? "Sua conta" : "Conta do admin"}
                       </Muted>
-                      {user.role !== "ENTREGADOR" && user.phone ? <Muted>{user.phone}</Muted> : null}
+                      {user.role !== "ENTREGADOR" && user.role !== "WAITER" && user.phone ? <Muted>{user.phone}</Muted> : null}
                     </div>
                     <ShieldCheck size={18} />
                   </CardHeader>

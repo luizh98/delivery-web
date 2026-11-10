@@ -113,3 +113,12 @@ test("waiter can request closing directly in the summary; only admin sees final 
     assert.ok(!JSON.stringify(workbench).includes("Encerrar comanda"));
   }
 });
+
+test("selecting another alert for the current table refreshes without clearing consumption", async () => {
+  const view = renderClosing();
+  const alerts = view.nodes.find((node) => node.type === "TableServiceAlerts");
+  alerts.props.onSelect("table");
+  await Promise.resolve();
+  assert.equal(view.requests[0]?.[0], "admin/table-operations/table/orders", "same-table alert must fetch immediately instead of waiting for polling");
+  assert.ok(!view.writes.some(({ slot, value }) => slot === 3 && value === null), "known total must remain visible during refresh");
+});

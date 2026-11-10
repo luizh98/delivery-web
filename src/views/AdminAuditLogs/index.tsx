@@ -69,7 +69,7 @@ export function AdminAuditLogsView() {
                 <Entry key={entry.id}>
                   <Summary>
                     <SummaryHeading><strong>{entry.actor.name || entry.actor.email || entry.actor.id}</strong><span>{auditActions[entry.action]} · {auditCollections[entry.collection] ?? entry.collection}</span><Status>{auditStatuses[entry.status]}</Status></SummaryHeading>
-                    <Muted>{entry.actor.email} · {entry.actor.roles.join(", ")}</Muted>
+                    <Muted>{entry.actor.email} · {entry.actor.roles?.join(", ")}</Muted>
                     <Time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleString("pt-BR")}</Time>
                     {entry.source ? <Muted>Origem: {entry.source}</Muted> : null}
                     {uncertain ? <Notice>Conclusão não confirmada. A operação pode ter alterado os dados; confira o registro antes de repetir.</Notice> : primary ? <Muted>{auditFieldName(primary.field)}: {auditValue(primary.before, primary.beforeExists).slice(0, 140)} → {auditValue(primary.after, primary.afterExists).slice(0, 140)}</Muted> : <Muted>Nenhum campo mudou.</Muted>}

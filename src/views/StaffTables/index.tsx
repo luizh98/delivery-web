@@ -130,7 +130,10 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   }, [hasDrafts, uncertainSubmission]);
 
   function updateDraft(next: Draft) { setDrafts((current) => ({ ...current, [selectedId]: next })); }
-  function openTable(id: string) { consumptionVersion.current++; setSelectedId(id); setConsumption(null); setConsumptionError(""); setProductSearch(""); setCategoryId(""); setTab("draft"); setMobilePane("catalog"); }
+  function openTable(id: string) {
+    if (id === selectedId) { void loadConsumption(id); return; }
+    consumptionVersion.current++; setSelectedId(id); setConsumption(null); setConsumptionError(""); setProductSearch(""); setCategoryId(""); setTab("draft"); setMobilePane("catalog");
+  }
   function addProduct(product: Product) {
     if (isClosing) { showToast(closingMessage, "warning"); return; }
     const item: DraftItem = { id: crypto.randomUUID(), product, quantity: 1, observations: "", options: [] };
