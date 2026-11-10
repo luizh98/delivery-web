@@ -33,8 +33,8 @@ function PhoneDialog({ onConfirm, onClose }: { onConfirm: (phone: string) => voi
   useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
   return <Dialog ref={dialog} onCancel={onClose} aria-labelledby="phone-title">
     <form onSubmit={form.handleSubmit(({ phone }) => onConfirm(normalizeTablePhone(phone)))}>
-      <Row><Heading id="phone-title">Contato da mesa</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
-      <Muted>Informe telefone ou celular da pessoa responsável pela mesa para contato, caso ela saia.</Muted>
+      <Row><Heading id="phone-title">Contato da conta</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
+      <Muted>Informe telefone ou celular da pessoa responsável pela conta para contato, caso ela saia.</Muted>
       <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
       <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar</Button><Button type="submit"><Send size={18} />Salvar contato e enviar</Button></Actions>
     </form>
@@ -229,10 +229,10 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
 
   return <AdminShell admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} beforeLeave={confirmLeave}><Root>
-    <Header><div><Title>Atendimento de mesas</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div></Header>
+    <Header><div><Title>Atendimento do salão</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div></Header>
     <TableServiceAlerts tables={tables} onSelect={openTable} disabled={busy || uncertainSubmission} />
     <Row><div><Heading>{selected ? tableLabel(selected) : "Escolha mesa ou comanda"}</Heading><Muted>{selected ? `${tableStatus(selected)} · ${selected.kind === "COMMAND" ? "Conta individual" : "Conta compartilhada"}` : "Selecione para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
-      {selected ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas</Button> : null}
+      {selected ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas e comandas</Button> : null}
       <Button variant="outline" disabled={refreshing || busy} onClick={() => void manualRefresh()}><RefreshCw size={16} />{refreshing ? "Atualizando…" : "Atualizar"}</Button>
     </Actions></Row>
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
@@ -244,7 +244,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         {table.requests?.map((request) => <Muted key={request.id}>{requestLabel[request.type]}{request.status === "ASSIGNED" ? " · Em atendimento" : ""}</Muted>)}
         {drafts[table.id]?.items.length ? <Badge>Rodada não enviada</Badge> : null}
       </TableButton>)}</TableGrid>
-      {tables !== null && !tableList.length ? <Empty>{tables.some((table) => table.active) ? "Nenhuma mesa encontrada. Tente outro número." : "Nenhuma mesa ativa. Peça ao administrador para cadastrar ou ativar as mesas."}</Empty> : null}
+      {tables !== null && !tableList.length ? <Empty>{tables.some((table) => table.active) ? "Nenhuma mesa ou comanda encontrada. Tente outro número." : "Nenhuma mesa ou comanda ativa. Peça ao administrador para cadastrar ou ativar."}</Empty> : null}
     </Stack> : <Stack>
       {consumptionError ? <ErrorBox role="alert">{consumptionError}</ErrorBox> : null}
       {uncertainSubmission ? <ErrorBox role="alert">Envio sem confirmação. Use Conferir envio antes de alterar a rodada ou trocar de mesa.</ErrorBox> : null}
@@ -269,7 +269,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         <ProductList>{products.map((product) => <ProductButton key={product.id} disabled={!canEdit || (!canLaunch && !isClosing)} aria-disabled={!canLaunch} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><span><strong>{product.name}</strong><Muted>{money(productSalePrice(product))}{product.optionGroups?.some((group) => !group.deleted) ? " · Ver opções" : ""}</Muted></span>{isClosing ? <LockKeyhole size={20} aria-hidden="true" /> : <Plus size={20} aria-hidden="true" />}</ProductButton>)}</ProductList>
         {!products.length ? <Empty><Search size={24} aria-hidden="true" />Nenhum produto encontrado. Tente outro nome ou categoria.</Empty> : null}
       </Panel><Panel aria-label={`Conta · ${tableLabel(selected)}`}>
-        {tablePhone ? <Muted>Contato da mesa: <a href={`tel:${tablePhone}`}>{tablePhone}</a></Muted> : null}
+        {tablePhone ? <Muted>Contato da conta: <a href={`tel:${tablePhone}`}>{tablePhone}</a></Muted> : null}
         <Tabs><Button variant={tab === "draft" ? "primary" : "ghost"} aria-pressed={tab === "draft"} onClick={() => setTab("draft")}>Rodada ({draftCount})</Button><Button variant={tab === "consumption" ? "primary" : "ghost"} aria-pressed={tab === "consumption"} onClick={() => setTab("consumption")}><ReceiptText size={16} />Comanda</Button></Tabs>
         {tab === "draft" ? <Stack><div><Heading>Nova rodada · {tableLabel(selected)}</Heading><Muted>Os itens abaixo ainda não foram enviados.</Muted></div>
           {draft.sessionId && consumption?.session?.id !== draft.sessionId ? <ErrorBox role="alert">Esta rodada pertence a uma comanda encerrada. Descarte os itens e comece uma nova rodada.</ErrorBox> : null}
@@ -283,7 +283,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
           </ItemRow>)}
           {draft.items.length ? <><Field label="Observação da rodada (opcional)"><Textarea maxLength={2000} disabled={!canEdit} value={draft.notes} onChange={(event) => updateDraft({ ...draft, notes: event.target.value })} /></Field><Button variant="dangerGhost" disabled={!canEdit} onClick={async () => { if (await requestConfirmation({ message: "Descartar os itens desta rodada? Os pedidos já enviados serão mantidos.", confirmLabel: "Descartar rodada" })) updateDraft(emptyDraft(consumption?.session?.id)); }}><Trash2 size={16} />Descartar rodada</Button></> : null}
           <Summary><Row><span>Total da rodada</span><Price>{money(draftTotal)}</Price></Row><Button disabled={busy || (!uncertainSubmission && ((!canLaunch && !isClosing) || !draft.items.length)) || !!consumptionError} aria-disabled={isClosing && !uncertainSubmission} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => void sendRound()}><Send size={18} />{busy ? "Enviando…" : uncertainSubmission ? "Conferir envio" : `Enviar ${draftCount} ${draftCount === 1 ? "item" : "itens"} à cozinha`}</Button></Summary>
-        </Stack> : <Stack><Row><Heading>Consumo da mesa</Heading><Price>{money(consumptionTotal)}</Price></Row>
+        </Stack> : <Stack><Row><Heading>Consumo da conta</Heading><Price>{money(consumptionTotal)}</Price></Row>
           {!consumption?.orders.length ? <Empty>{consumption ? "Nenhum pedido enviado nesta comanda." : "Carregando consumo…"}</Empty> : consumption.orders.map((order) => <ItemRow key={order.id}>
             <Row><strong>Rodada #{order.orderNumber ?? order.id.slice(-6)}</strong><Badge>{statusLabel(order.status, "TABLE")}</Badge></Row>
             <Muted>{order.createdAt ? new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</Muted>

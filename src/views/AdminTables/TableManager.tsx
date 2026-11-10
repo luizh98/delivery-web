@@ -186,8 +186,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
       showToast(editingTableId ? "Cadastro atualizado." : "Cadastro criado. Baixe ou copie o QR Code abaixo.");
     } catch {
       const message = editingTableId
-        ? "Não foi possível atualizar a mesa. Tente novamente."
-        : "Não foi possível criar a mesa. Verifique o número e tente novamente.";
+        ? "Não foi possível atualizar o cadastro. Tente novamente."
+        : "Não foi possível criar o cadastro. Verifique o número e tente novamente.";
       setError(message);
       showToast(message, "error");
     } finally {
@@ -205,9 +205,9 @@ export function TableManager({ initialTables }: TableManagerProps) {
         body: JSON.stringify({ number: table.number, active: !table.active }),
       });
       updateTable(updatedTable);
-      showToast(updatedTable.active ? "Cadastro ativoda." : "Mesa desativada.");
+      showToast(updatedTable.active ? "Cadastro ativado." : "Cadastro desativado.");
     } catch {
-      const message = "Não foi possível alterar o estado da mesa. Tente novamente.";
+      const message = "Não foi possível alterar o estado do cadastro. Tente novamente.";
       setError(message);
       showToast(message, "error");
     } finally {
@@ -229,7 +229,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
       if (requestId !== qrRequest.current) return;
       const unavailable = error instanceof ApiError && error.status === 409;
       const message = unavailable
-        ? "Esta mesa precisa de um novo QR Code. Gere um novo abaixo; o código anterior deixará de funcionar."
+        ? "Este cadastro precisa de um novo QR Code. Gere um novo abaixo; o código anterior deixará de funcionar."
         : "Não foi possível carregar o QR Code. Tente novamente.";
       setQrError({ message, canRetry: !unavailable });
     } finally {
