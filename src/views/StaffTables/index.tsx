@@ -27,16 +27,17 @@ const closingMessage = "Conta em fechamento. Reabra a comanda para lançar novos
 const requestLabel = tableServiceLabels;
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-function PhoneDialog({ onConfirm, onClose }: { onConfirm: (phone: string) => void; onClose: () => void }) {
+function PhoneDialog({ opening, onConfirm, onClose }: { opening: boolean; onConfirm: (phone: string, guestCount?: number) => void; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const form = useForm({ defaultValues: { phone: "" } });
+  const form = useForm({ defaultValues: { phone: "", guestCount: "" } });
   useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
   return <Dialog ref={dialog} onCancel={onClose} aria-labelledby="phone-title">
-    <form onSubmit={form.handleSubmit(({ phone }) => onConfirm(normalizeTablePhone(phone)))}>
-      <Row><Heading id="phone-title">Contato da conta</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
+    <form onSubmit={form.handleSubmit(({ phone, guestCount }) => onConfirm(normalizeTablePhone(phone), opening ? Number(guestCount) : undefined))}>
+      <Row><Heading id="phone-title">{opening ? "Abertura da conta" : "Contato da conta"}</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
       <Muted>Informe telefone ou celular da pessoa responsável pela conta para contato, caso ela saia.</Muted>
       <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
-      <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar</Button><Button type="submit"><Send size={18} />Salvar contato e enviar</Button></Actions>
+      {opening ? <Field label="Total de pessoas" error={form.formState.errors.guestCount?.message}><Input type="number" inputMode="numeric" min={1} max={999} step={1} {...form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} /></Field> : null}
+      <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar</Button><Button type="submit"><Send size={18} />{opening ? "Abrir conta e enviar" : "Salvar contato e enviar"}</Button></Actions>
     </form>
   </Dialog>;
 }
@@ -171,14 +172,14 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     finally { setRefreshing(false); }
   }
 
-  async function sendRound(contactPhone = tablePhone) {
+  async function sendRound(contactPhone = tablePhone, guestCount?: number) {
     if (submitting.current || !selected || !consumption || consumptionError) return;
     if (!pendingSubmission.current && isClosing) { showToast(closingMessage, "warning"); return; }
     if (!pendingSubmission.current && !draft.items.length) return;
-    if (!pendingSubmission.current && !normalizeTablePhone(contactPhone)) { setAskingPhone(true); return; }
+    if (!pendingSubmission.current && (!normalizeTablePhone(contactPhone) || (!consumption.session && guestCount === undefined))) { setAskingPhone(true); return; }
     submitting.current = true; setBusy(true);
     if (!pendingSubmission.current) {
-      pendingSubmission.current = { tableId: selectedId, body: JSON.stringify({ submissionId: crypto.randomUUID(), sessionId: draft.sessionId, customerPhone: normalizeTablePhone(contactPhone), notes: draft.notes, expectedTotalCents: draftTotal, items: draft.items.map((item) => ({ productId: item.product.id, quantity: item.quantity, observations: item.observations, options: item.options })) }) };
+      pendingSubmission.current = { tableId: selectedId, body: JSON.stringify({ submissionId: crypto.randomUUID(), sessionId: draft.sessionId, customerPhone: normalizeTablePhone(contactPhone), guestCount, notes: draft.notes, expectedTotalCents: draftTotal, items: draft.items.map((item) => ({ productId: item.product.id, quantity: item.quantity, observations: item.observations, options: item.options })) }) };
     }
     try {
       const submission = pendingSubmission.current;
@@ -324,6 +325,6 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     </Stack>}
     {editor ? <ItemEditor key={editor.item.id} item={editor.item} editing={editor.editing} onClose={() => setEditor(null)} onSave={(item) => { updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: editor.editing ? draft.items.map((entry) => entry.id === item.id ? item : entry) : [...draft.items, item] }); setEditor(null); showToast(editor.editing ? "Item atualizado na rodada." : `${item.product.name} adicionado à rodada.`); }} /> : null}
     {cancelAction ? <ReasonDialog action={cancelAction} onClose={() => setCancelAction(null)} onConfirm={cancelSent} /> : null}
-    {askingPhone ? <PhoneDialog onClose={() => setAskingPhone(false)} onConfirm={(phone) => { setAskingPhone(false); void sendRound(phone); }} /> : null}
+    {askingPhone ? <PhoneDialog opening={!consumption?.session} onClose={() => setAskingPhone(false)} onConfirm={(phone, guestCount) => { setAskingPhone(false); void sendRound(phone, guestCount); }} /> : null}
   </Root></AdminShell>;
 }
