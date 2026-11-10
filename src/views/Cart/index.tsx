@@ -42,6 +42,7 @@ import {
 } from "@/utils/customerInput";
 import { money, reaisToCents } from "@/utils/format";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
+import { tableLabel } from "@/utils/tableIdentity";
 import { tableMenuPath } from "@/utils/productAvailability";
 import {
   CartCard,
@@ -159,7 +160,7 @@ const checkoutSchema = z
 type CartViewProps = {
   restaurantConfig: RestaurantConfigResponse | null;
   initialStep?: 1 | 2;
-  table?: { number: string; token: string; participationId?: string };
+  table?: { number: string; token: string; participationId?: string; kind?: "TABLE" | "COMMAND" };
 };
 
 function formatAddressLines(address?: Address | null) {
@@ -532,7 +533,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
           description={step === 1
               ? "Revise os produtos antes de continuar."
               : isTableOrder
-                ? `Confirme seu pedido para Mesa ${table?.number}.`
+                ? `Confirme seu pedido para ${table ? tableLabel(table) : "consumo no local"}.`
                 : "Informe entrega, pagamento e confirme o pedido."}
         />
 
@@ -663,7 +664,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
 
               {isTableOrder ? (
                 <CheckoutSection>
-                  <CheckoutSectionTitle>Mesa {table?.number}</CheckoutSectionTitle>
+                  <CheckoutSectionTitle>{table ? tableLabel(table) : "Consumo no local"}</CheckoutSectionTitle>
                   <p>Seu pedido será entregue nesta mesa. Pagamento no caixa ou com garçom.</p>
                 </CheckoutSection>
               ) : (
@@ -892,7 +893,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
                 />
                 <CheckoutConfirmationText>
                   {isTableOrder
-                    ? `Revisei produtos e dados. Confirmo pedido para Mesa ${table?.number}.`
+                    ? `Revisei produtos e dados. Confirmo pedido para ${table ? tableLabel(table) : "consumo no local"}.`
                     : "Revisei produtos, dados de entrega e pagamento. Confirmo o envio deste pedido."}
                 </CheckoutConfirmationText>
               </CheckoutConfirmation>

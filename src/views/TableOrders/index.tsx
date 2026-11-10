@@ -9,6 +9,7 @@ import { clientApi } from "@/services/api/client";
 import type { PublicTableConsumption, PublicTableResponse } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { tableMenuPath } from "@/utils/productAvailability";
+import { tableLabel } from "@/utils/tableIdentity";
 import { Actions, Dialog, Empty, Footer, Header, HoldProgress, Identity, Item, Meta, Notice, Orders, Root, Round, Row, StateBadge, Total, holdProgressKeyframes } from "./styles";
 
 export function HoldToCallButton({ disabled, called, onConfirm }: { disabled: boolean; called: boolean; onConfirm: () => void }) {
@@ -125,8 +126,8 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
 
   return <Root>
     <Header>
-      <CustomerPageHeader title="Comanda" description="Consumo e atendimento da sua mesa. Atualização automática." onBack={() => router.push(tableMenuPath(token))} />
-      <Row><Identity>Mesa {table.number}</Identity>{data?.session ? <StateBadge>{closing ? "Em fechamento" : "Conta aberta"}</StateBadge> : null}</Row>
+      <CustomerPageHeader title="Comanda" description={table.kind === "COMMAND" ? "Sua conta individual e atendimento. Atualização automática." : "Consumo compartilhado e atendimento da mesa. Atualização automática."} onBack={() => router.push(tableMenuPath(token))} />
+      <Row><Identity>{tableLabel(table)}</Identity>{data?.session ? <StateBadge>{closing ? "Em fechamento" : "Conta aberta"}</StateBadge> : null}</Row>
     </Header>
     {error ? <Notice role="alert">{error}</Notice> : null}
     {notice && !ended && !closing ? <Notice role="status">{notice}</Notice> : null}

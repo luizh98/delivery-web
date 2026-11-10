@@ -7,5 +7,5 @@ export async function HomeView({ tableToken }: { tableToken?: string } = {}) {
   if (tableToken && !table) notFound();
   const [config, menu] = await Promise.all([getRestaurantConfig(), getMenu(table ? "TABLE" : "DELIVERY")]);
 
-  return <CustomerMenu restaurantConfig={config} menu={menu} table={table && tableToken ? { number: table.number, token: tableToken } : undefined} />;
+  return <CustomerMenu restaurantConfig={config} menu={menu} table={table && tableToken ? { number: table.number, kind: table.kind, token: tableToken } : undefined} />;
 }

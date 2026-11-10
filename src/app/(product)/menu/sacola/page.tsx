@@ -9,5 +9,5 @@ export default async function TableCart({ searchParams }: { searchParams: Promis
   if (!mesa) notFound();
   const [restaurantConfig, table] = await Promise.all([getRestaurantConfig(), getPublicTable(mesa)]);
   if (!table) notFound();
-  return <CartView restaurantConfig={restaurantConfig} initialStep={1} table={{ number: table.number, token: mesa, participationId: table.session?.participationId }} />;
+  return <CartView restaurantConfig={restaurantConfig} initialStep={1} table={{ number: table.number, kind: table.kind, token: mesa, participationId: table.session?.participationId }} />;
 }

@@ -9,7 +9,7 @@ export const tableServiceLabels: Record<TableServiceRequestType, string> = {
 export function pendingTableCalls(tables: StaffTable[]) {
   return tables.filter((table) => table.active).flatMap((table) =>
     (table.requests ?? []).filter((request) => request.status === "PENDING").map((request) => ({
-      id: request.id, tableId: table.id, tableNumber: table.number, label: tableServiceLabels[request.type],
+      id: request.id, tableId: table.id, tableNumber: table.number, kind: table.kind, label: tableServiceLabels[request.type],
     })),
   );
 }

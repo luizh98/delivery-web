@@ -15,6 +15,7 @@ import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } 
 import { ItemEditor } from "./ItemEditor";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
+import { tableLabel } from "@/utils/tableIdentity";
 import { AdminShell } from "@/layouts/AdminLayout/AdminShell";
 import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
@@ -222,7 +223,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     return !(hasDrafts || uncertainSubmission) || await requestConfirmation({ message: "Há itens ainda não enviados ou um envio sem confirmação. Sair descartará os rascunhos. Deseja sair?", confirmLabel: "Sair", variant: "danger" });
   }
 
-  const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(table.number).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
+  const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(tableLabel(table)).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
   const products = menu.products.filter((product) => product.active && (!categoryId || product.categoryId === categoryId) && normalize(product.name).includes(normalize(productSearch)));
   const canEdit = !busy && !uncertainSubmission;
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
@@ -230,15 +231,15 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   return <AdminShell admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} beforeLeave={confirmLeave}><Root>
     <Header><div><Title>Atendimento de mesas</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div></Header>
     <TableServiceAlerts tables={tables} onSelect={openTable} disabled={busy || uncertainSubmission} />
-    <Row><div><Heading>{selected ? `Mesa ${selected.number}` : "Escolha a mesa"}</Heading><Muted>{selected ? tableStatus(selected) : "Selecione a mesa para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
+    <Row><div><Heading>{selected ? tableLabel(selected) : "Escolha mesa ou comanda"}</Heading><Muted>{selected ? `${tableStatus(selected)} · ${selected.kind === "COMMAND" ? "Conta individual" : "Conta compartilhada"}` : "Selecione para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
       {selected ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas</Button> : null}
       <Button variant="outline" disabled={refreshing || busy} onClick={() => void manualRefresh()}><RefreshCw size={16} />{refreshing ? "Atualizando…" : "Atualizar"}</Button>
     </Actions></Row>
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
     {!selected ? <Stack>
-      <Field label="Buscar mesa"><Input type="search" inputMode="numeric" placeholder="Número da mesa" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} /></Field>
-      <TableGrid>{tableList.map((table) => <TableButton key={table.id} className={table.requests?.some((request) => request.status === "PENDING") ? "table-service-pending" : undefined} onClick={() => openTable(table.id)} aria-label={`Mesa ${table.number}, ${tableStatus(table)}`}>
-        <Row><Armchair size={20} aria-hidden="true" /><Badge>{tableStatus(table)}</Badge></Row><strong>Mesa {table.number}</strong>
+      <Field label="Buscar mesa ou comanda"><Input type="search" placeholder="Número ou tipo de atendimento" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} /></Field>
+      <TableGrid>{tableList.map((table) => <TableButton key={table.id} className={table.requests?.some((request) => request.status === "PENDING") ? "table-service-pending" : undefined} onClick={() => openTable(table.id)} aria-label={`${tableLabel(table)}, ${tableStatus(table)}`}>
+        <Row>{table.kind === "COMMAND" ? <ReceiptText size={20} aria-hidden="true" /> : <Armchair size={20} aria-hidden="true" />}<Badge>{tableStatus(table)}</Badge></Row><strong>{tableLabel(table)}</strong>
         {table.requests?.length ? <Badge><BellRing size={16} />{table.requests.length} chamado(s)</Badge> : <Muted>Toque para atender</Muted>}
         {table.requests?.map((request) => <Muted key={request.id}>{requestLabel[request.type]}{request.status === "ASSIGNED" ? " · Em atendimento" : ""}</Muted>)}
         {drafts[table.id]?.items.length ? <Badge>Rodada não enviada</Badge> : null}
@@ -247,8 +248,8 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     </Stack> : <Stack>
       {consumptionError ? <ErrorBox role="alert">{consumptionError}</ErrorBox> : null}
       {uncertainSubmission ? <ErrorBox role="alert">Envio sem confirmação. Use Conferir envio antes de alterar a rodada ou trocar de mesa.</ErrorBox> : null}
-      <AccountPanel aria-label={`Resumo da comanda da mesa ${selected.number}`}>
-        <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Comanda · Mesa {selected.number}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
+      <AccountPanel aria-label={`Resumo · ${tableLabel(selected)}`}>
+        <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Conta · {tableLabel(selected)}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
         {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
         <Actions>
           {isClosing ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}
@@ -266,10 +267,10 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         {!consumption && !consumptionError ? <Muted role="status">Carregando comanda…</Muted> : null}
         <ProductList>{products.map((product) => <ProductButton key={product.id} disabled={!canEdit || (!canLaunch && !isClosing)} aria-disabled={!canLaunch} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><span><strong>{product.name}</strong><Muted>{money(productSalePrice(product))}{product.optionGroups?.some((group) => !group.deleted) ? " · Ver opções" : ""}</Muted></span>{isClosing ? <LockKeyhole size={20} aria-hidden="true" /> : <Plus size={20} aria-hidden="true" />}</ProductButton>)}</ProductList>
         {!products.length ? <Empty><Search size={24} aria-hidden="true" />Nenhum produto encontrado. Tente outro nome ou categoria.</Empty> : null}
-      </Panel><Panel aria-label={`Comanda da mesa ${selected.number}`}>
+      </Panel><Panel aria-label={`Conta · ${tableLabel(selected)}`}>
         {tablePhone ? <Muted>Contato da mesa: <a href={`tel:${tablePhone}`}>{tablePhone}</a></Muted> : null}
         <Tabs><Button variant={tab === "draft" ? "primary" : "ghost"} aria-pressed={tab === "draft"} onClick={() => setTab("draft")}>Rodada ({draftCount})</Button><Button variant={tab === "consumption" ? "primary" : "ghost"} aria-pressed={tab === "consumption"} onClick={() => setTab("consumption")}><ReceiptText size={16} />Comanda</Button></Tabs>
-        {tab === "draft" ? <Stack><div><Heading>Nova rodada · Mesa {selected.number}</Heading><Muted>Os itens abaixo ainda não foram enviados.</Muted></div>
+        {tab === "draft" ? <Stack><div><Heading>Nova rodada · {tableLabel(selected)}</Heading><Muted>Os itens abaixo ainda não foram enviados.</Muted></div>
           {draft.sessionId && consumption?.session?.id !== draft.sessionId ? <ErrorBox role="alert">Esta rodada pertence a uma comanda encerrada. Descarte os itens e comece uma nova rodada.</ErrorBox> : null}
           {!draft.items.length ? <Empty><Send size={24} aria-hidden="true" />Escolha produtos no cardápio. Você pode revisar tudo antes de enviar à cozinha.</Empty> : draft.items.map((item) => <ItemRow key={item.id}>
             <Row><strong>{item.quantity}× {item.product.name}</strong><Price>{money(draftItemTotal(item))}</Price></Row>

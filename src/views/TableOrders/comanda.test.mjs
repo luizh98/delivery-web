@@ -25,6 +25,7 @@ function renderComanda(clientApi = async () => consumption) {
     document, queueMicrotask: fn => queued.push(fn),
     window: { setInterval: (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; }, clearInterval: () => { intervals.length = 0; } },
     require(name) {
+      if (name === "@/utils/tableIdentity") return { tableLabel: (table) => `${table.kind === "COMMAND" ? "Comanda" : "Mesa"} ${table.number}` };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (name === "react") return {
         useState: (initial) => [stateIndex++ === 0 ? consumption : initial, () => {}],
@@ -55,7 +56,7 @@ test("Comanda exposes total and closing before order details, without manual ref
 test("comanda uses shared header and keeps the table when returning to menu", () => {
   const { nodes, navigation } = renderComanda();
   const header = nodes.find(node => node.type === "CustomerPageHeader");
-  assert.equal(header.props.description, "Consumo e atendimento da sua mesa. Atualização automática.");
+  assert.equal(header.props.description, "Consumo compartilhado e atendimento da mesa. Atualização automática.");
   header.props.onBack();
   assert.deepEqual(navigation, ["/menu?mesa=token"]);
   assert.ok(nodes.some(node => node.type === "Identity"));
@@ -103,6 +104,7 @@ function mountHold(disabled = false) {
     setTimeout(fn, ms) { const id = ++nextId; timers.set(id, { fn, at: now + ms }); return id; },
     clearTimeout: id => timers.delete(id),
     require(name) {
+      if (name === "@/utils/tableIdentity") return { tableLabel: (table) => `${table.kind === "COMMAND" ? "Comanda" : "Mesa"} ${table.number}` };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (name === "react") return {
         useState(initial) { const i = cursor++; if (!(i in hooks)) hooks[i] = initial; return [hooks[i], value => { hooks[i] = value; }]; },

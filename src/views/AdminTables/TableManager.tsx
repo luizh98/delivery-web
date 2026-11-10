@@ -8,7 +8,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/Button";
 import { useConfirmation } from "@/components/ConfirmationProvider";
-import { Field, Input } from "@/components/Field";
+import { Field, Input, Select } from "@/components/Field";
+import { BulkTableForm } from "./BulkTableForm";
+import { tableLabel } from "@/utils/tableIdentity";
 import { useToast } from "@/components/ToastProvider";
 import { ApiError, clientApi } from "@/services/api/client";
 import type { TableAccessResponse, TableResponse } from "@/types/api";
@@ -39,7 +41,8 @@ import {
 } from "./styles";
 
 const tableSchema = z.object({
-  number: z.string().trim().min(1, "Informe o número da mesa."),
+  kind: z.enum(["TABLE", "COMMAND"]),
+  number: z.string().trim().min(1, "Informe o número."),
   active: z.boolean(),
 });
 
@@ -52,14 +55,15 @@ type TableManagerProps = {
 type TableLink = {
   tableId: string;
   tableNumber: string;
+  label: string;
   url: string;
   qrCodeDataUrl: string;
 };
 
-const defaultTableForm = (): TableForm => ({ number: "", active: true });
+const defaultTableForm = (): TableForm => ({ number: "", active: true, kind: "TABLE" });
 
 function tableToForm(table: TableResponse): TableForm {
-  return { number: table.number, active: table.active };
+  return { number: table.number, active: table.active, kind: table.kind ?? "TABLE" };
 }
 
 function sortTables(tables: TableResponse[]) {
@@ -83,7 +87,7 @@ async function createTableLink(table: TableResponse): Promise<TableLink> {
     color: { dark: "#000000", light: "#ffffff" },
   });
 
-  return { tableId: table.id, tableNumber: table.number, url, qrCodeDataUrl };
+  return { tableId: table.id, tableNumber: table.number, label: tableLabel(table), url, qrCodeDataUrl };
 }
 
 export function TableManager({ initialTables }: TableManagerProps) {
@@ -135,7 +139,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
   async function copyLink(link: TableLink) {
     try {
       await navigator.clipboard.writeText(link.url);
-      showToast(`Link da mesa ${link.tableNumber} copiado.`);
+      showToast(`Link · ${link.label} copiado.`);
     } catch {
       showToast("Não foi possível copiar o link. Copie-o manualmente.", "error");
     }
@@ -144,11 +148,11 @@ export function TableManager({ initialTables }: TableManagerProps) {
   function downloadQrCode(link: TableLink) {
     const download = document.createElement("a");
     download.href = link.qrCodeDataUrl;
-    download.download = `mesa-${link.tableNumber}-qr.png`;
+    download.download = `${link.label.toLowerCase().replaceAll(" ", "-")}-qr.png`;
     document.body.append(download);
     download.click();
     download.remove();
-    showToast(`QR Code da mesa ${link.tableNumber} baixado.`);
+    showToast(`QR Code · ${link.label} baixado.`);
   }
 
   async function submit(values: TableForm) {
@@ -164,8 +168,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
           method: editingTableId ? "PUT" : "POST",
           body: JSON.stringify(
             editingTableId
-              ? { number: values.number, active: values.active }
-              : { number: values.number },
+              ? { number: values.number, active: values.active, kind: values.kind }
+              : { number: values.number, kind: values.kind },
           ),
         },
       );
@@ -174,12 +178,12 @@ export function TableManager({ initialTables }: TableManagerProps) {
       if (table.token) {
         setTableLink(await createTableLink(table));
       } else if (tableLink?.tableId === table.id) {
-        setTableLink({ ...tableLink, tableNumber: table.number });
+        setTableLink({ ...tableLink, tableNumber: table.number, label: tableLabel(table) });
       } else {
         await loadTableQrCode(table);
       }
       form.reset(tableToForm(table));
-      showToast(editingTableId ? "Mesa atualizada." : "Mesa criada. Baixe ou copie o QR Code abaixo.");
+      showToast(editingTableId ? "Cadastro atualizado." : "Cadastro criado. Baixe ou copie o QR Code abaixo.");
     } catch {
       const message = editingTableId
         ? "Não foi possível atualizar a mesa. Tente novamente."
@@ -201,7 +205,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
         body: JSON.stringify({ number: table.number, active: !table.active }),
       });
       updateTable(updatedTable);
-      showToast(updatedTable.active ? "Mesa ativada." : "Mesa desativada.");
+      showToast(updatedTable.active ? "Cadastro ativoda." : "Mesa desativada.");
     } catch {
       const message = "Não foi possível alterar o estado da mesa. Tente novamente.";
       setError(message);
@@ -235,7 +239,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
 
   async function regenerateLink(table: TableResponse) {
     const confirmed = await requestConfirmation({
-      message: `Gerar novo QR Code da mesa ${table.number}? O QR Code e link anteriores deixarão de funcionar.`,
+      message: `Gerar novo QR Code de ${tableLabel(table)}? O QR Code e link anteriores deixarão de funcionar.`,
       confirmLabel: "Gerar novo QR",
       variant: "danger",
     });
@@ -279,8 +283,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
   return (
     <Root>
       <div>
-        <Title>Mesas</Title>
-        <Subtitle>Cadastre mesas e controle os links de pedido do salão.</Subtitle>
+        <Title>Mesas e comandas</Title>
+        <Subtitle>Mesas compartilham a conta do grupo. Comandas têm contas individuais, cada uma com QR próprio.</Subtitle>
       </div>
 
       {error ? <ErrorText role="alert">{error}</ErrorText> : null}
@@ -289,27 +293,28 @@ export function TableManager({ initialTables }: TableManagerProps) {
         <Section ref={editorRef}>
           <SectionHeader>
             <div>
-              <SectionTitle>{isEditing ? `Editar mesa ${editingTable?.number ?? ""}` : "Adicionar mesa"}</SectionTitle>
+              <SectionTitle>{isEditing && editingTable ? `Editar ${tableLabel(editingTable)}` : "Cadastro individual"}</SectionTitle>
               <SectionHelp>
                 {isEditing
-                  ? "Altere os dados e acesse o QR Code desta mesa abaixo."
-                  : "Uma mesa nova começa ativa e recebe um link exclusivo para pedidos."}
+                  ? "Altere os dados e acesse o QR Code abaixo."
+                  : "Novo cadastro começa ativo e recebe um link exclusivo para pedidos."}
               </SectionHelp>
             </div>
             {isEditing ? (
               <Button type="button" variant="ghost" onClick={resetForm} disabled={isBusy}>
-                <Plus size={16} aria-hidden="true" /> Nova mesa
+                <Plus size={16} aria-hidden="true" /> Novo cadastro
               </Button>
             ) : null}
           </SectionHeader>
 
           <Form onSubmit={(event) => void form.handleSubmit(submit)(event)}>
-            <Field label="Número da mesa" error={form.formState.errors.number?.message}>
+            <Field label="Tipo de atendimento"><Select disabled={isBusy} {...form.register("kind")}><option value="TABLE">Mesa · conta compartilhada</option><option value="COMMAND">Comanda · conta individual</option></Select></Field>
+            <Field label="Número" error={form.formState.errors.number?.message}>
               <Input autoComplete="off" inputMode="numeric" disabled={isBusy} {...form.register("number")} />
             </Field>
             {isEditing ? (
               <CheckboxLabel>
-                <input type="checkbox" disabled={isBusy} {...form.register("active")} /> Mesa ativa
+                <input type="checkbox" disabled={isBusy} {...form.register("active")} /> Cadastro ativo
               </CheckboxLabel>
             ) : null}
             <Actions>
@@ -318,8 +323,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
                 {form.formState.isSubmitting
                   ? "Salvando..."
                   : isEditing
-                    ? "Salvar mesa"
-                    : "Criar mesa"}
+                    ? "Salvar cadastro"
+                    : "Criar cadastro"}
               </Button>
             </Actions>
           </Form>
@@ -327,8 +332,8 @@ export function TableManager({ initialTables }: TableManagerProps) {
           {editingTable ? (
             <LinkResult aria-live="polite" aria-busy={qrLoading}>
               <div>
-                <SectionTitle>Link da mesa {editingTable.number}</SectionTitle>
-                <SectionHelp>Baixe o QR Code ou copie o link para usar nesta mesa.</SectionHelp>
+                <SectionTitle>Link · {tableLabel(editingTable)}</SectionTitle>
+                <SectionHelp>Baixe o QR Code ou copie o link deste atendimento.</SectionHelp>
               </div>
               {qrLoading ? <SectionHelp role="status">Carregando QR Code...</SectionHelp> : null}
               {qrError ? (
@@ -344,9 +349,9 @@ export function TableManager({ initialTables }: TableManagerProps) {
               {tableLink && tableLink.tableId === editingTable.id ? (
                 <>
                   <QrCodePreview>
-                    <QrCodeImage alt={`QR Code da mesa ${tableLink.tableNumber}`} src={tableLink.qrCodeDataUrl} />
+                    <QrCodeImage alt={`QR Code · ${tableLink.label}`} src={tableLink.qrCodeDataUrl} />
                   </QrCodePreview>
-                  <LinkInput aria-label={`Link da mesa ${tableLink.tableNumber}`} readOnly value={tableLink.url} />
+                  <LinkInput aria-label={`Link · ${tableLink.label}`} readOnly value={tableLink.url} />
                   <Actions>
                     <Button type="button" onClick={() => downloadQrCode(tableLink)} disabled={isBusy}>
                       <Download size={16} aria-hidden="true" /> Baixar QR Code
@@ -368,12 +373,12 @@ export function TableManager({ initialTables }: TableManagerProps) {
 
         <Section>
           <div>
-            <SectionTitle>Mesas cadastradas</SectionTitle>
-            <SectionHelp>{tables.length} mesa(s) cadastrada(s).</SectionHelp>
+            <SectionTitle>Mesas e comandas cadastradas</SectionTitle>
+            <SectionHelp>{tables.length} cadastro(s).</SectionHelp>
           </div>
 
           {tables.length === 0 ? (
-            <Empty>Nenhuma mesa cadastrada. Adicione a primeira mesa ao lado.</Empty>
+            <Empty>Nenhuma mesa ou comanda cadastrada. Adicione o primeiro cadastro.</Empty>
           ) : (
             <List>
               {tables.map((table) => {
@@ -382,7 +387,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
                 return (
                   <TableCard key={table.id} data-selected={editingTableId === table.id}>
                     <TableIdentity>
-                      <TableName>Mesa {table.number}</TableName>
+                      <TableName>{tableLabel(table)}</TableName>
                       <Status active={table.active}>
                         {table.active ? <CheckCircle2 size={14} aria-hidden="true" /> : <Power size={14} aria-hidden="true" />}
                         {table.active ? "Ativa" : "Inativa"}
@@ -403,6 +408,7 @@ export function TableManager({ initialTables }: TableManagerProps) {
           )}
         </Section>
       </PaneGrid>
+      <BulkTableForm disabled={isBusy} onComplete={(created) => setTables((current) => sortTables([...current.filter((table) => !created.some((value) => value.id === table.id)), ...created]))} />
     </Root>
   );
 }

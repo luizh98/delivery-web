@@ -350,7 +350,7 @@ export function OrdersManager({
       const previousOrder = liveUpdates.get(order.id) ?? initialOrders.find((entry) => entry.id === order.id);
       const previousCancellations = previousOrder?.tableItemCancellations?.length ?? 0;
       if ((order.tableItemCancellations?.length ?? 0) > previousCancellations || (order.deliveryType === "TABLE" && order.status === "CANCELED" && previousOrder?.status !== "CANCELED")) {
-        showToast(`Mesa ${order.tableNumber}: item cancelado. Confira o aviso de cancelamento antes de preparar.`, "error");
+        showToast(`${order.tableKind === "COMMAND" ? "Comanda" : "Mesa"} ${order.tableNumber}: item cancelado. Confira o aviso de cancelamento antes de preparar.`, "error");
       }
       liveUpdates.set(order.id, order);
       const isNewOrder = !knownOrderIdsRef.current.has(order.id);
@@ -645,7 +645,7 @@ export function OrdersManager({
                 ) : null}
                 <DetailRow>
                   <Truck size={16} aria-hidden="true" />
-                  <span>{order.deliveryType === "TABLE" ? `Mesa ${order.tableNumber ?? ""}` : deliveryLabels[order.deliveryType]}</span>
+                  <span>{order.deliveryType === "TABLE" ? `${order.tableKind === "COMMAND" ? "Comanda" : "Mesa"} ${order.tableNumber ?? ""}` : deliveryLabels[order.deliveryType]}</span>
                 </DetailRow>
                 <DetailRow>
                   <CreditCard size={16} aria-hidden="true" />
@@ -834,7 +834,7 @@ export function OrdersManager({
                 </ModalSectionTitle>
                 <p>
                   {detailsOrder.deliveryType === "TABLE"
-                    ? `Mesa ${detailsOrder.tableNumber ?? ""}`
+                    ? `${detailsOrder.tableKind === "COMMAND" ? "Comanda" : "Mesa"} ${detailsOrder.tableNumber ?? ""}`
                     : detailsOrder.deliveryType === "PICKUP"
                     ? "Retirada no restaurante"
                     : detailsAddress || "Endereço não informado"}

@@ -111,6 +111,7 @@ test("checkout submits DELIVERY outside a table and TABLE without address inside
     runInNewContext(compiled, {
       module: loaded, exports: loaded.exports,
       require(name) {
+        if (name === "@/utils/tableIdentity") return { tableLabel: (table) => `${table.kind === "COMMAND" ? "Comanda" : "Mesa"} ${table.number}` };
         if (name === "zod") return require(name);
         if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
         if (name === "react") return {

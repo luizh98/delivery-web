@@ -12,8 +12,8 @@ test("alerts identify doubt and closure, excluding assigned and inactive tables"
     { id: "off", number: "02", active: false, requests: [{ id: "hidden", type: "SERVICE", status: "PENDING" }] },
   ]);
   assert.deepEqual(calls, [
-    { id: "doubt", tableId: "one", tableNumber: "01", label: "Dúvida · chamou garçom" },
-    { id: "bill", tableId: "one", tableNumber: "01", label: "Fechamento da conta" },
+    { id: "doubt", tableId: "one", tableNumber: "01", kind: undefined, label: "Dúvida · chamou garçom" },
+    { id: "bill", tableId: "one", tableNumber: "01", kind: undefined, label: "Fechamento da conta" },
   ]);
   assert.deepEqual(pendingTableCalls([]), []);
 });

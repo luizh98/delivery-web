@@ -46,8 +46,8 @@ export function TableServiceAlerts({ tables, onSelect, disabled = false }: { tab
   return <Banner className="table-service-pending" aria-label="Chamados das mesas">
     <h2 aria-live="polite"><BellRing size={20} aria-hidden="true" />{calls.length} {calls.length === 1 ? "mesa aguardando atendimento" : "chamados aguardando atendimento"}</h2>
     <ul>{calls.map((call) => <li key={call.id}>{onSelect
-      ? <button type="button" disabled={disabled} onClick={() => onSelect(call.tableId)}>Mesa {call.tableNumber} · {call.label}</button>
-      : <Link href={`/hall?table=${encodeURIComponent(call.tableId)}`}>Mesa {call.tableNumber} · {call.label}</Link>}</li>)}</ul>
+      ? <button type="button" disabled={disabled} onClick={() => onSelect(call.tableId)}>{call.kind === "COMMAND" ? "Comanda" : "Mesa"} {call.tableNumber} · {call.label}</button>
+      : <Link href={`/hall?table=${encodeURIComponent(call.tableId)}`}>{call.kind === "COMMAND" ? "Comanda" : "Mesa"} {call.tableNumber} · {call.label}</Link>}</li>)}</ul>
     {failed ? <p role="status">Sem atualização dos chamados. Confira a conexão.</p> : null}
   </Banner>;
 }

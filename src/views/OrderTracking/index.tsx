@@ -375,7 +375,7 @@ export function OrderTrackingView({
           <SummaryList>
             <SummaryRow>
               <dt>Atendimento</dt>
-              <dd>{order.deliveryType === "TABLE" ? `Mesa ${order.tableNumber ?? ""}` : order.deliveryType === "DELIVERY" ? "Entrega" : "Retirada"}</dd>
+              <dd>{order.deliveryType === "TABLE" ? `${order.tableKind === "COMMAND" ? "Comanda" : "Mesa"} ${order.tableNumber ?? ""}` : order.deliveryType === "DELIVERY" ? "Entrega" : "Retirada"}</dd>
             </SummaryRow>
             {order.deliveryType !== "TABLE" ? <SummaryRow>
               <dt>Pagamento</dt>

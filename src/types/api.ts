@@ -263,12 +263,14 @@ export type OrderResponse = {
   deliveryRouteId?: string;
   motoboyId?: string;
   tableId?: string;
+  tableKind?: "TABLE" | "COMMAND";
   tableNumber?: string;
   tableSessionId?: string;
 };
 
 export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations"> & { customerPhone?: string };
 export type StaffTable = {
+	 kind?: "TABLE" | "COMMAND";
   id: string;
   number: string;
   active: boolean;
@@ -316,10 +318,12 @@ export type PublicOrderTrackingResponse = {
   };
   createdAt?: string;
   updatedAt?: string;
+  tableKind?: "TABLE" | "COMMAND";
   tableNumber?: string;
 };
 
 export type TableResponse = {
+  kind?: "TABLE" | "COMMAND";
   id: string;
   number: string;
   active: boolean;
@@ -331,6 +335,7 @@ export type TableResponse = {
 export type TableAccessResponse = { token: string };
 
 export type PublicTableResponse = {
+  kind?: "TABLE" | "COMMAND";
   number: string;
   session?: { id: string; participationId: string; status: "OPEN" | "CLOSING" } | null;
 };

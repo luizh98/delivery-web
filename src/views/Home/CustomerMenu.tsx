@@ -7,6 +7,7 @@ import { useCustomerAuth } from "@/components/CustomerAuthProvider";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { isValidBrazilianMobile, normalizeBrazilianMobile } from "@/utils/customerInput";
 import { money } from "@/utils/format";
+import { tableLabel } from "@/utils/tableIdentity";
 import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import type { BusinessHour } from "@/types/api";
 import type { CustomerMenuProps } from "./types";
@@ -53,7 +54,7 @@ export function CustomerMenu({ restaurantConfig, menu, table }: CustomerMenuProp
         </HeroTitleRow>
         <HeroText>{restaurantConfig?.menuDescription?.trim() || "Escolha seus itens, revise o pedido e envie."}</HeroText>
         <TrackingActions>
-          {table ? <TableIdentity><Armchair size={18} aria-hidden="true" />Mesa {table.number}</TableIdentity>
+          {table ? <TableIdentity><Armchair size={18} aria-hidden="true" />{tableLabel(table)}</TableIdentity>
             : <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(customer ? "/account" : "/login")}><UserRound size={16} aria-hidden="true" />{customer?.name.trim() || "Entrar ou criar conta"}</TrackingShortcut>}
           <TrackingShortcut type="button" tone="secondary" onClick={() => router.push(table ? `/menu/pedidos?mesa=${encodeURIComponent(table.token)}` : "/orders")}><ClipboardList size={16} aria-hidden="true" />{table ? "Comanda" : "Meus pedidos"}</TrackingShortcut>
         </TrackingActions>

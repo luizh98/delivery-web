@@ -25,6 +25,7 @@ function renderClosing({ pending = null, status = "CLOSING", isAdmin = false } =
   runInNewContext(source, {
     module: loaded, exports: loaded.exports,
     require(name) {
+      if (name === "@/utils/tableIdentity") return { tableLabel: (table) => `${table.kind === "COMMAND" ? "Comanda" : "Mesa"} ${table.number}` };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (name === "react") return {
         useState(initial) { const slot = index++; return [state.has(slot) ? state.get(slot) : initial, (value) => writes.push({ slot, value })]; },
