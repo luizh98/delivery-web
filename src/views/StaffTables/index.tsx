@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, BellRing, Check, CircleAlert, Copy, LockKeyhole, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, BellRing, Check, CircleAlert, Clock3, Copy, LockKeyhole, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/Button";
@@ -16,6 +16,7 @@ import { ItemEditor } from "./ItemEditor";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
 import { tableLabel } from "@/utils/tableIdentity";
+import { tableElapsed, tableGuests, tableState, tableStatus } from "./presentation";
 import { AdminShell } from "@/layouts/AdminLayout/AdminShell";
 import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
@@ -24,7 +25,6 @@ type CancelAction = { order: StaffTableOrder; itemIndex?: number } | { closeTabl
 const emptyDraft = (sessionId = ""): Draft => ({ items: [], sessionId, notes: "" });
 const closingMessage = "Conta em fechamento. Reabra a comanda para lançar novos itens.";
 const requestLabel = tableServiceLabels;
-const tableStatus = (table: StaffTable) => table.session?.status === "CLOSING" ? "Fechando conta" : table.session ? "Em consumo" : "Livre";
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 function PhoneDialog({ onConfirm, onClose }: { onConfirm: (phone: string) => void; onClose: () => void }) {
@@ -56,6 +56,23 @@ function ReasonDialog({ action, onConfirm, onClose }: { action: CancelAction; on
   </Dialog>;
 }
 
+function GuestCountForm({ tableId, session, disabled, onSaved }: { tableId: string; session: NonNullable<StaffTable["session"]>; disabled: boolean; onSaved: () => Promise<void> }) {
+  const { showToast } = useToast();
+  const form = useForm({ defaultValues: { guestCount: session.guestCount ? String(session.guestCount) : "" } });
+  return <form className="table-guests-form" onSubmit={form.handleSubmit(async ({ guestCount }) => {
+    try {
+      await clientApi(`admin/table-operations/${tableId}/guests`, { method: "PATCH", body: JSON.stringify({ sessionId: session.id, guestCount: Number(guestCount) }) });
+      showToast("Quantidade de pessoas salva.");
+      await onSaved();
+    } catch (cause) { showToast(staffApiMessage(cause, "Não foi possível salvar. Atualize a mesa e tente novamente."), "error"); }
+  })}>
+    <Field label="Quantidade de pessoas" error={form.formState.errors.guestCount?.message}>
+      <Input type="number" inputMode="numeric" min={1} max={999} step={1} placeholder="Não informado" disabled={disabled || form.formState.isSubmitting} {...form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} />
+    </Field>
+    <Button type="submit" variant="outline" disabled={disabled || form.formState.isSubmitting}>{form.formState.isSubmitting ? "Salvando…" : "Salvar pessoas"}</Button>
+  </form>;
+}
+
 export function StaffTables({ initialTables, initialMenu, admin, restaurantName, initialTableId = "", storeOpen = true }: { initialTables: StaffTable[] | null; initialMenu: MenuResponse; admin: CurrentUserResponse; restaurantName: string; initialTableId?: string; storeOpen?: boolean }) {
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirmation();
@@ -81,6 +98,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const pendingSubmission = useRef<{ tableId: string; body: string } | null>(null);
   const [uncertainSubmission, setUncertainSubmission] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("");
+  const [now, setNow] = useState<number | null>(null);
   const isAdmin = admin.roles.includes("ADMIN");
   const selected = tables?.find((table) => table.id === selectedId);
   const draft = drafts[selectedId] ?? emptyDraft(consumption?.session?.id);
@@ -112,8 +130,8 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
 
   useEffect(() => {
     const controller = new AbortController();
-    const update = () => { void refresh(controller.signal); if (selectedId) void loadConsumption(selectedId, controller.signal); };
-    queueMicrotask(() => { if (selectedId && !controller.signal.aborted) void loadConsumption(selectedId, controller.signal); });
+    const update = () => { setNow(Date.now()); void refresh(controller.signal); if (selectedId) void loadConsumption(selectedId, controller.signal); };
+    queueMicrotask(() => { if (!controller.signal.aborted) { setNow(Date.now()); if (selectedId) void loadConsumption(selectedId, controller.signal); } });
     const timer = window.setInterval(update, 10000);
     const onVisible = () => { if (document.visibilityState === "visible") update(); };
     const events = new EventSource("/api/backend/admin/table-operations/events");
@@ -238,10 +256,13 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
     {!selected ? <Stack>
       <Field label="Buscar mesa ou comanda"><Input type="search" placeholder="Número ou tipo de atendimento" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} /></Field>
-      <TableGrid>{tableList.map((table) => <TableButton key={table.id} className={table.requests?.some((request) => request.status === "PENDING") ? "table-service-pending" : undefined} onClick={() => openTable(table.id)} aria-label={`${tableLabel(table)}, ${tableStatus(table)}`}>
-        <Row>{table.kind === "COMMAND" ? <ReceiptText size={20} aria-hidden="true" /> : <Armchair size={20} aria-hidden="true" />}<Badge>{tableStatus(table)}</Badge></Row><strong>{tableLabel(table)}</strong>
-        {table.requests?.length ? <Badge><BellRing size={16} />{table.requests.length} chamado(s)</Badge> : <Muted>Toque para atender</Muted>}
-        {table.requests?.map((request) => <Muted key={request.id}>{requestLabel[request.type]}{request.status === "ASSIGNED" ? " · Em atendimento" : ""}</Muted>)}
+      <div className="table-legend" aria-label="Status das mesas"><span data-state="free">Livre</span><span data-state="occupied">Ocupado</span><span data-state="closing">Fechamento</span></div>
+      <TableGrid>{tableList.map((table) => <TableButton key={table.id} data-state={tableState(table)} onClick={() => openTable(table.id)} aria-label={`${tableLabel(table)}, ${tableStatus(table)}`}>
+        <strong>{tableLabel(table)}</strong><span className="table-status">{tableStatus(table)}</span>
+        {table.session ? <span className="table-details"><Clock3 size={14} aria-hidden="true" />{now === null ? "Calculando tempo…" : tableElapsed(table.session.createdAt, now)}</span> : null}
+        {table.session ? <span className="table-details"><Users size={14} aria-hidden="true" />{tableGuests(table.session.guestCount)}</span> : null}
+        {table.requests?.length ? <span className="table-request"><BellRing size={14} aria-hidden="true" />{table.requests.length} {table.requests.length === 1 ? "chamado" : "chamados"}</span> : null}
+        {table.requests?.map((request) => <span className="table-request" key={request.id}>{requestLabel[request.type]}{request.status === "ASSIGNED" ? " · Em atendimento" : ""}</span>)}
         {drafts[table.id]?.items.length ? <Badge>Rodada não enviada</Badge> : null}
       </TableButton>)}</TableGrid>
       {tables !== null && !tableList.length ? <Empty>{tables.some((table) => table.active) ? "Nenhuma mesa ou comanda encontrada. Tente outro número." : "Nenhuma mesa ou comanda ativa. Peça ao administrador para cadastrar ou ativar."}</Empty> : null}
@@ -252,6 +273,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Conta · {tableLabel(selected)}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
         {consumption?.totals ? <div aria-label="Composição da conta"><Row><Muted>Consumo</Muted><Price>{money(consumption.totals.consumptionCents)}</Price></Row><Row><Muted>Taxa de serviço ({(consumption.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</Muted><Price>{money(consumption.totals.serviceFeeCents)}</Price></Row></div> : null}
         {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
+        {consumption?.session ? <GuestCountForm key={`${consumption.session.id}:${consumption.session.guestCount ?? ""}`} tableId={selectedId} session={consumption.session} disabled={!canEdit || !!consumptionError} onSaved={refresh} /> : null}
         <Actions>
           {isClosing ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}
           {isAdmin ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => setCancelAction({ closeTable: true })}>Encerrar comanda</Button> : null}

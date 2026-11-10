@@ -6,6 +6,13 @@ export const Root = styled("section", {
   "& :is(button, a, input, textarea, select):focus-visible": { outline: "2px solid var(--color-primary-text)", outlineOffset: "3px" },
   "& input, & textarea": { caretColor: "var(--color-primary-text)" },
   "& ::selection": { background: "var(--color-primary)", color: "var(--color-primary-foreground)" },
+  "& [data-state='free']": { "--table-color": "#15803d" },
+  "& [data-state='occupied']": { "--table-color": "#b91c1c" },
+  "& [data-state='closing']": { "--table-color": "#c2410c" },
+  "& .table-legend": { display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", color: "var(--color-muted)" },
+  "& .table-legend span": { display: "inline-flex", alignItems: "center", gap: "0.375rem" },
+  "& .table-legend span::before": { content: "''", width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "var(--table-color)" },
+  "& .table-guests-form": { display: "flex", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem", "& > button": { marginTop: "1.625rem", minHeight: "2.75rem" } },
 });
 export const Header = styled("header", { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", paddingBottom: "1rem", borderBottom: "1px solid var(--color-border)" });
 export const Title = styled("h1", { fontSize: "1.5rem", lineHeight: 1.25, fontWeight: 700 });
@@ -15,11 +22,16 @@ export const Row = styled("div", { display: "flex", alignItems: "center", justif
 export const Actions = styled("div", { display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" });
 export const Stack = styled("div", { display: "grid", gap: "1rem", minWidth: 0 });
 export const ErrorBox = styled("p", { padding: "1rem", border: "1px solid var(--color-border)", borderRadius: "0.75rem", background: "var(--color-surface)", fontSize: "0.875rem", fontWeight: 600 });
-export const TableGrid = styled("div", { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(9rem, 1fr))", gap: "0.75rem" });
+export const TableGrid = styled("div", { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(7.5rem, 1fr))", gap: "0.75rem", "@lg": { gridTemplateColumns: "repeat(auto-fill, minmax(12rem, 1fr))" } });
 export const TableButton = styled("button", {
-  display: "grid", gap: "0.5rem", textAlign: "left", padding: "1.25rem", minHeight: "9rem", background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "0.75rem",
-  "&:hover": { borderColor: "var(--color-primary-text)", background: "var(--color-surface-muted)" },
-  "& strong": { fontSize: "1.5rem", fontWeight: 700 },
+  display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: "0.375rem", minWidth: 0, textAlign: "left", padding: "1rem", minHeight: "6rem", color: "var(--table-color)", background: "color-mix(in srgb, var(--table-color) 6%, var(--color-surface))", border: "1px solid color-mix(in srgb, var(--table-color) 35%, var(--color-border))", borderRadius: "0.75rem", overflowWrap: "anywhere",
+  "&:hover": { background: "color-mix(in srgb, var(--table-color) 12%, var(--color-surface))", borderColor: "var(--table-color)" },
+  "& strong": { fontSize: "1.25rem", fontWeight: 700, lineHeight: 1.3 },
+  "& .table-status": { display: "none", fontSize: "0.8125rem", fontWeight: 600 },
+  "& .table-details": { display: "none", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", fontVariantNumeric: "tabular-nums" },
+  "& .table-request": { display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", fontWeight: 600 },
+  "& svg": { flexShrink: 0 },
+  "@lg": { minHeight: "9rem", "& .table-status": { display: "block" }, "& .table-details": { display: "flex" } },
 });
 export const Badge = styled("span", { display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", fontWeight: 600, width: "fit-content", color: "var(--color-primary-text)" });
 export const Workbench = styled("div", { display: "grid", alignItems: "start", gap: "1.5rem", "@(max-width: 1023px)": { "&[data-mobile-pane='ticket'] > section:first-of-type": { display: "none" }, "&[data-mobile-pane='catalog'] > section:last-of-type": { display: "none" } }, "@lg": { gridTemplateColumns: "minmax(0, 1.3fr) minmax(20rem, 0.8fr)" } });

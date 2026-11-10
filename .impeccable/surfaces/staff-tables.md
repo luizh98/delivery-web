@@ -16,7 +16,9 @@ Este registro descreve somente `src/views/StaffTables/` e `src/app/(product)/sal
 
 ## Desktop e celular
 
-Lista de mesas em grade responsiva (`minmax(9rem, 1fr)`), busca por número e estados escritos: Livre, Em consumo e Fechando conta. Chamados e rodada não enviada recebem texto próprio.
+Lista de mesas em grade responsiva: `minmax(7.5rem, 1fr)` no mobile e `minmax(12rem, 1fr)` a partir de 1024px. Busca por número e cores semânticas: verde livre, vermelho ocupado e laranja fechamento, com fundos suaves e bordas finas. Mobile prioriza identificação e cor, com legenda e nomes acessíveis. Desktop exibe também status escrito, tempo da abertura e pessoas. Chamados e rodada não enviada continuam com texto próprio. Refinamento verificado em 10/11/2026 na rota atual `/hall`.
+
+Quantidade de pessoas é editável no resumo da comanda por ADMIN/WAITER, após existir uma visita aberta, inclusive durante fechamento. Campo inteiro de 1 a 999, salvo por sessão com auditoria. Ausência de quantidade ou data em comandas antigas não gera valores inventados. Relógio inicia após montagem e acompanha atualização de 10 segundos. Evidências e limites desta alteração estão em `.specs/features/table-overview/spec.md`.
 
 A partir de 1024px, catálogo e comanda ficam lado a lado, com colunas `minmax(0, 1.3fr)` e `minmax(20rem, 0.8fr)`. Contêiner limitado a 90rem. Abaixo desse limite, botões Cardápio / Rodada e consumo alternam o painel visível. No catálogo, barra inferior fixa mostra quantidade e valor e leva à revisão; respeita safe area. A comanda oferece Rodada e Consumo como escolhas separadas.
 

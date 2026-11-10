@@ -164,6 +164,12 @@ Nenhum.
 
 ---
 
+## Visão limpa das mesas — 2026-11-10
+
+- `/hall`: grade compacta com livre verde, ocupado vermelho e fechamento laranja. Desktop mostra status, tempo e pessoas; mobile usa identificação e legenda com nomes acessíveis.
+- Quantidade editável por ADMIN/WAITER na comanda, salva por sessão no backend e auditada. Dados legados permanecem não informados. Spec e evidências em `.specs/features/table-overview/spec.md`.
+- Verificação: 186 testes web, 427 testes Go (incluindo integração Mongo isolada/auditoria), lint, TypeScript, build e navegador com backend sintético em 320–1440px. Sem publicação. Alterações anteriores de `Finalizar comanda` preservadas fora dos commits.
+
 ## Preferences
 
 **Model Guidance Shown:** never

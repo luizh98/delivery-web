@@ -4,6 +4,7 @@ import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts";
+import * as presentation from "./presentation.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
 function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, totals } = {}) {
@@ -38,6 +39,7 @@ function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, to
       if (name === "@/utils/format") return { money: (cents) => String(cents), statusLabel: (status) => status };
       if (name === "@/utils/productPricing") return { productSalePrice: (item) => item.priceCents };
       if (name === "./draft") return { draftItemTotal, normalizeTablePhone, staffApiMessage };
+      if (name === "./presentation") return presentation;
       if (name === "@/utils/tableService") return { tableServiceLabels: {} };
       return new Proxy({}, { get: (_, key) => String(key) });
     },

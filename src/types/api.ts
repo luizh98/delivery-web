@@ -275,7 +275,7 @@ export type StaffTable = {
   id: string;
   number: string;
   active: boolean;
-  session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string } | null;
+  session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string; guestCount?: number } | null;
   requests: { id: string; type: "SERVICE" | "CLOSURE" | "PAYMENT"; status: "PENDING" | "ASSIGNED"; assignedBy?: string }[];
 };
 export type TableConsumptionTotals = { consumptionCents: number; serviceFeeBasisPoints: number; serviceFeeCents: number; totalCents: number };
