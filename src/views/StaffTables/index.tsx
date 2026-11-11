@@ -2,7 +2,7 @@
 
 import { ArrowLeft, BellRing, Check, CircleAlert, Clock3, Copy, LockKeyhole, Pencil, Plus, ReceiptText, RefreshCw, Search, Send, Trash2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/Button";
 import { Field, Input, Select, Textarea } from "@/components/Field";
 import { useConfirmation } from "@/components/ConfirmationProvider";
@@ -13,6 +13,7 @@ import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
+import { GuestCountField } from "./GuestCountField";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
 import { tableLabel } from "@/utils/tableIdentity";
@@ -30,13 +31,14 @@ const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u0
 function PhoneDialog({ opening, onConfirm, onClose }: { opening: boolean; onConfirm: (phone: string, guestCount?: number) => void; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const form = useForm({ defaultValues: { phone: "", guestCount: "" } });
+  const guestCount = useWatch({ control: form.control, name: "guestCount" });
   useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
   return <Dialog ref={dialog} onCancel={onClose} aria-labelledby="phone-title">
     <form onSubmit={form.handleSubmit(({ phone, guestCount }) => onConfirm(normalizeTablePhone(phone), opening ? Number(guestCount) : undefined))}>
       <Row><Heading id="phone-title">{opening ? "Abertura da conta" : "Contato da conta"}</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
       <Muted>Informe telefone ou celular da pessoa responsável pela conta para contato, caso ela saia.</Muted>
       <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
-      {opening ? <Field label="Total de pessoas" error={form.formState.errors.guestCount?.message}><Input type="number" inputMode="numeric" min={1} max={999} step={1} {...form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} /></Field> : null}
+      {opening ? <GuestCountField label="Total de pessoas" value={guestCount} onChange={(value) => form.setValue("guestCount", value, { shouldDirty: true, shouldValidate: true })} error={form.formState.errors.guestCount?.message} registration={form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} /> : null}
       <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar</Button><Button type="submit"><Send size={18} />{opening ? "Abrir conta e enviar" : "Salvar contato e enviar"}</Button></Actions>
     </form>
   </Dialog>;
@@ -60,6 +62,7 @@ function ReasonDialog({ action, onConfirm, onClose }: { action: CancelAction; on
 function GuestCountForm({ tableId, session, disabled, onSaved }: { tableId: string; session: NonNullable<StaffTable["session"]>; disabled: boolean; onSaved: () => Promise<void> }) {
   const { showToast } = useToast();
   const form = useForm({ defaultValues: { guestCount: session.guestCount ? String(session.guestCount) : "" } });
+  const guestCount = useWatch({ control: form.control, name: "guestCount" });
   return <form className="table-guests-form" onSubmit={form.handleSubmit(async ({ guestCount }) => {
     try {
       await clientApi(`admin/table-operations/${tableId}/guests`, { method: "PATCH", body: JSON.stringify({ sessionId: session.id, guestCount: Number(guestCount) }) });
@@ -67,9 +70,7 @@ function GuestCountForm({ tableId, session, disabled, onSaved }: { tableId: stri
       await onSaved();
     } catch (cause) { showToast(staffApiMessage(cause, "Não foi possível salvar. Atualize a mesa e tente novamente."), "error"); }
   })}>
-    <Field label="Quantidade de pessoas" error={form.formState.errors.guestCount?.message}>
-      <Input type="number" inputMode="numeric" min={1} max={999} step={1} placeholder="Não informado" disabled={disabled || form.formState.isSubmitting} {...form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} />
-    </Field>
+    <GuestCountField label="Quantidade de pessoas" value={guestCount} onChange={(value) => form.setValue("guestCount", value, { shouldDirty: true, shouldValidate: true })} error={form.formState.errors.guestCount?.message} disabled={disabled || form.formState.isSubmitting} registration={form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} />
     <Button type="submit" variant="outline" disabled={disabled || form.formState.isSubmitting}>{form.formState.isSubmitting ? "Salvando…" : "Salvar pessoas"}</Button>
   </form>;
 }

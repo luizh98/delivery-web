@@ -53,5 +53,12 @@ export const Dialog = styled("dialog", {
   "& form": { display: "grid", gap: "1rem" },
   "& button:focus-visible, & input:focus-visible, & textarea:focus-visible": { outline: "2px solid var(--color-primary-text)", outlineOffset: "2px" },
 });
+export const GuestCountControls = styled("div", {
+  display: "grid", gridTemplateColumns: "3rem minmax(0, 1fr) 3rem", gap: "0.5rem", width: "100%", maxWidth: "20rem", minWidth: 0,
+  "& > button": { width: "3rem", height: "3rem", padding: 0, "&:disabled": { background: "var(--color-surface-muted)", color: "var(--color-muted)", cursor: "not-allowed" } },
+  "& input": { width: "100%", minWidth: 0, height: "3rem", fontSize: "1.125rem", fontVariantNumeric: "tabular-nums", textAlign: "center", appearance: "textfield" },
+  "& input::-webkit-inner-spin-button, & input::-webkit-outer-spin-button": { WebkitAppearance: "none", margin: 0 },
+  "& button:focus-visible, & input:focus-visible": { outline: "2px solid var(--color-primary-text)", outlineOffset: "2px" },
+});
 export const OptionSet = styled("fieldset", { display: "grid", gap: "0.5rem", "& legend": { fontWeight: 600, marginBottom: "0.5rem" } });
 export const Option = styled("label", { display: "flex", gap: "0.75rem", alignItems: "center", minHeight: "2.75rem", "& input": { width: "1.125rem", height: "1.125rem", accentColor: "var(--color-primary-text)" } });

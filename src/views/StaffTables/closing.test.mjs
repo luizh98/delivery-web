@@ -36,8 +36,9 @@ function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, to
         useRef: (current) => ({ current: refIndex++ === 2 && pending ? pending : current }), useEffect() {}, useCallback: (fn) => fn,
       };
       if (name === "next/navigation") return { useRouter: () => ({ push() {} }) };
-      if (name === "react-hook-form") return { useForm: () => ({
+      if (name === "react-hook-form") return { useWatch: ({ name }) => dialogValues[name] ?? "", useForm: () => ({
         formState: { errors: {} },
+        setValue(name, value) { dialogValues[name] = value; },
         register(name, options) { fields[name] = options; return { name }; },
         handleSubmit: (submit) => () => submit(dialogValues),
       }) };
