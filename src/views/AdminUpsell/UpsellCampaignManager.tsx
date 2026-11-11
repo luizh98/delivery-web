@@ -34,6 +34,8 @@ import type {
 } from "@/types/api";
 import { centsToReais, money, reaisToCents } from "@/utils/format";
 import { ReportLinks } from "./report.styles";
+import { applyDefaultOfferPrice } from "./offerPricing";
+import { VisibleItemsList } from "./VisibleItemsList";
 import {
   Actions,
   CampaignCard,
@@ -41,7 +43,6 @@ import {
   CampaignMeta,
   CampaignName,
   Checkbox,
-  ChoiceList,
   Empty,
   ErrorText,
   FormActions,
@@ -292,6 +293,9 @@ export function UpsellCampaignManager({
   const [formOpen, setFormOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [offerSearch, setOfferSearch] = useState("");
+  const [defaultPriceType, setDefaultPriceType] = useState<UpsellPriceType>("FIXED");
+  const [defaultPrice, setDefaultPrice] = useState("");
+  const [defaultPriceError, setDefaultPriceError] = useState("");
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirmation();
   const form = useForm<CampaignForm>({
@@ -333,6 +337,9 @@ export function UpsellCampaignManager({
     setEditing(null);
     form.reset(defaults);
     setOfferSearch("");
+    setDefaultPrice("");
+    setDefaultPriceError("");
+    setDefaultPriceType("FIXED");
     setStep(0);
     setFormOpen(true);
   }
@@ -341,6 +348,9 @@ export function UpsellCampaignManager({
     setEditing(campaign);
     form.reset(campaignToForm(campaign));
     setOfferSearch("");
+    setDefaultPrice("");
+    setDefaultPriceError("");
+    setDefaultPriceType("FIXED");
     setStep(0);
     setFormOpen(true);
   }
@@ -393,6 +403,26 @@ export function UpsellCampaignManager({
     const next = [...offers];
     [next[index], next[target]] = [next[target], next[index]];
     form.setValue("offers", next, { shouldDirty: true });
+  }
+
+  function applyPriceToAllOffers() {
+    if (defaultPrice.trim() === "") {
+      setDefaultPriceError("Informe o valor para aplicar aos itens.");
+      return;
+    }
+    try {
+      const next = applyDefaultOfferPrice(form.getValues("offers"), {
+        priceType: defaultPriceType,
+        value: Number(defaultPrice),
+      });
+      form.setValue("offers", next, { shouldDirty: true, shouldValidate: true });
+      setDefaultPriceError("");
+      showToast(`Padrão aplicado a ${next.length} oferta(s). Salve a campanha para confirmar.`);
+    } catch (error) {
+      setDefaultPriceError(error instanceof z.ZodError
+        ? error.issues[0].message
+        : "Confira o valor informado.");
+    }
   }
 
   async function submit(values: CampaignForm) {
@@ -651,7 +681,7 @@ export function UpsellCampaignManager({
                   </Select>
                 </Field>
                 {triggerType === "PRODUCT" ? (
-                  <ChoiceList>
+                  <VisibleItemsList count={4} label="Produtos da condição">
                     {products.map((product) => (
                       <Checkbox key={product.id}>
                         <input
@@ -662,10 +692,10 @@ export function UpsellCampaignManager({
                         {product.name}
                       </Checkbox>
                     ))}
-                  </ChoiceList>
+                  </VisibleItemsList>
                 ) : null}
                 {triggerType === "CATEGORY" ? (
-                  <ChoiceList>
+                  <VisibleItemsList count={4} label="Categorias da condição">
                     {categories.map((category) => (
                       <Checkbox key={category.id}>
                         <input
@@ -676,7 +706,7 @@ export function UpsellCampaignManager({
                         {category.name}
                       </Checkbox>
                     ))}
-                  </ChoiceList>
+                  </VisibleItemsList>
                 ) : null}
                 <GridTwo>
                   <Field label="Valor mínimo" error={form.formState.errors.minimumCartAmountReais?.message}>
@@ -719,7 +749,7 @@ export function UpsellCampaignManager({
                 <GridTwo>
                   <StepContent>
                     <CampaignName>Categorias</CampaignName>
-                    <ChoiceList>
+                    <VisibleItemsList count={4} label="Categorias disponíveis">
                       {filteredCategories.map((category) => (
                         <Checkbox key={category.id}>
                           <input
@@ -737,11 +767,11 @@ export function UpsellCampaignManager({
                       {!filteredCategories.length ? (
                         <PageSubtitle>Nenhuma categoria encontrada.</PageSubtitle>
                       ) : null}
-                    </ChoiceList>
+                    </VisibleItemsList>
                   </StepContent>
                   <StepContent>
                     <CampaignName>Produtos específicos</CampaignName>
-                    <ChoiceList>
+                    <VisibleItemsList count={4} label="Produtos específicos disponíveis">
                       {filteredProducts.map((product) => (
                         <Checkbox key={product.id}>
                           <input
@@ -759,12 +789,56 @@ export function UpsellCampaignManager({
                       {!filteredProducts.length ? (
                         <PageSubtitle>Nenhum produto encontrado.</PageSubtitle>
                       ) : null}
-                    </ChoiceList>
+                    </VisibleItemsList>
                   </StepContent>
                 </GridTwo>
+                <StepContent>
+                  <CampaignName>Padrão para todos os itens</CampaignName>
+                  <GridTwo>
+                    <Field label="Tipo do padrão">
+                      <Select
+                        value={defaultPriceType}
+                        onChange={(event) => {
+                          setDefaultPriceType(event.target.value === "PERCENTAGE" ? "PERCENTAGE" : "FIXED");
+                          setDefaultPrice("");
+                          setDefaultPriceError("");
+                        }}
+                      >
+                        <option value="FIXED">Preço fixo (R$)</option>
+                        <option value="PERCENTAGE">Desconto (%)</option>
+                      </Select>
+                    </Field>
+                    <Field
+                      label={defaultPriceType === "FIXED" ? "Preço para todos (R$)" : "Desconto para todos (%)"}
+                      error={defaultPriceError}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        max={defaultPriceType === "PERCENTAGE" ? 100 : undefined}
+                        step={defaultPriceType === "PERCENTAGE" ? 1 : "0.01"}
+                        value={defaultPrice}
+                        onChange={(event) => {
+                          setDefaultPrice(event.target.value);
+                          setDefaultPriceError("");
+                        }}
+                      />
+                    </Field>
+                  </GridTwo>
+                  <Actions>
+                    <Button type="button" variant="outline" disabled={!offers.length}
+                      onClick={applyPriceToAllOffers}>
+                      <Save size={16} /> Aplicar a todos
+                    </Button>
+                    <PageSubtitle>
+                      Aplica às ofertas selecionadas. Preços por dia continuam individuais.
+                    </PageSubtitle>
+                  </Actions>
+                </StepContent>
                 {form.formState.errors.offers?.message ? (
                   <ErrorText>{form.formState.errors.offers.message}</ErrorText>
                 ) : null}
+                <VisibleItemsList count={3} label="Itens da oferta" offers>
                 {offers.map((offer, index) => (
                   <OfferCard key={`${offer.targetType}:${offer.targetId}`}>
                     <OfferHeader>
@@ -914,6 +988,7 @@ export function UpsellCampaignManager({
                     </WeekdayDetails>
                   </OfferCard>
                 ))}
+                </VisibleItemsList>
                 <Field label="Quantidade máxima por pedido">
                   <Input
                     type="number"

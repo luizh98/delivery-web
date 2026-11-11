@@ -156,9 +156,18 @@ export const Checkbox = styled("label", {
 
 export const ChoiceList = styled("div", {
   display: "grid",
+  alignContent: "start",
+  minWidth: 0,
   maxHeight: "18rem",
   gap: "0.35rem",
   overflowY: "auto",
+  overscrollBehaviorY: "contain",
+  scrollbarGutter: "stable",
+  variants: {
+    offers: {
+      true: { gap: "0.75rem", maxHeight: "48rem" },
+    },
+  },
 });
 
 export const OrderedItem = styled("div", {
