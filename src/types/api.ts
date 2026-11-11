@@ -75,6 +75,7 @@ export type RestaurantConfigResponse = {
   menuDescription?: string;
   minimumOrderCents?: number;
   serviceFeeBasisPoints?: number;
+  waiterCheckoutEnabled?: boolean;
   whatsapp?: string;
   address?: Address;
   theme?: Theme;
@@ -275,11 +276,13 @@ export type StaffTable = {
   id: string;
   number: string;
   active: boolean;
-  session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string; guestCount?: number } | null;
+  session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string; guestCount?: number; paymentVersion?: number; payments?: TablePayment[] } | null;
   requests: { id: string; type: "SERVICE" | "CLOSURE" | "PAYMENT"; status: "PENDING" | "ASSIGNED"; assignedBy?: string }[];
 };
 export type TableConsumptionTotals = { consumptionCents: number; serviceFeeBasisPoints: number; serviceFeeCents: number; totalCents: number };
-export type StaffTableConsumption = { session: StaffTable["session"]; orders: StaffTableOrder[]; totals?: TableConsumptionTotals };
+export type TablePaymentItem = { orderId: string; itemIndex: number; quantity: number; name?: string; consumptionCents?: number };
+export type TablePayment = { id: string; mode: "ITEMS" | "EQUAL"; splitCount: number; person: string; method: "PIX" | "CASH" | "CREDIT_CARD" | "DEBIT_CARD"; items?: TablePaymentItem[]; consumptionCents: number; serviceFeeCents: number; amountCents: number; receivedAt: string; receivedBy: string };
+export type StaffTableConsumption = { session: StaffTable["session"]; orders: StaffTableOrder[]; totals?: TableConsumptionTotals; canCheckout?: boolean; paidCents?: number };
 
 export type MotoboyResponse = {
   id: string;

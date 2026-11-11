@@ -13,6 +13,7 @@ export const Root = styled("section", {
   "& .table-legend span": { display: "inline-flex", alignItems: "center", gap: "0.375rem" },
   "& .table-legend span::before": { content: "''", width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "var(--table-color)" },
   "& .table-guests-form": { display: "flex", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem", "& > button": { marginTop: "1.625rem", minHeight: "2.75rem" } },
+  "& .table-payment-form": { display: "grid", gap: "1rem", minWidth: 0, "& input, & select": { minWidth: 0, maxWidth: "100%" } },
 });
 export const Header = styled("header", { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", paddingBottom: "1rem", borderBottom: "1px solid var(--color-border)" });
 export const Title = styled("h1", { fontSize: "1.5rem", lineHeight: 1.25, fontWeight: 700 });

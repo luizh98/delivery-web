@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/.wiser-qca/
 
 # next.js
 /.next/

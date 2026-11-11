@@ -13,6 +13,7 @@ import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
+import { Payments } from "./Payments";
 import { GuestCountField } from "./GuestCountField";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
@@ -101,6 +102,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const [uncertainSubmission, setUncertainSubmission] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("");
   const [now, setNow] = useState<number | null>(null);
+  const [checkoutPending, setCheckoutPending] = useState(false);
   const isAdmin = admin.roles.includes("ADMIN");
   const selected = tables?.find((table) => table.id === selectedId);
   const draft = drafts[selectedId] ?? emptyDraft(consumption?.session?.id);
@@ -110,6 +112,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const consumptionTotal = consumption?.totals?.totalCents ?? consumption?.orders.filter((order) => order.status !== "CANCELED").reduce((sum, order) => sum + order.totals.totalCents, 0) ?? 0;
   const tablePhone = consumption?.orders.find((order) => order.customerPhone)?.customerPhone ?? "";
   const isClosing = consumption?.session?.status === "CLOSING";
+  const hasPayments = !!consumption?.session?.payments?.length;
 
   const loadConsumption = useCallback(async (id: string, signal?: AbortSignal) => {
     const version = ++consumptionVersion.current;
@@ -144,11 +147,11 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   }, [selectedId, refresh, loadConsumption]);
 
   useEffect(() => {
-    if (!hasDrafts && !uncertainSubmission) return;
+    if (!hasDrafts && !uncertainSubmission && !checkoutPending) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [hasDrafts, uncertainSubmission]);
+  }, [hasDrafts, uncertainSubmission, checkoutPending]);
 
   function updateDraft(next: Draft) { setDrafts((current) => ({ ...current, [selectedId]: next })); }
   function openTable(id: string) {
@@ -240,19 +243,20 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   }
 
   async function confirmLeave() {
+    if (checkoutPending) { showToast("Confira o recebimento pendente antes de sair desta mesa.", "warning"); return false; }
     return !(hasDrafts || uncertainSubmission) || await requestConfirmation({ message: "Há itens ainda não enviados ou um envio sem confirmação. Sair descartará os rascunhos. Deseja sair?", confirmLabel: "Sair", variant: "danger" });
   }
 
   const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(tableLabel(table)).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
   const products = menu.products.filter((product) => product.active && (!categoryId || product.categoryId === categoryId) && normalize(product.name).includes(normalize(productSearch)));
-  const canEdit = !busy && !uncertainSubmission;
+  const canEdit = !busy && !uncertainSubmission && !checkoutPending;
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
 
   return <AdminShell admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} beforeLeave={confirmLeave}><Root>
     <Header><div><Title>Atendimento do salão</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div></Header>
-    <TableServiceAlerts tables={tables} onSelect={openTable} disabled={busy || uncertainSubmission} />
+    <TableServiceAlerts tables={tables} onSelect={openTable} disabled={!canEdit} />
     <Row><div><Heading>{selected ? tableLabel(selected) : "Escolha mesa ou comanda"}</Heading><Muted>{selected ? `${tableStatus(selected)} · ${selected.kind === "COMMAND" ? "Conta individual" : "Conta compartilhada"}` : "Selecione para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
-      {selected ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas e comandas</Button> : null}
+      {selected ? <Button variant="outline" disabled={!canEdit} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas e comandas</Button> : null}
       <Button variant="outline" disabled={refreshing || busy} onClick={() => void manualRefresh()}><RefreshCw size={16} />{refreshing ? "Atualizando…" : "Atualizar"}</Button>
     </Actions></Row>
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
@@ -274,12 +278,13 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
       <AccountPanel aria-label={`Resumo · ${tableLabel(selected)}`}>
         <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Conta · {tableLabel(selected)}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
         {consumption?.totals ? <div aria-label="Composição da conta"><Row><Muted>Consumo</Muted><Price>{money(consumption.totals.consumptionCents)}</Price></Row><Row><Muted>Taxa de serviço ({(consumption.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</Muted><Price>{money(consumption.totals.serviceFeeCents)}</Price></Row></div> : null}
-        {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
+        {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{hasPayments ? "Há pagamentos registrados. Receba o saldo restante para encerrar a comanda." : closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
         {consumption?.session ? <GuestCountForm key={`${consumption.session.id}:${consumption.session.guestCount ?? ""}`} tableId={selectedId} session={consumption.session} disabled={!canEdit || !!consumptionError} onSaved={refresh} /> : null}
         <Actions>
-          {isClosing ? <Button variant="outline" disabled={busy || uncertainSubmission} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}
-          {isAdmin ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !consumption?.session || !!consumptionError} onClick={() => setCancelAction({ closeTable: true })}>Encerrar comanda</Button> : null}
+          {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={!canEdit || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}
+          {isAdmin && !hasPayments ? <Button variant="dangerGhost" disabled={!canEdit || !consumption?.session || !!consumptionError} onClick={() => setCancelAction({ closeTable: true })}>Encerrar comanda</Button> : null}
         </Actions>
+        {isClosing && consumption?.session ? <Payments key={consumption.session.id} tableId={selectedId} consumption={consumption} disabled={!canEdit || !!consumptionError} onBlockedChange={setCheckoutPending} onSaved={async () => { await Promise.all([refresh(), loadConsumption(selectedId)]); }} /> : null}
       </AccountPanel>
       {selected.requests?.map((request) => <Panel key={request.id} className={request.status === "PENDING" ? "table-service-pending" : undefined}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}
@@ -312,12 +317,12 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
             <Row><strong>Rodada #{order.orderNumber ?? order.id.slice(-6)}</strong><Badge>{statusLabel(order.status, "TABLE")}</Badge></Row>
             <Muted>{order.createdAt ? new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</Muted>
             {order.items.map((item, index) => <Stack key={index}><Row><span>{item.quantity}× {item.name}</span><Price>{money(item.totalCents)}</Price></Row>{item.options?.length ? <Muted>{item.options.map((option) => option.itemName).join(", ")}</Muted> : null}{item.observations ? <Muted>Observação: {item.observations}</Muted> : null}
-              {isAdmin && order.status !== "CANCELED" && order.status !== "COMPLETED" ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !!consumptionError} onClick={() => setCancelAction({ order, itemIndex: index })}><X size={16} />Cancelar item</Button> : null}</Stack>)}
+              {isAdmin && !hasPayments && order.status !== "CANCELED" && order.status !== "COMPLETED" ? <Button variant="dangerGhost" disabled={!canEdit || !!consumptionError} onClick={() => setCancelAction({ order, itemIndex: index })}><X size={16} />Cancelar item</Button> : null}</Stack>)}
             {order.notes ? <Muted>Rodada: {order.notes}</Muted> : null}
             {order.tableItemCancellations?.map((entry, index) => <Muted key={index}>Cancelado: {entry.item.quantity}× {entry.item.name} · {entry.reason}</Muted>)}
             {order.cancellation ? <Muted>Motivo: {order.cancellation.reason}</Muted> : null}
             <Row><Muted>{order.status === "CANCELED" ? "Não entra no total" : "Total da rodada"}</Muted><Price>{money(order.totals.totalCents)}</Price></Row>
-            {isAdmin && order.status !== "CANCELED" && order.status !== "COMPLETED" ? <Button variant="dangerGhost" disabled={busy || uncertainSubmission || !!consumptionError} onClick={() => setCancelAction({ order })}><Trash2 size={16} />Cancelar rodada</Button> : null}
+            {isAdmin && !hasPayments && order.status !== "CANCELED" && order.status !== "COMPLETED" ? <Button variant="dangerGhost" disabled={!canEdit || !!consumptionError} onClick={() => setCancelAction({ order })}><Trash2 size={16} />Cancelar rodada</Button> : null}
           </ItemRow>)}
           {!isAdmin ? <Muted>Precisa corrigir algo já enviado? Peça ao administrador para cancelar o item com motivo e lance a correção em uma nova rodada.</Muted> : null}
         </Stack>}

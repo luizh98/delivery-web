@@ -55,6 +55,15 @@ test("service fee defaults disabled and restores saved percentage with account s
   assert.ok(saved.includes("contas abertas mantêm a taxa inicial"));
 });
 
+test("waiter checkout defaults disabled and restores the saved permission", () => {
+  const off = renderSettings();
+  assert.equal(formDefaults.at(-1).waiterCheckoutEnabled, false);
+  assert.match(off, /name="waiterCheckoutEnabled"/);
+  const on = renderSettings({ waiterCheckoutEnabled: true });
+  assert.equal(formDefaults.at(-1).waiterCheckoutEnabled, true);
+  assert.match(on, /garçom receba e feche mesas e comandas/);
+});
+
 test("WhatsApp configuration stays inside orders and never renders a saved token", () => {
   const html = renderSettings({ whatsappIntegration: { phoneNumberId: "123456789", apiVersion: "v25.0", language: "pt_BR", tokenConfigured: true, templates: { production: "pedido_producao", delivery: "pedido_entrega", completed: "pedido_concluido" }, accessToken: "must-never-render" } });
   const section = html.slice(html.indexOf('<details id="orders"'), html.indexOf('<details id="delivery"'));

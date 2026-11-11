@@ -41,9 +41,12 @@ Busca de produto e filtro de categoria precedem a lista. Editor modal nativo (`s
 | Editar, duplicar, excluir rascunho; descartar rodada | Sim | Sim |
 | Assumir/concluir chamado; pedir conta; reabrir comanda | Sim, respeitando atribuição do chamado | Sim |
 | Cancelar item ou rodada enviada | Não; solicitar ao ADMIN e lançar correção em nova rodada | Com motivo obrigatório; cozinha avisada |
-| Encerrar comanda | Não | Com motivo; diálogo informa cancelamento de pendências |
+| Receber por itens ou divisão igual; encerrar conta paga | Somente com configuração de fechamento pelo garçom habilitada | Sim |
+| Encerrar comanda sem recebimento | Não | Com motivo e sem baixas anteriores; diálogo informa cancelamento de pendências |
 
-Cancelamento e encerramento são ações explícitas e exclusivas de ADMIN. A interface não edita silenciosamente item enviado. Encerrar comanda não registra recebimento nem pagamento. Não há financeiro, desconto, estorno, divisão, transferência de mesas ou pagamento nesta superfície. A rota exige autenticação e perfil ADMIN ou WAITER; a visibilidade de ações usa `isAdmin`. A autorização efetiva do backend não é comprovada por esta inspeção visual/documental.
+Cancelamento de consumo enviado e encerramento forçado são exclusivos de ADMIN. Após a primeira baixa, cancelamento e reabertura ficam bloqueados. A interface não edita silenciosamente item enviado. O encerramento forçado legado não registra pagamento; o encerramento financeiro exige saldo zero e pedidos prontos/concluídos. Não há desconto novo, estorno, transferência de mesas ou integração bancária. A rota exige ADMIN ou WAITER; permissão financeira efetiva vem de `canCheckout` no consumo e é revalidada pelo backend em toda mutação.
+
+Extensão de 11/11/2026: **Receber e dividir conta** aparece no resumo, acima das abas que alternam no celular. Mantém componentes e tema existentes: quantidades com menos/mais e campo numérico, seleção de critério, pessoa opcional e forma de pagamento; CTA mostra valor exato a receber. Histórico informa pessoa, método, itens e valor. Recebido/saldo e taxa incluída são visíveis. Divisão fica fixada na primeira baixa. Submissão inconclusiva usa sessionStorage e ação Conferir recebimento, inclusive após recarregar, bloqueando saída até conferência. Sem cards aninhados ou nova identidade visual.
 
 ## Evidência e limites da verificação
 
