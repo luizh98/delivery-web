@@ -1,7 +1,7 @@
-import { AdminTableOrdersView } from "@/views/AdminTableOrders";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default function AdminTableOrdersPage() {
-  return <AdminTableOrdersView />;
+  redirect("/admin/orders");
 }

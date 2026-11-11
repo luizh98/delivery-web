@@ -112,6 +112,15 @@ export const SearchFilter = styled("div", {
   "@md": {
     gridTemplateColumns: "minmax(0, 2fr) minmax(14rem, 1fr)",
   },
+  variants: {
+    hasDeliveryTypeFilter: {
+      true: {
+        "@md": {
+          gridTemplateColumns: "minmax(0, 2fr) minmax(9rem, 1fr) minmax(14rem, 1fr)",
+        },
+      },
+    },
+  },
 });
 
 export const Empty = styled("div", {

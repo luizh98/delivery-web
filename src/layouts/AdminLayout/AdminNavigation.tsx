@@ -59,7 +59,6 @@ const navItems = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard },
   { href: "/admin/analytics", label: "Análises", icon: LineChart, adminOnly: true },
   { href: "/admin/orders", label: "Pedidos", icon: ClipboardList },
-  { href: "/admin/table-orders", label: "Pedidos mesa", icon: ClipboardList },
   { href: "/admin/tables", label: "Mesas e comandas", icon: Armchair },
   { href: "/hall", label: "Atendimento do salão", icon: Armchair, adminOnly: true },
   { href: "/admin/kitchen", label: "Cozinha", icon: CookingPot },

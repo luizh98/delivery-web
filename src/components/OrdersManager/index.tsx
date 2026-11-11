@@ -277,6 +277,7 @@ export function OrdersManager({
   const subscribeToOrderEvents = useAdminOrderEvents();
   const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
+  const [deliveryTypeFilter, setDeliveryTypeFilter] = useState<DeliveryType | "">("");
   const [search, setSearch] = useState("");
   const [{ startDate, endDate }, setDateRange] = useState(
     () => getPresetDateRange("today"),
@@ -294,6 +295,9 @@ export function OrdersManager({
     const phoneSearch = search.replace(/\D/g, "");
 
     return orders.filter((order) => {
+      if (deliveryTypeFilter && order.deliveryType !== deliveryTypeFilter) {
+        return false;
+      }
       const receivedAt = getReceivedAt(order);
       const receivedDate = receivedAt ? localDateKey(receivedAt) : null;
 
@@ -316,7 +320,7 @@ export function OrdersManager({
           order.customer.phone.replace(/\D/g, "").includes(phoneSearch))
       );
     });
-  }, [endDate, orders, search, startDate]);
+  }, [deliveryTypeFilter, endDate, orders, search, startDate]);
   const filteredOrders = useMemo(
     () => matchingOrders.filter((order) => statusFilter
       ? getOrderFilterStatus(order) === statusFilter
@@ -559,7 +563,7 @@ export function OrdersManager({
         })}
       </StatusFilters>
 
-      <SearchFilter>
+      <SearchFilter hasDeliveryTypeFilter={!compact}>
         <Field label="Buscar pedido">
           <Input
             type="search"
@@ -568,6 +572,20 @@ export function OrdersManager({
             placeholder="Nome, ID do pedido ou celular"
           />
         </Field>
+        {!compact ? (
+          <Field label="Tipo de pedido">
+            <Select
+              aria-label="Tipo de pedido"
+              value={deliveryTypeFilter}
+              onChange={(event) => setDeliveryTypeFilter(event.target.value as DeliveryType | "")}
+            >
+              <option value="">Todos</option>
+              <option value="DELIVERY">Entrega</option>
+              <option value="PICKUP">Retirada</option>
+              <option value="TABLE">Salão</option>
+            </Select>
+          </Field>
+        ) : null}
         <DateRangeFilter value={{ startDate, endDate }} onChange={setDateRange} />
       </SearchFilter>
 
