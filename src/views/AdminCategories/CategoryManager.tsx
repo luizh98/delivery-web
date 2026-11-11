@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Save, Search, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Save, Search, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { useConfirmation } from "@/components/ConfirmationProvider";
 import { Field, Input, Select } from "@/components/Field";
 import { useToast } from "@/components/ToastProvider";
 import { clientApi } from "@/services/api/client";
+import { catalogOrderChanges, sortCatalogItems } from "@/utils/catalogOrder";
 import type { ProductCategory } from "@/types/api";
 import type { CategoryManagerProps } from "./types";
 import {
@@ -84,6 +85,7 @@ export function CategoryManager({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [error, setError] = useState("");
+  const [reordering, setReordering] = useState(false);
   const { requestConfirmation } = useConfirmation();
   const { showToast } = useToast();
   const form = useForm<CategoryForm>({
@@ -91,7 +93,10 @@ export function CategoryManager({
     defaultValues: defaultCategoryForm(),
   });
   const isEditing = Boolean(editingCategoryId);
-  const filteredCategories = categories.filter((category) =>
+  const orderedCategories = sortCatalogItems(categories);
+  const canReorder = !reordering && !isEditing && !form.formState.isSubmitting
+    && !deletingCategoryId && !search.trim() && !statusFilter;
+  const filteredCategories = orderedCategories.filter((category) =>
     categoryMatchesSearch(category, search.trim().toLowerCase()) &&
     (!statusFilter || category.active === (statusFilter === "active")),
   );
@@ -99,6 +104,29 @@ export function CategoryManager({
   function commitCategories(nextCategories: ProductCategory[]) {
     setCategories(nextCategories);
     onCategoriesChange?.(nextCategories);
+  }
+
+  async function moveCategory(id: string, direction: -1 | 1) {
+    if (!canReorder) return;
+    setReordering(true);
+    setError("");
+    try {
+      const current = await clientApi<ProductCategory[]>("admin/product-categories");
+      for (const category of catalogOrderChanges(current, id, direction)) {
+        await clientApi<ProductCategory>(`admin/product-categories/${category.id}`, {
+          method: "PUT", body: JSON.stringify(category),
+        });
+      }
+      commitCategories(await clientApi<ProductCategory[]>("admin/product-categories"));
+      showToast("Ordem das categorias salva.");
+    } catch {
+      try { commitCategories(await clientApi<ProductCategory[]>("admin/product-categories")); } catch { /* Keep the current list if reload also fails. */ }
+      const message = "Não foi possível concluir a troca. Atualize a lista e confira a ordem.";
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      setReordering(false);
+    }
   }
 
   function resetCategoryForm() {
@@ -230,7 +258,7 @@ export function CategoryManager({
               </CheckboxLabel>
             </GridTwo>
             <Actions>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting || reordering}>
                 <Save size={16} />
                 {isEditing ? "Salvar categoria" : "Criar categoria"}
               </Button>
@@ -244,6 +272,7 @@ export function CategoryManager({
             <SectionHelp>
               {filteredCategories.length} de {categories.length} categoria(s)
             </SectionHelp>
+            <SectionHelp>Use as setas para ordenar. Limpe a pesquisa e o filtro de status para mover.</SectionHelp>
           </div>
 
           <SearchLabel>
@@ -283,7 +312,7 @@ export function CategoryManager({
             </Empty>
           ) : null}
 
-          <List>
+          <List aria-busy={reordering}>
             {filteredCategories.map((category) => (
               <Card
                 key={category.id}
@@ -298,11 +327,25 @@ export function CategoryManager({
                   </Muted>
                 </div>
                 <CardActions>
+                  <Button type="button" variant="outline"
+                    aria-label={`Subir categoria ${category.name}`}
+                    title="Subir categoria"
+                    disabled={!canReorder || orderedCategories[0]?.id === category.id}
+                    onClick={() => moveCategory(category.id, -1)}>
+                    <ArrowUp size={16} />
+                  </Button>
+                  <Button type="button" variant="outline"
+                    aria-label={`Descer categoria ${category.name}`}
+                    title="Descer categoria"
+                    disabled={!canReorder || orderedCategories.at(-1)?.id === category.id}
+                    onClick={() => moveCategory(category.id, 1)}>
+                    <ArrowDown size={16} />
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => startEditCategory(category)}
-                    disabled={editingCategoryId === category.id}
+                    disabled={reordering || editingCategoryId === category.id}
                   >
                     <Pencil size={16} />
                     {editingCategoryId === category.id ? "Editando" : "Editar"}
@@ -311,7 +354,7 @@ export function CategoryManager({
                     type="button"
                     variant="danger"
                     onClick={() => deleteCategory(category)}
-                    disabled={deletingCategoryId === category.id}
+                    disabled={reordering || deletingCategoryId === category.id}
                   >
                     <Trash2 size={16} />
                     Excluir

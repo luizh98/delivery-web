@@ -25,6 +25,7 @@ import { useToast } from "@/components/ToastProvider";
 import { ApiError, clientApi } from "@/services/api/client";
 import { centsToReais, reaisToCents } from "@/utils/format";
 import { isProductDiscountValid, productSalePrice } from "@/utils/productPricing";
+import { catalogOrderChanges } from "@/utils/catalogOrder";
 import type {
   Product,
   ProductCategory,
@@ -366,6 +367,7 @@ export function ProductManager({
   );
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [reorderingProducts, setReorderingProducts] = useState(false);
   const [error, setError] = useState("");
   const [templateError, setTemplateError] = useState("");
   const [savingTemplateGroupIndex, setSavingTemplateGroupIndex] = useState<number | null>(
@@ -760,7 +762,34 @@ export function ProductManager({
     }
   }
 
+  async function moveProduct(id: string, direction: -1 | 1) {
+    if (reorderingProducts || productFormOpen || editingProduct || deletingProductId || productSearch.trim() || productStatusFilter) return;
+    setReorderingProducts(true);
+    setError("");
+    try {
+      const current = await clientApi<Product[]>("admin/products");
+      const selected = current.find((product) => product.id === id);
+      if (!selected) throw new Error("Product no longer exists");
+      const siblings = current.filter((product) => product.categoryId === selected.categoryId);
+      for (const product of catalogOrderChanges(siblings, id, direction)) {
+        await clientApi<Product>(`admin/products/${product.id}`, {
+          method: "PUT", body: JSON.stringify(product),
+        });
+      }
+      setProducts(await clientApi<Product[]>("admin/products"));
+      showToast("Ordem dos produtos salva.");
+    } catch {
+      try { setProducts(await clientApi<Product[]>("admin/products")); } catch { /* Keep the current list if reload also fails. */ }
+      const message = "Não foi possível concluir a troca. Atualize a lista e confira a ordem.";
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      setReorderingProducts(false);
+    }
+  }
+
   async function submit(values: ProductForm) {
+    if (reorderingProducts) return;
     setError("");
     if (videoChecking) { setVideoError("Aguarde a validação do vídeo."); return; }
     if (videoError) return;
@@ -1320,6 +1349,7 @@ export function ProductManager({
         <ProductCount>
           {filteredProducts.length} de {products.length} produto(s)
         </ProductCount>
+        <Muted>Use as setas para ordenar dentro da categoria. Limpe a pesquisa e o filtro de status para mover.</Muted>
 
         {products.length === 0 ? (
           <EmptySurface>
@@ -1333,10 +1363,13 @@ export function ProductManager({
           </EmptySurface>
         ) : null}
 
-        <ProductList>
+        <ProductList aria-busy={reorderingProducts}>
           {filteredProducts.map((product) => {
             const flags = activeProductFlags(product);
             const category = categoryById.get(product.categoryId);
+            const siblings = sortedProducts.filter((item) => item.categoryId === product.categoryId);
+            const canReorder = !reorderingProducts && !productFormOpen && !editingProduct && !deletingProductId
+              && !productSearch.trim() && !productStatusFilter && category?.active;
 
             return (
               <ProductCard key={product.id}>
@@ -1347,6 +1380,7 @@ export function ProductManager({
                   </ProductCategoryText>
                   <Description>{product.description}</Description>
                   <ProductMeta>
+                    <span>Ordem: {product.sortOrder}</span>
                     <span>{visibleOptionGroupsCount(product)} grupo(s) de opcionais</span>
                     <StatusBadge active={product.active}>
                       {product.active ? "Ativo" : "Inativo"}
@@ -1367,7 +1401,21 @@ export function ProductManager({
                 </div>
                 <ProductActions>
                   <Price><DiscountPrice product={product} /></Price>
-                  <Button type="button" variant="outline" onClick={() => startEdit(product)}>
+                  <Button type="button" variant="outline"
+                    aria-label={`Subir produto ${product.name}`}
+                    title="Subir produto nesta categoria"
+                    disabled={!canReorder || siblings[0]?.id === product.id}
+                    onClick={() => moveProduct(product.id, -1)}>
+                    <ArrowUp size={16} />
+                  </Button>
+                  <Button type="button" variant="outline"
+                    aria-label={`Descer produto ${product.name}`}
+                    title="Descer produto nesta categoria"
+                    disabled={!canReorder || siblings.at(-1)?.id === product.id}
+                    onClick={() => moveProduct(product.id, 1)}>
+                    <ArrowDown size={16} />
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => startEdit(product)} disabled={reorderingProducts}>
                     <Pencil size={16} />
                     Editar
                   </Button>
@@ -1375,7 +1423,7 @@ export function ProductManager({
                     type="button"
                     variant="danger"
                     onClick={() => deleteProduct(product)}
-                    disabled={deletingProductId === product.id}
+                    disabled={reorderingProducts || deletingProductId === product.id}
                   >
                     <Trash2 size={16} />
                     Excluir
