@@ -9,7 +9,7 @@ const consumption = {
   orders: [{ id: "order", orderNumber: "1042", status: "PREPARING", items: [{ name: "Produto", quantity: 1, totalCents: 2990 }], totals: { totalCents: 2990 } }],
 };
 
-function renderComanda(clientApi = async () => consumption, value = consumption) {
+function renderComanda(clientApi = async () => consumption, value = consumption, { error = "", confirmClose = false } = {}) {
   let stateIndex = 0;
   let load;
   const navigation = [];
@@ -28,7 +28,10 @@ function renderComanda(clientApi = async () => consumption, value = consumption)
       if (name === "@/utils/tableIdentity") return { tableLabel: (table) => `${table.kind === "COMMAND" ? "Comanda" : "Mesa"} ${table.number}` };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (name === "react") return {
-        useState: (initial) => [stateIndex++ === 0 ? value : initial, () => {}],
+        useState: (initial) => {
+          const index = stateIndex++;
+          return [index === 0 ? value : index === 1 ? error : index === 4 ? confirmClose : initial, () => {}];
+        },
         useRef: (current) => ({ current }), useEffect: fn => effects.push(fn), useCallback: (callback) => { load = callback; return callback; },
       };
       if (name === "@/services/api/client") return { clientApi };
@@ -51,6 +54,32 @@ test("Comanda exposes total and closing before order details, without manual ref
   assert.ok(total >= 0 && total < actions && actions < orders);
   assert.ok(nodes.some((node) => node.type === "CustomerPageHeader" && node.props.title === "Comanda"));
   assert.ok(!nodes.some((node) => node.type === "Button" && JSON.stringify(node.props.children).includes("Atualizar")));
+});
+
+const closingButton = nodes => nodes.find(node => node.type === "Button" && JSON.stringify(node.props.children).includes("Pedir fechamento"));
+
+test("customer must receive every round before requesting the bill", () => {
+  for (const status of ["RECEIVED", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY"]) {
+    const value = { ...consumption, orders: [{ ...consumption.orders[0], status: "COMPLETED" }, { ...consumption.orders[0], id: "second", status }] };
+    const { nodes } = renderComanda(undefined, value, { confirmClose: true });
+    assert.equal(closingButton(nodes).props.disabled, true, status);
+    assert.equal(closingButton(nodes).props["aria-describedby"], "closure-pending-items");
+    assert.ok(nodes.some(node => node.props?.id === "closure-pending-items" && /Aguarde receber/.test(node.props.children)));
+    assert.ok(!nodes.some(node => node.type?.name === "CloseConfirmation"));
+    assert.equal(nodes.find(node => node.type?.name === "HoldToCallButton").props.disabled, false);
+  }
+});
+
+test("delivered and canceled rounds release the bill; unread or stale consumption does not", () => {
+  const value = { ...consumption, orders: ["COMPLETED", "CANCELED"].map((status, index) => ({ ...consumption.orders[0], id: String(index), status })) };
+  const { nodes } = renderComanda(undefined, value, { confirmClose: true });
+  assert.equal(closingButton(nodes).props.disabled, false);
+  assert.ok(nodes.some(node => node.type?.name === "CloseConfirmation"));
+  assert.ok(!nodes.some(node => node.props?.id === "closure-pending-items"));
+  assert.equal(closingButton(renderComanda(undefined, null).nodes).props.disabled, true);
+  const stale = renderComanda(undefined, value, { error: "Falha na atualização", confirmClose: true });
+  assert.equal(closingButton(stale.nodes).props.disabled, true);
+  assert.ok(!stale.nodes.some(node => node.type?.name === "CloseConfirmation"));
 });
 
 test("account summary displays authoritative service fee separately from rounds", () => {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { CustomerPageHeader } from "@/components/CustomerPageHeader";
-import { clientApi } from "@/services/api/client";
+import { ApiError, clientApi } from "@/services/api/client";
 import type { PublicTableConsumption, PublicTableResponse } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { tableMenuPath } from "@/utils/productAvailability";
@@ -107,6 +107,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
   }, [load]);
 
   async function request(type: "SERVICE" | "CLOSURE") {
+    if (type === "CLOSURE" && (!data?.session || error || pendingItems)) return;
     setSending(true); setError(""); setNotice(""); setConfirmClose(false);
     try {
       await clientApi(`${base}/service-requests`, { method: "POST", body: JSON.stringify({ type, participationId }) });
@@ -115,11 +116,17 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
       activeRequest.current?.abort();
       activeRequest.current = null;
       await load();
-    } catch { setError("Não foi possível enviar o chamado. Atualize a página e tente novamente."); }
+    } catch (error) {
+      if (type === "CLOSURE" && error instanceof ApiError && error.status === 400) {
+        await load();
+        setError("Não foi possível pedir o fechamento. Confira se todos os itens já foram entregues e tente novamente após a atualização do consumo.");
+      } else setError("Não foi possível enviar o chamado. Atualize a página e tente novamente.");
+    }
     finally { setSending(false); }
   }
 
   const closing = data?.session?.status === "CLOSING";
+  const pendingItems = data?.orders.some((order) => order.status !== "COMPLETED" && order.status !== "CANCELED") ?? false;
   const servicePending = data?.requests.some((item) => item.type === "SERVICE");
   const total = data?.totals?.totalCents ?? data?.orders.reduce((sum, order) => sum + (order.status === "CANCELED" ? 0 : order.totals.totalCents), 0) ?? 0;
   const ended = Boolean(table.session && data && !data.session);
@@ -136,8 +143,9 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
     {data?.session ? <Total aria-label="Total do consumo">{data.totals ? <><Row><span>Consumo</span><strong>{money(data.totals.consumptionCents)}</strong></Row><Row><span>Taxa de serviço ({(data.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</span><strong>{money(data.totals.serviceFeeCents)}</strong></Row></> : null}<Row><span>Total da comanda</span><strong>{money(total)}</strong></Row><p>Pagamento com a equipe do restaurante.</p></Total> : null}
     <Actions aria-label="Atendimento e fechamento">
       <HoldToCallButton disabled={sending || !data || ended || !!servicePending || sentService} called={!!servicePending || sentService} onConfirm={() => void request("SERVICE")} />
-      <Button disabled={sending || !data?.session || closing} onClick={() => setConfirmClose(true)}><ReceiptText size={18} aria-hidden="true" />{closing ? "Fechamento solicitado" : "Pedir fechamento"}</Button>
+      <Button disabled={sending || !data?.session || closing || pendingItems || !!error} aria-describedby={pendingItems && !closing ? "closure-pending-items" : undefined} onClick={() => setConfirmClose(true)}><ReceiptText size={18} aria-hidden="true" />{closing ? "Fechamento solicitado" : "Pedir fechamento"}</Button>
     </Actions>
+    {pendingItems && !closing ? <Notice id="closure-pending-items" role="status">Aguarde receber todos os itens para pedir o fechamento da conta.</Notice> : null}
     {data?.orders.length ? <>
       <Orders aria-label="Pedidos da comanda">{data.orders.map((order) => <Round key={order.id}>
         <Row><h2>Pedido #{order.orderNumber ?? order.id.slice(-6)}</h2><StateBadge>{statusLabel(order.status, "TABLE")}</StateBadge></Row>
@@ -148,6 +156,6 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
       </Round>)}</Orders>
     </> : data ? <Empty><ReceiptText size={56} strokeWidth={1.3} aria-hidden="true" /><h2>{ended ? "Atendimento encerrado" : "Nenhum pedido por aqui"}</h2><Meta>{ended ? "A conta desta visita foi encerrada. Os pedidos anteriores não aparecem mais aqui." : "Os pedidos deste atendimento aparecerão aqui."}</Meta></Empty> : null}
     <Footer><Button type="button" variant="outline" onClick={() => router.push(tableMenuPath(token))}><ArrowLeft size={18} aria-hidden="true" />Voltar ao cardápio</Button></Footer>
-    {confirmClose ? <CloseConfirmation onClose={() => setConfirmClose(false)} onConfirm={() => void request("CLOSURE")} /> : null}
+    {confirmClose && !pendingItems && !error && !closing ? <CloseConfirmation onClose={() => setConfirmClose(false)} onConfirm={() => void request("CLOSURE")} /> : null}
   </Root>;
 }

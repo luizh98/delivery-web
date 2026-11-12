@@ -34,3 +34,7 @@ BUILD PATH: Código existente é autoridade do catálogo por instrução explíc
 ## Revisão de acesso à Comanda — 05/11/2026
 
 Usuário solicitou trocar Meus pedidos por Comanda no salão, acentos de cor primária na consulta e remoção do atualizar manual. Total e ações precedem pedidos; leituras automáticas sem sobreposição. No salão, resumo/total e ações pedir fechamento/reabrir/encerrar ficam acima das abas; mobile tem acesso direto Comanda. Permissões existentes e catálogo preservados. Requisitos em `.specs/features/comanda-access/spec.md` no workspace pai.
+
+## Fechamento após entrega — 12/11/2026
+
+Cliente aguarda todos os pedidos concluídos ou cancelados antes de pedir fechamento. Pronto para servir ainda bloqueia. Botão desabilitado recebe explicação visível associada por aria-describedby; carregamento/falha de leitura bloqueiam fechamento. Polling existente libera após entrega; API revalida a sessão inteira. Chamado ao garçom e ações da equipe preservados. Identidade, tema e componentes existentes mantidos; modo Operate.
