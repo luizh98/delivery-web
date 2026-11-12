@@ -13,7 +13,8 @@ import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
-import { Payments } from "./Payments";
+import { useRouter } from "next/navigation";
+import { ReasonDialog } from "./ReasonDialog";
 import { GuestCountField } from "./GuestCountField";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
@@ -23,7 +24,6 @@ import { AdminShell } from "@/layouts/AdminLayout/AdminShell";
 import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
 type Draft = { items: DraftItem[]; sessionId: string; notes: string };
-type CancelAction = { order: StaffTableOrder; itemIndex?: number } | { closeTable: true };
 const emptyDraft = (sessionId = ""): Draft => ({ items: [], sessionId, notes: "" });
 const closingMessage = "Conta em fechamento. Reabra a comanda para lançar novos itens.";
 const requestLabel = tableServiceLabels;
@@ -45,20 +45,6 @@ function PhoneDialog({ opening, onConfirm, onClose }: { opening: boolean; onConf
   </Dialog>;
 }
 
-function ReasonDialog({ action, onConfirm, onClose }: { action: CancelAction; onConfirm: (reason: string) => Promise<void>; onClose: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const form = useForm({ defaultValues: { reason: "" } });
-  useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
-  const title = "closeTable" in action ? "Encerrar comanda" : action.itemIndex === undefined ? "Cancelar rodada" : `Cancelar ${action.order.items[action.itemIndex].name}`;
-  return <Dialog ref={dialog} onCancel={(event) => { if (form.formState.isSubmitting) event.preventDefault(); else onClose(); }} aria-labelledby="cancel-title">
-    <form onSubmit={form.handleSubmit(async ({ reason }) => { await onConfirm(reason.trim()); })}>
-      <Row><Heading id="cancel-title">{title}</Heading><Button type="button" variant="ghost" disabled={form.formState.isSubmitting} onClick={onClose} aria-label="Voltar sem cancelar"><X size={18} /></Button></Row>
-      <Muted>{"closeTable" in action ? "Pedidos em andamento serão cancelados. Esta ação não registra recebimento nem pagamento." : "O cancelamento ficará no histórico e será avisado à cozinha. Para corrigir, lance o item novamente em outra rodada."}</Muted>
-      <Field label="Motivo obrigatório" error={form.formState.errors.reason?.message}><Textarea maxLength={500} {...form.register("reason", { validate: (value) => value.trim().length > 0 || "Informe o motivo." })} /></Field>
-      <Actions><Button type="button" variant="outline" disabled={form.formState.isSubmitting} onClick={onClose}>Voltar</Button><Button variant="danger" type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Salvando…" : title}</Button></Actions>
-    </form>
-  </Dialog>;
-}
 
 function GuestCountForm({ tableId, session, disabled, onSaved }: { tableId: string; session: NonNullable<StaffTable["session"]>; disabled: boolean; onSaved: () => Promise<void> }) {
   const { showToast } = useToast();
@@ -90,7 +76,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const [tab, setTab] = useState<"draft" | "consumption">("draft");
   const [mobilePane, setMobilePane] = useState<"catalog" | "ticket">("catalog");
   const [editor, setEditor] = useState<{ item: DraftItem; editing: boolean } | null>(null);
-  const [cancelAction, setCancelAction] = useState<CancelAction | null>(null);
+  const [cancelAction, setCancelAction] = useState<{ order: StaffTableOrder; itemIndex?: number } | null>(null);
   const [askingPhone, setAskingPhone] = useState(false);
   const [error, setError] = useState(initialTables === null ? "Não foi possível carregar as mesas. Toque em Atualizar para tentar novamente." : "");
   const [consumptionError, setConsumptionError] = useState("");
@@ -102,7 +88,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const [uncertainSubmission, setUncertainSubmission] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("");
   const [now, setNow] = useState<number | null>(null);
-  const [checkoutPending, setCheckoutPending] = useState(false);
+  const router = useRouter();
   const isAdmin = admin.roles.includes("ADMIN");
   const selected = tables?.find((table) => table.id === selectedId);
   const draft = drafts[selectedId] ?? emptyDraft(consumption?.session?.id);
@@ -147,11 +133,11 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   }, [selectedId, refresh, loadConsumption]);
 
   useEffect(() => {
-    if (!hasDrafts && !uncertainSubmission && !checkoutPending) return;
+    if (!hasDrafts && !uncertainSubmission) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [hasDrafts, uncertainSubmission, checkoutPending]);
+  }, [hasDrafts, uncertainSubmission]);
 
   function updateDraft(next: Draft) { setDrafts((current) => ({ ...current, [selectedId]: next })); }
   function openTable(id: string) {
@@ -229,13 +215,9 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     if (!cancelAction || !selected) return;
     setBusy(true);
     try {
-      if ("closeTable" in cancelAction) {
-        const response = await clientApi<{ warning?: string }>(`admin/table-operations/${selectedId}/force-close`, { method: "POST", body: JSON.stringify({ reason }) });
-        if (response.warning) showToast(response.warning, "error");
-      } else {
-        const response = await clientApi<StaffTableOrder & { warning?: string }>(`admin/table-operations/${selectedId}/orders/${cancelAction.order.id}/cancel`, { method: "POST", body: JSON.stringify({ reason, itemIndex: cancelAction.itemIndex, updatedAt: cancelAction.order.updatedAt }) });
-        if (response.warning) showToast(response.warning, "error");
-      }
+      const response = await clientApi<StaffTableOrder & { warning?: string }>(`admin/table-operations/${selectedId}/orders/${cancelAction.order.id}/cancel`, { method: "POST", body: JSON.stringify({ reason, itemIndex: cancelAction.itemIndex, updatedAt: cancelAction.order.updatedAt }) });
+      if (response.warning) showToast(response.warning, "error");
+
       setCancelAction(null); showToast("Alteração registrada no histórico.");
       await Promise.all([refresh(), loadConsumption(selectedId)]);
     } catch (cause) { showToast(staffApiMessage(cause, "Não foi possível cancelar. Atualize a mesa e tente novamente."), "error"); }
@@ -243,13 +225,12 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   }
 
   async function confirmLeave() {
-    if (checkoutPending) { showToast("Confira o recebimento pendente antes de sair desta mesa.", "warning"); return false; }
     return !(hasDrafts || uncertainSubmission) || await requestConfirmation({ message: "Há itens ainda não enviados ou um envio sem confirmação. Sair descartará os rascunhos. Deseja sair?", confirmLabel: "Sair", variant: "danger" });
   }
 
   const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(tableLabel(table)).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
   const products = menu.products.filter((product) => product.active && (!categoryId || product.categoryId === categoryId) && normalize(product.name).includes(normalize(productSearch)));
-  const canEdit = !busy && !uncertainSubmission && !checkoutPending;
+  const canEdit = !busy && !uncertainSubmission;
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
 
   return <AdminShell admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} beforeLeave={confirmLeave}><Root>
@@ -281,10 +262,9 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{hasPayments ? "Há pagamentos registrados. Receba o saldo restante para encerrar a comanda." : closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
         {consumption?.session ? <GuestCountForm key={`${consumption.session.id}:${consumption.session.guestCount ?? ""}`} tableId={selectedId} session={consumption.session} disabled={!canEdit || !!consumptionError} onSaved={refresh} /> : null}
         <Actions>
-          {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : <Button disabled={!canEdit || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button>}
-          {isAdmin && !hasPayments ? <Button variant="dangerGhost" disabled={!canEdit || !consumption?.session || !!consumptionError} onClick={() => setCancelAction({ closeTable: true })}>Encerrar comanda</Button> : null}
+          {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : !consumption?.canCheckout ? <Button disabled={!canEdit || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button> : null}
+          {consumption?.canCheckout && consumption.session ? <Button disabled={!canEdit || !!consumptionError} onClick={async () => { if (await confirmLeave()) router.push(`/hall?${new URLSearchParams({ table: selectedId, view: "checkout", session: consumption.session!.id })}`); }}><ReceiptText size={18} />Fechar conta</Button> : null}
         </Actions>
-        {isClosing && consumption?.session ? <Payments key={consumption.session.id} tableId={selectedId} consumption={consumption} disabled={!canEdit || !!consumptionError} onBlockedChange={setCheckoutPending} onSaved={async () => { await Promise.all([refresh(), loadConsumption(selectedId)]); }} /> : null}
       </AccountPanel>
       {selected.requests?.map((request) => <Panel key={request.id} className={request.status === "PENDING" ? "table-service-pending" : undefined}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}

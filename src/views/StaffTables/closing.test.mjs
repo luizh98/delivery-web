@@ -7,11 +7,11 @@ import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts
 import * as presentation from "./presentation.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
-function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, totals, askingPhone = false, dialogValues = {} } = {}) {
+function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, canCheckout = isAdmin, totals, askingPhone = false, dialogValues = {} } = {}) {
   const session = status ? { id: "visit", status } : null;
   const product = { id: "burger", name: "X-burger", priceCents: 2990, active: true, optionGroups: [] };
   const draft = { sessionId: session?.id ?? "", notes: "", items: [{ id: "line", product, quantity: 1, observations: "", options: [] }] };
-  const state = new Map([[3, { session, orders: [], totals }], [4, { table: draft }]]);
+  const state = new Map([[3, { session, orders: [], totals, canCheckout }], [4, { table: draft }]]);
   if (pending) state.set(17, true);
   if (askingPhone) state.set(12, true);
   const fields = {};
@@ -167,14 +167,16 @@ test("closing visit still allows checking an uncertain prior submission with the
   assert.equal(posts[0][1].body, pending.body);
 });
 
-test("waiter can request closing directly in the summary; only admin sees final closure", () => {
-  for (const isAdmin of [false, true]) {
-    const { nodes } = renderClosing({ status: "OPEN", isAdmin });
+test("hall offers an entry to checkout only when authorized and keeps payments on their own screen", () => {
+  for (const canCheckout of [false, true]) {
+    const { nodes } = renderClosing({ status: "OPEN", canCheckout });
     const summary = nodes.find((node) => node.type === "AccountPanel");
     assert.ok(summary);
     const text = JSON.stringify(summary);
-    assert.ok(text.includes("Pedir fechamento"));
-    assert.equal(text.includes("Encerrar comanda"), isAdmin);
+    assert.equal(text.includes("Pedir fechamento"), !canCheckout);
+    assert.equal(text.includes("Fechar conta"), canCheckout);
+    assert.equal(text.includes("Encerrar comanda"), false);
+    assert.ok(!nodes.some(node => node.type === "Payments"));
     const workbench = nodes.find((node) => node.type === "Workbench");
     assert.ok(!JSON.stringify(workbench).includes("Encerrar comanda"));
   }

@@ -12,7 +12,8 @@ import type { StaffTableConsumption, TablePayment } from "@/types/api";
 import { money } from "@/utils/format";
 import { staffApiMessage } from "./draft";
 import { paymentLines, paymentMethodLabels, paymentQuote } from "./paymentCalculation";
-import { Actions, ErrorBox, Heading, ItemRow, Muted, Price, Row, Stack, Summary, GuestCountControls } from "./styles";
+import { ErrorBox, Heading, ItemRow, Muted, Price, Row } from "./styles";
+import { CheckoutNotice, PaymentAmount, PaymentDetails, PaymentHistory, PaymentLine, PaymentQuantity, PaymentSelection, PaymentWorkspace } from "./checkoutStyles";
 
 type Values = { mode: "ITEMS" | "EQUAL"; splitCount: number; method: TablePayment["method"]; person: string; quantities: Record<string, number> };
 type Pending = { path: "payments" | "settle"; body: string };
@@ -99,34 +100,51 @@ export function Payments({ tableId, consumption, disabled, onSaved, onBlockedCha
     await send({ path: "payments", body: JSON.stringify({ sessionId: session.id, version: session.paymentVersion ?? 0, submissionId: crypto.randomUUID(), mode, splitCount: mode === "EQUAL" ? splitCount : 0, method: data.method, person: data.person.trim(), items: quote.items, expectedAmountCents: quote.amountCents }) });
   }
 
-  return <Stack aria-label="Recebimentos da conta">
-    <Heading><Wallet size={20} aria-hidden="true" /> Receber e dividir conta</Heading>
-    <Row aria-live="polite"><span>Recebido: <Price>{money(paid)}</Price></span><span>Falta receber: <Price>{money(balance)}</Price></span></Row>
+  return <PaymentWorkspace aria-label="Recebimentos da conta">
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
-    {pending ? <><Muted>Há uma operação sem confirmação. Confira antes de fazer outra baixa ou sair desta mesa.</Muted><Button disabled={saving || !consumption.canCheckout} onClick={() => void send(pending)}>{saving ? "Conferindo…" : pending.path === "payments" ? "Conferir recebimento" : "Conferir encerramento"}</Button></> : null}
-    {payments.length ? <div aria-label="Pagamentos registrados">{payments.map((payment) => <ItemRow key={payment.id}>
-      <Row><strong><Check size={16} aria-hidden="true" /> {payment.person}</strong><Price>{money(payment.amountCents)}</Price></Row>
-      <Muted>{paymentMethodLabels[payment.method]} · {new Date(payment.receivedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}{payment.mode === "EQUAL" ? ` · Divisão em ${payment.splitCount} pessoas` : ""}</Muted>
-      {payment.items?.map((item) => <Muted key={`${item.orderId}:${item.itemIndex}`}>{item.quantity}× {item.name}</Muted>)}
-    </ItemRow>)}</div> : null}
-    {!consumption.canCheckout ? <Muted>Recebimento pelo garçom não está liberado. Solicite o fechamento ao caixa.</Muted> : balance > 0 || !payments.length && (consumption.totals?.totalCents ?? 0) > 0 ? <form onSubmit={(event) => void form.handleSubmit(receive)(event)} className="table-payment-form">
-      <Field label="Como dividir a conta"><Select disabled={locked || payments.length > 0} {...form.register("mode")}><option value="ITEMS">Selecionar itens por pessoa</option><option value="EQUAL">Dividir igualmente por pessoas</option></Select></Field>
-      {mode === "EQUAL" ? <><Field label="Dividir entre quantas pessoas?" error={form.formState.errors.splitCount?.message}><Input type="number" inputMode="numeric" min={1} max={999} step={1} disabled={locked || payments.length > 0} {...form.register("splitCount", { valueAsNumber: true, validate: (value) => Number.isInteger(value) && value >= 1 && value <= 999 || "Informe entre 1 e 999 pessoas." })} /></Field><Muted>Parte {payments.length + 1} de {splitCount || "…"}. Centavos são distribuídos entre as partes. Use 1 para receber o total.</Muted></> : <div aria-label="Selecionar itens para pagamento">{paymentLines(consumption).map((line, index) => <ItemRow key={`${line.orderId}:${line.itemIndex}`}>
-        <Row><div><strong>{line.item.name}</strong><Muted>Rodada #{line.orderNumber ?? line.orderId.slice(-6)} · {line.remaining} de {line.item.quantity} disponível(is)</Muted></div><Price>{money(line.item.totalCents)}</Price></Row>
-        {line.item.options?.length ? <Muted>{line.item.options.map((option) => option.itemName).join(", ")}</Muted> : null}{line.item.observations ? <Muted>{line.item.observations}</Muted> : null}
-        <Field label={`Quantidade de ${line.item.name} a receber`}><GuestCountControls>
-          <Button type="button" variant="outline" disabled={locked || Number(values.quantities?.[index] ?? 0) <= 0} aria-label={`Diminuir ${line.item.name} a receber`} onClick={() => form.setValue(`quantities.${index}`, Math.max(0, Number(values.quantities?.[index] ?? 0) - 1))}><Minus size={18} /></Button>
-          <Input type="number" inputMode="numeric" aria-label={`Quantidade de ${line.item.name} a receber`} min={0} max={line.remaining} step={1} disabled={locked || !line.remaining} {...form.register(`quantities.${index}`, { valueAsNumber: true })} placeholder="0" />
-          <Button type="button" variant="outline" disabled={locked || Number(values.quantities?.[index] ?? 0) >= line.remaining} aria-label={`Aumentar ${line.item.name} a receber`} onClick={() => form.setValue(`quantities.${index}`, Math.min(line.remaining, Number(values.quantities?.[index] ?? 0) + 1))}><Plus size={18} /></Button>
-        </GuestCountControls></Field>
-      </ItemRow>)}</div>}
-      <Field label="Pessoa (opcional)"><Input maxLength={100} placeholder={`Pessoa ${payments.length + 1}`} disabled={locked} {...form.register("person")} /></Field>
-      <Field label="Forma de pagamento"><Select disabled={locked} {...form.register("method")}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-      <Muted>Taxa de serviço incluída nesta parte: {money(quote.serviceFeeCents)}. Após a primeira baixa, divisão e consumo ficam protegidos.</Muted>
-      <Summary><Button type="submit" disabled={locked || !quote.valid}><Wallet size={18} />{saving ? "Registrando…" : `Receber ${money(quote.amountCents)}`}</Button></Summary>
+    {pending ? <CheckoutNotice role="status"><Heading>Confira o recebimento pendente</Heading><Muted>Esta operação ainda não foi confirmada. Confira antes de registrar outro pagamento.</Muted><Button disabled={saving || !consumption.canCheckout} onClick={() => void send(pending)}>{saving ? "Conferindo…" : pending.path === "payments" ? "Conferir recebimento" : "Conferir encerramento"}</Button></CheckoutNotice> : null}
+    {!consumption.canCheckout ? <Muted>Recebimento pelo garçom não está liberado. Solicite o fechamento ao caixa.</Muted> : balance > 0 || !payments.length && (consumption.totals?.totalCents ?? 0) > 0 ? <form onSubmit={(event) => void form.handleSubmit(receive)(event)}>
+      <PaymentSelection aria-label="Divisão do pagamento">
+        <div><Heading>Dividir pagamento</Heading><Muted>Escolha os itens desta pessoa ou divida o total igualmente.</Muted></div>
+        <Field label="Como dividir a conta"><Select disabled={locked || payments.length > 0} {...form.register("mode")}><option value="ITEMS">Selecionar itens por pessoa</option><option value="EQUAL">Dividir igualmente por pessoas</option></Select></Field>
+        {mode === "EQUAL" ? <><Field label="Dividir entre quantas pessoas?" error={form.formState.errors.splitCount?.message}><Input type="number" inputMode="numeric" min={1} max={999} step={1} disabled={locked || payments.length > 0} {...form.register("splitCount", { valueAsNumber: true, validate: (value) => Number.isInteger(value) && value >= 1 && value <= 999 || "Informe entre 1 e 999 pessoas." })} /></Field><Muted>Parte {payments.length + 1} de {splitCount || "…"}. Centavos são distribuídos entre as partes. Use 1 para receber o total.</Muted></> :
+        <div aria-label="Selecionar itens para pagamento">{paymentLines(consumption).map((line, index) => {
+          if (!line.remaining) return null;
+          const quantity = Number(values.quantities?.[index] ?? 0);
+          const remainingCents = line.item.totalCents - Math.floor(line.item.totalCents * line.paid / line.item.quantity);
+          return <PaymentLine key={`${line.orderId}:${line.itemIndex}`} data-selected={quantity > 0}>
+            <div data-item-info><strong>{line.item.name}</strong><Muted>{line.remaining} pendente(s) · {money(remainingCents)}</Muted>
+              {line.item.options?.length ? <Muted>{line.item.options.map((option) => option.itemName).join(", ")}</Muted> : null}
+              {line.item.observations ? <Muted>{line.item.observations}</Muted> : null}
+            </div>
+            <PaymentQuantity role="group" aria-label={`Selecionar ${line.item.name}`}>
+              <Button type="button" variant="outline" disabled={locked || quantity <= 0} aria-label={`Diminuir ${line.item.name} a receber`} onClick={() => form.setValue(`quantities.${index}`, Math.max(0, quantity - 1))}><Minus size={18} /></Button>
+              <Input type="number" inputMode="numeric" aria-label={`Quantidade de ${line.item.name} a receber`} min={0} max={line.remaining} step={1} disabled={locked} {...form.register(`quantities.${index}`, { valueAsNumber: true })} placeholder="0" />
+              <Button type="button" variant="outline" disabled={locked || quantity >= line.remaining} aria-label={`Aumentar ${line.item.name} a receber`} onClick={() => form.setValue(`quantities.${index}`, Math.min(line.remaining, quantity + 1))}><Plus size={18} /></Button>
+            </PaymentQuantity>
+          </PaymentLine>;
+        })}</div>}
+        {payments.length ? <Muted>Divisão mantida conforme o primeiro recebimento. Itens quitados aparecem no histórico abaixo.</Muted> : null}
+      </PaymentSelection>
+      <PaymentDetails aria-label="Pagamento desta pessoa">
+        <Heading>Receber desta pessoa</Heading>
+        <Field label="Pessoa (opcional)"><Input maxLength={100} placeholder={`Pessoa ${payments.length + 1}`} disabled={locked} {...form.register("person")} /></Field>
+        <Field label="Forma de pagamento"><Select disabled={locked} {...form.register("method")}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+        <PaymentAmount aria-live="polite">
+          <Row><Muted>Consumo selecionado</Muted><Price>{money(quote.consumptionCents)}</Price></Row>
+          <Row><Muted>Serviço desta parte</Muted><Price>{money(quote.serviceFeeCents)}</Price></Row>
+          <Row><span>Receber agora</span><Price>{money(quote.amountCents)}</Price></Row>
+        </PaymentAmount>
+        <Button type="submit" disabled={locked || !quote.valid}><Wallet size={18} />{saving ? "Registrando…" : `Receber ${money(quote.amountCents)}`}</Button>
+        <Muted>{mode === "ITEMS" && !quote.items.length ? "Selecione as quantidades que esta pessoa vai pagar." : "Confirme a baixa somente depois de conferir o pagamento presencial."}</Muted>
+      </PaymentDetails>
     </form> : null}
-    {consumption.canCheckout && balance === 0 && consumption.totals ? <><Muted>{kitchenPending ? "Conta quitada. Aguarde a cozinha marcar os pedidos em preparo como prontos para encerrar." : "Conta quitada. Encerre para liberar a mesa ou comanda."}</Muted><Actions><Button disabled={locked || kitchenPending} onClick={async () => {
+    {consumption.canCheckout && balance === 0 && consumption.totals ? <CheckoutNotice role="status"><Heading><Check size={22} />Conta quitada</Heading><Muted>{kitchenPending ? "Aguarde a cozinha marcar os pedidos em preparo como prontos para encerrar." : "Todos os pagamentos foram registrados. Encerre para liberar a mesa ou comanda."}</Muted><Button disabled={locked || kitchenPending} onClick={async () => {
       if (await requestConfirmation({ message: "Conta quitada. Encerrar comanda e liberar este atendimento?", confirmLabel: "Encerrar conta paga", variant: "primary" })) await send({ path: "settle", body: JSON.stringify({ sessionId: session.id, version: session.paymentVersion ?? 0 }) });
-    }}><Check size={18} />Encerrar conta paga</Button></Actions></> : null}
-  </Stack>;
+    }}><Check size={18} />Encerrar conta paga</Button></CheckoutNotice> : null}
+    {payments.length ? <PaymentHistory aria-label="Pagamentos registrados"><Heading>Pagamentos registrados · {payments.length}</Heading>{payments.map((payment) => <ItemRow key={payment.id}>
+      <Row><div><strong>{payment.person}</strong><Muted>{paymentMethodLabels[payment.method]} · {new Date(payment.receivedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}{payment.mode === "EQUAL" ? ` · Divisão em ${payment.splitCount} pessoas` : ""}</Muted></div><Price>{money(payment.amountCents)}</Price></Row>
+      {payment.items?.length ? <details><summary>Ver itens deste pagamento</summary>{payment.items.map((item) => <Muted key={`${item.orderId}:${item.itemIndex}`}>{item.quantity}× {item.name}</Muted>)}</details> : null}
+    </ItemRow>)}</PaymentHistory> : null}
+  </PaymentWorkspace>;
 }
