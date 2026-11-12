@@ -8,10 +8,11 @@ export const Root = styled("section", {
   "& ::selection": { background: "var(--color-primary)", color: "var(--color-primary-foreground)" },
   "& [data-state='free']": { "--table-color": "#15803d" },
   "& [data-state='occupied']": { "--table-color": "#b91c1c" },
-  "& [data-state='closing']": { "--table-color": "#c2410c" },
+  "& [data-state='closing']": { "--table-color": "#854d0e" },
   "& .table-legend": { display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", color: "var(--color-muted)" },
   "& .table-legend span": { display: "inline-flex", alignItems: "center", gap: "0.375rem" },
   "& .table-legend span::before": { content: "''", width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "var(--table-color)" },
+  "& .table-legend [data-state='closing']::before": { background: "#eab308" },
   "& .table-guests-form": { display: "flex", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem", "& > button": { marginTop: "1.625rem", minHeight: "2.75rem" } },
 });
 export const Header = styled("header", { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", paddingBottom: "1rem", borderBottom: "1px solid var(--color-border)" });
@@ -26,6 +27,7 @@ export const TableGrid = styled("div", { display: "grid", gridTemplateColumns: "
 export const TableButton = styled("button", {
   display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: "0.375rem", minWidth: 0, textAlign: "left", padding: "1rem", minHeight: "6rem", color: "var(--table-color)", background: "color-mix(in srgb, var(--table-color) 6%, var(--color-surface))", border: "1px solid color-mix(in srgb, var(--table-color) 35%, var(--color-border))", borderRadius: "0.75rem", overflowWrap: "anywhere",
   "&:hover": { background: "color-mix(in srgb, var(--table-color) 12%, var(--color-surface))", borderColor: "var(--table-color)" },
+  "&[data-state='closing']": { background: "#fef3c7", borderColor: "#eab308", "&:hover": { background: "#fde68a", borderColor: "#ca8a04" } },
   "& strong": { fontSize: "1.25rem", fontWeight: 700, lineHeight: 1.3 },
   "& .table-status": { display: "none", fontSize: "0.8125rem", fontWeight: 600 },
   "& .table-details": { display: "none", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", fontVariantNumeric: "tabular-nums" },

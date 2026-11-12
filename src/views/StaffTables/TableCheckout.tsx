@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, ReceiptText, RefreshCw } from "lucide-react";
+import { ArrowLeft, ReceiptText, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
@@ -26,7 +26,6 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
-  const [closed, setClosed] = useState(false);
   const [forceClose, setForceClose] = useState(false);
   const requestVersion = useRef(0);
   const hadSession = useRef(!!expectedSessionId);
@@ -43,14 +42,14 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
     try {
       const result = await clientApi<StaffTableConsumption>(`admin/table-operations/${table.id}/orders`, { signal });
       if (signal?.aborted || version !== requestVersion.current) return;
+      if (!result.session && hadSession.current) { router.replace("/hall"); return; }
       setConsumption(result); setError("");
-      if (!result.session && hadSession.current) setClosed(true);
     } catch {
       if (!signal?.aborted && version === requestVersion.current) setError("Não foi possível atualizar a conta. Confira a conexão e tente novamente antes de receber.");
     } finally {
       if (!signal?.aborted && version === requestVersion.current) setRefreshing(false);
     }
-  }, [table.id]);
+  }, [table.id, router]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -101,14 +100,14 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : null}
     {!consumption && !error ? <Muted role="status">Carregando consumo e recebimentos…</Muted> : null}
     {sessionChanged ? <ErrorBox role="alert">A conta desta mesa mudou. Volte ao atendimento e selecione a conta atual antes de receber.</ErrorBox> : null}
-    {consumption && !session ? <CheckoutNotice role="status"><Heading>{closed ? <><Check size={22} />Atendimento encerrado</> : "Nenhuma conta aberta"}</Heading><Muted>{closed ? "A mesa ou comanda está liberada. Os registros do fechamento permanecem no histórico." : "Volte ao atendimento para selecionar uma mesa ou comanda com consumo."}</Muted><Button onClick={() => void back(true)}><ArrowLeft size={18} />Voltar às mesas</Button></CheckoutNotice> : null}
+    {consumption && !session && !expectedSessionId ? <CheckoutNotice role="status"><Heading>Nenhuma conta aberta</Heading><Muted>Volte ao atendimento para selecionar uma mesa ou comanda com consumo.</Muted><Button onClick={() => void back(true)}><ArrowLeft size={18} />Voltar às mesas</Button></CheckoutNotice> : null}
     {session && !sessionChanged && consumption?.totals ? <div>
       <CheckoutTotals aria-label="Resumo do fechamento" aria-live="polite"><div><dt>Total da conta</dt><dd>{money(consumption.totals.totalCents)}</dd></div><div><dt>Já recebido</dt><dd>{money(paid)}</dd></div><div><dt>Falta receber</dt><dd>{money(consumption.totals.totalCents - paid)}</dd></div></CheckoutTotals>
       <Muted>Consumo {money(consumption.totals.consumptionCents)} + serviço ({(consumption.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%) {money(consumption.totals.serviceFeeCents)}</Muted>
     </div> : null}
     {session && !sessionChanged && !consumption?.canCheckout ? <CheckoutNotice><Heading>Fechamento pelo caixa</Heading><Muted>Recebimento pelo garçom não está liberado. Solicite o fechamento ao caixa.</Muted></CheckoutNotice> : null}
     {session && !sessionChanged && consumption?.canCheckout && session.status === "OPEN" ? <CheckoutNotice><Heading><ReceiptText size={22} />Iniciar fechamento</Heading><Muted>Novos lançamentos serão bloqueados enquanto você recebe a conta. Antes do primeiro pagamento, é possível reabrir para corrigir o consumo.</Muted><Button disabled={!canAct} onClick={async () => { if (await requestConfirmation({ message: "Iniciar o fechamento e bloquear novos lançamentos nesta conta?", confirmLabel: "Iniciar fechamento", variant: "primary" })) await tableAction("request-bill"); }}><ReceiptText size={18} />Iniciar fechamento</Button></CheckoutNotice> : null}
-    {session && !sessionChanged && session.status === "CLOSING" && consumption?.canCheckout ? <Payments key={session.id} tableId={table.id} consumption={consumption} disabled={busy || !!error} onSaved={refresh} onBlockedChange={setBlocked} /> : null}
+    {session && !sessionChanged && session.status === "CLOSING" && consumption?.canCheckout ? <Payments key={session.id} tableId={table.id} consumption={consumption} disabled={busy || !!error} onSaved={refresh} onSettled={() => router.replace("/hall")} onBlockedChange={setBlocked} /> : null}
     {session && !sessionChanged && !paid && !session.payments?.length && isAdmin ? <details className="checkout-admin-actions"><summary>Outras ações de encerramento</summary><Muted>Use apenas quando for necessário encerrar sem registrar pagamento. Pedidos em andamento serão cancelados e o motivo ficará no histórico.</Muted><Button variant="dangerGhost" disabled={!canAct} onClick={() => setForceClose(true)}>Encerrar sem recebimento</Button></details> : null}
     {forceClose ? <ReasonDialog action={{ closeTable: true }} onClose={() => setForceClose(false)} onConfirm={(reason) => tableAction("force-close", { reason })} /> : null}
   </CheckoutRoot></AdminShell>;

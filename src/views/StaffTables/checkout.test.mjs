@@ -3,14 +3,15 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import test from "node:test";
 import ts from "typescript";
+import * as calculations from "./paymentCalculation.ts";
 
 const descendants = (node) => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(descendants) : [node, ...descendants(node.props?.children)];
 const source = (name) => ts.transpileModule(readFileSync(new URL(name, import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const account = (patch = {}) => ({ session: { id: "visit", status: "CLOSING", payments: [{ amountCents: 2000 }] }, canCheckout: true, orders: [], totals: { consumptionCents: 6001, serviceFeeCents: 600, serviceFeeBasisPoints: 1000, totalCents: 6601 }, ...patch });
 
-function render({ consumption = account(), error = "", blocked = false, closed = false, confirm = true } = {}) {
+function render({ consumption = account(), error = "", blocked = false, confirm = true, expectedSessionId = "visit" } = {}) {
   let slot = 0;
-  const states = [consumption, error, false, false, blocked, closed, false];
+  const states = [consumption, error, false, false, blocked, false];
   const requests = [], routes = [], notices = [], confirmations = [];
   const loaded = { exports: {} };
   const jsx = (type, props) => ({ type, props });
@@ -19,7 +20,7 @@ function render({ consumption = account(), error = "", blocked = false, closed =
     require(id) {
       if (id === "react/jsx-runtime") return { jsx, jsxs: jsx };
       if (id === "react") return { useState: (initial) => [slot < states.length ? states[slot++] : initial, () => {}], useRef: (current) => ({ current }), useEffect() {}, useCallback: (fn) => fn };
-      if (id === "next/navigation") return { useRouter: () => ({ push: (route) => routes.push(route) }) };
+      if (id === "next/navigation") return { useRouter: () => ({ push: (route) => routes.push(route), replace: (route) => routes.push(route) }) };
       if (id === "@/components/ToastProvider") return { useToast: () => ({ showToast: (message) => notices.push(message) }) };
       if (id === "@/components/ConfirmationProvider") return { useConfirmation: () => ({ requestConfirmation: async (options) => { confirmations.push(options); return confirm; } }) };
       if (id === "@/services/api/client") return { clientApi: async (...args) => { requests.push(args); return args[1]?.method ? {} : consumption; } };
@@ -29,7 +30,7 @@ function render({ consumption = account(), error = "", blocked = false, closed =
       return new Proxy({}, { get: (_, key) => key });
     },
   });
-  const tree = loaded.exports.TableCheckout({ table: { id: "table", number: "01", active: true, session: { id: "visit" } }, expectedSessionId: "visit", admin: { roles: ["ADMIN"] }, restaurantName: "Teste" });
+  const tree = loaded.exports.TableCheckout({ table: { id: "table", number: "01", active: true, session: { id: "visit" } }, expectedSessionId, admin: { roles: ["ADMIN"] }, restaurantName: "Teste" });
   return { tree, nodes: descendants(tree), requests, routes, notices, confirmations };
 }
 
@@ -81,15 +82,55 @@ test("pending receipt blocks leaving and stale consumption blocks new receiving"
   assert.equal(ready.routes[0], "/hall?table=table");
 });
 
-test("closed and empty accounts offer recovery without a receiving form", async () => {
-  for (const closed of [false, true]) {
-    const view = render({ consumption: account({ session: null }), closed });
-    assert.ok(!view.nodes.some((node) => node.type === "Payments"));
-    assert.ok(JSON.stringify(view.tree).includes(closed ? "Atendimento encerrado" : "Nenhuma conta aberta"));
-    const back = view.nodes.find(node => node.type === "Button" && node.props.children?.includes?.("Voltar às mesas"));
-    await back.props.onClick();
-    assert.equal(view.routes[0], "/hall");
+test("confirmed settlement returns directly to hall without an intermediate completion message", async () => {
+  const view = render();
+  view.nodes.find(node => node.type === "Payments").props.onSettled();
+  assert.deepEqual(view.routes, ["/hall"]);
+  const lostResponse = render({ consumption: account({ session: null }) });
+  assert.ok(!JSON.stringify(lostResponse.tree).includes("Atendimento encerrado"));
+  await lostResponse.nodes.find(node => node.props?.["aria-label"] === "Atualizar conta").props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(lostResponse.routes, ["/hall"]);
+});
+
+test("settlement redirects only after confirmation and does not show a completion toast", async () => {
+  for (const failure of [false, true]) {
+    let slot = 0, redirected = 0, refreshed = 0;
+    const requests = [], notices = [], storage = new Map();
+    const loaded = { exports: {} }, jsx = (type, props) => ({ type, props });
+    runInNewContext(source("./Payments.tsx"), {
+      module: loaded, exports: loaded.exports,
+      sessionStorage: { setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
+      require(id) {
+        if (id === "react/jsx-runtime") return { jsx, jsxs: jsx };
+        if (id === "react") return { useState: initial => [slot++ === 1 ? true : initial, () => {}], useRef: current => ({ current }), useEffect() {} };
+        if (id === "react-hook-form") return { useForm: () => ({ control: {}, setValue() {}, resetField() {} }), useWatch: () => ({ mode: "ITEMS", splitCount: 1 }) };
+        if (id === "@/components/ConfirmationProvider") return { useConfirmation: () => ({ requestConfirmation: async () => true }) };
+        if (id === "@/components/ToastProvider") return { useToast: () => ({ showToast: value => notices.push(value) }) };
+        if (id === "@/services/api/client") return { ApiError: class extends Error {}, clientApi: async (...args) => { requests.push(args); if (failure) throw Error("lost response"); return {}; } };
+        if (id === "@/utils/format") return { money: String };
+        if (id === "./paymentCalculation") return calculations;
+        return new Proxy({}, { get: (_, key) => key });
+      },
+    });
+    const tree = loaded.exports.Payments({ tableId: "table", consumption: account({ session: { id: "visit", status: "CLOSING", payments: [{ mode: "ITEMS", splitCount: 0, amountCents: 6601, consumptionCents: 6001, serviceFeeCents: 600 }] } }), disabled: false, onSaved: async () => { refreshed++; }, onSettled: () => { redirected++; }, onBlockedChange() {} });
+    const close = descendants(tree).find(node => node.type === "Button" && node.props.children?.includes?.("Encerrar conta paga"));
+    assert.equal(close.props.disabled, false);
+    await close.props.onClick();
+    assert.equal(requests[0][0], "admin/table-operations/table/settle");
+    assert.equal(redirected, failure ? 0 : 1);
+    assert.equal(refreshed, failure ? 1 : 0);
+    assert.deepEqual(notices, []);
+    assert.equal(storage.size, failure ? 1 : 0, "inconclusive settlement must retain its retry payload");
   }
+});
+
+test("empty accounts without an expected visit still offer recovery", async () => {
+  const view = render({ consumption: account({ session: null }), expectedSessionId: "" });
+  assert.ok(JSON.stringify(view.tree).includes("Nenhuma conta aberta"));
+  const back = view.nodes.find(node => node.type === "Button" && node.props.children?.includes?.("Voltar às mesas"));
+  await back.props.onClick();
+  assert.equal(view.routes[0], "/hall");
 });
 
 test("checkout query renders a separate screen and never fetches the product menu", async () => {

@@ -19,7 +19,7 @@ type Values = { mode: "ITEMS" | "EQUAL"; splitCount: number; method: TablePaymen
 type Pending = { path: "payments" | "settle"; body: string };
 const emptyPayments: TablePayment[] = [];
 
-export function Payments({ tableId, consumption, disabled, onSaved, onBlockedChange }: { tableId: string; consumption: StaffTableConsumption; disabled: boolean; onSaved: () => Promise<void>; onBlockedChange: (blocked: boolean) => void }) {
+export function Payments({ tableId, consumption, disabled, onSaved, onSettled, onBlockedChange }: { tableId: string; consumption: StaffTableConsumption; disabled: boolean; onSaved: () => Promise<void>; onSettled: () => void; onBlockedChange: (blocked: boolean) => void }) {
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirmation();
   const session = consumption.session!;
@@ -77,11 +77,13 @@ export function Payments({ tableId, consumption, disabled, onSaved, onBlockedCha
       setError("Não foi possível guardar a confirmação. Libere o armazenamento do navegador e tente novamente.");
       submitting.current = false; setSaving(false); return;
     }
+    let settled = false;
     try {
       await clientApi(`admin/table-operations/${tableId}/${request.path}`, { method: "POST", body: request.body });
       sessionStorage.removeItem(storageKey); setPending(null);
       form.setValue("quantities", Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0]))); form.resetField("person", { defaultValue: "" });
-      showToast(request.path === "payments" ? "Recebimento registrado. Confira o saldo restante." : "Conta paga e comanda encerrada.");
+      if (request.path === "settle") { settled = true; onSettled(); }
+      else showToast("Recebimento registrado. Confira o saldo restante.");
     } catch (cause) {
       if (cause instanceof ApiError && [400, 404, 409, 422].includes(cause.status)) {
         sessionStorage.removeItem(storageKey); setPending(null);
@@ -90,7 +92,8 @@ export function Payments({ tableId, consumption, disabled, onSaved, onBlockedCha
         setError("Resultado sem confirmação. Use Conferir recebimento; a mesma baixa não será duplicada.");
       }
     } finally {
-      await onSaved(); submitting.current = false; setSaving(false);
+      if (!settled) await onSaved();
+      submitting.current = false; setSaving(false);
     }
   }
 
