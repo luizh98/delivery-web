@@ -7,11 +7,11 @@ import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts
 import * as presentation from "./presentation.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
-function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, canCheckout = isAdmin, totals, askingPhone = false, dialogValues = {} } = {}) {
+function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, canCheckout = isAdmin, totals, orders = [], askingPhone = false, dialogValues = {} } = {}) {
   const session = status ? { id: "visit", status } : null;
   const product = { id: "burger", name: "X-burger", priceCents: 2990, active: true, optionGroups: [] };
   const draft = { sessionId: session?.id ?? "", notes: "", items: [{ id: "line", product, quantity: 1, observations: "", options: [] }] };
-  const state = new Map([[3, { session, orders: [], totals, canCheckout }], [4, { table: draft }]]);
+  const state = new Map([[3, { session, orders, totals, canCheckout }], [4, { table: draft }]]);
   if (pending) state.set(17, true);
   if (askingPhone) state.set(12, true);
   const fields = {};
@@ -67,6 +67,20 @@ function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, ca
   const dialog = nodes.find((node) => typeof node.type === "function" && node.type.name === "PhoneDialog");
   return { nodes, notifications, writes, requests, fields, dialog, renderDialog: () => descendants(dialog.type(dialog.props)) };
 }
+
+test("waiter cannot request closure with a pending round, but delivered and canceled release it", async () => {
+  for (const status of ["PREPARING", "READY", "COMPLETED", "CANCELED"]) {
+    const view = renderClosing({ status: "OPEN", orders: [{ id: "food", status, items: [], totals: { totalCents: 1000 } }] });
+    const button = view.nodes.find(node => node.type === "Button" && node.props.children?.includes?.("Pedir fechamento"));
+    const pending = status === "PREPARING" || status === "READY";
+    assert.equal(button.props.disabled, pending);
+    if (pending) {
+      await button.props.onClick();
+      assert.equal(view.requests.length, 0);
+      assert.match(view.notifications.at(-1).message, /entrega de todos os itens/);
+    }
+  }
+});
 
 test("opening asks for people and submits count with first round", async () => {
   const view = renderClosing({ status: null, askingPhone: true, dialogValues: { phone: "(11) 98888-7777", guestCount: "4" } });

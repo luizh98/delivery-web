@@ -12,6 +12,7 @@ import type { StaffTableConsumption, TablePayment } from "@/types/api";
 import { money } from "@/utils/format";
 import { staffApiMessage } from "./draft";
 import { paymentLines, paymentMethodLabels, paymentQuote } from "./paymentCalculation";
+import { tableDeliveryNotice, tableDeliveryPending } from "./presentation";
 import { ErrorBox, Heading, ItemRow, Muted, Price, Row } from "./styles";
 import { CheckoutNotice, PaymentAmount, PaymentDetails, PaymentHistory, PaymentLine, PaymentQuantity, PaymentSelection, PaymentWorkspace } from "./checkoutStyles";
 
@@ -38,8 +39,8 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
   const storageKey = `table-payment:${tableId}:${session.id}`;
   const paid = payments.reduce((sum, payment) => sum + payment.amountCents, 0);
   const balance = (consumption.totals?.totalCents ?? 0) - paid;
-  const locked = disabled || saving || !!pending || !ready;
-  const kitchenPending = consumption.orders.some((order) => !["READY", "COMPLETED", "CANCELED"].includes(order.status));
+  const kitchenPending = tableDeliveryPending(consumption.orders);
+  const locked = disabled || saving || !!pending || !ready || kitchenPending;
 
   useEffect(() => {
     let active = true;
@@ -142,7 +143,8 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
         <Muted>{mode === "ITEMS" && !quote.items.length ? "Selecione as quantidades que esta pessoa vai pagar." : "Confirme a baixa somente depois de conferir o pagamento presencial."}</Muted>
       </PaymentDetails>
     </form> : null}
-    {consumption.canCheckout && balance === 0 && consumption.totals ? <CheckoutNotice role="status"><Heading><Check size={22} />Conta quitada</Heading><Muted>{kitchenPending ? "Aguarde a cozinha marcar os pedidos em preparo como prontos para encerrar." : "Todos os pagamentos foram registrados. Encerre para liberar a mesa ou comanda."}</Muted><Button disabled={locked || kitchenPending} onClick={async () => {
+    {consumption.canCheckout && balance === 0 && consumption.totals ? <CheckoutNotice role="status"><Heading><Check size={22} />Conta quitada</Heading><Muted>{kitchenPending ? tableDeliveryNotice : "Todos os pagamentos foram registrados. Encerre para liberar a mesa ou comanda."}</Muted><Button disabled={locked} onClick={async () => {
+      if (locked) return;
       if (await requestConfirmation({ message: "Conta quitada. Encerrar comanda e liberar este atendimento?", confirmLabel: "Encerrar conta paga", variant: "primary" })) await send({ path: "settle", body: JSON.stringify({ sessionId: session.id, version: session.paymentVersion ?? 0 }) });
     }}><Check size={18} />Encerrar conta paga</Button></CheckoutNotice> : null}
     {payments.length ? <PaymentHistory aria-label="Pagamentos registrados"><Heading>Pagamentos registrados · {payments.length}</Heading>{payments.map((payment) => <ItemRow key={payment.id}>

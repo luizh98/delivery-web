@@ -19,7 +19,7 @@ import { GuestCountField } from "./GuestCountField";
 import { TableServiceAlerts } from "@/components/TableServiceAlerts";
 import { tableServiceLabels } from "@/utils/tableService";
 import { tableLabel } from "@/utils/tableIdentity";
-import { tableElapsed, tableGuests, tableState, tableStatus } from "./presentation";
+import { tableDeliveryNotice, tableDeliveryPending, tableElapsed, tableGuests, tableState, tableStatus } from "./presentation";
 import { AdminShell } from "@/layouts/AdminLayout/AdminShell";
 import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
@@ -98,6 +98,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const consumptionTotal = consumption?.totals?.totalCents ?? consumption?.orders.filter((order) => order.status !== "CANCELED").reduce((sum, order) => sum + order.totals.totalCents, 0) ?? 0;
   const tablePhone = consumption?.orders.find((order) => order.customerPhone)?.customerPhone ?? "";
   const isClosing = consumption?.session?.status === "CLOSING";
+  const deliveryPending = tableDeliveryPending(consumption?.orders ?? []);
   const hasPayments = !!consumption?.session?.payments?.length;
 
   const loadConsumption = useCallback(async (id: string, signal?: AbortSignal) => {
@@ -201,6 +202,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   }
 
   async function requestBill() {
+    if (deliveryPending) { showToast(tableDeliveryNotice, "warning"); return; }
     if (await requestConfirmation({ message: "Pedir a conta bloqueará novos lançamentos até a comanda ser reaberta. Continuar?", confirmLabel: "Pedir fechamento", variant: "primary" })) {
       await tableAction("request-bill", "Fechamento solicitado.");
     }
@@ -262,9 +264,10 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{hasPayments ? "Há pagamentos registrados. Receba o saldo restante para encerrar a comanda." : closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
         {consumption?.session ? <GuestCountForm key={`${consumption.session.id}:${consumption.session.guestCount ?? ""}`} tableId={selectedId} session={consumption.session} disabled={!canEdit || !!consumptionError} onSaved={refresh} /> : null}
         <Actions>
-          {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : !consumption?.canCheckout ? <Button disabled={!canEdit || !consumption?.session || !!consumptionError} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button> : null}
+          {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : !consumption?.canCheckout ? <Button disabled={!canEdit || !consumption?.session || !!consumptionError || deliveryPending} aria-describedby={deliveryPending ? "staff-pending-delivery" : undefined} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button> : null}
           {consumption?.canCheckout && consumption.session ? <Button disabled={!canEdit || !!consumptionError} onClick={async () => { if (await confirmLeave()) router.push(`/hall?${new URLSearchParams({ table: selectedId, view: "checkout", session: consumption.session!.id })}`); }}><ReceiptText size={18} />Fechar conta</Button> : null}
         </Actions>
+        {consumption?.session && deliveryPending ? <Muted id="staff-pending-delivery" role="status">{tableDeliveryNotice}</Muted> : null}
       </AccountPanel>
       {selected.requests?.map((request) => <Panel key={request.id} className={request.status === "PENDING" ? "table-service-pending" : undefined}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}

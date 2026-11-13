@@ -14,6 +14,7 @@ import { tableLabel } from "@/utils/tableIdentity";
 import { staffApiMessage } from "./draft";
 import { Payments } from "./Payments";
 import { ReasonDialog } from "./ReasonDialog";
+import { tableDeliveryNotice, tableDeliveryPending } from "./presentation";
 import { CheckoutNotice, CheckoutRoot, CheckoutTotals } from "./checkoutStyles";
 import { Actions, ErrorBox, Header, Heading, Muted, Title } from "./styles";
 
@@ -35,6 +36,7 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
   const paid = session?.payments?.reduce((sum, payment) => sum + payment.amountCents, 0) ?? 0;
   const isAdmin = admin.roles.includes("ADMIN");
   const canAct = !busy && !blocked && !error && !sessionChanged;
+  const deliveryPending = tableDeliveryPending(consumption?.orders ?? []);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
     const version = ++requestVersion.current;
@@ -82,6 +84,7 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
 
   async function tableAction(path: string, body: object = {}) {
     if (!canAct || actionPending.current) return;
+    if (deliveryPending && path !== "reopen") { showToast(tableDeliveryNotice, "warning"); return; }
     actionPending.current = true; setBusy(true);
     try {
       const result = await clientApi<{ warning?: string }>(`admin/table-operations/${table.id}/${path}`, { method: "POST", body: JSON.stringify(body) });
@@ -106,9 +109,10 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
       <Muted>Consumo {money(consumption.totals.consumptionCents)} + serviço ({(consumption.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%) {money(consumption.totals.serviceFeeCents)}</Muted>
     </div> : null}
     {session && !sessionChanged && !consumption?.canCheckout ? <CheckoutNotice><Heading>Fechamento pelo caixa</Heading><Muted>Recebimento pelo garçom não está liberado. Solicite o fechamento ao caixa.</Muted></CheckoutNotice> : null}
-    {session && !sessionChanged && consumption?.canCheckout && session.status === "OPEN" ? <CheckoutNotice><Heading><ReceiptText size={22} />Iniciar fechamento</Heading><Muted>Novos lançamentos serão bloqueados enquanto você recebe a conta. Antes do primeiro pagamento, é possível reabrir para corrigir o consumo.</Muted><Button disabled={!canAct} onClick={async () => { if (await requestConfirmation({ message: "Iniciar o fechamento e bloquear novos lançamentos nesta conta?", confirmLabel: "Iniciar fechamento", variant: "primary" })) await tableAction("request-bill"); }}><ReceiptText size={18} />Iniciar fechamento</Button></CheckoutNotice> : null}
-    {session && !sessionChanged && session.status === "CLOSING" && consumption?.canCheckout ? <Payments key={session.id} tableId={table.id} consumption={consumption} disabled={busy || !!error} onSaved={refresh} onSettled={() => router.replace("/hall")} onBlockedChange={setBlocked} /> : null}
-    {session && !sessionChanged && !paid && !session.payments?.length && isAdmin ? <details className="checkout-admin-actions"><summary>Outras ações de encerramento</summary><Muted>Use apenas quando for necessário encerrar sem registrar pagamento. Pedidos em andamento serão cancelados e o motivo ficará no histórico.</Muted><Button variant="dangerGhost" disabled={!canAct} onClick={() => setForceClose(true)}>Encerrar sem recebimento</Button></details> : null}
+    {session && !sessionChanged && deliveryPending ? <CheckoutNotice id="checkout-pending-delivery" role="status"><Heading>Itens ainda não entregues</Heading><Muted>{tableDeliveryNotice}</Muted></CheckoutNotice> : null}
+    {session && !sessionChanged && consumption?.canCheckout && session.status === "OPEN" ? <CheckoutNotice><Heading><ReceiptText size={22} />Iniciar fechamento</Heading><Muted>Novos lançamentos serão bloqueados enquanto você recebe a conta. Antes do primeiro pagamento, é possível reabrir para corrigir o consumo.</Muted><Button disabled={!canAct || deliveryPending} aria-describedby={deliveryPending ? "checkout-pending-delivery" : undefined} onClick={async () => { if (!deliveryPending && await requestConfirmation({ message: "Iniciar o fechamento e bloquear novos lançamentos nesta conta?", confirmLabel: "Iniciar fechamento", variant: "primary" })) await tableAction("request-bill"); }}><ReceiptText size={18} />Iniciar fechamento</Button></CheckoutNotice> : null}
+    {session && !sessionChanged && session.status === "CLOSING" && consumption?.canCheckout ? <Payments key={session.id} tableId={table.id} consumption={consumption} disabled={busy || !!error || deliveryPending} onSaved={refresh} onSettled={() => router.replace("/hall")} onBlockedChange={setBlocked} /> : null}
+    {session && !sessionChanged && !paid && !session.payments?.length && isAdmin ? <details className="checkout-admin-actions"><summary>Outras ações de encerramento</summary><Muted>Use apenas quando for necessário encerrar sem registrar pagamento. Todos os itens devem estar entregues ou cancelados; o motivo ficará no histórico.</Muted><Button variant="dangerGhost" disabled={!canAct || deliveryPending} aria-describedby={deliveryPending ? "checkout-pending-delivery" : undefined} onClick={() => setForceClose(true)}>Encerrar sem recebimento</Button></details> : null}
     {forceClose ? <ReasonDialog action={{ closeTable: true }} onClose={() => setForceClose(false)} onConfirm={(reason) => tableAction("force-close", { reason })} /> : null}
   </CheckoutRoot></AdminShell>;
 }

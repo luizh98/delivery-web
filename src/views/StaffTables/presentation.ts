@@ -1,4 +1,7 @@
-import type { StaffTable } from "@/types/api";
+import type { StaffTable, StaffTableOrder } from "@/types/api";
+
+export const tableDeliveryPending = (orders: Pick<StaffTableOrder, "status">[]) => orders.some(order => order.status !== "COMPLETED" && order.status !== "CANCELED");
+export const tableDeliveryNotice = "Aguarde a entrega de todos os itens antes de fechar a conta. Itens não entregues devem ser cancelados separadamente, com motivo.";
 
 export const tableState = (table: StaffTable) => table.session?.status === "CLOSING" ? "closing" : table.session ? "occupied" : "free";
 export const tableStatus = (table: StaffTable) => table.session?.status === "CLOSING" ? "Fechamento" : table.session ? "Ocupado" : "Livre";

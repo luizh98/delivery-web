@@ -2,6 +2,8 @@
 
 ## Brief da superfície
 
+Correção de 13/11/2026: ADMIN/WAITER também aguardam todos os pedidos COMPLETED/CANCELED antes de iniciar, receber nova baixa ou encerrar. READY ainda é pendente. Aviso "Itens ainda não entregues" explica motivo e orienta cancelamento separado; CTAs de início/encerramento têm disabled e associação ao aviso. Conta antiga CLOSING/quitada conserva pagamentos e bloqueia novas ações enquanto houver pendências. Retry de operação já confirmada preservado. Encerrar sem recebimento não cancela nem conclui pedidos implicitamente; esta regra substitui descrições históricas de cancelamento automático abaixo. Mundo visual e componentes herdados preservados. Browser local confirmou 1440/390/320px, início/forçado bloqueados e conta quitada READY bloqueada, com liberação após COMPLETED.
+
 Modo **Operate**, herdado do atendimento e do admin. Tarefa: conferir conta, dividir recebimento por itens ou cotas, registrar pagamento presencial e liberar atendimento quitado. Público: ADMIN e WAITER autorizado pela configuração/backend. Extensão do mundo visual existente; não estabelece identidade, tokens ou proibições globais.
 
 Registro de 12/11/2026, baseado em `src/views/StaffTables/{TableCheckout.tsx,Payments.tsx,checkoutStyles.ts,index.tsx,ReasonDialog.tsx}`, `src/app/(product)/hall/page.tsx` e contrato `.specs/features/table-checkout-screen/spec.md`. O brief de [atendimento](staff-tables.md) continua descrevendo catálogo, rodada, consumo e chamados.

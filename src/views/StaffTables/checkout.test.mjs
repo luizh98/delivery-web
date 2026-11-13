@@ -4,6 +4,7 @@ import { runInNewContext } from "node:vm";
 import test from "node:test";
 import ts from "typescript";
 import * as calculations from "./paymentCalculation.ts";
+import * as presentation from "./presentation.ts";
 
 const descendants = (node) => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(descendants) : [node, ...descendants(node.props?.children)];
 const source = (name) => ts.transpileModule(readFileSync(new URL(name, import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
@@ -27,6 +28,7 @@ function render({ consumption = account(), error = "", blocked = false, confirm 
       if (id === "@/utils/format") return { money: String };
       if (id === "@/utils/tableIdentity") return { tableLabel: (value) => "Mesa " + value.number };
       if (id === "./draft") return { staffApiMessage: (_, fallback) => fallback };
+      if (id === "./presentation") return presentation;
       return new Proxy({}, { get: (_, key) => key });
     },
   });
@@ -65,6 +67,21 @@ test("opening checkout is read-only; starting closure is explicit and cancellabl
     const writes = view.requests.filter(([, init]) => init?.method === "POST");
     assert.equal(writes.length, confirm ? 1 : 0);
     if (confirm) assert.equal(writes[0][0], "admin/table-operations/table/request-bill");
+  }
+});
+
+test("admin cannot start or force closure before every round is delivered", async () => {
+  for (const status of ["RECEIVED", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY"]) {
+    const view = render({ consumption: account({ session: { id: "visit", status: "OPEN", payments: [] }, orders: [{ id: "served", status: "COMPLETED" }, { id: "pending", status }] }) });
+    const start = view.nodes.find(node => node.type === "Button" && node.props.children?.includes?.("Iniciar fechamento"));
+    const force = view.nodes.find(node => node.type === "Button" && node.props.children === "Encerrar sem recebimento");
+    assert.equal(start.props.disabled, true, status);
+    assert.equal(force.props.disabled, true, status);
+    assert.ok(JSON.stringify(view.tree).includes("Aguarde a entrega de todos os itens"));
+    await start.props.onClick();
+    assert.equal(view.requests.filter(([, init]) => init?.method === "POST").length, 0);
+    const legacy = render({ consumption: account({ session: { id: "visit", status: "CLOSING" }, orders: [{ id: "pending", status }] }) });
+    assert.equal(legacy.nodes.find(node => node.type === "Payments").props.disabled, true);
   }
 });
 
@@ -110,6 +127,7 @@ test("settlement redirects only after confirmation and does not show a completio
         if (id === "@/services/api/client") return { ApiError: class extends Error {}, clientApi: async (...args) => { requests.push(args); if (failure) throw Error("lost response"); return {}; } };
         if (id === "@/utils/format") return { money: String };
         if (id === "./paymentCalculation") return calculations;
+        if (id === "./presentation") return presentation;
         return new Proxy({}, { get: (_, key) => key });
       },
     });

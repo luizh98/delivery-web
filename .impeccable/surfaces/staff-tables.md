@@ -2,6 +2,8 @@
 
 ## Brief da superfície
 
+Correção de 13/11/2026: fechamento da equipe também exige todos os pedidos COMPLETED/CANCELED. Salão apresenta motivo visível; Pedir fechamento fica desabilitado com pendências e orienta entrega ou cancelamento explícito. Fechar conta conserva acesso à conferência; início/recebimento/encerramento são bloqueados na tela dedicada e API enquanto houver pendências. READY não equivale a entregue.
+
 Modo **Operate**. Extensão operacional do admin existente: selecionar mesa, montar e revisar uma rodada, enviar à cozinha e consultar consumo/chamados. Público: WAITER (Garçom) e ADMIN do restaurante. O cabeçalho identifica restaurante e perfil; a mesa selecionada permanece identificada antes do espaço de trabalho. A ação principal apresenta quantidade de itens; o resumo apresenta total da rodada.
 
 Este registro descreve somente `src/views/StaffTables/` e `src/app/(product)/salao/page.tsx`, conforme código verificado em 04/11/2026 e contrato em `../.specs/features/staff-table-entry/{spec,design}.md`. Não estabelece nova identidade visual nem regras globais.
