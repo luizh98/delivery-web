@@ -1,7 +1,7 @@
 import { clientApi } from "@/services/api/client";
 import { normalizePrintOverview } from "./normalizeOverview";
 
-export type PrintDestination = "RECEIPT" | "KITCHEN" | "EXPEDITION";
+export type PrintDestination = "RECEIPT" | "KITCHEN" | "BAR" | "EXPEDITION";
 
 export type PrintDevice = {
   id: string;

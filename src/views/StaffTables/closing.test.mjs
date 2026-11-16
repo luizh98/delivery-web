@@ -7,8 +7,8 @@ import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts
 import * as presentation from "./presentation.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
-function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, canCheckout = isAdmin, totals, orders = [], askingPhone = false, dialogValues = {} } = {}) {
-  const session = status ? { id: "visit", status } : null;
+function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, canCheckout = isAdmin, totals, orders = [], askingPhone = false, dialogValues = {}, kind = "TABLE", physicalTableId } = {}) {
+  const session = status ? { id: "visit", status, physicalTableId } : null;
   const product = { id: "burger", name: "X-burger", priceCents: 2990, active: true, optionGroups: [] };
   const draft = { sessionId: session?.id ?? "", notes: "", items: [{ id: "line", product, quantity: 1, observations: "", options: [] }] };
   const state = new Map([[3, { session, orders, totals, canCheckout }], [4, { table: draft }]]);
@@ -54,7 +54,7 @@ function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, ca
     },
   });
   const tree = loaded.exports.StaffTables({
-    initialTables: [{ id: "table", number: "01", active: true, session, requests: [] }],
+    initialTables: [{ id: "physical", number: "01", kind: "TABLE", active: true, requests: [] }, { kind, id: "table", number: "01", active: true, session, requests: [] }],
     initialMenu: { categories: [], products: [product] },
     initialTableId: "table", admin: { id: "waiter", roles: [isAdmin ? "ADMIN" : "WAITER"] }, restaurantName: "Teste",
   });
@@ -117,7 +117,7 @@ test("canceling opening keeps draft and sends nothing", () => {
 
 test("first round opens the contact and people dialog before any request", async () => {
   const view = renderClosing({ status: null });
-  const send = view.nodes.find((node) => node.type === "Button" && node.props?.children?.some?.((child) => typeof child === "string" && child.includes("à cozinha")));
+  const send = view.nodes.find((node) => node.type === "Button" && node.props?.children?.some?.((child) => typeof child === "string" && child.includes("ao preparo")));
   assert.ok(send);
   send.props.onClick();
   await Promise.resolve();
@@ -148,7 +148,7 @@ test("staff account uses server total and shows service fee separately", () => {
 
 test("closing table send attempt reports warning without issuing an order", async () => {
   const view = renderClosing();
-  const button = view.nodes.find((node) => node.type === "Button" && node.props?.children?.some?.((child) => typeof child === "string" && child.includes("à cozinha")));
+  const button = view.nodes.find((node) => node.type === "Button" && node.props?.children?.some?.((child) => typeof child === "string" && child.includes("ao preparo")));
   assert.ok(button);
   assert.notEqual(button.props.disabled, true, "send attempt must explain closing state");
   button.props.onClick();
@@ -203,4 +203,15 @@ test("selecting another alert for the current table refreshes without clearing c
   await Promise.resolve();
   assert.equal(view.requests[0]?.[0], "admin/table-operations/table/orders", "same-table alert must fetch immediately instead of waiting for polling");
   assert.ok(!view.writes.some(({ slot, value }) => slot === 3 && value === null), "known total must remain visible during refresh");
+});
+
+
+test("individual comanda requires a physical table and submits it with contact", async () => {
+ const view=renderClosing({status:null,kind:"COMMAND",askingPhone:true,dialogValues:{phone:"11988887777",guestCount:"1",physicalTableId:"physical"}});
+ const nodes=view.renderDialog();
+ assert.equal(view.fields.physicalTableId.required,"Selecione a mesa desta comanda.");
+ const form=nodes.find(n=>n.type==="form"); await form.props.onSubmit();
+ const request=view.requests.find(([url,options])=>url.endsWith("/orders")&&options?.method==="POST");
+ assert.equal(JSON.parse(request[1].body).physicalTableId,"physical");
+ assert.equal(JSON.parse(request[1].body).customerPhone,"11988887777");
 });

@@ -13,6 +13,7 @@ import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
+import { BillPrintButton } from "./BillPrintButton";
 import { useRouter } from "next/navigation";
 import { ReasonDialog } from "./ReasonDialog";
 import { GuestCountField } from "./GuestCountField";
@@ -29,14 +30,16 @@ const closingMessage = "Conta em fechamento. Reabra a comanda para lançar novos
 const requestLabel = tableServiceLabels;
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-function PhoneDialog({ opening, onConfirm, onClose }: { opening: boolean; onConfirm: (phone: string, guestCount?: number) => void; onClose: () => void }) {
+function PhoneDialog({ opening, onConfirm, onClose, physicalTables = [], needsTable = false, initialPhone = "", accountLabel = "" }: { opening: boolean; onConfirm: (phone: string, guestCount?: number, physicalTableId?: string) => void; onClose: () => void; physicalTables?: StaffTable[]; needsTable?: boolean; initialPhone?: string; accountLabel?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const form = useForm({ defaultValues: { phone: "", guestCount: "" } });
+  const form = useForm({ defaultValues: { phone: initialPhone, guestCount: needsTable ? "1" : "", physicalTableId: "" } });
   const guestCount = useWatch({ control: form.control, name: "guestCount" });
   useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
   return <Dialog ref={dialog} onCancel={onClose} aria-labelledby="phone-title">
-    <form onSubmit={form.handleSubmit(({ phone, guestCount }) => onConfirm(normalizeTablePhone(phone), opening ? Number(guestCount) : undefined))}>
+    <form onSubmit={form.handleSubmit(({ phone, guestCount, physicalTableId }) => onConfirm(normalizeTablePhone(phone), opening ? Number(guestCount) : undefined, physicalTableId))}>
       <Row><Heading id="phone-title">{opening ? "Abertura da conta" : "Contato da conta"}</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Voltar à rodada"><X size={18} /></Button></Row>
+      <Muted>{accountLabel}</Muted>
+      {needsTable ? <Field label="Mesa da comanda" error={form.formState.errors.physicalTableId?.message}><Select autoFocus {...form.register("physicalTableId", { required: "Selecione a mesa desta comanda." })}><option value="">Selecione a mesa</option>{physicalTables.map((table) => <option key={table.id} value={table.id}>Mesa {table.number}</option>)}</Select></Field> : null}
       <Muted>Informe telefone ou celular da pessoa responsável pela conta para contato, caso ela saia.</Muted>
       <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
       {opening ? <GuestCountField label="Total de pessoas" value={guestCount} onChange={(value) => form.setValue("guestCount", value, { shouldDirty: true, shouldValidate: true })} error={form.formState.errors.guestCount?.message} registration={form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} /> : null}
@@ -163,21 +166,21 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     finally { setRefreshing(false); }
   }
 
-  async function sendRound(contactPhone = tablePhone, guestCount?: number) {
+  async function sendRound(contactPhone = tablePhone, guestCount?: number, physicalTableId = consumption?.session?.physicalTableId) {
     if (submitting.current || !selected || !consumption || consumptionError) return;
     if (!pendingSubmission.current && isClosing) { showToast(closingMessage, "warning"); return; }
     if (!pendingSubmission.current && !draft.items.length) return;
-    if (!pendingSubmission.current && (!normalizeTablePhone(contactPhone) || (!consumption.session && guestCount === undefined))) { setAskingPhone(true); return; }
+    if (!pendingSubmission.current && (!normalizeTablePhone(contactPhone) || (!consumption.session && guestCount === undefined) || (selected.kind === "COMMAND" && !physicalTableId))) { setAskingPhone(true); return; }
     submitting.current = true; setBusy(true);
     if (!pendingSubmission.current) {
-      pendingSubmission.current = { tableId: selectedId, body: JSON.stringify({ submissionId: crypto.randomUUID(), sessionId: draft.sessionId, customerPhone: normalizeTablePhone(contactPhone), guestCount, notes: draft.notes, expectedTotalCents: draftTotal, items: draft.items.map((item) => ({ productId: item.product.id, quantity: item.quantity, observations: item.observations, options: item.options })) }) };
+      pendingSubmission.current = { tableId: selectedId, body: JSON.stringify({ submissionId: crypto.randomUUID(), sessionId: draft.sessionId, physicalTableId: selected.kind === "COMMAND" ? physicalTableId : undefined, customerPhone: normalizeTablePhone(contactPhone), guestCount, notes: draft.notes, expectedTotalCents: draftTotal, items: draft.items.map((item) => ({ productId: item.product.id, quantity: item.quantity, observations: item.observations, options: item.options })) }) };
     }
     try {
       const submission = pendingSubmission.current;
       const order = await clientApi<StaffTableOrder>(`admin/table-operations/${submission.tableId}/orders`, { method: "POST", body: submission.body });
       pendingSubmission.current = null; setUncertainSubmission(false);
       updateDraft(emptyDraft());
-      showToast(`Rodada ${order.orderNumber ?? ""} enviada à cozinha.`);
+      showToast(`Rodada ${order.orderNumber ?? ""} enviada aos setores de preparo.`);
       setTab("consumption");
       setMobilePane("ticket");
       await Promise.all([refresh(), loadConsumption(selectedId)]);
@@ -230,7 +233,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     return !(hasDrafts || uncertainSubmission) || await requestConfirmation({ message: "Há itens ainda não enviados ou um envio sem confirmação. Sair descartará os rascunhos. Deseja sair?", confirmLabel: "Sair", variant: "danger" });
   }
 
-  const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(tableLabel(table)).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
+  const tableList = [...(tables ?? [])].filter((table) => table.active && normalize(`${tableLabel(table)} ${table.session?.physicalTableNumber ?? ""}`).includes(normalize(tableSearch))).sort((left, right) => left.number.localeCompare(right.number, "pt-BR", { numeric: true }));
   const products = menu.products.filter((product) => product.active && (!categoryId || product.categoryId === categoryId) && normalize(product.name).includes(normalize(productSearch)));
   const canEdit = !busy && !uncertainSubmission;
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
@@ -247,7 +250,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
       <Field label="Buscar mesa ou comanda"><Input type="search" placeholder="Número ou tipo de atendimento" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} /></Field>
       <div className="table-legend" aria-label="Status das mesas"><span data-state="free">Livre</span><span data-state="occupied">Ocupado</span><span data-state="closing">Fechamento</span></div>
       <TableGrid>{tableList.map((table) => <TableButton key={table.id} data-state={tableState(table)} onClick={() => openTable(table.id)} aria-label={`${tableLabel(table)}, ${tableStatus(table)}`}>
-        <strong>{tableLabel(table)}</strong><span className="table-status">{tableStatus(table)}</span>
+        <strong>{tableLabel(table)}</strong>{table.session?.physicalTableNumber ? <span>Mesa {table.session.physicalTableNumber}</span> : null}<span className="table-status">{tableStatus(table)}</span>
         {table.session ? <span className="table-details"><Clock3 size={14} aria-hidden="true" />{now === null ? "Calculando tempo…" : tableElapsed(table.session.createdAt, now)}</span> : null}
         {table.session ? <span className="table-details"><Users size={14} aria-hidden="true" />{tableGuests(table.session.guestCount)}</span> : null}
         {table.requests?.length ? <span className="table-request"><BellRing size={14} aria-hidden="true" />{table.requests.length} {table.requests.length === 1 ? "chamado" : "chamados"}</span> : null}
@@ -259,11 +262,13 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
       {consumptionError ? <ErrorBox role="alert">{consumptionError}</ErrorBox> : null}
       {uncertainSubmission ? <ErrorBox role="alert">Envio sem confirmação. Use Conferir envio antes de alterar a rodada ou trocar de mesa.</ErrorBox> : null}
       <AccountPanel aria-label={`Resumo · ${tableLabel(selected)}`}>
+        {selected.kind === "COMMAND" ? <Muted>{consumption?.session?.physicalTableNumber ? `Mesa ${consumption.session.physicalTableNumber} · ${tableLabel(selected)}` : "Informe a mesa ao enviar a primeira rodada desta comanda."}</Muted> : null}
         <Row><Heading><ReceiptText size={20} aria-hidden="true" /> Conta · {tableLabel(selected)}</Heading><AccountTotal><span>Total do consumo</span><Price>{consumption ? money(consumptionTotal) : "Carregando…"}</Price></AccountTotal></Row>
         {consumption?.totals ? <div aria-label="Composição da conta"><Row><Muted>Consumo</Muted><Price>{money(consumption.totals.consumptionCents)}</Price></Row><Row><Muted>Taxa de serviço ({(consumption.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</Muted><Price>{money(consumption.totals.serviceFeeCents)}</Price></Row></div> : null}
         {isClosing ? <div id="table-closing-notice" role="status"><Heading><CircleAlert size={18} aria-hidden="true" /> Conta em fechamento</Heading><Muted>{hasPayments ? "Há pagamentos registrados. Receba o saldo restante para encerrar a comanda." : closingMessage}</Muted></div> : <Muted>{consumption?.session ? "Confira o consumo e solicite o fechamento por aqui." : consumption ? "Nenhuma comanda aberta nesta mesa." : "Carregando comanda…"}</Muted>}
         {consumption?.session ? <GuestCountForm key={`${consumption.session.id}:${consumption.session.guestCount ?? ""}`} tableId={selectedId} session={consumption.session} disabled={!canEdit || !!consumptionError} onSaved={refresh} /> : null}
         <Actions>
+          {consumption?.session ? <BillPrintButton key={consumption.session.id} tableId={selectedId} sessionId={consumption.session.id} disabled={!canEdit || !!consumptionError} /> : null}
           {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : !consumption?.canCheckout ? <Button disabled={!canEdit || !consumption?.session || !!consumptionError || deliveryPending} aria-describedby={deliveryPending ? "staff-pending-delivery" : undefined} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button> : null}
           {consumption?.canCheckout && consumption.session ? <Button disabled={!canEdit || !!consumptionError} onClick={async () => { if (await confirmLeave()) router.push(`/hall?${new URLSearchParams({ table: selectedId, view: "checkout", session: consumption.session!.id })}`); }}><ReceiptText size={18} />Fechar conta</Button> : null}
         </Actions>
@@ -285,7 +290,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
         <Tabs><Button variant={tab === "draft" ? "primary" : "ghost"} aria-pressed={tab === "draft"} onClick={() => setTab("draft")}>Rodada ({draftCount})</Button><Button variant={tab === "consumption" ? "primary" : "ghost"} aria-pressed={tab === "consumption"} onClick={() => setTab("consumption")}><ReceiptText size={16} />Comanda</Button></Tabs>
         {tab === "draft" ? <Stack><div><Heading>Nova rodada · {tableLabel(selected)}</Heading><Muted>Os itens abaixo ainda não foram enviados.</Muted></div>
           {draft.sessionId && consumption?.session?.id !== draft.sessionId ? <ErrorBox role="alert">Esta rodada pertence a uma comanda encerrada. Descarte os itens e comece uma nova rodada.</ErrorBox> : null}
-          {!draft.items.length ? <Empty><Send size={24} aria-hidden="true" />Escolha produtos no cardápio. Você pode revisar tudo antes de enviar à cozinha.</Empty> : draft.items.map((item) => <ItemRow key={item.id}>
+          {!draft.items.length ? <Empty><Send size={24} aria-hidden="true" />Escolha produtos no cardápio. Você pode revisar tudo antes de enviar aos setores de preparo.</Empty> : draft.items.map((item) => <ItemRow key={item.id}>
             <Row><strong>{item.quantity}× {item.product.name}</strong><Price>{money(draftItemTotal(item))}</Price></Row>
             {item.options.length ? <Muted>{item.options.map((option) => item.product.optionGroups.find((group) => group.id === option.groupId)?.items.find((entry) => entry.id === option.itemId)?.name).join(", ")}</Muted> : null}
             {item.observations ? <Muted>{item.observations}</Muted> : null}
@@ -294,11 +299,11 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
               <Button variant="dangerGhost" disabled={!canEdit} onClick={() => updateDraft({ ...draft, items: draft.items.filter((entry) => entry.id !== item.id) })} aria-label={`Excluir ${item.product.name}`}><Trash2 size={16} /></Button></Actions>
           </ItemRow>)}
           {draft.items.length ? <><Field label="Observação da rodada (opcional)"><Textarea maxLength={2000} disabled={!canEdit} value={draft.notes} onChange={(event) => updateDraft({ ...draft, notes: event.target.value })} /></Field><Button variant="dangerGhost" disabled={!canEdit} onClick={async () => { if (await requestConfirmation({ message: "Descartar os itens desta rodada? Os pedidos já enviados serão mantidos.", confirmLabel: "Descartar rodada" })) updateDraft(emptyDraft(consumption?.session?.id)); }}><Trash2 size={16} />Descartar rodada</Button></> : null}
-          <Summary><Row><span>Total da rodada</span><Price>{money(draftTotal)}</Price></Row><Button disabled={busy || (!uncertainSubmission && ((!canLaunch && !isClosing) || !draft.items.length)) || !!consumptionError} aria-disabled={isClosing && !uncertainSubmission} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => void sendRound()}><Send size={18} />{busy ? "Enviando…" : uncertainSubmission ? "Conferir envio" : `Enviar ${draftCount} ${draftCount === 1 ? "item" : "itens"} à cozinha`}</Button></Summary>
+          <Summary><Row><span>Total da rodada</span><Price>{money(draftTotal)}</Price></Row><Button disabled={busy || (!uncertainSubmission && ((!canLaunch && !isClosing) || !draft.items.length)) || !!consumptionError} aria-disabled={isClosing && !uncertainSubmission} aria-describedby={isClosing ? "table-closing-notice" : undefined} onClick={() => void sendRound()}><Send size={18} />{busy ? "Enviando…" : uncertainSubmission ? "Conferir envio" : `Enviar ${draftCount} ${draftCount === 1 ? "item" : "itens"} ao preparo`}</Button></Summary>
         </Stack> : <Stack><Row><Heading>Consumo da conta</Heading><Price>{money(consumptionTotal)}</Price></Row>
           {!consumption?.orders.length ? <Empty>{consumption ? "Nenhum pedido enviado nesta comanda." : "Carregando consumo…"}</Empty> : consumption.orders.map((order) => <ItemRow key={order.id}>
             <Row><strong>Rodada #{order.orderNumber ?? order.id.slice(-6)}</strong><Badge>{statusLabel(order.status, "TABLE")}</Badge></Row>
-            <Muted>{order.createdAt ? new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</Muted>
+            <Muted>{order.waiterName ? `Garçom ${order.waiterName} · ` : ""}{order.physicalTableNumber ? `Mesa ${order.physicalTableNumber} · ` : ""}{order.createdAt ? new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</Muted>
             {order.items.map((item, index) => <Stack key={index}><Row><span>{item.quantity}× {item.name}</span><Price>{money(item.totalCents)}</Price></Row>{item.options?.length ? <Muted>{item.options.map((option) => option.itemName).join(", ")}</Muted> : null}{item.observations ? <Muted>Observação: {item.observations}</Muted> : null}
               {isAdmin && !hasPayments && order.status !== "CANCELED" && order.status !== "COMPLETED" ? <Button variant="dangerGhost" disabled={!canEdit || !!consumptionError} onClick={() => setCancelAction({ order, itemIndex: index })}><X size={16} />Cancelar item</Button> : null}</Stack>)}
             {order.notes ? <Muted>Rodada: {order.notes}</Muted> : null}
@@ -314,6 +319,6 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
     </Stack>}
     {editor ? <ItemEditor key={editor.item.id} item={editor.item} editing={editor.editing} onClose={() => setEditor(null)} onSave={(item) => { updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: editor.editing ? draft.items.map((entry) => entry.id === item.id ? item : entry) : [...draft.items, item] }); setEditor(null); showToast(editor.editing ? "Item atualizado na rodada." : `${item.product.name} adicionado à rodada.`); }} /> : null}
     {cancelAction ? <ReasonDialog action={cancelAction} onClose={() => setCancelAction(null)} onConfirm={cancelSent} /> : null}
-    {askingPhone ? <PhoneDialog opening={!consumption?.session} onClose={() => setAskingPhone(false)} onConfirm={(phone, guestCount) => { setAskingPhone(false); void sendRound(phone, guestCount); }} /> : null}
+    {askingPhone ? <PhoneDialog needsTable={selected?.kind === "COMMAND" && !consumption?.session?.physicalTableId} physicalTables={(tables ?? []).filter((table) => table.active && table.kind !== "COMMAND")} initialPhone={tablePhone} accountLabel={selected ? tableLabel(selected) : ""} opening={!consumption?.session} onClose={() => setAskingPhone(false)} onConfirm={(phone, guestCount, physicalTableId) => { setAskingPhone(false); void sendRound(phone, guestCount, physicalTableId); }} /> : null}
   </Root></AdminShell>;
 }

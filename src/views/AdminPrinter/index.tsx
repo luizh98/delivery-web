@@ -54,7 +54,8 @@ type ConfigurableDestination = Exclude<PrintDestination, "EXPEDITION">;
 
 const destinations: Array<{ id: ConfigurableDestination; label: string; description: string }> = [
   { id: "RECEIPT", label: "Recibo", description: "Pedido completo para o balcão." },
-  { id: "KITCHEN", label: "Cozinha", description: "Pedido completo para a cozinha." },
+  { id: "KITCHEN", label: "Cozinha", description: "No salão, recebe somente itens do setor Cozinha." },
+  { id: "BAR", label: "Bar", description: "No salão, recebe somente itens do setor Bar." },
 ];
 
 type DestinationDraft = Omit<PrintDestinationConfig, "destination">;
@@ -88,14 +89,14 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
   const [overview, setOverview] = useState<PrintOverview | null>(null);
   const [jobs, setJobs] = useState<PrintJob[]>([]);
   const [jobsPage, setJobsPage] = useState(0);
-  const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft });
+  const [drafts, setDrafts] = useState<Record<ConfigurableDestination, DestinationDraft>>({ RECEIPT: emptyDraft, KITCHEN: emptyDraft, BAR: emptyDraft });
   const [pairingCode, setPairingCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [pairingAttempt, setPairingAttempt] = useState<{ startedAt: number; activeDeviceIds: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [browserPrinting, setBrowserPrinting] = useState({ RECEIPT: false, KITCHEN: false });
 
-  function changeBrowserPrinting(destination: ConfigurableDestination, enabled: boolean) {
+  function changeBrowserPrinting(destination: "RECEIPT" | "KITCHEN", enabled: boolean) {
     try {
       setBrowserPrintEnabled(destination, enabled);
       setBrowserPrinting((current) => ({ ...current, [destination]: enabled }));
@@ -327,7 +328,7 @@ export function AdminPrinterView({ connectorServerUrl }: { connectorServerUrl: s
 
       <Panel>
         <PanelHeader><PanelTitle>Impressão neste navegador</PanelTitle><PanelDescription>Desativada por padrão. Permite abrir a janela de impressão quando o destino não tiver impressão automática pelo conector. O botão Imprimir sempre prioriza a impressora configurada. Esta preferência vale apenas neste navegador e nesta loja.</PanelDescription></PanelHeader>
-        {destinations.map((destination) => <InlineField key={destination.id}><input type="checkbox" checked={browserPrinting[destination.id]} onChange={(event) => changeBrowserPrinting(destination.id, event.target.checked)} />Permitir impressão de {destination.label.toLowerCase()} neste navegador</InlineField>)}
+        {destinations.filter((destination): destination is typeof destination & { id: "RECEIPT" | "KITCHEN" } => destination.id !== "BAR").map((destination) => <InlineField key={destination.id}><input type="checkbox" checked={browserPrinting[destination.id]} onChange={(event) => changeBrowserPrinting(destination.id, event.target.checked)} />Permitir impressão de {destination.label.toLowerCase()} neste navegador</InlineField>)}
       </Panel>
 
       <Panel>

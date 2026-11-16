@@ -105,6 +105,7 @@ import {
 } from "./styles";
 
 const productSchema = z.object({
+  productionSector: z.enum(["KITCHEN", "BAR"]),
   availability: z.enum(["ALL", "DELIVERY", "TABLE"]),
   categoryId: z.string().min(1, "Selecione uma categoria."),
   name: z.string().min(2, "Informe o nome."),
@@ -195,6 +196,7 @@ const flagTones: Record<ProductFlagStyle, ProductFlagTone> = {
 };
 
 const defaultProductForm = (categoryId = ""): ProductForm => ({
+  productionSector: "KITCHEN",
   availability: "ALL",
   categoryId,
   name: "",
@@ -215,6 +217,7 @@ function productToForm(product: Product): ProductForm {
   const salePrice = productSalePrice(product);
   const discounted = salePrice < product.priceCents;
   return {
+    productionSector: product.productionSector ?? "KITCHEN",
     availability: productAvailability(product),
     categoryId: product.categoryId,
     name: product.name,
@@ -781,6 +784,7 @@ export function ProductManager({
 
     try {
       const productPayload = {
+        productionSector: values.productionSector,
         availability: values.availability,
         categoryId: values.categoryId,
         name: values.name,
@@ -982,6 +986,7 @@ export function ProductManager({
             ) : null}
           </SectionHeader>
 
+          <Field label="Setor de preparo" error={form.formState.errors.productionSector?.message}><Select {...form.register("productionSector")}><option value="KITCHEN">Cozinha</option><option value="BAR">Bar</option></Select></Field>
           <Field label="Disponível em" error={form.formState.errors.availability?.message}>
             <Select {...form.register("availability")}>
               <option value="ALL">Delivery e salão</option>

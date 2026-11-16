@@ -160,6 +160,7 @@ export type ProductOptionGroupTemplate = {
 export type ProductAvailability = "ALL" | "DELIVERY" | "TABLE";
 
 export type Product = {
+  productionSector?: "KITCHEN" | "BAR";
   availability?: ProductAvailability;
   id: string;
   categoryId: string;
@@ -270,13 +271,13 @@ export type OrderResponse = {
   tableSessionId?: string;
 };
 
-export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations"> & { customerPhone?: string };
+export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations"> & { customerPhone?: string; physicalTableNumber?: string; waiterName?: string };
 export type StaffTable = {
 	 kind?: "TABLE" | "COMMAND";
   id: string;
   number: string;
   active: boolean;
-  session?: { id: string; status: "OPEN" | "CLOSING"; createdAt?: string; guestCount?: number; paymentVersion?: number; payments?: TablePayment[] } | null;
+  session?: { physicalTableId?: string; physicalTableNumber?: string; id: string; status: "OPEN" | "CLOSING"; createdAt?: string; guestCount?: number; paymentVersion?: number; payments?: TablePayment[] } | null;
   requests: { id: string; type: "SERVICE" | "CLOSURE" | "PAYMENT"; status: "PENDING" | "ASSIGNED"; assignedBy?: string }[];
 };
 export type TableConsumptionTotals = { consumptionCents: number; serviceFeeBasisPoints: number; serviceFeeCents: number; totalCents: number };
