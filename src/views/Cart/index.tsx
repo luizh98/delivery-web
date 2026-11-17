@@ -508,6 +508,7 @@ export function CartView({ restaurantConfig, initialStep = 1, table }: CartViewP
         try {
           const response = JSON.parse(cause.message) as { code?: string; message?: string };
           if (response.code === "product_channel_unavailable" && response.message) message = response.message;
+          if (response.code === "table_access_required") { message = "Esta mesa/comanda está protegida. Peça o código ao responsável para continuar."; router.refresh(); }
         } catch { /* Keep the fallback for non-JSON failures. */ }
       }
       setCheckoutError(message);

@@ -342,9 +342,12 @@ export type TableResponse = {
 export type TableAccessResponse = { token: string };
 
 export type PublicTableResponse = {
+  accessLocked?: boolean;
+  isOwner?: boolean;
+  shareCode?: string;
   kind?: "TABLE" | "COMMAND";
   number: string;
-  session?: { id: string; participationId: string; status: "OPEN" | "CLOSING" } | null;
+  session?: { id: string; participationId?: string; status: "OPEN" | "CLOSING" } | null;
 };
 
 export type TableServiceRequestType = "SERVICE" | "CLOSURE" | "PAYMENT";

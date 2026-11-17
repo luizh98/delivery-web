@@ -12,6 +12,7 @@ import { formatClosedStoreMessage } from "@/utils/storeAvailability";
 import type { BusinessHour } from "@/types/api";
 import type { CustomerMenuProps } from "./types";
 import { MenuCatalog } from "./MenuCatalog";
+import { TableAccess } from "@/components/TableAccess";
 import {
   ClosedStoreNotice, Hero, HeroBanner, HeroBody, HeroDetailsRow, HeroInfoGrid,
   HeroInfoItem, HeroText, HeroTitle, HeroTitleRow, MenuPanel, TableIdentity,
@@ -64,6 +65,7 @@ export function CustomerMenu({ restaurantConfig, menu, table }: CustomerMenuProp
           {minimum > 0 ? <HeroInfoItem><ShoppingBag size={14} /><span>Pedido mínimo:</span><strong>{money(minimum)}</strong></HeroInfoItem> : null}
         </HeroInfoGrid></HeroDetailsRow> : null}
       </HeroBody></Hero>
+      {table?.accessLocked ? <TableAccess token={table.token} table={table} /> : null}
       <MenuCatalog menu={menu} table={table} />
     </MenuPanel>
   </>;

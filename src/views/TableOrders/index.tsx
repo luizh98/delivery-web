@@ -4,6 +4,7 @@ import { ArrowLeft, BellRing, ReceiptText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
+import { TableShare } from "@/components/TableAccess";
 import { CustomerPageHeader } from "@/components/CustomerPageHeader";
 import { ApiError, clientApi } from "@/services/api/client";
 import type { PublicTableConsumption, PublicTableResponse } from "@/types/api";
@@ -140,6 +141,7 @@ export function TableOrders({ token, table }: { token: string; table: PublicTabl
     {notice && !ended && !closing ? <Notice role="status">{notice}</Notice> : null}
     {!data && !error ? <Meta role="status">Carregando pedidos da mesa…</Meta> : null}
     {closing ? <Notice role="status">Fechamento solicitado. Aguarde a equipe para conferir a conta e realizar o pagamento.</Notice> : null}
+    {table.isOwner && table.shareCode && data?.session && !ended ? <TableShare token={token} table={table} /> : null}
     {data?.session ? <Total aria-label="Total do consumo">{data.totals ? <><Row><span>Consumo</span><strong>{money(data.totals.consumptionCents)}</strong></Row><Row><span>Taxa de serviço ({(data.totals.serviceFeeBasisPoints / 100).toLocaleString("pt-BR")}%)</span><strong>{money(data.totals.serviceFeeCents)}</strong></Row></> : null}<Row><span>Total da comanda</span><strong>{money(total)}</strong></Row><p>Pagamento com a equipe do restaurante.</p></Total> : null}
     <Actions aria-label="Atendimento e fechamento">
       <HoldToCallButton disabled={sending || !data || ended || !!servicePending || sentService} called={!!servicePending || sentService} onConfirm={() => void request("SERVICE")} />

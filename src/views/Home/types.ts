@@ -1,7 +1,8 @@
 import type { MenuResponse, RestaurantConfigResponse } from "@/types/api";
+import type { PublicTableResponse } from "@/types/api";
 
 export type CustomerMenuProps = {
-  table?: { number: string; token: string; kind?: "TABLE" | "COMMAND" };
+  table?: PublicTableResponse & { token: string };
   restaurantConfig: RestaurantConfigResponse | null;
   menu: MenuResponse;
 };

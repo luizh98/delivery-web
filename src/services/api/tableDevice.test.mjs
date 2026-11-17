@@ -7,12 +7,12 @@ import ts from "typescript";
 
 const require = createRequire(import.meta.url);
 function load(url, dependencies, globals = {}) {
-  const module = { exports: {} };
+  const loaded = { exports: {} };
   runInNewContext(ts.transpileModule(readFileSync(url, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
-    module, exports: module.exports, process, Headers, URL, Response, AbortSignal,
+    module: loaded, exports: loaded.exports, process, Headers, URL, Response, AbortSignal,
     require: name => name in dependencies ? dependencies[name] : require(name), ...globals,
   });
-  return module.exports;
+  return loaded.exports;
 }
 const device = load(new URL("./tableDevice.ts", import.meta.url), {});
 test("device tokens persist only valid 256-bit browser identifiers", () => {
