@@ -22,7 +22,7 @@ import { tableServiceLabels } from "@/utils/tableService";
 import { tableLabel } from "@/utils/tableIdentity";
 import { tableDeliveryNotice, tableDeliveryPending, tableElapsed, tableGuests, tableState, tableStatus } from "./presentation";
 import { AdminShell } from "@/layouts/AdminLayout/AdminShell";
-import { AccountPanel, AccountTotal, Actions, Badge, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
+import { AccountPanel, AccountTotal, Actions, Badge, DeliveryWarning, Dialog, Empty, ErrorBox, Header, Heading, ItemRow, MobileBar, MobileSwitch, Muted, Panel, Price, ProductButton, ProductList, Root, Row, Stack, Summary, TableButton, TableGrid, Tabs, Title, Workbench } from "./styles";
 
 type Draft = { items: DraftItem[]; sessionId: string; notes: string };
 const emptyDraft = (sessionId = ""): Draft => ({ items: [], sessionId, notes: "" });
@@ -272,7 +272,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
           {isClosing ? !hasPayments && <Button variant="outline" disabled={!canEdit || !!consumptionError} onClick={() => void tableAction("reopen", "Comanda reaberta.")}>Reabrir comanda</Button> : !consumption?.canCheckout ? <Button disabled={!canEdit || !consumption?.session || !!consumptionError || deliveryPending} aria-describedby={deliveryPending ? "staff-pending-delivery" : undefined} onClick={() => void requestBill()}><ReceiptText size={18} aria-hidden="true" />Pedir fechamento</Button> : null}
           {consumption?.canCheckout && consumption.session ? <Button disabled={!canEdit || !!consumptionError} onClick={async () => { if (await confirmLeave()) router.push(`/hall?${new URLSearchParams({ table: selectedId, view: "checkout", session: consumption.session!.id })}`); }}><ReceiptText size={18} />Fechar conta</Button> : null}
         </Actions>
-        {consumption?.session && deliveryPending ? <Muted id="staff-pending-delivery" role="status">{tableDeliveryNotice}</Muted> : null}
+        {consumption?.session && deliveryPending ? <DeliveryWarning id="staff-pending-delivery" role="status" aria-labelledby="staff-pending-delivery-title"><Heading id="staff-pending-delivery-title"><CircleAlert size={24} aria-hidden="true" />Itens ainda não entregues</Heading><Muted>{tableDeliveryNotice}</Muted></DeliveryWarning> : null}
       </AccountPanel>
       {selected.requests?.map((request) => <Panel key={request.id} className={request.status === "PENDING" ? "table-service-pending" : undefined}><Row><div><Heading><BellRing size={18} aria-hidden="true" /> {requestLabel[request.type]}</Heading><Muted>{request.status === "ASSIGNED" ? request.assignedBy === admin.id ? "Em atendimento por você" : "Em atendimento por outro funcionário" : "Aguardando atendimento"}</Muted></div><Actions>
         {request.status === "PENDING" ? <Button variant="outline" disabled={busy} onClick={() => void tableAction(`requests/${request.id}/claim`, "Atendimento assumido.")}><Check size={16} />Assumir</Button> : null}

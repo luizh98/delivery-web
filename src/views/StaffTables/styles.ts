@@ -64,3 +64,11 @@ export const GuestCountControls = styled("div", {
 });
 export const OptionSet = styled("fieldset", { display: "grid", gap: "0.5rem", "& legend": { fontWeight: 600, marginBottom: "0.5rem" } });
 export const Option = styled("label", { display: "flex", gap: "0.75rem", alignItems: "center", minHeight: "2.75rem", "& input": { width: "1.125rem", height: "1.125rem", accentColor: "var(--color-primary-text)" } });
+
+export const DeliveryWarning = styled("div", {
+  display: "grid", gap: "0.5rem", padding: "1rem 1.25rem", borderRadius: "0.75rem",
+  border: "1px solid #fcd34d", background: "#fffbeb", color: "#78350f",
+  "& h2": { display: "flex", alignItems: "flex-start", gap: "0.625rem", fontSize: "1.125rem", fontWeight: 700, lineHeight: 1.4 },
+  "& svg": { flexShrink: 0, marginTop: "0.125rem" },
+  "& p": { color: "inherit", fontWeight: 500, lineHeight: 1.6 },
+});
