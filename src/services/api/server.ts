@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { ADMIN_TOKEN_COOKIE, backendBaseUrl } from "@/constants/api";
 import { restaurantConfigCacheTag } from "@/services/api/cache";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
+import { TABLE_DEVICE_COOKIE } from "@/services/api/tableDevice";
 import type {
   AdminCustomerPage,
   AdminUserResponse,
@@ -44,6 +45,10 @@ async function backendFetch<T>(path: string, init?: RequestInit) {
 
   requestHeaders.set("X-Tenant-Slug", tenantSlug);
   requestHeaders.set("Accept", "application/json");
+  if (path.startsWith("public/tables/")) {
+    const device = cookieStore.get(TABLE_DEVICE_COOKIE)?.value;
+    if (device) requestHeaders.set("X-Table-Client-Token", device);
+  }
 
   if (token) {
     requestHeaders.set("Authorization", `Bearer ${token}`);

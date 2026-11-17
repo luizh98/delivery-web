@@ -9,6 +9,7 @@ import {
 } from "@/constants/api";
 import { resolveTenantFromHeaders } from "@/utils/tenant";
 import { restaurantConfigCacheTag } from "@/services/api/cache";
+import { TABLE_DEVICE_COOKIE, tableDeviceCookieOptions, tableDeviceToken, usesTableDevice } from "@/services/api/tableDevice";
 
 type RouteParams = {
   params: Promise<{
@@ -33,6 +34,9 @@ async function forward(request: NextRequest, context: RouteParams) {
   targetUrl.search = requestUrl.search;
 
   const headers = new Headers();
+  const tableDevice = usesTableDevice(path, request.method)
+    ? tableDeviceToken(request.cookies.get(TABLE_DEVICE_COOKIE)?.value) : undefined;
+  if (tableDevice) headers.set("X-Table-Client-Token", tableDevice);
   const contentType = request.headers.get("content-type");
   const accept = request.headers.get("accept");
   const adminRoute = path[0] === "admin" || (path[0] === "auth" && path[1] === "me");
@@ -126,7 +130,7 @@ async function forward(request: NextRequest, context: RouteParams) {
       }
     }
   } catch {
-    return NextResponse.json(
+    const unavailable = NextResponse.json(
       {
         error: "BACKEND_UNAVAILABLE",
         message: "Backend temporarily unavailable. Try again shortly.",
@@ -139,6 +143,8 @@ async function forward(request: NextRequest, context: RouteParams) {
         },
       },
     );
+    if (tableDevice) unavailable.cookies.set(TABLE_DEVICE_COOKIE, tableDevice, tableDeviceCookieOptions);
+    return unavailable;
   }
 
   if (
@@ -152,6 +158,7 @@ async function forward(request: NextRequest, context: RouteParams) {
   }
 
   const responseHeaders = new Headers();
+  if (tableDevice) responseHeaders.set("Cache-Control", "no-store");
   const responseType = response.headers.get("content-type");
   if (responseType) {
     responseHeaders.set("Content-Type", responseType);
@@ -165,6 +172,7 @@ async function forward(request: NextRequest, context: RouteParams) {
     status: response.status,
     headers: responseHeaders,
   });
+  if (tableDevice) nextResponse.cookies.set(TABLE_DEVICE_COOKIE, tableDevice, tableDeviceCookieOptions);
   if (persistentSessionToken) {
     if (refreshedAccessToken) {
       nextResponse.cookies.set({
