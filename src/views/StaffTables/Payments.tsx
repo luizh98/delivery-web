@@ -11,12 +11,12 @@ import { ApiError, clientApi } from "@/services/api/client";
 import type { StaffTableConsumption, TablePayment } from "@/types/api";
 import { money } from "@/utils/format";
 import { staffApiMessage } from "./draft";
-import { paymentLines, paymentMethodLabels, paymentQuote } from "./paymentCalculation";
+import { paymentAmountCents, paymentLines, paymentMethodLabels, paymentQuote } from "./paymentCalculation";
 import { tableDeliveryNotice, tableDeliveryPending } from "./presentation";
 import { ErrorBox, Heading, ItemRow, Muted, Price, Row } from "./styles";
 import { CheckoutNotice, PaymentAmount, PaymentDetails, PaymentHistory, PaymentLine, PaymentQuantity, PaymentSelection, PaymentWorkspace } from "./checkoutStyles";
 
-type Values = { mode: "ITEMS" | "EQUAL"; splitCount: number; method: TablePayment["method"]; person: string; quantities: Record<string, number> };
+type Values = { mode: TablePayment["mode"]; amount: string; splitCount: number; method: TablePayment["method"]; person: string; quantities: Record<string, number> };
 type Pending = { path: "payments" | "settle"; body: string };
 const emptyPayments: TablePayment[] = [];
 
@@ -25,12 +25,12 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
   const { requestConfirmation } = useConfirmation();
   const session = consumption.session!;
   const payments = session.payments ?? emptyPayments;
-  const form = useForm<Values>({ defaultValues: { mode: payments[0]?.mode ?? "ITEMS", splitCount: payments[0]?.splitCount || session.guestCount || 1, method: "CREDIT_CARD", person: "", quantities: Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0])) } });
+  const form = useForm<Values>({ defaultValues: { mode: payments[0]?.mode ?? "AMOUNT", amount: "", splitCount: payments[0]?.splitCount || session.guestCount || 1, method: "CREDIT_CARD", person: "", quantities: Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0])) } });
   const values = useWatch({ control: form.control });
-  const mode = payments[0]?.mode ?? values.mode ?? "ITEMS";
+  const mode = payments[0]?.mode ?? values.mode ?? "AMOUNT";
   const splitCount = payments[0]?.splitCount || Number(values.splitCount);
   const quantities = Object.fromEntries(paymentLines(consumption).map((line, index) => [`${line.orderId}:${line.itemIndex}`, Number(values.quantities?.[index] ?? 0)]));
-  const quote = paymentQuote(consumption, mode, splitCount, quantities);
+  const quote = paymentQuote(consumption, mode, splitCount, quantities, paymentAmountCents(values.amount ?? ""));
   const [pending, setPending] = useState<Pending | null>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,7 +63,7 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
     if (payments.some((payment) => payment.id === id)) {
       queueMicrotask(() => {
         sessionStorage.removeItem(storageKey); setPending(null); setError("");
-        form.setValue("quantities", Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0]))); form.resetField("person", { defaultValue: "" });
+        form.setValue("quantities", Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0]))); form.resetField("person", { defaultValue: "" }); form.resetField("amount", { defaultValue: "" });
       });
     }
   }, [payments, pending, storageKey, form, consumption]);
@@ -82,7 +82,7 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
     try {
       await clientApi(`admin/table-operations/${tableId}/${request.path}`, { method: "POST", body: request.body });
       sessionStorage.removeItem(storageKey); setPending(null);
-      form.setValue("quantities", Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0]))); form.resetField("person", { defaultValue: "" });
+      form.setValue("quantities", Object.fromEntries(paymentLines(consumption).map((_, index) => [index, 0]))); form.resetField("person", { defaultValue: "" }); form.resetField("amount", { defaultValue: "" });
       if (request.path === "settle") { settled = true; onSettled(); }
       else showToast("Recebimento registrado. Confira o saldo restante.");
     } catch (cause) {
@@ -109,10 +109,10 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
     {pending ? <CheckoutNotice role="status"><Heading>Confira o recebimento pendente</Heading><Muted>Esta operação ainda não foi confirmada. Confira antes de registrar outro pagamento.</Muted><Button disabled={saving || !consumption.canCheckout} onClick={() => void send(pending)}>{saving ? "Conferindo…" : pending.path === "payments" ? "Conferir recebimento" : "Conferir encerramento"}</Button></CheckoutNotice> : null}
     {!consumption.canCheckout ? <Muted>Recebimento pelo garçom não está liberado. Solicite o fechamento ao caixa.</Muted> : balance > 0 || !payments.length && (consumption.totals?.totalCents ?? 0) > 0 ? <form onSubmit={(event) => void form.handleSubmit(receive)(event)}>
       <PaymentSelection aria-label="Divisão do pagamento">
-        <div><Heading>Dividir pagamento</Heading><Muted>Escolha os itens desta pessoa ou divida o total igualmente.</Muted></div>
-        <Field label="Como dividir a conta"><Select disabled={locked || payments.length > 0} {...form.register("mode")}><option value="ITEMS">Selecionar itens por pessoa</option><option value="EQUAL">Dividir igualmente por pessoas</option></Select></Field>
+        <div><Heading>Dividir pagamento</Heading><Muted>Informe o valor que esta pessoa paga, selecione itens ou divida igualmente.</Muted></div>
+        <Field label="Como dividir a conta"><Select disabled={locked || payments.length > 0} {...form.register("mode")}><option value="AMOUNT">Informar valor</option><option value="ITEMS">Selecionar itens por pessoa</option><option value="EQUAL">Dividir igualmente por pessoas</option></Select></Field>
         {mode === "EQUAL" ? <><Field label="Dividir entre quantas pessoas?" error={form.formState.errors.splitCount?.message}><Input type="number" inputMode="numeric" min={1} max={999} step={1} disabled={locked || payments.length > 0} {...form.register("splitCount", { valueAsNumber: true, validate: (value) => Number.isInteger(value) && value >= 1 && value <= 999 || "Informe entre 1 e 999 pessoas." })} /></Field><Muted>Parte {payments.length + 1} de {splitCount || "…"}. Centavos são distribuídos entre as partes. Use 1 para receber o total.</Muted></> :
-        <div aria-label="Selecionar itens para pagamento">{paymentLines(consumption).map((line, index) => {
+        mode === "AMOUNT" ? <Muted>Receba valores diferentes de cada pessoa até quitar o saldo. O valor informado já inclui a parte da taxa de serviço.</Muted> : <div aria-label="Selecionar itens para pagamento">{paymentLines(consumption).map((line, index) => {
           if (!line.remaining) return null;
           const quantity = Number(values.quantities?.[index] ?? 0);
           const remainingCents = line.item.totalCents - Math.floor(line.item.totalCents * line.paid / line.item.quantity);
@@ -128,18 +128,23 @@ export function Payments({ tableId, consumption, disabled, onSaved, onSettled, o
             </PaymentQuantity>
           </PaymentLine>;
         })}</div>}
-        {payments.length ? <Muted>Divisão mantida conforme o primeiro recebimento. Itens quitados aparecem no histórico abaixo.</Muted> : null}
+        {payments.length ? <Muted>Critério mantido conforme o primeiro recebimento. Confira os pagamentos no histórico abaixo.</Muted> : null}
       </PaymentSelection>
       <PaymentDetails aria-label="Pagamento desta pessoa">
         <Heading>Receber desta pessoa</Heading>
+        {mode === "AMOUNT" ? <Field label="Valor a receber (R$)" error={form.formState.errors.amount?.message}><Input type="text" inputMode="decimal" autoComplete="off" placeholder="0,00" maxLength={20} disabled={locked} aria-label="Valor a receber (R$)" aria-invalid={!!form.formState.errors.amount} aria-describedby="payment-amount-hint" {...form.register("amount", { validate: (value) => {
+          const cents = paymentAmountCents(value);
+          if (!Number.isSafeInteger(cents) || cents <= 0) return "Informe um valor maior que zero, com até duas casas decimais.";
+          return cents <= balance || `Informe até ${money(balance)}, o saldo restante.`;
+        } })} /><Muted id="payment-amount-hint">Use vírgula ou ponto para os centavos. Saldo disponível: {money(balance)}.</Muted></Field> : null}
         <Field label="Pessoa (opcional)"><Input maxLength={100} placeholder={`Pessoa ${payments.length + 1}`} disabled={locked} {...form.register("person")} /></Field>
         <Field label="Forma de pagamento"><Select disabled={locked} {...form.register("method")}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
         <PaymentAmount aria-live="polite">
-          <Row><Muted>Consumo selecionado</Muted><Price>{money(quote.consumptionCents)}</Price></Row>
+          <Row><Muted>{mode === "AMOUNT" ? "Consumo desta parte" : "Consumo selecionado"}</Muted><Price>{money(quote.consumptionCents)}</Price></Row>
           <Row><Muted>Serviço desta parte</Muted><Price>{money(quote.serviceFeeCents)}</Price></Row>
           <Row><span>Receber agora</span><Price>{money(quote.amountCents)}</Price></Row>
         </PaymentAmount>
-        <Button type="submit" disabled={locked || !quote.valid}><Wallet size={18} />{saving ? "Registrando…" : `Receber ${money(quote.amountCents)}`}</Button>
+        <Button type="submit" disabled={locked || mode !== "AMOUNT" && !quote.valid}><Wallet size={18} />{saving ? "Registrando…" : `Receber ${money(quote.amountCents)}`}</Button>
         <Muted>{mode === "ITEMS" && !quote.items.length ? "Selecione as quantidades que esta pessoa vai pagar." : "Confirme a baixa somente depois de conferir o pagamento presencial."}</Muted>
       </PaymentDetails>
     </form> : null}

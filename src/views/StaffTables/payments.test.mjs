@@ -1,6 +1,33 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { paymentLines, paymentQuote } from "./paymentCalculation.ts";
+import { paymentAmountCents, paymentLines, paymentQuote } from "./paymentCalculation.ts";
+
+test("free money input accepts decimal comma, point and Brazilian grouping without rounding", () => {
+  for (const [input, expected] of [["12", 1200], ["12,3", 1230], ["12.34", 1234], [" 12,34 ", 1234], ["0,01", 1], ["1.234,56", 123456], ["1.234", 123400]]) {
+    assert.equal(paymentAmountCents(input), expected, input);
+  }
+  for (const input of ["", " ", "-1", "12,345", "1e3", "R$ 10", "1,2,3", "12abc", "99999999999999999999"]) assert.ok(Number.isNaN(paymentAmountCents(input)), input);
+});
+
+test("custom amounts preserve fee cents, remaining balance and division lock", () => {
+  const value = account();
+  for (const amount of [1, 1250, 3000, 2351]) {
+    const quote = paymentQuote(value, "AMOUNT", 0, {}, amount);
+    assert.equal(quote.valid, true);
+    assert.equal(quote.amountCents, amount);
+    assert.deepEqual(quote.items, []);
+    value.session.payments.push({ ...quote, mode: "AMOUNT", splitCount: 0 });
+    assert.equal(paymentQuote(value, "EQUAL", 2, {}).valid, false);
+    assert.equal(paymentQuote(value, "ITEMS", 0, { "food:0": 1 }).valid, false);
+  }
+  assert.equal(value.session.payments.reduce((sum, p) => sum + p.serviceFeeCents, 0), 600);
+  assert.equal(value.session.payments.reduce((sum, p) => sum + p.consumptionCents, 0), 6002);
+  assert.equal(paymentQuote(value, "AMOUNT", 0, {}, 1).valid, false);
+  for (const amount of [0, -1, NaN, Infinity, 1.5, 6603]) assert.equal(paymentQuote(account(), "AMOUNT", 0, {}, amount).valid, false);
+  const existing = account();
+  existing.session.payments.push({ mode: "ITEMS", splitCount: 0, amountCents: 1000 });
+  assert.equal(paymentQuote(existing, "AMOUNT", 0, {}, 100).valid, false);
+});
 
 const account = () => ({
   session: { id: "visit", status: "CLOSING", payments: [] },

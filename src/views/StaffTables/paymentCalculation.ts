@@ -1,4 +1,13 @@
-import type { StaffTableConsumption, TablePaymentItem } from "@/types/api";
+import type { StaffTableConsumption, TablePayment, TablePaymentItem } from "@/types/api";
+
+export function paymentAmountCents(input: string) {
+  const value = input.trim();
+  if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(value) && !/^\d+\.\d{1,2}$/.test(value)) return NaN;
+  const normalized = value.includes(",") || /^\d{1,3}(?:\.\d{3})+$/.test(value) ? value.replaceAll(".", "").replace(",", ".") : value;
+  const [reais, cents = ""] = normalized.split(".");
+  const amount = Number(reais) * 100 + Number(cents.padEnd(2, "0"));
+  return Number.isSafeInteger(amount) ? amount : NaN;
+}
 
 export function paymentLines(consumption: StaffTableConsumption) {
   const payments = consumption.session?.payments ?? [];
@@ -8,7 +17,7 @@ export function paymentLines(consumption: StaffTableConsumption) {
   }));
 }
 
-export function paymentQuote(consumption: StaffTableConsumption, mode: "ITEMS" | "EQUAL", splitCount: number, selections: Record<string, number>) {
+export function paymentQuote(consumption: StaffTableConsumption, mode: TablePayment["mode"], splitCount: number, selections: Record<string, number>, customAmountCents = 0) {
   const payments = consumption.session?.payments ?? [];
   const total = consumption.totals?.totalCents ?? 0;
   const paidCents = payments.reduce((sum, payment) => sum + payment.amountCents, 0);
@@ -18,6 +27,13 @@ export function paymentQuote(consumption: StaffTableConsumption, mode: "ITEMS" |
   let serviceFeeCents = 0;
   let valid = !!consumption.totals && balanceCents >= 0 && payments.length < 999;
   if (payments.length && (payments[0].mode !== mode || payments[0].splitCount !== (mode === "EQUAL" ? splitCount : 0))) valid = false;
+  if (mode === "AMOUNT") {
+    valid &&= Number.isSafeInteger(customAmountCents) && customAmountCents > 0 && customAmountCents <= balanceCents;
+    const amountCents = valid ? customAmountCents : 0;
+    const previousFee = payments.reduce((sum, payment) => sum + payment.serviceFeeCents, 0);
+    serviceFeeCents = total > 0 ? Math.floor((paidCents + amountCents) * (consumption.totals?.serviceFeeCents ?? 0) / total) - previousFee : 0;
+    return { valid, amountCents, serviceFeeCents, consumptionCents: amountCents - serviceFeeCents, items, paidCents, balanceCents };
+  }
   if (mode === "EQUAL") {
     valid &&= Number.isInteger(splitCount) && splitCount >= 1 && splitCount <= 999 && payments.length < splitCount && (total === 0 || splitCount <= total);
     const amountCents = valid ? Math.floor(total / splitCount) + (payments.length < total % splitCount ? 1 : 0) : 0;

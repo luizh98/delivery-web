@@ -24,6 +24,7 @@ export const PaymentSelection = styled("section", { display: "grid", gap: "1rem"
 export const PaymentDetails = styled("section", {
   display: "grid", gap: "1rem", minWidth: 0, paddingTop: "1.25rem", borderTop: "1px solid var(--color-border)",
   "@lg": { position: "sticky", top: "5rem", paddingTop: 0, borderTop: "none" },
+  "& input[inputmode='decimal']": { fontSize: "1rem", fontVariantNumeric: "tabular-nums" },
 });
 export const PaymentLine = styled("div", {
   display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: "0.75rem", alignItems: "center", padding: "1rem 0", borderBottom: "1px solid var(--color-border)",

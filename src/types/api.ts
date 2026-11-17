@@ -283,7 +283,7 @@ export type StaffTable = {
 };
 export type TableConsumptionTotals = { consumptionCents: number; serviceFeeBasisPoints: number; serviceFeeCents: number; totalCents: number };
 export type TablePaymentItem = { orderId: string; itemIndex: number; quantity: number; name?: string; consumptionCents?: number };
-export type TablePayment = { id: string; mode: "ITEMS" | "EQUAL"; splitCount: number; person: string; method: "PIX" | "CASH" | "CREDIT_CARD" | "DEBIT_CARD"; items?: TablePaymentItem[]; consumptionCents: number; serviceFeeCents: number; amountCents: number; receivedAt: string; receivedBy: string };
+export type TablePayment = { id: string; mode: "ITEMS" | "EQUAL" | "AMOUNT"; splitCount: number; person: string; method: "PIX" | "CASH" | "CREDIT_CARD" | "DEBIT_CARD"; items?: TablePaymentItem[]; consumptionCents: number; serviceFeeCents: number; amountCents: number; receivedAt: string; receivedBy: string };
 export type StaffTableConsumption = { session: StaffTable["session"]; orders: StaffTableOrder[]; totals?: TableConsumptionTotals; canCheckout?: boolean; paidCents?: number };
 
 export type MotoboyResponse = {
