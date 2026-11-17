@@ -76,6 +76,7 @@ export type RestaurantConfigResponse = {
   minimumOrderCents?: number;
   serviceFeeBasisPoints?: number;
   waiterCheckoutEnabled?: boolean;
+  tableOrderLockEnabled?: boolean;
   whatsapp?: string;
   address?: Address;
   theme?: Theme;

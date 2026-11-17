@@ -64,6 +64,16 @@ test("waiter checkout defaults disabled and restores the saved permission", () =
   assert.match(on, /garçom receba e feche mesas e comandas/);
 });
 
+test("table order lock defaults off and explains responsibility, sharing and existing visits", () => {
+  const off = renderSettings();
+  assert.equal(formDefaults.at(-1).tableOrderLockEnabled, false);
+  assert.match(off, /name="tableOrderLockEnabled"/);
+  const on = renderSettings({ tableOrderLockEnabled: true });
+  assert.equal(formDefaults.at(-1).tableOrderLockEnabled, true);
+  for (const text of ["Bloquear mesa/comanda após o pedido do cliente", "primeiro cliente", "naquele navegador", "código", "contas já abertas não mudam", "liberado imediatamente"]) assert.ok(on.includes(text), text);
+  assert.match(on, /aria-describedby="table-order-lock-help"/);
+});
+
 test("WhatsApp configuration stays inside orders and never renders a saved token", () => {
   const html = renderSettings({ whatsappIntegration: { phoneNumberId: "123456789", apiVersion: "v25.0", language: "pt_BR", tokenConfigured: true, templates: { production: "pedido_producao", delivery: "pedido_entrega", completed: "pedido_concluido" }, accessToken: "must-never-render" } });
   const section = html.slice(html.indexOf('<details id="orders"'), html.indexOf('<details id="delivery"'));

@@ -83,6 +83,7 @@ const settingsBaseSchema = z.object({
   minimumOrderReais: z.number().min(0, "Pedido mínimo não pode ser negativo."),
   serviceFeePercent: z.number().min(0, "Taxa deve estar entre 0 e 100%.").max(100, "Taxa deve estar entre 0 e 100%."),
   waiterCheckoutEnabled: z.boolean(),
+  tableOrderLockEnabled: z.boolean(),
   automaticOrderConfirmation: z.boolean(),
   whatsappNotificationsEnabled: z.boolean(),
   whatsappPhoneNumberId: z.string(),
@@ -309,6 +310,7 @@ export function SettingsForm({
       minimumOrderReais: centsToReais(initialConfig?.minimumOrderCents ?? 0),
       serviceFeePercent: (initialConfig?.serviceFeeBasisPoints ?? 0) / 100,
       waiterCheckoutEnabled: initialConfig?.waiterCheckoutEnabled ?? false,
+      tableOrderLockEnabled: initialConfig?.tableOrderLockEnabled ?? false,
       automaticOrderConfirmation: initialConfig?.automaticOrderConfirmation ?? false,
       whatsappNotificationsEnabled: initialConfig?.whatsappNotificationsEnabled ?? false,
       whatsappPhoneNumberId: initialConfig?.whatsappIntegration?.phoneNumberId ?? "",
@@ -507,6 +509,7 @@ export function SettingsForm({
         ...(dirty.minimumOrderReais ? { minimumOrderCents: reaisToCents(values.minimumOrderReais) } : {}),
         ...(dirty.serviceFeePercent ? { serviceFeeBasisPoints: Math.round(values.serviceFeePercent * 100) } : {}),
         ...(dirty.waiterCheckoutEnabled ? { waiterCheckoutEnabled: values.waiterCheckoutEnabled } : {}),
+        ...(dirty.tableOrderLockEnabled ? { tableOrderLockEnabled: values.tableOrderLockEnabled } : {}),
         ...(dirty.automaticOrderConfirmation ? { automaticOrderConfirmation: values.automaticOrderConfirmation } : {}),
         ...(dirty.whatsappNotificationsEnabled ? { whatsappNotificationsEnabled: values.whatsappNotificationsEnabled } : {}),
         ...(whatsappChanged ? { whatsappIntegration: {
@@ -832,6 +835,9 @@ export function SettingsForm({
             />
           </Field>
           <SettingsGroup aria-labelledby="service-fee-title">
+            <SectionTitle as="h3">Acesso à mesa/comanda pelo QR Code</SectionTitle>
+            <StatusToggle><input type="checkbox" aria-describedby="table-order-lock-help" {...form.register("tableOrderLockEnabled")} /><span>Bloquear mesa/comanda após o pedido do cliente</span></StatusToggle>
+            <Muted id="table-order-lock-help">Em novas aberturas, o primeiro cliente que faz um pedido pelo QR Code se torna responsável naquele navegador. Outras pessoas precisam do código que ele compartilha pela Comanda para pedir e consultar o consumo. Isso evita pedidos de pessoas de fora do grupo. O código muda a cada nova abertura; contas já abertas não mudam ao ativar. Garçom e administrador continuam operando pelo painel. Ao desativar, o acesso pelo QR Code é liberado imediatamente.</Muted>
             <SectionTitle as="h3">Fechamento pelo garçom</SectionTitle>
             <StatusToggle><input type="checkbox" {...form.register("waiterCheckoutEnabled")} /><span>Permitir que o garçom receba e feche mesas e comandas</span></StatusToggle>
             <Muted>Desativado: o garçom solicita o fechamento ao caixa. Ativado: pode registrar pagamentos presenciais por pessoa e encerrar a conta quitada. O administrador mantém acesso ao fechamento.</Muted>
