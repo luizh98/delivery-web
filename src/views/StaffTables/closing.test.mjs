@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts";
 import * as presentation from "./presentation.ts";
+import { formatBrazilianPhoneInput } from "../../utils/customerInput.ts";
 
 // Execute the component's real event handlers with a closing visit and a retained draft.
 function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, canCheckout = isAdmin, totals, orders = [], askingPhone = false, dialogValues = {}, kind = "TABLE", physicalTableId } = {}) {
@@ -36,17 +37,20 @@ function renderClosing({ pending = null, status = "CLOSING", isAdmin = false, ca
         useRef: (current) => ({ current: refIndex++ === 2 && pending ? pending : current }), useEffect() {}, useCallback: (fn) => fn,
       };
       if (name === "next/navigation") return { useRouter: () => ({ push() {} }) };
-      if (name === "react-hook-form") return { useWatch: ({ name }) => dialogValues[name] ?? "", useForm: () => ({
+      if (name === "react-hook-form") return { useWatch: ({ name }) => dialogValues[name] ?? "", useForm: ({ defaultValues }) => {
+        Object.assign(dialogValues, { ...defaultValues, ...dialogValues });
+        return ({
         formState: { errors: {} },
         setValue(name, value) { dialogValues[name] = value; },
         register(name, options) { fields[name] = options; return { name }; },
         handleSubmit: (submit) => () => submit(dialogValues),
-      }) };
+      }); } };
       if (name === "@/components/ToastProvider") return { useToast: () => ({ showToast: (message, variant) => notifications.push({ message, variant }) }) };
       if (name === "@/components/ConfirmationProvider") return { useConfirmation: () => ({ requestConfirmation: async () => true }) };
       if (name === "@/services/api/client") return { ApiError: class extends Error {}, clientApi: (...args) => { requests.push(args); return Promise.resolve({}); } };
       if (name === "@/utils/format") return { money: (cents) => String(cents), statusLabel: (status) => status };
       if (name === "@/utils/productPricing") return { productSalePrice: (item) => item.priceCents };
+      if (name === "@/utils/customerInput") return { formatBrazilianPhoneInput };
       if (name === "./draft") return { draftItemTotal, normalizeTablePhone, staffApiMessage };
       if (name === "./presentation") return presentation;
       if (name === "@/utils/tableService") return { tableServiceLabels: {} };
@@ -106,6 +110,32 @@ test("existing visit contact does not ask for or overwrite people", async () => 
   const post = view.requests.find(([, init]) => init?.method === "POST");
   assert.ok(post);
   assert.ok(!Object.hasOwn(JSON.parse(post[1].body), "guestCount"));
+});
+
+test("table and command opening default to one guest and accept a landline", async () => {
+  for (const kind of ["TABLE", "COMMAND"]) {
+    const view = renderClosing({ status: null, kind, askingPhone: true, dialogValues: { phone: "(11) 3333-4444", physicalTableId: "physical" } });
+    const nodes = view.renderDialog();
+    assert.equal(nodes.find(node => node.props?.label === "Total de pessoas").props.value, "1");
+    await nodes.find(node => node.type === "form").props.onSubmit();
+    const body = JSON.parse(view.requests.find(([, init]) => init?.method === "POST")[1].body);
+    assert.equal(body.guestCount, 1);
+    assert.equal(body.customerPhone, "1133334444");
+  }
+});
+
+test("contact input masks landlines and mobiles while keeping normalized submission", async () => {
+  for (const [raw, masked] of [["1133334444", "(11) 3333-4444"], ["11999999999", "(11) 99999-9999"]]) {
+    const values = { phone: raw };
+    const view = renderClosing({ status: null, askingPhone: true, dialogValues: values });
+    const nodes = view.renderDialog();
+    const target = { value: raw };
+    nodes.find(node => node.type === "Input" && node.props.name === "phone").props.onInput({ currentTarget: target });
+    assert.equal(target.value, masked);
+    values.phone = target.value;
+    await nodes.find(node => node.type === "form").props.onSubmit();
+    assert.equal(JSON.parse(view.requests.find(([, init]) => init?.method === "POST")[1].body).customerPhone, raw);
+  }
 });
 
 test("canceling opening keeps draft and sends nothing", () => {

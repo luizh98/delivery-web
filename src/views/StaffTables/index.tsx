@@ -11,6 +11,7 @@ import { ApiError, clientApi } from "@/services/api/client";
 import type { CurrentUserResponse, MenuResponse, Product, StaffTable, StaffTableConsumption, StaffTableOrder } from "@/types/api";
 import { money, statusLabel } from "@/utils/format";
 import { productSalePrice } from "@/utils/productPricing";
+import { formatBrazilianPhoneInput } from "@/utils/customerInput";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
 import { BillPrintButton } from "./BillPrintButton";
@@ -32,7 +33,7 @@ const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u0
 
 function PhoneDialog({ opening, onConfirm, onClose, physicalTables = [], needsTable = false, initialPhone = "", accountLabel = "" }: { opening: boolean; onConfirm: (phone: string, guestCount?: number, physicalTableId?: string) => void; onClose: () => void; physicalTables?: StaffTable[]; needsTable?: boolean; initialPhone?: string; accountLabel?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const form = useForm({ defaultValues: { phone: initialPhone, guestCount: needsTable ? "1" : "", physicalTableId: "" } });
+  const form = useForm({ defaultValues: { phone: formatBrazilianPhoneInput(initialPhone), guestCount: "1", physicalTableId: "" } });
   const guestCount = useWatch({ control: form.control, name: "guestCount" });
   useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
   return <Dialog ref={dialog} onCancel={onClose} aria-labelledby="phone-title">
@@ -41,7 +42,7 @@ function PhoneDialog({ opening, onConfirm, onClose, physicalTables = [], needsTa
       <Muted>{accountLabel}</Muted>
       {needsTable ? <Field label="Mesa da comanda" error={form.formState.errors.physicalTableId?.message}><Select autoFocus {...form.register("physicalTableId", { required: "Selecione a mesa desta comanda." })}><option value="">Selecione a mesa</option>{physicalTables.map((table) => <option key={table.id} value={table.id}>Mesa {table.number}</option>)}</Select></Field> : null}
       <Muted>Informe telefone ou celular da pessoa responsável pela conta para contato, caso ela saia.</Muted>
-      <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
+      <Field label="Telefone ou celular com DDD" error={form.formState.errors.phone?.message}><Input type="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25} autoFocus onInput={(event) => { event.currentTarget.value = formatBrazilianPhoneInput(event.currentTarget.value); }} {...form.register("phone", { validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
       {opening ? <GuestCountField label="Total de pessoas" value={guestCount} onChange={(value) => form.setValue("guestCount", value, { shouldDirty: true, shouldValidate: true })} error={form.formState.errors.guestCount?.message} registration={form.register("guestCount", { validate: (value) => (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999) || "Informe um número inteiro entre 1 e 999." })} /> : null}
       <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar</Button><Button type="submit"><Send size={18} />{opening ? "Abrir conta e enviar" : "Salvar contato e enviar"}</Button></Actions>
     </form>
