@@ -272,7 +272,7 @@ export type OrderResponse = {
   tableSessionId?: string;
 };
 
-export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations"> & { customerPhone?: string; physicalTableNumber?: string; waiterName?: string };
+export type StaffTableOrder = Pick<OrderResponse, "id" | "orderNumber" | "status" | "items" | "totals" | "notes" | "createdAt" | "updatedAt" | "cancellation" | "tableItemCancellations"> & { customerName?: string; customerPhone?: string; physicalTableNumber?: string; waiterName?: string };
 export type StaffTable = {
 	 kind?: "TABLE" | "COMMAND";
   id: string;

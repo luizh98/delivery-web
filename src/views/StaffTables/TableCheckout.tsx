@@ -87,8 +87,8 @@ export function TableCheckout({ table, admin, restaurantName, storeOpen = true, 
     if (deliveryPending && path !== "reopen") { showToast(tableDeliveryNotice, "warning"); return; }
     actionPending.current = true; setBusy(true);
     try {
-      const result = await clientApi<{ warning?: string }>(`admin/table-operations/${table.id}/${path}`, { method: "POST", body: JSON.stringify(body) });
-      if (result.warning) showToast(result.warning, "warning");
+      const result = await clientApi<{ warning?: string; printWarning?: string }>(`admin/table-operations/${table.id}/${path}`, { method: "POST", body: JSON.stringify(body) });
+      if (result.printWarning || result.warning) showToast(result.printWarning || result.warning!, "warning");
       setForceClose(false);
       await refresh();
     } catch (cause) { showToast(staffApiMessage(cause, "Não foi possível concluir. Atualize a conta e tente novamente."), "error"); }

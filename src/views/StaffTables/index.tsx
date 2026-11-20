@@ -14,6 +14,7 @@ import { productSalePrice } from "@/utils/productPricing";
 import { formatBrazilianPhoneInput } from "@/utils/customerInput";
 import { draftItemTotal, normalizeTablePhone, staffApiMessage, type DraftItem } from "./draft";
 import { ItemEditor } from "./ItemEditor";
+import { NewTableOrder } from "./NewTableOrder";
 import { BillPrintButton } from "./BillPrintButton";
 import { useRouter } from "next/navigation";
 import { ReasonDialog } from "./ReasonDialog";
@@ -92,6 +93,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const [uncertainSubmission, setUncertainSubmission] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("");
   const [now, setNow] = useState<number | null>(null);
+  const [launching, setLaunching] = useState(!initialTableId);
   const router = useRouter();
   const isAdmin = admin.roles.includes("ADMIN");
   const selected = tables?.find((table) => table.id === selectedId);
@@ -152,9 +154,7 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   function addProduct(product: Product) {
     if (isClosing) { showToast(closingMessage, "warning"); return; }
     const item: DraftItem = { id: crypto.randomUUID(), product, quantity: 1, observations: "", options: [] };
-    if (product.optionGroups?.some((group) => !group.deleted)) { setEditor({ editing: false, item }); return; }
-    updateDraft({ ...draft, sessionId: draft.items.length ? draft.sessionId : consumption?.session?.id ?? "", items: [...draft.items, item] });
-    showToast(`${product.name} adicionado à rodada. Use Editar para incluir uma observação.`);
+    setEditor({ editing: false, item });
   }
 
   async function manualRefresh() {
@@ -200,15 +200,15 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   async function tableAction(path: string, message: string) {
     if (submitting.current) return;
     submitting.current = true; setBusy(true);
-    try { await clientApi(`admin/table-operations/${selectedId}/${path}`, { method: "POST", body: "{}" }); showToast(message); await Promise.all([refresh(), loadConsumption(selectedId)]); }
+    try { const result = await clientApi<{ printWarning?: string }>(`admin/table-operations/${selectedId}/${path}`, { method: "POST", body: "{}" }); showToast(result.printWarning || message, result.printWarning ? "warning" : undefined); await Promise.all([refresh(), loadConsumption(selectedId)]); }
     catch (cause) { showToast(staffApiMessage(cause, "Não foi possível concluir. Atualize a mesa e tente novamente."), "error"); }
     finally { submitting.current = false; setBusy(false); }
   }
 
   async function requestBill() {
     if (deliveryPending) { showToast(tableDeliveryNotice, "warning"); return; }
-    if (await requestConfirmation({ message: "Pedir a conta bloqueará novos lançamentos até a comanda ser reaberta. Continuar?", confirmLabel: "Pedir fechamento", variant: "primary" })) {
-      await tableAction("request-bill", "Fechamento solicitado.");
+    if (await requestConfirmation({ message: "Solicitar fechamento e imprimir a conta no caixa? Novos lançamentos ficarão bloqueados. O pagamento será registrado separadamente pelo responsável no caixa.", confirmLabel: "Pedir fechamento", variant: "primary" })) {
+      await tableAction("request-bill", "Fechamento solicitado. Conta enviada à impressora do caixa.");
     }
   }
 
@@ -239,8 +239,10 @@ export function StaffTables({ initialTables, initialMenu, admin, restaurantName,
   const canEdit = !busy && !uncertainSubmission;
   const canLaunch = canEdit && consumption !== null && !consumptionError && consumption.session?.status !== "CLOSING" && (!draft.sessionId || draft.sessionId === consumption.session?.id);
 
+  if (launching) return <NewTableOrder menu={menu} tables={tables} admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} onTables={() => setLaunching(false)} onSent={() => void refresh()} />;
+
   return <AdminShell admin={admin} restaurantName={restaurantName} storeOpen={storeOpen} beforeLeave={confirmLeave}><Root>
-    <Header><div><Title>Atendimento do salão</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div></Header>
+    <Header><div><Title>Atendimento do salão</Title><Muted>{restaurantName} · {isAdmin ? "Administrador" : "Garçom"}</Muted></div><Button disabled={!canEdit} onClick={async () => { if (await confirmLeave()) { setDrafts({}); setLaunching(true); } }}><Plus size={18} />Novo pedido</Button></Header>
     <TableServiceAlerts tables={tables} onSelect={openTable} disabled={!canEdit} />
     <Row><div><Heading>{selected ? tableLabel(selected) : "Escolha mesa ou comanda"}</Heading><Muted>{selected ? `${tableStatus(selected)} · ${selected.kind === "COMMAND" ? "Conta individual" : "Conta compartilhada"}` : "Selecione para lançar uma nova rodada."}{lastUpdated ? ` · Atualizado às ${lastUpdated}` : ""}</Muted></div><Actions>
       {selected ? <Button variant="outline" disabled={!canEdit} onClick={() => { setSelectedId(""); setConsumption(null); }}><ArrowLeft size={16} />Mesas e comandas</Button> : null}
