@@ -36,9 +36,9 @@ export function OrderDestination({ tables, onConfirm, onClose }: { tables: Staff
       if (controller.signal.aborted) return;
       setLoaded({ tableId, consumption: value }); setError("");
       const contact = value.orders.find((order) => order.customerPhone);
-      form.setValue("customerPhone", formatBrazilianPhoneInput(contact?.customerPhone ?? ""));
-      form.setValue("customerName", contact?.customerName ?? "");
-      form.setValue("physicalTableId", value.session?.physicalTableId ?? "");
+      if (!form.getValues("customerPhone")) form.setValue("customerPhone", formatBrazilianPhoneInput(contact?.customerPhone ?? ""));
+      if (!form.getValues("customerName")) form.setValue("customerName", contact?.customerName ?? "");
+      if (value.session?.physicalTableId) form.setValue("physicalTableId", value.session.physicalTableId);
     }).catch((cause) => { if (!controller.signal.aborted) { setLoaded(null); setError(staffApiMessage(cause, "Não foi possível conferir esta conta. Selecione novamente para tentar.")); } });
     return () => controller.abort();
   }, [tableId, form]);
@@ -52,10 +52,12 @@ export function OrderDestination({ tables, onConfirm, onClose }: { tables: Staff
     <Field label="Mesa ou comanda" error={form.formState.errors.tableId?.message}><Select autoFocus {...form.register("tableId", { required: "Selecione mesa ou comanda.", onChange: () => { setLoaded(null); setError(""); } })}><option value="">Selecione a conta</option>{tables.filter((entry) => entry.active).map((entry) => <option key={entry.id} value={entry.id}>{tableLabel(entry)}{entry.kind !== "COMMAND" ? " · conta compartilhada" : ""}</option>)}</Select></Field>
     {error ? <ErrorBox role="alert">{error}</ErrorBox> : tableId && !consumption ? <Muted role="status">Conferindo conta…</Muted> : null}
     {closing ? <ErrorBox role="alert">Conta em fechamento. Reabra em Mesas e comandas ou escolha outra conta.</ErrorBox> : null}
+    <fieldset className="hall-destination-fields" disabled={!consumption || closing}>
     {table?.kind === "COMMAND" && !boundTable ? <Field label="Mesa da comanda" error={form.formState.errors.physicalTableId?.message}><Select {...form.register("physicalTableId", { validate: (value) => table?.kind !== "COMMAND" || !!boundTable || !!value || "Selecione a mesa desta comanda." })}><option value="">Selecione a mesa</option>{tables.filter((entry) => entry.active && entry.kind !== "COMMAND").map((entry) => <option key={entry.id} value={entry.id}>Mesa {entry.number}</option>)}</Select></Field> : consumption?.session?.physicalTableNumber ? <Muted>Mesa {consumption.session.physicalTableNumber} · {table ? tableLabel(table) : ""}</Muted> : null}
     <Field label="Nome do cliente (opcional)" error={form.formState.errors.customerName?.message}><Input maxLength={100} autoComplete="off" {...form.register("customerName", { maxLength: { value: 100, message: "Use até 100 caracteres." } })} /></Field>
     <Field label="Telefone ou celular com DDD" error={form.formState.errors.customerPhone?.message}><Input type="tel" inputMode="tel" autoComplete="off" maxLength={25} placeholder="(11) 99999-9999" {...form.register("customerPhone", { onChange: (event) => form.setValue("customerPhone", formatBrazilianPhoneInput(event.target.value)), validate: (value) => !!normalizeTablePhone(value) || "Informe DDD e telefone com 10 ou 11 dígitos." })} /></Field>
     {consumption && !consumption.session ? <GuestCountField label="Total de pessoas" value={guestCount} onChange={(value) => form.setValue("guestCount", value, { shouldValidate: true })} error={form.formState.errors.guestCount?.message} registration={form.register("guestCount", { validate: (value) => !!consumption?.session || Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 999 || "Informe de 1 a 999 pessoas." })} /> : null}
+    </fieldset>
     <Actions><Button type="button" variant="outline" onClick={onClose}>Voltar aos itens</Button><Button type="submit" disabled={!consumption || closing || form.formState.isSubmitting}><Send size={18} />Confirmar e enviar ao preparo</Button></Actions>
   </form></Dialog>;
 }

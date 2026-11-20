@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { draftItemTotal, staffApiMessage } from "./draft.ts";
+import { draftItemTotal, normalizeTablePhone, staffApiMessage } from "./draft.ts";
+import { formatBrazilianPhoneInput } from "../../utils/customerInput.ts";
 
 function harness({ fail } = {}) {
   const product = { id: "food", name: "Prato", active: true, priceCents: 2000, optionGroups: [], imageUrl: "/photo.jpg" };
@@ -88,4 +89,34 @@ test("rejected submission preserves items and allows selecting another destinati
   await new Promise(setImmediate);
   assert.equal(view.requests[1][0], "admin/table-operations/other-command/orders");
   assert.notEqual(JSON.parse(view.requests[0][1].body).submissionId, JSON.parse(view.requests[1][1].body).submissionId);
+});
+
+test("destination waits for consumption and late contact lookup never erases typed fields", async () => {
+  const data = { tableId: "command", physicalTableId: "", customerName: "", customerPhone: "", guestCount: "1" };
+  const effects = [], state = new Map();
+  let slot = 0, resolve;
+  const form = { formState: { errors: {} }, register: () => ({}), handleSubmit: (fn) => fn, getValues: (name) => data[name], setValue: (name, value) => { data[name] = value; } };
+  const jsx = (type, props) => ({ type, props });
+  const loaded = { exports: {} };
+  const source = ts.transpileModule(readFileSync(new URL("./OrderDestination.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  runInNewContext(source, { module: loaded, exports: loaded.exports, AbortController, require(name) {
+    if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
+    if (name === "react") return { useRef: () => ({ current: null }), useEffect: (fn) => effects.push(fn), useState: (initial) => { const key = slot++; if (!state.has(key)) state.set(key, initial); return [state.get(key), (next) => state.set(key, next)]; } };
+    if (name === "react-hook-form") return { useForm: () => form, useWatch: ({ name }) => data[name] };
+    if (name === "@/services/api/client") return { clientApi: () => new Promise((done) => { resolve = done; }) };
+    if (name === "@/utils/customerInput") return { formatBrazilianPhoneInput };
+    if (name === "./draft") return { normalizeTablePhone, staffApiMessage };
+    if (name === "@/utils/tableIdentity") return { tableLabel: (table) => table.number };
+    return new Proxy({}, { get: (_, key) => String(key) });
+  } });
+  const tree = loaded.exports.OrderDestination({ tables: [{ id: "command", number: "23", kind: "COMMAND", active: true }], onClose() {}, onConfirm() {} });
+  const fields = tree.props.children.props.children.find((node) => node?.type === "fieldset");
+  assert.equal(fields.props.disabled, true);
+  effects[1]();
+  data.physicalTableId = "typed-table"; data.customerName = "Typed name"; data.customerPhone = "11988887777";
+  resolve({ session: null, orders: [{ customerName: "Old contact", customerPhone: "11999990000" }] });
+  await new Promise(setImmediate);
+  assert.equal(data.physicalTableId, "typed-table");
+  assert.equal(data.customerName, "Typed name");
+  assert.equal(data.customerPhone, "11988887777");
 });

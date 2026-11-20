@@ -56,6 +56,8 @@ export const Dialog = styled("dialog", {
   margin: "auto", width: "min(36rem, calc(100% - 1.5rem))", maxHeight: "calc(100dvh - 2rem)", overflowY: "auto", overscrollBehavior: "contain", padding: "1.5rem", border: "none", borderRadius: "1rem", background: "var(--color-surface)", color: "var(--color-foreground)",
   "&::backdrop": { background: "rgb(0 0 0 / 45%)" },
   "& form": { display: "grid", gap: "1rem" },
+  "& .hall-destination-fields": { display: "grid", gap: "1rem", minWidth: 0 },
+  "& .item-editor-header": { flexWrap: "nowrap", alignItems: "flex-start", "& h2": { flex: 1, minWidth: 0, overflowWrap: "anywhere" }, "& button": { flexShrink: 0 } },
   "& button:focus-visible, & input:focus-visible, & textarea:focus-visible": { outline: "2px solid var(--color-primary-text)", outlineOffset: "2px" },
 });
 export const GuestCountControls = styled("div", {

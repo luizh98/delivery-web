@@ -24,7 +24,7 @@ export function ItemEditor({ item, editing, onSave, onClose }: { item: DraftItem
       if (invalid) { setError(invalid); return; }
       onSave(next);
     })}>
-      <Row><Heading id="item-editor-title">{item.product.name}</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Fechar item"><X size={18} /></Button></Row>
+      <Row className="item-editor-header"><Heading id="item-editor-title">{item.product.name}</Heading><Button type="button" variant="ghost" onClick={onClose} aria-label="Fechar item"><X size={18} /></Button></Row>
       <Muted>{editing ? "Corrija este item antes de enviar a rodada." : "Escolha os detalhes para incluir na rodada."}</Muted>
       {(item.product.optionGroups ?? []).filter((group) => !group.deleted).map((group) => {
         const max = group.maxSelections > 0 ? group.maxSelections : 1;
